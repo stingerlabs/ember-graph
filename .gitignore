@@ -1,0 +1,4 @@
+node_modules/*
+test/index.html
+ember-graph.js
+.idea/*
