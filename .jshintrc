@@ -1,4 +1,10 @@
 {
+	"predef": [
+		"QUnit",
+		"module",
+		"test",
+		"ok"
+	],
 	"bitwise": true,
 	"camelcase": false,
 	"curly": true,
