@@ -4,22 +4,19 @@
 Eg.Model = Em.Object.extend({
 
 	/**
+	 * The prefix added to generated IDs to show that the prefix wasn't given
+	 * by the server and is only temporary until the real one comes in.
+	 *
 	 * @type {String}
-	 * @public
+	 * @constant
+	 * @static
+	 */
+	temporaryIdPrefix: 'EG_TEMP_ID_',
+
+	/**
+	 * @type {String}
 	 */
 	id: null,
-
-	/**
-	 * @type {Object}
-	 * @private
-	 */
-	originalData: null,
-
-	/**
-	 * @type {Object}
-	 * @private
-	 */
-	modifiedData: null,
 
 	/**
 	 * @type {Object}
@@ -31,7 +28,11 @@ Eg.Model = Em.Object.extend({
 	 * @constructs
 	 */
 	init: function() {
+		this.set('id', null);
+		this.set('store', null);
 
+		this.set('_serverAttributes', {});
+		this.set('_clientAttributes', {});
 	},
 
 	/**
@@ -40,28 +41,12 @@ Eg.Model = Em.Object.extend({
 	 * @returns {Eg.Model}
 	 */
 	createRecord: function(json) {
+		var record = this.super();
 
-	},
+		this.constructor.eachAttribute(function(name, meta) {
+			
+		}, this);
 
-
-	/**
-	 * @instance
-	 * @returns {Object}
-	 */
-	toJSON: function() {
-
-	},
-
-	/**
-	 * Proxies the store's save method for convenience.
-	 * @returns {Em.RSVP.Promise}
-	 * @throws Error If this record hasn't been loaded into the store
-	 */
-	save: function() {
-		if (this.store) {
-			return this.store.save(this);
-		} else {
-			throw new Error('This record hasn\'t been loaded into a store yet.');
-		}
+		return record;
 	}
 });
