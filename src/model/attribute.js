@@ -30,13 +30,8 @@ Eg.attr = function(options) {
 		valid: options.valid || defaultValidity
 	};
 
-	return Em.computed(function(key, value) {
+	var attribute = function(key, value) {
 		if (arguments.length > 1) {
-			if (meta.readOnly) {
-				Ember.assert('Cannot modify a read-only property.');
-				return undefined;
-			}
-
 			if (!meta.valid(value)) {
 				Ember.assert('The value \'' + value + '\' wasn\'t valid for the \'' + key + '\' property.');
 				return undefined;
@@ -57,31 +52,15 @@ Eg.attr = function(options) {
 
 		var client = this.get('_clientAttributes.' + key);
 		return (client === undefined ? this.get('_serverAttributes.' + key) : client);
-	}).property('_clientAttributes').meta(meta);
+	}.property('_clientAttributes').meta(meta);
+
+	return (options.readOnly ? attribute.readOnly() : attribute);
 };
 
 /**
  * @class Model
  */
 Eg.Model.reopenClass({
-
-	/**
-	 * Represents the latest set of properties from the server. The only way these
-	 * can be updated is if the server sends over new JSON through an operation,
-	 * or a save operation successfully completes, in which case `_clientAttributes`
-	 * will be copied into this.
-	 *
-	 * @private
-	 */
-	_serverAttributes: null,
-
-	/**
-	 * Represents the state of the object on the client. These are likely different
-	 * from what the server has and are completely temporary until saved.
-	 *
-	 * @private
-	 */
-	_clientAttributes: null,
 
 	/**
 	 * @static
@@ -102,9 +81,9 @@ Eg.Model.reopenClass({
 	}),
 
 	/**
-	 * @instance
 	 * @param name Name of property
 	 * @returns {Boolean} True if attribute, false otherwise
+	 * @static
 	 */
 	isAttribute: function(name) {
 		return Em.get(this.constructor, 'attributes').contains(name);
@@ -123,11 +102,31 @@ Eg.Model.reopenClass({
 				callback.call(binding, name, meta);
 			}
 		});
-	},
+	}
+});
+
+Eg.Model.reopen({
 
 	/**
-	 * @instance
-	 * @returns {Object}
+	 * Represents the latest set of properties from the server. The only way these
+	 * can be updated is if the server sends over new JSON through an operation,
+	 * or a save operation successfully completes, in which case `_clientAttributes`
+	 * will be copied into this.
+	 *
+	 * @private
+	 */
+	_serverAttributes: null,
+
+	/**
+	 * Represents the state of the object on the client. These are likely different
+	 * from what the server has and are completely temporary until saved.
+	 *
+	 * @private
+	 */
+	_clientAttributes: null,
+
+	/**
+	 * @returns {Object} Keys are attribute names, values are arrays with [oldVal, newVal]
 	 */
 	changedAttributes: function() {
 		var diff = {};
@@ -145,11 +144,39 @@ Eg.Model.reopenClass({
 	},
 
 	/**
-	 * @instance
+	 * Resets all attribute changes to last known server attributes.
 	 */
 	rollbackAttributes: function() {
 		this.constructor.eachAttribute(function(name, meta) {
 			this.set('_clientAttributes.' + name, this.get('_serverAttributes.' + name));
+		}, this);
+	},
+
+	/**
+	 * Loads attributes from the server.
+	 *
+	 * @param json The JSON with properties to load
+	 * @param merge False if the object is just created, false if the object is being reloaded
+	 * @private
+	 */
+	_loadAttributes: function(json, merge) {
+		if (!merge) {
+			this.set('_serverAttributes', {});
+			this.set('_clientAttributes', {});
+		}
+
+		this.constructor.eachAttribute(function(name, meta) {
+			if (json.hasOwnProperty(name) || !meta.isRequired) {
+				var value = json.hasOwnProperty(name) ? json[name] : meta.defaultValue;
+
+				if (meta.valid(value)) {
+					this.set('_serverAttributes');
+				} else {
+					throw new Error('The value \'' + value + '\' for property \'' + name + '\' is invalid.');
+				}
+			} else if (!merge) {
+				throw new Error('The given JSON doesn\'t contain the \'' + name + '\' property.');
+			}
 		}, this);
 	}
 });

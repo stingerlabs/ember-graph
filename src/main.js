@@ -1,5 +1,14 @@
-var EmberGraph = {}; // jshint ignore:line
-var Eg = EmberGraph; // jshint ignore:line
+require('global');
 
-require('model/model.js');
-require('model/attribute.js');
+require('util');
+require('string');
+require('debug');
+
+require('model/model');
+require('model/attribute');
+
+require('transform/transform');
+require('transform/boolean');
+require('transform/date');
+require('transform/number');
+require('transform/string');

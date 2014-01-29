@@ -2,8 +2,8 @@
 
 module.exports = {
 	options: {
-		filepathTransform: function(filepath) {
-			return 'src/' + filepath;
+		filepathTransform: function(path) {
+			return 'src/' + path;
 		}
 	},
 
