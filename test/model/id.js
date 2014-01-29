@@ -22,7 +22,7 @@
 		ok(Eg.String.startsWith(model.get('id'), Em.get(Eg.Model, 'temporaryIdPrefix')));
 	});
 
-	test('ID cannot be changed', function() {
+	test('A permanent ID cannot be changed', function() {
 		expect(1);
 
 		var model = TestModel.createRecord({ id: '1' });
@@ -39,20 +39,6 @@
 		model.set('id', '');
 
 		ok(model.get('id') === '');
-	});
-
-	test('ID cannot be used as attribute', function() {
-		expect(1);
-
-		throws(function() {
-			var BadModel = Eg.Model.extend({
-				id: Eg.attr({
-					type: 'string'
-				})
-			});
-
-			Em.get(BadModel, 'attributes');
-		});
 	});
 })();
 

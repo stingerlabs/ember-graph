@@ -23,7 +23,7 @@ Eg.attr = function(options) {
 	var meta = {
 		isAttribute: true,
 		type: options.type,
-		isRequired: options.hasOwnProperty('defaultValue'),
+		isRequired: !options.hasOwnProperty('defaultValue'),
 		defaultValue: options.defaultValue,
 		compare: options.compare || defaultCompare,
 		readOnly: options.readOnly === true,
@@ -31,15 +31,18 @@ Eg.attr = function(options) {
 	};
 
 	var attribute = function(key, value) {
+		var client = this.get('_clientAttributes.' + key);
+		var current = (client === undefined ? this.get('_serverAttributes.' + key) : client);
+
 		if (arguments.length > 1) {
 			if (!meta.valid(value)) {
 				Ember.assert('The value \'' + value + '\' wasn\'t valid for the \'' + key + '\' property.');
-				return undefined;
+				return current;
 			}
 
 			if (value === undefined) {
 				Ember.assert('`undefined` is not a valid property value.');
-				return undefined;
+				return current;
 			}
 
 			if (!meta.compare(value, this.get('_serverAttributes.' + key))) {
@@ -50,9 +53,8 @@ Eg.attr = function(options) {
 			return value;
 		}
 
-		var client = this.get('_clientAttributes.' + key);
-		return (client === undefined ? this.get('_serverAttributes.' + key) : client);
-	}.property('_clientAttributes').meta(meta);
+		return current;
+	}.property('_clientAttributes', '_serverAttributes').meta(meta);
 
 	return (options.readOnly ? attribute.readOnly() : attribute);
 };
@@ -73,7 +75,7 @@ Eg.Model.reopenClass({
 				Em.assert('The ' + name + ' cannot be used as an attribute name.',
 					!disallowedAttributeNames.contains(name));
 
-				attributes.pushObject(name);
+				attributes.addObject(name);
 			}
 		});
 
@@ -86,7 +88,7 @@ Eg.Model.reopenClass({
 	 * @static
 	 */
 	isAttribute: function(name) {
-		return Em.get(this.constructor, 'attributes').contains(name);
+		return Em.get(this, 'attributes').contains(name);
 	},
 
 	/**
@@ -150,6 +152,8 @@ Eg.Model.reopen({
 		this.constructor.eachAttribute(function(name, meta) {
 			this.set('_clientAttributes.' + name, this.get('_serverAttributes.' + name));
 		}, this);
+
+		this.notifyPropertyChange('_clientAttributes');
 	},
 
 	/**
@@ -170,7 +174,7 @@ Eg.Model.reopen({
 				var value = json.hasOwnProperty(name) ? json[name] : meta.defaultValue;
 
 				if (meta.valid(value)) {
-					this.set('_serverAttributes');
+					this.set('_serverAttributes.' + name, value);
 				} else {
 					throw new Error('The value \'' + value + '\' for property \'' + name + '\' is invalid.');
 				}
