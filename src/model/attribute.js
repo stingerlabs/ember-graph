@@ -36,12 +36,12 @@ Eg.attr = function(options) {
 
 		if (arguments.length > 1) {
 			if (!meta.valid(value)) {
-				Ember.assert('The value \'' + value + '\' wasn\'t valid for the \'' + key + '\' property.');
+				Eg.debug.warn('The value \'' + value + '\' wasn\'t valid for the \'' + key + '\' property.');
 				return current;
 			}
 
 			if (value === undefined) {
-				Ember.assert('`undefined` is not a valid property value.');
+				Eg.debug.warn('`undefined` is not a valid property value.');
 				return current;
 			}
 
@@ -137,6 +137,10 @@ Eg.Model.reopen({
 			var server = this.get('_serverAttributes.' + name);
 			var client = this.get('_clientAttributes.' + name);
 
+			if (client === undefined) {
+				return;
+			}
+
 			if (!meta.compare(server, client)) {
 				diff[name] = [server, client];
 			}
@@ -149,10 +153,7 @@ Eg.Model.reopen({
 	 * Resets all attribute changes to last known server attributes.
 	 */
 	rollbackAttributes: function() {
-		this.constructor.eachAttribute(function(name, meta) {
-			this.set('_clientAttributes.' + name, this.get('_serverAttributes.' + name));
-		}, this);
-
+		this.set('_clientAttributes', {});
 		this.notifyPropertyChange('_clientAttributes');
 	},
 
@@ -164,6 +165,8 @@ Eg.Model.reopen({
 	 * @private
 	 */
 	_loadAttributes: function(json, merge) {
+		// TODO: If merge, alert observer
+
 		if (!merge) {
 			this.set('_serverAttributes', {});
 			this.set('_clientAttributes', {});

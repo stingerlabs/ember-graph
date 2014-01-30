@@ -121,6 +121,14 @@
 		ok(!set.isEqual(['1']));
 	});
 
+	test('Equality works with a null value', function() {
+		expect(1);
+
+		var set = new Eg.OrderedStringSet(['1', '2', '3']);
+
+		ok(!set.isEqual(null));
+	});
+
 	test('A set copies correctly', function() {
 		expect(2);
 
