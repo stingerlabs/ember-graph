@@ -2,6 +2,8 @@
 	'use strict';
 
 	var attributes = {
+		typeKey: 'test',
+
 		name: Eg.attr({
 			type: 'string',
 			readOnly: true

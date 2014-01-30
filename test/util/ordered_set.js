@@ -31,7 +31,7 @@
 		ok(set.contains('3'));
 	});
 
-	test('The constructor throw when given a non-enumberable object', function() {
+	test('The constructor throw when given a non-enumerable object', function() {
 		expect(1);
 
 		throws(function() {

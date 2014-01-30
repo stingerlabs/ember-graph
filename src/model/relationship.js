@@ -1,19 +1,25 @@
+var BELONGS_TO_KEY = Eg.Model.BELONGS_TO_KEY = 'belongsTo';
+var HAS_MANY_KEY = Eg.Model.HAS_MANY_KEY = 'hasMany';
+
 var disallowedRelationshipNames = new Em.Set(['id', 'type']);
 
 Eg.hasMany = function() {
 
 };
 
-Eg.belongsTo = function() {
+Eg.belongsTo = function(options) {
+	var meta = {
+		isRelationship: true,
+		kind: BELONGS_TO_KEY,
+		relatedType: options.relatedType,
+		readOnly: options.readOnly === true
+	};
 
-};
+	var relationship = function(key, value) {
 
-Eg.hasLinks = function() {
+	}.property('_serverRelationships', '_clientRelationships');
 
-};
-
-Eg.isLinkedTo = function() {
-
+	return (meta.readOnly ? relationship.readOnly() : relationship);
 };
 
 Eg.Model.reopenClass({

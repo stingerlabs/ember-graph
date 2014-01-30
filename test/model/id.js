@@ -1,7 +1,9 @@
 (function() {
 	'use strict';
 
-	var TestModel = Eg.Model.extend({});
+	var TestModel = Eg.Model.extend({
+		typeKey: 'test'
+	});
 
 	module('Model ID Test');
 

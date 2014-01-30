@@ -61,6 +61,7 @@ Eg.Model = Em.Object.extend({
 });
 
 Eg.Model.reopenClass({
+
 	/**
 	 * The prefix added to generated IDs to show that the prefix wasn't given
 	 * by the server and is only temporary until the real one comes in.
@@ -70,6 +71,14 @@ Eg.Model.reopenClass({
 	 * @static
 	 */
 	temporaryIdPrefix: 'EG_TEMP_ID_',
+
+	/**
+	 * Holds the type associations (typeKey -> model)
+	 *
+	 * @private
+	 * @static
+	 */
+	_typeKeys: {},
 
 	/**
 	 * @static
@@ -82,5 +91,57 @@ Eg.Model.reopenClass({
 		record._create(json);
 
 		return record;
+	},
+
+	/**
+	 * Modifies the extend method to ensure that the typeKey is available on
+	 * both the class an instances. Also registers it with the system.
+	 *
+	 * @returns {Eg.Model} Subclass of Eg.Model
+	 */
+	extend: function() {
+		var options = arguments[arguments.length - 1];
+
+		Eg.debug.assert('You must include the `typeKey` attribute.', typeof options.typeKey === 'string');
+		var typeKey = options.typeKey;
+		delete options.typeKey;
+
+		var subclass = this._super.apply(this, arguments);
+
+		subclass.reopen({
+			typeKey: typeKey
+		});
+
+		subclass.reopenClass({
+			typeKey: typeKey
+		});
+
+		this._registerType(typeKey, subclass);
+
+		return subclass;
+	},
+
+	/**
+	 * Registers a type with the system. Will override a previous type.
+	 *
+	 * @param {String} typeKey The type name of the model
+	 * @param {Eg.Model} model The model to associate with the type name
+	 * @private
+	 * @static
+	 */
+	_registerType: function(typeKey, model) {
+		Eg.Model._typeKeys[typeKey] = model;
+	},
+
+	/**
+	 * Looks up a model for a type name
+	 *
+	 * @param {String} typeKey The type name of the model
+	 * @returns {Eg.Model} The model associated with the type given
+	 * @static
+	 */
+	modelForType: function(typeKey) {
+		return Eg.Model._typeKeys[typeKey];
 	}
 });
+
