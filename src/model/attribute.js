@@ -67,7 +67,7 @@ Eg.Model.reopenClass({
 	/**
 	 * @static
 	 */
-	attributes: Em.computed(function() {
+	attributes: function() {
 		var attributes = new Em.Set();
 
 		this.eachComputedProperty(function(name, meta) {
@@ -80,7 +80,7 @@ Eg.Model.reopenClass({
 		});
 
 		return attributes;
-	}),
+	}.property(),
 
 	/**
 	 * @param name Name of property

@@ -1,8 +1,8 @@
 require('global');
 
-require('util');
-require('string');
-require('debug');
+require('util/util');
+require('util/string');
+require('util/debug');
 
 require('model/model');
 require('model/attribute');
