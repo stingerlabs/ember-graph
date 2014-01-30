@@ -62,6 +62,7 @@ Eg.Model.reopenClass({
 });
 
 Eg.Model.reopen({
+
 	/**
 	 * Represents the latest set of relationships from the server. The only way these
 	 * can be updated is if the server sends over new JSON through an operation,

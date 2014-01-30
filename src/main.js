@@ -3,6 +3,7 @@ require('global');
 require('util/util');
 require('util/string');
 require('util/debug');
+require('util/ordered_set');
 
 require('model/model');
 require('model/attribute');
