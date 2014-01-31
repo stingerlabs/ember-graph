@@ -197,5 +197,14 @@
 		set.addObject('2');
 		ok(set.get('length') === 3);
 	});
+
+	test('Adding an object at Infinity index adds to the end', function() {
+		expect(1);
+
+		var set = new Eg.OrderedStringSet(['1', '2', '3']);
+
+		set.addObjectAt('4', Infinity);
+		ok(set.objectAt(3) === '4');
+	});
 })();
 

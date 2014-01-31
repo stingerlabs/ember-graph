@@ -237,17 +237,20 @@ Eg.Model.reopen({
 	 *
 	 * @param {String} relationship The relationship to modify
 	 * @param {String} id The ID to add to the relationship
+	 * @param {Number} index The place in the array to add the ID. Defaults to the end
 	 */
-	addToRelationship: function(relationship, id) {
+	addToRelationship: function(relationship, id, index) {
+		index = index || Infinity;
+
 		var server = this.get('_serverRelationships.' + relationship);
 		var client = this.get('_clientRelationships.' + relationship);
 
 		if (client === undefined) {
 			client = new Eg.OrderedStringSet(server);
-			client.addObject(id);
+			client.addObjectAt(id, index);
 			this.set('_clientRelationships.' + relationship, client);
 		} else {
-			client.addObject(id);
+			client.addObjectAt(id, index);
 
 			if (server.isEqual(client)) {
 				delete this.get('_clientRelationships')[relationship];
