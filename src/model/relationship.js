@@ -220,7 +220,6 @@ Eg.Model.reopen({
 	 */
 	rollbackRelationships: function() {
 		this.set('_clientRelationships', {});
-		this.notifyPropertyChange('_clientRelationships');
 	},
 
 	/**

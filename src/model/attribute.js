@@ -160,7 +160,6 @@ Eg.Model.reopen({
 	 */
 	rollbackAttributes: function() {
 		this.set('_clientAttributes', {});
-		this.notifyPropertyChange('_clientAttributes');
 	},
 
 	/**
