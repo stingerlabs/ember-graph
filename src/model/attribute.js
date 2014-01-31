@@ -83,6 +83,12 @@ Eg.Model.reopenClass({
 	}.property(),
 
 	/**
+	 * Just a more semantic alias for `metaForProperty`
+	 * @alias metaForProperty
+	 */
+	metaForAttribute: Em.alias('metaForProperty'),
+
+	/**
 	 * @param name Name of property
 	 * @returns {Boolean} True if attribute, false otherwise
 	 * @static

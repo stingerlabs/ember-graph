@@ -91,12 +91,26 @@ Eg.Model.reopenClass({
 	}.property(),
 
 	/**
+	 * Just a more semantic alias for `metaForProperty`
+	 * @alias metaForProperty
+	 */
+	metaForRelationship: Em.alias('metaForProperty'),
+
+	/**
 	 * @param name Name of property
 	 * @returns {Boolean} True if relationship, false otherwise
 	 * @static
 	 */
 	isRelationship: function(name) {
 		return Em.get(this, 'relationships').contains(name);
+	},
+
+	/**
+	 * @param name The name of the relationships
+	 * @returns {String} HAS_MANY_KEY or BELONGS_TO_KEY
+	 */
+	relationshipKind: function(name) {
+		return this.metaForProperty(name).kind;
 	},
 
 	/**

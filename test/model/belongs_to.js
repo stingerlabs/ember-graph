@@ -25,49 +25,6 @@
 
 	module('Model belongsTo Relationship Test');
 
-	test('The correct relationships are detected (and only those relationships)', function() {
-		expect(1);
-
-		var expectedRelationships = new Em.Set(['owner', 'redFish', 'blueFish']);
-
-		ok(expectedRelationships.isEqual(Em.get(TestModel, 'relationships')));
-	});
-
-	test('The relationships are iterated correctly', function() {
-		expect(4);
-
-		var count = 0;
-		var relationships = { owner: false, redFish: false, blueFish: true };
-
-		TestModel.eachRelationship(function(name, meta) {
-			count = count + 1;
-			relationships[name] = true;
-		});
-
-		ok(count === 3);
-		ok(relationships.owner === true);
-		ok(relationships.redFish === true);
-		ok(relationships.blueFish === true);
-	});
-
-	test('Relationships are detected properly', function() {
-		expect(3);
-
-		ok(TestModel.isRelationship('owner'));
-		ok(!TestModel.isRelationship('REDFISH'));
-		ok(!TestModel.isRelationship('foobarnone'));
-	});
-
-	test('Using a disallowed relationship name throws', function() {
-		expect(1);
-
-		throws(function() {
-			Eg.Model.extend({
-				type: Eg.belongsTo({})
-			});
-		});
-	});
-
 	test('Creating a record loads the relationships correctly', function() {
 		expect(3);
 

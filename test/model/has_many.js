@@ -25,14 +25,6 @@
 
 	module('Model hasMany Relationship Test');
 
-	test('The correct relationships are detected (and only those relationships)', function() {
-		expect(1);
-
-		var expectedRelationships = new Em.Set(['widgets', 'squirrels', 'people']);
-
-		ok(expectedRelationships.isEqual(Em.get(TestModel, 'relationships')));
-	});
-
 	test('Creating a record loads the relationships correctly', function() {
 		expect(3);
 

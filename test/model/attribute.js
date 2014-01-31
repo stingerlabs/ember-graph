@@ -201,5 +201,14 @@
 		ok(model.get('posts') === 0);
 		ok(model.get('birthday') === null);
 	});
+
+	test('metaForAttribute returns the correct metadata', function() {
+		expect(2);
+
+		var meta = TestModel.metaForRelationship('name');
+
+		ok(meta.isAttribute === true);
+		ok(meta.isRequired === true);
+	});
 })();
 
