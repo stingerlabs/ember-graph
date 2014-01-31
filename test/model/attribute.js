@@ -210,5 +210,41 @@
 		ok(meta.isAttribute === true);
 		ok(meta.isRequired === true);
 	});
+
+	test('Setting attributes dirties the record', function() {
+		expect(2);
+
+		var model = TestModel.createRecord({
+			name: 'Bob',
+			birthday: new Date()
+		});
+
+		ok(model.get('isDirty') === false);
+
+		model.set('posts', 42);
+		model.set('birthday', null);
+
+		ok(model.get('isDirty') === true);
+	});
+
+	test('Rolling back attributes cleans the record', function() {
+		expect(3);
+
+		var model = TestModel.createRecord({
+			name: 'Bob',
+			birthday: new Date()
+		});
+
+		ok(model.get('isDirty') === false);
+
+		model.set('posts', 42);
+		model.set('birthday', null);
+
+		ok(model.get('isDirty') === true);
+
+		model.rollbackAttributes();
+
+		ok(model.get('isDirty') === false);
+	});
 })();
 

@@ -70,4 +70,102 @@
 		ok(meta.isRelationship === true);
 		ok(meta.kind === BELONGS_TO_KEY);
 	});
+
+	test('Setting a belongsTo attribute dirties the record', function() {
+		expect(2);
+
+		var record = TestModel.createRecord({
+			single: '1',
+			multiple: ['2', '3', '4']
+		});
+
+		ok(record.get('isDirty') === false);
+
+		record.set('single', '5');
+
+		ok(record.get('isDirty') === true);
+	});
+
+	test('Setting a hasMany attribute dirties the record', function() {
+		expect(2);
+
+		var record = TestModel.createRecord({
+			single: '1',
+			multiple: ['2', '3', '4']
+		});
+
+		ok(record.get('isDirty') === false);
+
+		record.set('multiple', []);
+
+		ok(record.get('isDirty') === true);
+	});
+
+	test('Adding to a hasMany attribute dirties the record', function() {
+		expect(2);
+
+		var record = TestModel.createRecord({
+			single: '1',
+			multiple: ['2', '3', '4']
+		});
+
+		ok(record.get('isDirty') === false);
+
+		record.addToRelationship('multiple', '5');
+
+		ok(record.get('isDirty') === true);
+	});
+
+	test('Removing from a hasMany attribute dirties the record', function() {
+		expect(2);
+
+		var record = TestModel.createRecord({
+			single: '1',
+			multiple: ['2', '3', '4']
+		});
+
+		ok(record.get('isDirty') === false);
+
+		record.removeFromRelationship('multiple', '2');
+
+		ok(record.get('isDirty') === true);
+	});
+
+	test('Rolling back a belongsTo attribute clean the record', function() {
+		expect(3);
+
+		var record = TestModel.createRecord({
+			single: '1',
+			multiple: ['2', '3', '4']
+		});
+
+		ok(record.get('isDirty') === false);
+
+		record.set('single', '5');
+
+		ok(record.get('isDirty') === true);
+
+		record.rollbackRelationships();
+
+		ok(record.get('isDirty') === false);
+	});
+
+	test('Rolling back a hasMany attribute cleans the record', function() {
+		expect(3);
+
+		var record = TestModel.createRecord({
+			single: '1',
+			multiple: ['2', '3', '4']
+		});
+
+		ok(record.get('isDirty') === false);
+
+		record.removeFromRelationship('multiple', '2');
+
+		ok(record.get('isDirty') === true);
+
+		record.rollbackRelationships();
+
+		ok(record.get('isDirty') === false);
+	});
 })();

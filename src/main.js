@@ -16,3 +16,5 @@ require('transform/boolean');
 require('transform/date');
 require('transform/number');
 require('transform/string');
+
+require('test');

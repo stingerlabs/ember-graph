@@ -86,7 +86,7 @@
 			widgets: ['floob']
 		});
 
-		record.get('widgets').addObject('garb');
+		record.addToRelationship('widgets', 'garb');
 		ok(record.get('widgets').isEqual(['floob', 'garb']));
 	});
 
@@ -97,7 +97,7 @@
 			widgets: ['floob']
 		});
 
-		record.get('widgets').removeObject('floob');
+		record.removeFromRelationship('widgets', 'floob');
 		ok(record.get('widgets').isEqual([]));
 	});
 

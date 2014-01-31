@@ -14,21 +14,25 @@ Eg.hasMany = function(options) {
 	};
 
 	var relationship = function(key, value) {
+		var server = this.get('_serverRelationships.' + key);
 		var client = this.get('_clientRelationships.' + key);
-		var current = (client === undefined ? this.get('_serverRelationships.' + key) : client);
+		var current = (client === undefined ? server : client);
 
 		if (arguments.length > 1) {
 			if (!Em.isArray(value)) {
 				throw new Error ('\'' + value + '\' is not valid hasMany relationship value.');
 			}
 
-			if (!current.isEqual(value)) {
-				// TODO: Mark as dirty
+			if (server.isEqual(value)) {
+				delete this.get('_clientRelationships')[key];
+				this.notifyPropertyChange('_clientRelationships');
+				return server;
+			} else {
 				value = new Eg.OrderedStringSet(value);
 				this.set('_clientRelationships.' + key, value);
+				this.notifyPropertyChange('_clientRelationships');
+				return value;
 			}
-
-			return value;
 		}
 
 		return current;
@@ -48,20 +52,24 @@ Eg.belongsTo = function(options) {
 	};
 
 	var relationship = function(key, value) {
+		var server = this.get('_serverRelationships.' + key);
 		var client = this.get('_clientRelationships.' + key);
-		var current = (client === undefined ? this.get('_serverRelationships.' + key) : client);
+		var current = (client === undefined ? server : client);
 
 		if (arguments.length > 1) {
 			if (value !== null && typeof value !== 'string') {
 				throw new Error ('\'' + value + '\' is not valid belongsTo relationship value.');
 			}
 
-			if (value !== current) {
-				// TODO: Mark as dirty
+			if (server === value) {
+				delete this.get('_clientRelationships')[key];
+				this.notifyPropertyChange('_clientRelationships');
+				return server;
+			} else {
 				this.set('_clientRelationships.' + key, value);
+				this.notifyPropertyChange('_clientRelationships');
+				return value;
 			}
-
-			return value;
 		}
 
 		return current;
@@ -150,6 +158,15 @@ Eg.Model.reopen({
 	_clientRelationships: null,
 
 	/**
+	 * Watches the client side attributes for changes and detects if there are
+	 * any dirty attributes based on how many client attributes differ from
+	 * the server attributes.
+	 */
+	_areRelationshipsDirty: function() {
+		return Em.keys(this.get('_clientRelationships') || {}).length > 0;
+	}.property('_clientRelationships'),
+
+	/**
 	 * Loads relationships from the server.
 	 *
 	 * @param json The JSON with properties to load
@@ -220,6 +237,60 @@ Eg.Model.reopen({
 	 */
 	rollbackRelationships: function() {
 		this.set('_clientRelationships', {});
+	},
+
+	/**
+	 * A convenience method to add an item to a hasMany relationship. This will
+	 * ensure that all of the proper observers are notified of the change.
+	 *
+	 * @param {String} relationship The relationship to modify
+	 * @param {String} id The ID to add to the relationship
+	 */
+	addToRelationship: function(relationship, id) {
+		var server = this.get('_serverRelationships.' + relationship);
+		var client = this.get('_clientRelationships.' + relationship);
+
+		if (client === undefined) {
+			client = new Eg.OrderedStringSet(server);
+			client.addObject(id);
+			this.set('_clientRelationships.' + relationship, client);
+		} else {
+			client.addObject(id);
+
+			if (server.isEqual(client)) {
+				delete this.get('_clientRelationships')[relationship];
+			}
+		}
+
+		this.notifyPropertyChange('_clientRelationships');
+		this.notifyPropertyChange(relationship);
+	},
+
+	/**
+	 * A convenience method to remove an item from a hasMany relationship. This will
+	 * ensure that all of the proper observers are notified of the change.
+	 *
+	 * @param {String} relationship The relationship to modify
+	 * @param {String} id The ID to add to the relationship
+	 */
+	removeFromRelationship: function(relationship, id) {
+		var server = this.get('_serverRelationships.' + relationship);
+		var client = this.get('_clientRelationships.' + relationship);
+
+		if (client === undefined) {
+			client = new Eg.OrderedStringSet(server);
+			client.removeObject(id);
+			this.set('_clientRelationships.' + relationship, client);
+		} else {
+			client.removeObject(id);
+
+			if (server.isEqual(client)) {
+				delete this.get('_clientRelationships')[relationship];
+			}
+		}
+
+		this.notifyPropertyChange('_clientRelationships');
+		this.notifyPropertyChange(relationship);
 	},
 
 	/**

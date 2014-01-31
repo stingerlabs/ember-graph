@@ -31,8 +31,9 @@ Eg.attr = function(options) {
 	};
 
 	var attribute = function(key, value) {
+		var server = this.get('_serverAttributes.' + key);
 		var client = this.get('_clientAttributes.' + key);
-		var current = (client === undefined ? this.get('_serverAttributes.' + key) : client);
+		var current = (client === undefined ? server : client);
 
 		if (arguments.length > 1) {
 			if (!meta.valid(value)) {
@@ -45,12 +46,15 @@ Eg.attr = function(options) {
 				return current;
 			}
 
-			if (!meta.compare(value, this.get('_serverAttributes.' + key))) {
-				// TODO: Mark as dirty
+			if (meta.compare(server, value)) {
+				delete this.get('_serverAttributes')[key];
+				this.notifyPropertyChange('_serverAttributes');
+				return server;
+			} else {
 				this.set('_clientAttributes.' + key, value);
+				this.notifyPropertyChange('_clientAttributes');
+				return value;
 			}
-
-			return value;
 		}
 
 		return current;
@@ -132,6 +136,15 @@ Eg.Model.reopen({
 	 * @private
 	 */
 	_clientAttributes: null,
+
+	/**
+	 * Watches the client side attributes for changes and detects if there are
+	 * any dirty attributes based on how many client attributes differ from
+	 * the server attributes.
+	 */
+	_areAttributesDirty: function() {
+		return Em.keys(this.get('_clientAttributes') || {}).length > 0;
+	}.property('_clientAttributes'),
 
 	/**
 	 * @returns {Object} Keys are attribute names, values are arrays with [oldVal, newVal]

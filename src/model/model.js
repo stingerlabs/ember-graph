@@ -37,11 +37,67 @@ Eg.Model = Em.Object.extend({
 	store: null,
 
 	/**
+	 * Denotes that a record has been deleted. If `isDirty` is also true,
+	 * the change hasn't been persisted to the server yet.
+	 *
+	 * @type {Boolean}
+	 */
+	isDeleted: null,
+
+	/**
+	 * Denotes that the record is currently saving its changes
+	 * to the server, but the server hasn't responded yet.
+	 *
+	 * @type {Boolean}
+	 */
+	isSaving: null,
+
+	/**
+	 * Denotes that the record is being reloaded from the server,
+	 * and will likely change when the server responds.
+	 *
+	 * @type {Boolean}
+	 */
+	isReloading: null,
+
+	/**
+	 * Denotes that a record has been loaded into a store and isn't freestanding.
+	 *
+	 * @type {Boolean}
+	 */
+	isLoaded: function() {
+		return this.get('store') !== null;
+	}.property('store'),
+
+	/**
+	 * Denotes that the record has changes that have not been saved to the server yet.
+	 *
+	 * @type {Boolean}
+	 */
+	isDirty: function() {
+		return this.get('_areAttributesDirty') || this.get('_areRelationshipsDirty');
+	}.property('_areAttributesDirty', '_areRelationshipsDirty'),
+
+	/**
+	 * Denotes that a record has just been created and has not been saved to
+	 * the server yet. Most likely has a temporary ID if this is true.
+	 *
+	 * @type {Boolean}
+	 */
+	isNew: function() {
+		return Eg.String.startsWith(this.get('_id'), this.constructor.temporaryIdPrefix);
+	}.property('_id'),
+
+	/**
 	 * @constructs
 	 */
 	init: function() {
 		this.set('_id', null);
 		this.set('store', null);
+
+		this.set('isDeleted', false);
+		this.set('isSaving', false);
+		this.set('isReloading', false);
 	},
 
 	/**
