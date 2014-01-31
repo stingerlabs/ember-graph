@@ -160,9 +160,7 @@ Eg.Model.reopen({
 				return;
 			}
 
-			if (!meta.compare(server, client)) {
-				diff[name] = [server, client];
-			}
+			diff[name] = [server, client];
 		}, this);
 
 		return diff;

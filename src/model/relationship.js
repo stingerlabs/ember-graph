@@ -218,15 +218,7 @@ Eg.Model.reopen({
 				return;
 			}
 
-			if (meta.kind === BELONGS_TO_KEY) {
-				if (server !== client) {
-					diff[name] = [server, client];
-				}
-			} else if (meta.kind === HAS_MANY_KEY) {
-				if (!server.isEqual(client)) {
-					diff[name] = [server, client];
-				}
-			}
+			diff[name] = [server, client];
 		}, this);
 
 		return diff;
