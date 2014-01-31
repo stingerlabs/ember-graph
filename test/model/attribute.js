@@ -1,7 +1,7 @@
 (function() {
 	'use strict';
 
-	var attributes = {
+	var TestModel = Eg.Model.extend({
 		typeKey: 'test',
 
 		name: Eg.attr({
@@ -23,16 +23,14 @@
 				return (new Date(value).getTime() <= new Date().getTime());
 			}
 		})
-	};
-
-	var TestModel = Eg.Model.extend(attributes);
+	});
 
 	module('Model Attribute Test');
 
 	test('The class properly detects every attribute (and only those attributes)', function() {
 		expect(1);
 
-		var expectedAttributes = new Em.Set(Em.keys(attributes));
+		var expectedAttributes = new Em.Set(['name', 'posts', 'birthday']);
 
 		ok(Em.get(TestModel, 'attributes').isEqual(expectedAttributes));
 	});
@@ -165,6 +163,24 @@
 		ok(changed.posts[1] === 25);
 		ok(changed.birthday[0].getTime() === birthday.getTime());
 		ok(changed.birthday[1] === null);
+	});
+
+	test('Getting changed attributes doesn\'t include extra values', function() {
+		expect(3);
+
+		var birthday = new Date();
+		var model = TestModel.createRecord({
+			name: 'Bob',
+			birthday: birthday
+		});
+
+		model.set('posts', 25);
+
+		var changed = model.changedAttributes();
+
+		ok(Em.keys(changed).length === 1);
+		ok(changed.posts[0] === 0);
+		ok(changed.posts[1] === 25);
 	});
 
 	test('Rolling back attributes works correctly', function() {

@@ -15,7 +15,7 @@ Eg.Model = Em.Object.extend({
 		var id = this.get('_id');
 
 		if (arguments.length > 1) {
-			var prefix = Em.get(this.constructor, 'temporaryIdPrefix');
+			var prefix = this.constructor.temporaryIdPrefix;
 
 			if (id === null) {
 				this.set('_id', value);
@@ -33,7 +33,6 @@ Eg.Model = Em.Object.extend({
 
 	/**
 	 * @type {Object}
-	 * @private
 	 */
 	store: null,
 
@@ -57,6 +56,7 @@ Eg.Model = Em.Object.extend({
 		}
 
 		this._loadAttributes(json, false);
+		this._loadRelationships(json, false);
 	}
 });
 

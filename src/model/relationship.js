@@ -7,7 +7,7 @@ Eg.hasMany = function(options) {
 	var meta = {
 		isRelationship: true,
 		kind: HAS_MANY_KEY,
-		isRequired: options.isRequired === true,
+		isRequired: options.isRequired !== false,
 		defaultValue: options.defaultValue || [],
 		relatedType: options.relatedType,
 		readOnly: options.readOnly === true
@@ -32,7 +32,7 @@ Eg.hasMany = function(options) {
 		}
 
 		return current;
-	}.property('_serverRelationships', '_clientRelationships');
+	}.property('_serverRelationships', '_clientRelationships').meta(meta);
 
 	return (meta.readOnly ? relationship.readOnly() : relationship);
 };
@@ -41,7 +41,7 @@ Eg.belongsTo = function(options) {
 	var meta = {
 		isRelationship: true,
 		kind: BELONGS_TO_KEY,
-		isRequired: options.isRequired === true,
+		isRequired: options.isRequired !== false,
 		defaultValue: options.defaultValue || null,
 		relatedType: options.relatedType,
 		readOnly: options.readOnly === true
@@ -66,7 +66,7 @@ Eg.belongsTo = function(options) {
 		}
 
 		return current;
-	}.property('_serverRelationships', '_clientRelationships');
+	}.property('_serverRelationships', '_clientRelationships').meta(meta);
 
 	return (meta.readOnly ? relationship.readOnly() : relationship);
 };
@@ -81,7 +81,7 @@ Eg.Model.reopenClass({
 
 		this.eachComputedProperty(function(name, meta) {
 			if (meta.isRelationship) {
-				Em.assert('The ' + name + ' cannot be used as a relationship name.',
+				Eg.debug.assert('The ' + name + ' cannot be used as a relationship name.',
 					!disallowedRelationshipNames.contains(name));
 
 				relationships.addObject(name);

@@ -1,4 +1,4 @@
-var disallowedAttributeNames = new Ember.Set(['id', 'type']);
+var disallowedAttributeNames = new Em.Set(['id', 'type']);
 
 var defaultCompare = function(oldVal, newVal) {
 	return (oldVal === newVal);
@@ -72,7 +72,7 @@ Eg.Model.reopenClass({
 
 		this.eachComputedProperty(function(name, meta) {
 			if (meta.isAttribute) {
-				Em.assert('The ' + name + ' cannot be used as an attribute name.',
+				Eg.debug.assert('The ' + name + ' cannot be used as an attribute name.',
 					!disallowedAttributeNames.contains(name));
 
 				attributes.addObject(name);

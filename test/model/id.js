@@ -21,7 +21,7 @@
 
 		var model = TestModel.createRecord({});
 
-		ok(Eg.String.startsWith(model.get('id'), Em.get(Eg.Model, 'temporaryIdPrefix')));
+		ok(Eg.String.startsWith(model.get('id'), Eg.Model.temporaryIdPrefix));
 	});
 
 	test('A permanent ID cannot be changed', function() {
