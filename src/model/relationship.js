@@ -19,13 +19,13 @@ Eg.hasMany = function(options) {
 
 		if (arguments.length > 1) {
 			if (!Em.isArray(value)) {
-				Eg.debug.warn('\'' + value + '\' is not valid hasMany relationship value.');
-				return current;
+				throw new Error ('\'' + value + '\' is not valid hasMany relationship value.');
 			}
 
 			if (!current.isEqual(value)) {
 				// TODO: Mark as dirty
-				this.set('_clientRelationships.' + key, new Eg.OrderedStringSet(value));
+				value = new Eg.OrderedStringSet(value);
+				this.set('_clientRelationships.' + key, value);
 			}
 
 			return value;
@@ -53,8 +53,7 @@ Eg.belongsTo = function(options) {
 
 		if (arguments.length > 1) {
 			if (value !== null && typeof value !== 'string') {
-				Eg.debug.warn('\'' + value + '\' is not valid belongsTo relationship value.');
-				return current;
+				throw new Error ('\'' + value + '\' is not valid belongsTo relationship value.');
 			}
 
 			if (value !== current) {
@@ -163,7 +162,7 @@ Eg.Model.reopen({
 					}
 				} else if (meta.kind === HAS_MANY_KEY) {
 					if (Em.isArray(value)) {
-						this.set('_serverRelationship.' + name, new Eg.OrderedStringSet(value));
+						this.set('_serverRelationships.' + name, new Eg.OrderedStringSet(value));
 					} else {
 						throw new Error('The value \'' + value + '\' for relationship \'' + name + '\' is invalid.');
 					}

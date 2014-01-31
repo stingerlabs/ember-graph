@@ -58,6 +58,16 @@
 		ok(!TestModel.isRelationship('foobarnone'));
 	});
 
+	test('Using a disallowed relationship name throws', function() {
+		expect(1);
+
+		throws(function() {
+			Eg.Model.extend({
+				type: Eg.belongsTo({})
+			});
+		});
+	});
+
 	test('Creating a record loads the relationships correctly', function() {
 		expect(3);
 
@@ -128,23 +138,25 @@
 	});
 
 	test('Changing a value to an incorrect type throws', function() {
-		expect(1);
+		expect(2);
 
 		var record = TestModel.createRecord({
-			owner: '',
 			blueFish: ''
 		});
 
 		throws(function() {
-			record.set('blueFish', 4);
+			record.set('redFish', 4);
+		});
+
+		throws(function() {
+			record.set('redFish', undefined);
 		});
 	});
 
-	test('Changing a value show in changedRelationships', function() {
-		expect(3);
+	test('Changing a value shows in changedRelationships', function() {
+		expect(5);
 
 		var record = TestModel.createRecord({
-			owner: '',
 			blueFish: ''
 		});
 
@@ -154,15 +166,16 @@
 		var changed = record.changedRelationships();
 
 		ok(Em.keys(changed).length === 2);
-		ok(record.get('owner') === '1');
-		ok(record.get('redFish') === '2');
+		ok(changed.owner[0] === null);
+		ok(changed.owner[1] === '1');
+		ok(changed.redFish[0] === 'foo');
+		ok(changed.redFish[1] === '2');
 	});
 
 	test('Rolling back resets changes', function() {
 		expect(1);
 
 		var record = TestModel.createRecord({
-			owner: '',
 			blueFish: ''
 		});
 
