@@ -10,7 +10,8 @@ Eg.Model = Em.Object.extend({
 	/**
 	 * Should be overridden in all subclasses with a name for this
 	 * particular class. The name should be a unique string that
-	 * will be referenced throughout the application.
+	 * will be referenced throughout the application. Refrain from
+	 * special characters. Stick with lowercase letters.
 	 *
 	 * @type {String}
 	 */
@@ -22,6 +23,10 @@ Eg.Model = Em.Object.extend({
 	_id: null,
 
 	/**
+	 * The ID of the record. The ID can only be changed once, and only if
+	 * it's being changed from a temporary ID to a permanent one. Only the
+	 * store should change the ID from a temporary one to a permanent one.
+	 *
 	 * @type {String}
 	 */
 	id: function(key, value) {

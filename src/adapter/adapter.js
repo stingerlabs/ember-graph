@@ -58,9 +58,10 @@ Eg.Adapter = Em.Object.extend({
 	 * The promise can return any type of enumerable containing the records.
 	 *
 	 * @param {String|Model} type A type string or Model subclass
+	 * @param {Enumerable} ids The IDs of records of this type that the store already has
 	 * @returns {Promise} A promise that resolves to an enumerable of fetched records
 	 */
-	findAll: function(type) {
+	findAll: function(type, ids) {
 		throw missingMethod('findAll');
 	},
 
@@ -70,9 +71,10 @@ Eg.Adapter = Em.Object.extend({
 	 *
 	 * @param {String|Model} type A type string or Model subclass
 	 * @param {Object} query The query parameters that were passed into `find` earlier
+	 * @param {Enumerable} ids The IDs of records of this type that the store already has
 	 * @returns {Promise} A promise that resolves to an enumerable of fetched records
 	 */
-	findQuery: function(type, query) {
+	findQuery: function(type, query, ids) {
 		throw missingMethod('findQuery');
 	},
 
@@ -90,7 +92,7 @@ Eg.Adapter = Em.Object.extend({
 	 * Update the given record.
 	 *
 	 * @param {Model} record The model to save
-	 * @returns {Promise} A promise that resolves to true or false
+	 * @returns {Promise} Nothing on resolution. Throws error on rejection.
 	 */
 	deleteRecord: function(record) {
 		throw missingMethod('deleteRecord');
