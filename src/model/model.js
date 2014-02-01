@@ -1,7 +1,20 @@
 /**
- * @class Model
+ * Models act as classes for data. The model class should be
+ * extended for each type of object that your object model
+ * contains.
+ *
+ * @class {Model}
  */
 Eg.Model = Em.Object.extend({
+
+	/**
+	 * Should be overridden in all subclasses with a name for this
+	 * particular class. The name should be a unique string that
+	 * will be referenced throughout the application.
+	 *
+	 * @type {String}
+	 */
+	typeKey: null,
 
 	/**
 	 * @type {String}
@@ -89,7 +102,7 @@ Eg.Model = Em.Object.extend({
 	}.property('_id'),
 
 	/**
-	 * @constructs
+	 * Sets up the instance variables of this class.
 	 */
 	init: function() {
 		this.set('_id', null);
