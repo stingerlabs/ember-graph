@@ -17,6 +17,9 @@
 		birthday: Eg.attr({
 			type: 'date',
 			compare: function(a, b) {
+				if (Em.isNone(a) && Em.isNone(b)) {
+					return true;
+				}
 				return (new Date(a).getTime() === new Date(b).getTime());
 			},
 			valid: function(value) {

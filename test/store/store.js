@@ -198,12 +198,10 @@
 
 		store.loadRecord(records[1]);
 
-		timemachine.config({
-			timestamp: new Date().getTime() + 5*60*1000
-		});
+		Date.setTime(5*60*1000, true);
 
 		ok(store.hasRecord(typeKey, '1') === false);
 
-		timemachine.reset();
+		Date.resetTime();
 	});
 })();
