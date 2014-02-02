@@ -11,6 +11,12 @@ require('model/model');
 require('model/attribute');
 require('model/relationship');
 
+require('serializer/serializer');
+
+require('adapter/adapter');
+
+require('store/store');
+
 require('transform/transform');
 require('transform/boolean');
 require('transform/date');

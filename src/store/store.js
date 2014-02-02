@@ -7,6 +7,12 @@
 Eg.Store = Em.Object.extend({
 
 	/**
+	 * The number of milliseconds after a record in the cache expires
+	 * and must be re-fetched from the server.
+	 */
+	cacheTimeout: Infinity,
+
+	/**
 	 * Contains the records cached in the store. The keys are type names,
 	 * and the values are nested objects keyed at the ID of the record.
 	 */
@@ -22,6 +28,17 @@ Eg.Store = Em.Object.extend({
 	adapter: null,
 
 	/**
+	 * Initializes all of the variables properly
+	 */
+	init: function() {
+		var adapter = this.get('adapter');
+
+		if (!(adapter instanceof Eg.Adapter)) {
+			this.set('adapter', adapter.create());
+		}
+	},
+
+	/**
 	 * Registers records with the store, so they can be cached and fetched
 	 * in other places. You should only load a record into one store at a time.
 	 *
@@ -31,33 +48,39 @@ Eg.Store = Em.Object.extend({
 		var store = this.get('_records');
 
 		(Em.isArray(records) ? records : [records]).forEach(function(record) {
+			record.set('store', this);
+
 			store[record.typeKey] = store[record.typeKey] || {};
 
 			store[record.typeKey][record.get('id')] = {
 				record: record,
 				timestamp: new Date().getTime()
 			};
-		});
+		}, this);
 	},
 
 	/**
 	 * Returns all records of the given type that are in the cache.
 	 *
 	 * @param {String|Model} type
-	 * @param {Boolean} temporary True to include temporary records
+	 * @returns {Array} Array of records of the given type
 	 * @private
 	 */
-	_recordsForType: function(type, temporary) {
-		var timeout = new Date().getTime() - this.constructor.cacheTimeout;
+	_recordsForType: function(type) {
+		var records = this.get('_records.' + type) || {};
+		var timeout = new Date().getTime() - this.get('cacheTimeout');
 
 		type = (typeof type === 'string' ? type : type.typeKey);
-		return (this.get('_records.' + type) || {}).map(function(record) {
-			if (record.timestamp >= timeout) {
-				return record.record;
+
+		return Em.keys(records).map(function(id) {
+			var recordShell = records[id];
+
+			if (recordShell.timestamp >= timeout) {
+				return recordShell.record;
 			} else {
 				return undefined;
 			}
-		}, this);
+		});
 	},
 
 	/**
@@ -98,9 +121,9 @@ Eg.Store = Em.Object.extend({
 	 */
 	_getRecord: function(type, id) {
 		type = (typeof type === 'string' ? type : type.typeKey);
-		var store = this.get('store');
+		var store = this.get('_records');
 		var records = store[type] || (store[type] = {});
-		var timeout = new Date().getTime() - this.constructor.cacheTimeout;
+		var timeout = new Date().getTime() - this.get('cacheTimeout');
 
 		if (records[id]) {
 			return (records[id].timestamp >= timeout ? records[id].record : null);
@@ -135,7 +158,7 @@ Eg.Store = Em.Object.extend({
 	 * @private
 	 */
 	_findSingle: function(type, id) {
-		return Eg.PromiseObject({
+		return Eg.PromiseObject.create({
 			promise: this._findSinglePromise(type, id)
 		});
 	},
@@ -145,7 +168,7 @@ Eg.Store = Em.Object.extend({
 	 * @private
 	 */
 	_findMany: function(type, ids) {
-		return Eg.PromiseArray({
+		return Eg.PromiseArray.create({
 			promise: Em.RSVP.Promise.all(ids.map(function(id) {
 				return this._findSinglePromise(type, id);
 			}, this))
@@ -159,8 +182,10 @@ Eg.Store = Em.Object.extend({
 	_findAll: function(type) {
 		var ids = this._recordsForType(type).mapBy('id');
 
-		return Eg.PromiseArray({
-			promise: this.get('adapter').findAll(type, ids).toArray()
+		return Eg.PromiseArray.create({
+			promise: this.get('adapter').findAll(type, ids).then(function(value) {
+				return value.toArray();
+			})
 		});
 	},
 
@@ -171,8 +196,10 @@ Eg.Store = Em.Object.extend({
 	_findQuery: function(type, options) {
 		var ids = this._recordsForType(type).mapBy('id');
 
-		return Eg.PromiseArray({
-			promise: this.get('adapter').findQuery(type, options, ids).toArray()
+		return Eg.PromiseArray.create({
+			promise: this.get('adapter').findQuery(type, options, ids).then(function(value) {
+				return value.toArray();
+			})
 		});
 	},
 
@@ -231,13 +258,4 @@ Eg.Store = Em.Object.extend({
 	reloadRecord: function(record) {
 		return Em.RSVP.Promise.resolve(false);
 	}
-});
-
-Eg.Store.reopenClass({
-
-	/**
-	 * The number of milliseconds after a record in the cache expires
-	 * and must be re-fetched from the server.
-	 */
-	cacheTimeout: 0
 });

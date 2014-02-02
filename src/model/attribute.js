@@ -90,7 +90,7 @@ Eg.Model.reopenClass({
 	 * Just a more semantic alias for `metaForProperty`
 	 * @alias metaForProperty
 	 */
-	metaForAttribute: Em.alias('metaForProperty'),
+	metaForAttribute: Em.aliasMethod('metaForProperty'),
 
 	/**
 	 * @param name Name of property
