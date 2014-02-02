@@ -224,17 +224,27 @@ Eg.Store = Em.Object.extend({
 		var isNew = record.get('isNew');
 		var tempId = record.get('id');
 
+		record.set('isSaving', true);
+
 		if (isNew) {
 			return this.get('adapter').createRecord(record).then(function(createdRecord) {
+				record.set('isSaving', false);
+
 				var records = _this.get('_records.' + type);
 
 				delete records[tempId];
-				records[createdRecord.get('id')] = createdRecord;
+				records[createdRecord.get('id')] = {
+					timestamp: new Date().getTime(),
+					record: createdRecord
+				};
 
 				return createdRecord;
 			});
 		} else {
-			return this.get('adapter').updateRecord(record);
+			return this.get('adapter').updateRecord(record).then(function(savedRecord) {
+				record.set('isSaving', false);
+				return savedRecord;
+			});
 		}
 	},
 
@@ -245,8 +255,13 @@ Eg.Store = Em.Object.extend({
 	deleteRecord: function(record) {
 		var type = record.typeKey;
 		var id = record.get('id');
+		var records = (this.get('_records.' + type) || {});
+
+		record.set('isSaving', true);
+		record.set('isDeleted', true);
 
 		return this.get('adapter').deleteRecord(record).then(function() {
+			record.set('isSaving', false);
 			delete this.get('_records.' + type)[id];
 		}.bind(this));
 	},

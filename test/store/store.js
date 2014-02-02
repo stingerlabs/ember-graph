@@ -7,18 +7,13 @@
 
 	var typeKey = TestModel.typeKey;
 
-	var records = {
-		'1': TestModel.createRecord({ id: '1' }),
-		'2': TestModel.createRecord({ id: '2' }),
-		'3': TestModel.createRecord({ id: '3' }),
-		'4': TestModel.createRecord({ id: '4' })
-	};
+	var records;
 
 	var Adapter = Eg.Adapter.extend({
 
 		createRecord: function(record) {
 			record.set('id', Eg.util.generateGUID());
-			return record;
+			return Em.RSVP.Promise.resolve(record);
 		},
 
 		findRecord: function(type, id) {
@@ -133,7 +128,63 @@
 			ok(set.contains(records[3]));
 			ok(set.contains(records[4]));
 		});
+	});
 
+	asyncTest('The store saves new records properly', function() {
+		expect(5);
+
+		var record = TestModel.createRecord();
+		var tempId = record.get('id');
+		store.loadRecord(record);
+		ok(store.hasRecord(typeKey, tempId));
+
+		var promise = store.saveRecord(record);
+
+		ok(record.get('isSaving') === true);
+
+		promise.then(function() {
+			start();
+
+			ok(!store.hasRecord(typeKey, tempId));
+			ok(tempId !== record.get('id'));
+			ok(store.hasRecord(typeKey, record.get('id')));
+		});
+	});
+
+	asyncTest('The store deletes a record properly', function() {
+		expect(4);
+
+		store.loadRecord(records[1]);
+		store.loadRecord(records[2]);
+		store.loadRecord(records[4]);
+
+		var promise = store.deleteRecord(records[1]);
+
+		ok(records[1].get('isDirty') === true);
+		ok(records[1].get('isDeleted') === true);
+
+		promise.then(function() {
+			start();
+
+			ok(!store.hasRecord(typeKey, '1'));
+			ok(records[1].get('isDeleted') === true);
+		});
+	});
+
+	test('', function() {
+		expect(0);
+	});
+
+	test('', function() {
+		expect(0);
+	});
+
+	test('', function() {
+		expect(0);
+	});
+
+	test('', function() {
+		expect(0);
 	});
 
 	test('The store detects the overridden cacheTimeout properly', function() {

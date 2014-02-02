@@ -47,8 +47,8 @@ Eg.attr = function(options) {
 			}
 
 			if (meta.compare(server, value)) {
-				delete this.get('_serverAttributes')[key];
-				this.notifyPropertyChange('_serverAttributes');
+				delete this.get('_clientAttributes')[key];
+				this.notifyPropertyChange('_clientAttributes');
 				return server;
 			} else {
 				this.set('_clientAttributes.' + key, value);

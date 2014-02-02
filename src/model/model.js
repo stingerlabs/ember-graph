@@ -93,7 +93,8 @@ Eg.Model = Em.Object.extend({
 	 * @type {Boolean}
 	 */
 	isDirty: function() {
-		return this.get('_areAttributesDirty') || this.get('_areRelationshipsDirty');
+		var deleting = this.get('isDeleted') && this.get('isSaving');
+		return this.get('_areAttributesDirty') || this.get('_areRelationshipsDirty') || deleting;
 	}.property('_areAttributesDirty', '_areRelationshipsDirty'),
 
 	/**
@@ -122,6 +123,8 @@ Eg.Model = Em.Object.extend({
 	 * @private
 	 */
 	_create: function(json) {
+		json = json || {};
+
 		if (json.hasOwnProperty('id')) {
 			this.set('id', json.id);
 			delete json.id;
