@@ -17,12 +17,22 @@
 		birthday: Eg.attr({
 			type: 'date',
 			compare: function(a, b) {
-				if (Em.isNone(a) && Em.isNone(b)) {
+				var aNone = Em.isNone(a);
+				var bNone = Em.isNone(b);
+
+				if (aNone && bNone) {
 					return true;
+				} else if ((aNone && !bNone) || (!aNone && bNone)) {
+					return false;
+				} else {
+					return (new Date(a).getTime() === new Date(b).getTime());
 				}
-				return (new Date(a).getTime() === new Date(b).getTime());
 			},
 			valid: function(value) {
+				if (value === null) {
+					return true;
+				}
+
 				return (new Date(value).getTime() <= new Date().getTime());
 			}
 		})

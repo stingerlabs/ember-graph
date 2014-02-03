@@ -1,15 +1,17 @@
-Eg.debug = {
-	assert: function(message, test) {
-		if (typeof test === 'function') {
-			test = test();
-		}
+Eg.debug = function(fn) {
+	fn();
+};
 
-		if (!test) {
-			throw new Error(message);
-		}
-	},
-
-	warn: function(message) {
-		console.warn(message);
+Eg.debug.assert = function(message, test) {
+	if (typeof test === 'function') {
+		test = test();
 	}
+
+	if (!test) {
+		throw new Error(message);
+	}
+};
+
+Eg.debug.warn = function(message) {
+	console.warn(message);
 };

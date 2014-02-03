@@ -35,14 +35,15 @@ Eg.attr = function(options) {
 		var client = this.get('_clientAttributes.' + key);
 		var current = (client === undefined ? server : client);
 
-		if (arguments.length > 1) {
+		Eg.debug(function() {
+			if (arguments.length > 1 && value === undefined) {
+				Eg.debug.warn('`undefined` is not a valid property value.');
+			}
+		});
+
+		if (value !== undefined) {
 			if (!meta.valid(value)) {
 				Eg.debug.warn('The value \'' + value + '\' wasn\'t valid for the \'' + key + '\' property.');
-				return current;
-			}
-
-			if (value === undefined) {
-				Eg.debug.warn('`undefined` is not a valid property value.');
 				return current;
 			}
 

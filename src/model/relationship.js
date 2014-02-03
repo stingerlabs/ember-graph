@@ -250,6 +250,10 @@ Eg.Model.reopen({
 	 * @param {Number} index The place in the array to add the ID. Defaults to the end
 	 */
 	addToRelationship: function(relationship, id, index) {
+		if (this.constructor.metaForRelationship(relationship).kind !== HAS_MANY_KEY) {
+			return;
+		}
+
 		index = index || Infinity;
 
 		var server = this.get('_serverRelationships.' + relationship);
@@ -279,6 +283,10 @@ Eg.Model.reopen({
 	 * @param {String} id The ID to add to the relationship
 	 */
 	removeFromRelationship: function(relationship, id) {
+		if (this.constructor.metaForRelationship(relationship).kind !== HAS_MANY_KEY) {
+			return;
+		}
+
 		var server = this.get('_serverRelationships.' + relationship);
 		var client = this.get('_clientRelationships.' + relationship);
 
