@@ -7,6 +7,7 @@
 
 	var typeKey = TestModel.typeKey;
 
+	var store;
 	var records;
 
 	var Adapter = Eg.Adapter.extend({
@@ -39,13 +40,6 @@
 		}
 	});
 
-	var TestStore = Eg.Store.extend({
-		adapter: Adapter,
-		cacheTimeout: 60*1000
-	});
-
-	var store = TestStore.create();
-
 	module('Store Test', {
 		setup: function() {
 			records = {
@@ -55,7 +49,10 @@
 				'4': TestModel.createRecord({ id: '4' })
 			};
 
-			store = TestStore.create();
+			store = Eg.Store.create({
+				adapter: Adapter,
+				cacheTimeout: 60*1000
+			});
 		}
 	});
 
@@ -152,7 +149,7 @@
 	});
 
 	asyncTest('The store deletes a record properly', function() {
-		expect(4);
+		expect(5);
 
 		store.loadRecord(records[1]);
 		store.loadRecord(records[2]);
@@ -167,24 +164,23 @@
 			start();
 
 			ok(!store.hasRecord(typeKey, '1'));
+			ok(records[1].get('isDirty') === false);
 			ok(records[1].get('isDeleted') === true);
 		});
 	});
 
-	test('', function() {
-		expect(0);
-	});
+	asyncTest('The store uses the cache properly', function() {
+		expect(1);
 
-	test('', function() {
-		expect(0);
-	});
+		store.loadRecord(records[1]);
+		var deleted = records[1];
+		delete records[1];
 
-	test('', function() {
-		expect(0);
-	});
+		store.find(typeKey, '1').then(function(record) {
+			start();
 
-	test('', function() {
-		expect(0);
+			ok(deleted === record);
+		});
 	});
 
 	test('The store detects the overridden cacheTimeout properly', function() {

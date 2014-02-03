@@ -7,19 +7,22 @@
 		typeKey: 'test',
 
 		widgets: Eg.hasMany({
-			relatedType: 'widget'
+			relatedType: 'widget',
+			inverse: null
 		}),
 
 		squirrels: Eg.hasMany({
 			relatedType: 'squirrel',
 			isRequired: false,
-			readOnly: true
+			readOnly: true,
+			inverse: null
 		}),
 
 		people: Eg.hasMany({
 			relatedType: 'person',
 			isRequired: false,
-			defaultValue: ['admin', 'root']
+			defaultValue: ['admin', 'root'],
+			inverse: null
 		})
 	});
 

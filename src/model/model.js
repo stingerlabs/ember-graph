@@ -93,9 +93,16 @@ Eg.Model = Em.Object.extend({
 	 * @type {Boolean}
 	 */
 	isDirty: function() {
-		var deleting = this.get('isDeleted') && this.get('isSaving');
+		var isDeleted = this.get('isDeleted');
+		var isSaving = this.get('isSaving');
+
+		if (isDeleted && !isSaving) {
+			return false;
+		}
+
+		var deleting = isDeleted && isSaving;
 		return this.get('_areAttributesDirty') || this.get('_areRelationshipsDirty') || deleting;
-	}.property('_areAttributesDirty', '_areRelationshipsDirty'),
+	}.property('_areAttributesDirty', '_areRelationshipsDirty', 'isDeleted', 'isSaving'),
 
 	/**
 	 * Denotes that a record has just been created and has not been saved to
@@ -134,6 +141,58 @@ Eg.Model = Em.Object.extend({
 
 		this._loadAttributes(json, false);
 		this._loadRelationships(json, false);
+	},
+
+	/**
+	 * Reloads the record by taking another record and merging the two
+	 * together. Should only be called by the store.
+	 *
+	 * @param {Model} record
+	 */
+	_reloadRecord: function(record) {
+		this.set('_serverAttributes', record.get('_serverAttributes'));
+		this.set('_serverRelationships', record.get('_serverRelationships'));
+
+		this.constructor.eachAttribute(function(name, meta) {
+			var server = this.get('_serverAttributes.' + name);
+			var client = this.get('_clientAttributes.' + name);
+
+			if (meta.compare(server, client)) {
+				delete this.get('_clientAttributes')[name];
+				this.notifyPropertyChange('_clientAttributes');
+			}
+		}, this);
+
+		this.constructor.eachRelationship(function(name, meta) {
+			var server = this.get('_serverRelationships.' + name);
+			var client = this.get('_clientRelationships.' + name);
+
+			if (meta.compare(server, client)) {
+				delete this.get('_clientRelationships')[name];
+				this.notifyPropertyChange('_clientRelationships');
+			}
+		}, this);
+	},
+
+	/**
+	 * Proxies the store's save method for convenience.
+	 */
+	save: function() {
+		return this.get('store').saveRecord(this);
+	},
+
+	/**
+	 * Proxies the store's reload method for convenience.
+	 */
+	reload: function() {
+		return this.get('store').reloadRecord(this);
+	},
+
+	/**
+	 * Proxies the store's delete method for convenience.
+	 */
+	destroy: function() {
+		return this.get('store').deleteRecord(this);
 	}
 });
 

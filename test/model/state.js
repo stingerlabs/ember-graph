@@ -7,8 +7,8 @@
 	var TestModel = Eg.Model.extend({
 		typeKey: 'test',
 
-		single: Eg.belongsTo({ relatedType: 'foo' }),
-		multiple: Eg.hasMany({ relatedType: 'bar' })
+		single: Eg.belongsTo({ relatedType: 'foo', inverse: null }),
+		multiple: Eg.hasMany({ relatedType: 'bar', inverse: null })
 	});
 
 	module('Model State Test');

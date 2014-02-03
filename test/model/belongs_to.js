@@ -8,18 +8,21 @@
 
 		owner: Eg.belongsTo({
 			relatedType: 'user',
-			isRequired: false
+			isRequired: false,
+			inverse: null
 		}),
 
 		redFish: Eg.belongsTo({
 			relatedType: 'fish',
 			isRequired: false,
-			defaultValue: 'foo'
+			defaultValue: 'foo',
+			inverse: null
 		}),
 
 		blueFish: Eg.belongsTo({
 			relatedType: 'fish',
-			readOnly: true
+			readOnly: true,
+			inverse: null
 		})
 	});
 

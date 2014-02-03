@@ -4,12 +4,17 @@ var HAS_MANY_KEY = Eg.Model.HAS_MANY_KEY = 'hasMany';
 var disallowedRelationshipNames = new Em.Set(['id', 'type']);
 
 Eg.hasMany = function(options) {
+	Eg.debug.assert('Your relationship must specify a relatedType.', typeof options.relatedType === 'string');
+	Eg.debug.assert('Your relationship must specify an inverse relationship.',
+		options.inverse === null || typeof options.inverse === 'string');
+
 	var meta = {
 		isRelationship: true,
 		kind: HAS_MANY_KEY,
 		isRequired: options.isRequired !== false,
 		defaultValue: options.defaultValue || [],
 		relatedType: options.relatedType,
+		inverse: options.inverse,
 		readOnly: options.readOnly === true
 	};
 
@@ -42,12 +47,17 @@ Eg.hasMany = function(options) {
 };
 
 Eg.belongsTo = function(options) {
+	Eg.debug.assert('Your relationship must specify a relatedType.', typeof options.relatedType === 'string');
+	Eg.debug.assert('Your relationship must specify an inverse relationship.',
+		options.inverse === null || typeof options.inverse === 'string');
+
 	var meta = {
 		isRelationship: true,
 		kind: BELONGS_TO_KEY,
 		isRequired: options.isRequired !== false,
 		defaultValue: options.defaultValue || null,
 		relatedType: options.relatedType,
+		inverse: options.inverse,
 		readOnly: options.readOnly === true
 	};
 
@@ -297,6 +307,9 @@ Eg.Model.reopen({
 	 * @return {PromiseObject|PromiseArray}
 	 */
 	loadRelationship: function(name) {
-
+		// TODO: Should be bind this to the relationship?
+		// If we don't, they could become out of sync. (Is that so bad?)
+		// If we do, we could end up loading records that we don't need to,
+		// which is why we moved from Ember-Data in the first place.
 	}
 });

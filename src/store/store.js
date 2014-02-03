@@ -271,6 +271,14 @@ Eg.Store = Em.Object.extend({
 	 * @returns {Promise} True or false if the operation succeeds
 	 */
 	reloadRecord: function(record) {
-		return Em.RSVP.Promise.resolve(false);
+		record.set('isReloading', true);
+
+		return this.get('adapter').find(record.typeKey, record.get('id')).then(function(reloadedRecord) {
+			record._reloadRecord(reloadedRecord);
+			record.set('isReloading', false);
+			return true;
+		}).catch(function() {
+			return false;
+		});
 	}
 });
