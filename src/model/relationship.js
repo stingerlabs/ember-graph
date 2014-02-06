@@ -19,29 +19,8 @@ Eg.hasMany = function(options) {
 	};
 
 	var relationship = function(key, value) {
-		var server = this.get('_serverRelationships.' + key);
-		var client = this.get('_clientRelationships.' + key);
-		var current = (client === undefined ? server : client);
 
-		if (arguments.length > 1) {
-			if (!Em.isArray(value)) {
-				throw new Error ('\'' + value + '\' is not valid hasMany relationship value.');
-			}
-
-			if (server.isEqual(value)) {
-				delete this.get('_clientRelationships')[key];
-				this.notifyPropertyChange('_clientRelationships');
-				return server;
-			} else {
-				value = new Eg.OrderedStringSet(value);
-				this.set('_clientRelationships.' + key, value);
-				this.notifyPropertyChange('_clientRelationships');
-				return value;
-			}
-		}
-
-		return current;
-	}.property('_serverRelationships', '_clientRelationships').meta(meta);
+	}.property().meta(meta);
 
 	return (meta.readOnly ? relationship.readOnly() : relationship);
 };
@@ -62,28 +41,8 @@ Eg.belongsTo = function(options) {
 	};
 
 	var relationship = function(key, value) {
-		var server = this.get('_serverRelationships.' + key);
-		var client = this.get('_clientRelationships.' + key);
-		var current = (client === undefined ? server : client);
 
-		if (arguments.length > 1) {
-			if (value !== null && typeof value !== 'string') {
-				throw new Error ('\'' + value + '\' is not valid belongsTo relationship value.');
-			}
-
-			if (server === value) {
-				delete this.get('_clientRelationships')[key];
-				this.notifyPropertyChange('_clientRelationships');
-				return server;
-			} else {
-				this.set('_clientRelationships.' + key, value);
-				this.notifyPropertyChange('_clientRelationships');
-				return value;
-			}
-		}
-
-		return current;
-	}.property('_serverRelationships', '_clientRelationships').meta(meta);
+	}.property().meta(meta);
 
 	return (meta.readOnly ? relationship.readOnly() : relationship);
 };
@@ -150,20 +109,27 @@ Eg.Model.reopenClass({
 Eg.Model.reopen({
 
 	/**
-	 * Represents the latest set of relationships from the server. The only way these
-	 * can be updated is if the server sends over new JSON through an operation,
-	 * or a save operation successfully completes, in which case `_serverRelationships`
-	 * will be copied into this.
+	 * Relationships that have been saved to the server
+	 * that are currently connected to this record.
 	 *
-	 * @private
+	 * @type {Object.<String, Relationship>}
 	 */
 	_serverRelationships: null,
 
 	/**
-	 * Represents the state of the object on the client. These are likely different
-	 * from what the server has and are completely temporary until saved.
+	 * Relationships that have been saved to the server, but aren't currently
+	 * connected to this record and are scheduled for deletion on the next save.
 	 *
-	 * @private
+	 * @type {Object.<String, Relationship>}
+	 */
+	_deletedRelationships: null,
+
+	/**
+	 * Relationships that have been created on the client and haven't been
+	 * saved to the server yet. Relationships from here that are disconnected
+	 * are deleted completely rather than queued for deletion.
+	 *
+	 * @type {Object.<String, Relationship>}
 	 */
 	_clientRelationships: null,
 
@@ -173,8 +139,11 @@ Eg.Model.reopen({
 	 * the server attributes.
 	 */
 	_areRelationshipsDirty: function() {
-		return Em.keys(this.get('_clientRelationships') || {}).length > 0;
-	}.property('_clientRelationships'),
+		var client = Em.keys(this.get('_clientRelationships')).length > 0;
+		var deleted = Em.keys(this.get('_deletedRelationships')).length > 0;
+
+		return client || deleted;
+	}.property(),
 
 	/**
 	 * Loads relationships from the server.
@@ -184,61 +153,25 @@ Eg.Model.reopen({
 	 * @private
 	 */
 	_loadRelationships: function(json, merge) {
-		// TODO: If merge, alert observer
-
 		if (!merge) {
 			this.set('_serverRelationships', {});
 			this.set('_clientRelationships', {});
+			this.set('_deletedRelationships', {});
 		}
-
-		this.constructor.eachRelationship(function(name, meta) {
-			if (json.hasOwnProperty(name) || !meta.isRequired) {
-				var value = json.hasOwnProperty(name) ? json[name] : meta.defaultValue;
-
-				if (meta.kind === BELONGS_TO_KEY) {
-					if (value === null || typeof value === 'string') {
-						this.set('_serverRelationships.' + name, value);
-					} else {
-						throw new Error('The value \'' + value + '\' for relationship \'' + name + '\' is invalid.');
-					}
-				} else if (meta.kind === HAS_MANY_KEY) {
-					if (Em.isArray(value)) {
-						this.set('_serverRelationships.' + name, new Eg.OrderedStringSet(value));
-					} else {
-						throw new Error('The value \'' + value + '\' for relationship \'' + name + '\' is invalid.');
-					}
-				}
-			} else if (!merge) {
-				throw new Error('The given JSON doesn\'t contain the \'' + name + '\' relationship.');
-			}
-		}, this);
 	},
 
 	/**
 	 * @returns {Object} Keys are relationship names, values are arrays with [oldVal, newVal]
 	 */
 	changedRelationships: function() {
-		var diff = {};
 
-		this.constructor.eachRelationship(function(name, meta) {
-			var server = this.get('_serverRelationships.' + name);
-			var client = this.get('_clientRelationships.' + name);
-
-			if (client === undefined) {
-				return;
-			}
-
-			diff[name] = [server, client];
-		}, this);
-
-		return diff;
 	},
 
 	/**
 	 * Resets all relationship changes to last known server relationships.
 	 */
 	rollbackRelationships: function() {
-		this.set('_clientRelationships', {});
+
 	},
 
 	/**
@@ -250,29 +183,7 @@ Eg.Model.reopen({
 	 * @param {Number} index The place in the array to add the ID. Defaults to the end
 	 */
 	addToRelationship: function(relationship, id, index) {
-		if (this.constructor.metaForRelationship(relationship).kind !== HAS_MANY_KEY) {
-			return;
-		}
 
-		index = index || Infinity;
-
-		var server = this.get('_serverRelationships.' + relationship);
-		var client = this.get('_clientRelationships.' + relationship);
-
-		if (client === undefined) {
-			client = new Eg.OrderedStringSet(server);
-			client.addObjectAt(id, index);
-			this.set('_clientRelationships.' + relationship, client);
-		} else {
-			client.addObjectAt(id, index);
-
-			if (server.isEqual(client)) {
-				delete this.get('_clientRelationships')[relationship];
-			}
-		}
-
-		this.notifyPropertyChange('_clientRelationships');
-		this.notifyPropertyChange(relationship);
 	},
 
 	/**
@@ -283,27 +194,17 @@ Eg.Model.reopen({
 	 * @param {String} id The ID to add to the relationship
 	 */
 	removeFromRelationship: function(relationship, id) {
-		if (this.constructor.metaForRelationship(relationship).kind !== HAS_MANY_KEY) {
-			return;
+
+	},
+
+	setBelongsTo: function(relationship, id) {
+		if (id === null) {
+			return this.clearBelongsTo(relationship);
 		}
+	},
 
-		var server = this.get('_serverRelationships.' + relationship);
-		var client = this.get('_clientRelationships.' + relationship);
+	clearBelongsTo: function(relationship) {
 
-		if (client === undefined) {
-			client = new Eg.OrderedStringSet(server);
-			client.removeObject(id);
-			this.set('_clientRelationships.' + relationship, client);
-		} else {
-			client.removeObject(id);
-
-			if (server.isEqual(client)) {
-				delete this.get('_clientRelationships')[relationship];
-			}
-		}
-
-		this.notifyPropertyChange('_clientRelationships');
-		this.notifyPropertyChange(relationship);
 	},
 
 	/**

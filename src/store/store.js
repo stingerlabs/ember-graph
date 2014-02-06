@@ -96,6 +96,8 @@ Eg.Store = Em.Object.extend({
 	 * @returns {Model}
 	 */
 	createRecord: function(typeKey, json) {
+		json = json || {};
+
 		var record = this.modelForType(typeKey)._create();
 		record._create(json);
 		record.set('store', this);

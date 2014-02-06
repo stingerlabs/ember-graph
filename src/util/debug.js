@@ -3,6 +3,11 @@ Eg.debug = function(fn) {
 };
 
 Eg.debug.assert = function(message, test) {
+	if (typeof message !== 'string') {
+		test = message;
+		message = 'Assertion failed.';
+	}
+
 	if (typeof test === 'function') {
 		test = test();
 	}

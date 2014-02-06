@@ -11,6 +11,8 @@ require('model/model');
 require('model/attribute');
 require('model/relationship');
 
+require('relationship/relationship');
+
 require('serializer/serializer');
 
 require('adapter/adapter');
