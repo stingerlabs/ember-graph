@@ -136,5 +136,25 @@ Eg.OrderedStringSet = Em.CoreObject.extend(Em.MutableEnumerable, Em.Copyable, Em
 
 	set: function(key, value) {
 		return Em.set(this, key, value);
+	},
+
+	/**
+	 * Computes the difference between this set and another set.
+	 *
+	 * @param {Array} other The items to subtract from this set
+	 * @returns {OrderedSet} A new set containing only those in this set
+	 */
+	subtract: function(other) {
+		if (!Em.isArray(other)) {
+			return null;
+		}
+
+		var ret = this.copy();
+
+		other.forEach(function(item) {
+			ret.removeObject(item);
+		});
+
+		return ret;
 	}
 });
