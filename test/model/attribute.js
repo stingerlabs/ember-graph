@@ -1,9 +1,9 @@
 (function() {
 	'use strict';
 
-	var TestModel = Eg.Model.extend({
-		typeKey: 'test',
+	var store = Eg.Store.create();
 
+	var TestModel = store.createModel('test', {
 		name: Eg.attr({
 			type: 'string',
 			readOnly: true
@@ -60,7 +60,7 @@
 		expect(3);
 
 		var birthday = new Date('1970-01-01');
-		var model = TestModel.createRecord({
+		var model = store.createRecord('test', {
 			name: 'Bob',
 			posts: 16,
 			birthday: birthday
@@ -74,7 +74,7 @@
 	test('Creating an object inserts the correct defaults', function() {
 		expect(1);
 
-		var model = TestModel.createRecord({
+		var model = store.createRecord('test', {
 			name: 'Bob',
 			birthday: null
 		});
@@ -86,7 +86,7 @@
 		expect(1);
 
 		throws(function() {
-			TestModel.createRecord({
+			store.createRecord('test', {
 				name: 'Bob'
 			});
 		});
@@ -96,7 +96,7 @@
 		expect(1);
 
 		throws(function() {
-			TestModel.createRecord({
+			store.createRecord('test', {
 				name: 'Bob',
 				birthday: new Date(new Date().getTime() + 5000)
 			});
@@ -106,7 +106,7 @@
 	test('Setting attributes sets them correctly', function() {
 		expect(2);
 
-		var model = TestModel.createRecord({
+		var model = store.createRecord('test', {
 			name: 'Bob',
 			posts: 18,
 			birthday: new Date()
@@ -122,7 +122,7 @@
 	test('Setting a read-only property throws', function() {
 		expect(1);
 
-		var model = TestModel.createRecord({
+		var model = store.createRecord('test', {
 			name: 'Bob',
 			birthday: new Date()
 		});
@@ -136,7 +136,7 @@
 		expect(1);
 
 		var birthday = new Date();
-		var model = TestModel.createRecord({
+		var model = store.createRecord('test', {
 			name: 'Bob',
 			birthday: birthday
 		});
@@ -149,7 +149,7 @@
 	test('Setting value to undefined fails', function() {
 		expect(2);
 
-		var model = TestModel.createRecord({
+		var model = store.createRecord('test', {
 			name: 'Bob',
 			birthday: null
 		});
@@ -162,7 +162,7 @@
 		expect(4);
 
 		var birthday = new Date();
-		var model = TestModel.createRecord({
+		var model = store.createRecord('test', {
 			name: 'Bob',
 			birthday: birthday
 		});
@@ -182,7 +182,7 @@
 		expect(3);
 
 		var birthday = new Date();
-		var model = TestModel.createRecord({
+		var model = store.createRecord('test', {
 			name: 'Bob',
 			birthday: birthday
 		});
@@ -199,7 +199,7 @@
 	test('Rolling back attributes works correctly', function() {
 		expect(3);
 
-		var model = TestModel.createRecord({
+		var model = store.createRecord('test', {
 			name: 'Bob',
 			birthday: null
 		});
@@ -227,7 +227,7 @@
 	test('Setting attributes dirties the record', function() {
 		expect(2);
 
-		var model = TestModel.createRecord({
+		var model = store.createRecord('test', {
 			name: 'Bob',
 			birthday: new Date()
 		});
@@ -243,7 +243,7 @@
 	test('Rolling back attributes cleans the record', function() {
 		expect(3);
 
-		var model = TestModel.createRecord({
+		var model = store.createRecord('test', {
 			name: 'Bob',
 			birthday: new Date()
 		});

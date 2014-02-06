@@ -19,6 +19,11 @@ Eg.Store = Em.Object.extend({
 	_records: {},
 
 	/**
+	 * Holds all currently registered model subtypes. (typeKey -> Model)
+	 */
+	_types: {},
+
+	/**
 	 * The adapter used by the store to communicate with the server.
 	 * This should be overridden by `create` or `extend`. It can
 	 * either be an adapter instance or adapter subclass.
@@ -31,7 +36,14 @@ Eg.Store = Em.Object.extend({
 	 * Initializes all of the variables properly
 	 */
 	init: function() {
+		this.set('_records', {});
+		this.set('_types', {});
+
 		var adapter = this.get('adapter');
+
+		if (adapter === null) {
+			return;
+		}
 
 		if (!(adapter instanceof Eg.Adapter)) {
 			this.set('adapter', adapter.create());
@@ -39,24 +51,63 @@ Eg.Store = Em.Object.extend({
 	},
 
 	/**
-	 * Registers records with the store, so they can be cached and fetched
-	 * in other places. You should only load a record into one store at a time.
+	 * Cretes a new subclass of Model.
 	 *
-	 * @param {Model|Enumerable} records The record(s) to load into the store
+	 * @param {String} typeKey The name of the new type
+	 * @param {String} [parentKey] The parent type, if inheriting from a custom type
+	 * @param {Array} [mixins] The mixins to create the type with
+	 * @param {Object} options The attributes and relationships of the type
+	 * @returns {Model}
 	 */
-	loadRecord: function(records) {
-		var store = this.get('_records');
+	createModel: function(typeKey, parentKey, mixins, options) {
+		Eg.debug.assert('The type \'' + typeKey + '\' already exists.', !this._types.hasOwnProperty(typeKey));
 
-		(Em.isArray(records) ? records : [records]).forEach(function(record) {
-			record.set('store', this);
+		options = arguments[arguments.length -1];
 
-			store[record.typeKey] = store[record.typeKey] || {};
+		var base = Eg.Model;
+		if (typeof parentKey === 'string') {
+			Eg.debug.assert('The type \'' + parentKey + '\' doesn\'t exist.', this._types.hasOwnProperty(parentKey));
+			base = this.get('_types.' + parentKey);
+		}
 
-			store[record.typeKey][record.get('id')] = {
-				record: record,
-				timestamp: new Date().getTime()
-			};
-		}, this);
+		mixins = (Em.isArray(mixins) ? mixins : (Em.isArray(parentKey) ? parentKey : []));
+
+		var subclass = base._extend(typeKey, mixins, options);
+
+		this.set('_types.' + typeKey, subclass);
+		this.set('_records.' + typeKey, {});
+		return subclass;
+	},
+
+	/**
+	 * @param {String} typeKey
+	 * @returns {Model}
+	 */
+	modelForType: function(typeKey) {
+		Eg.debug.assert('The type \'' + typeKey + '\' doesn\'t exist.', this.get('_types').hasOwnProperty(typeKey));
+		return this.get('_types.' + typeKey);
+	},
+
+	/**
+	 * Creates a new record of the specified type.
+	 *
+	 * @param {String} typeKey
+	 * @param {Object} json
+	 * @returns {Model}
+	 */
+	createRecord: function(typeKey, json) {
+		var record = this.modelForType(typeKey)._create();
+		record._create(json);
+		record.set('store', this);
+
+		// TODO: Connect relationships
+
+		this.set('_records.' + typeKey + '.' + record.get('id'), {
+			record: record,
+			timestamp: new Date().getTime()
+		});
+
+		return record;
 	},
 
 	/**

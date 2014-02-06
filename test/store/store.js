@@ -1,11 +1,7 @@
 (function() {
 	'use strict';
 
-	var TestModel = Eg.Model.extend({
-		typeKey: 'storeTest'
-	});
-
-	var typeKey = TestModel.typeKey;
+	var typeKey = 'storeTest';
 
 	var store;
 	var records;
@@ -42,17 +38,19 @@
 
 	module('Store Test', {
 		setup: function() {
-			records = {
-				'1': TestModel.createRecord({ id: '1' }),
-				'2': TestModel.createRecord({ id: '2' }),
-				'3': TestModel.createRecord({ id: '3' }),
-				'4': TestModel.createRecord({ id: '4' })
-			};
-
 			store = Eg.Store.create({
 				adapter: Adapter,
 				cacheTimeout: 60*1000
 			});
+
+			store.createModel('storeTest', {});
+
+			records = {
+				'1': store.createRecord(typeKey, { id: '1' }),
+				'2': store.createRecord(typeKey, { id: '2' }),
+				'3': store.createRecord(typeKey, { id: '3' }),
+				'4': store.createRecord(typeKey, { id: '4' })
+			};
 		}
 	});
 
@@ -64,10 +62,6 @@
 
 	test('The store can load records properly', function() {
 		expect(6);
-
-		store.loadRecord(records[1]);
-		store.loadRecord(records[2]);
-		store.loadRecord(records[4]);
 
 		ok(records[1].get('store') === store);
 		ok(records[2].get('store') === store);
@@ -81,8 +75,6 @@
 	asyncTest('The store can find a single record properly', function() {
 		expect(1);
 
-		store.loadRecord(records[1]);
-
 		store.find(typeKey, '1').then(function(record) {
 			start();
 			ok(record === records[1]);
@@ -91,10 +83,6 @@
 
 	asyncTest('The store can load and find multiple records properly', function() {
 		expect(4);
-
-		store.loadRecord(records[1]);
-		store.loadRecord(records[2]);
-		store.loadRecord(records[4]);
 
 		store.find(typeKey, ['1', '2', '4']).then(function(resolvedRecords) {
 			start();
@@ -109,11 +97,6 @@
 
 	asyncTest('The store can find all records of a type properly', function() {
 		expect(5);
-
-		store.loadRecord(records[1]);
-		store.loadRecord(records[2]);
-		store.loadRecord(records[3]);
-		store.loadRecord(records[4]);
 
 		store.find(typeKey).then(function(resolvedRecords) {
 			start();
@@ -130,9 +113,9 @@
 	asyncTest('The store saves new records properly', function() {
 		expect(5);
 
-		var record = TestModel.createRecord();
+		var record = store.createRecord(typeKey, {});
 		var tempId = record.get('id');
-		store.loadRecord(record);
+
 		ok(store.hasRecord(typeKey, tempId));
 
 		var promise = store.saveRecord(record);
@@ -151,10 +134,6 @@
 	asyncTest('The store deletes a record properly', function() {
 		expect(5);
 
-		store.loadRecord(records[1]);
-		store.loadRecord(records[2]);
-		store.loadRecord(records[4]);
-
 		var promise = store.deleteRecord(records[1]);
 
 		ok(records[1].get('isDirty') === true);
@@ -172,7 +151,6 @@
 	asyncTest('The store uses the cache properly', function() {
 		expect(1);
 
-		store.loadRecord(records[1]);
 		var deleted = records[1];
 		delete records[1];
 
@@ -191,8 +169,6 @@
 
 	test('The store invalidates records in the cache after the timeout period', function() {
 		expect(1);
-
-		store.loadRecord(records[1]);
 
 		Date.setTime(5*60*1000, true);
 
