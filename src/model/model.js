@@ -121,6 +121,10 @@ Eg.Model = Em.Object.extend({
 		this.set('_id', null);
 		this.set('store', null);
 
+		this.set('_serverRelationships', {});
+		this.set('_clientRelationships', {});
+		this.set('_deletedRelationships', {});
+
 		this.set('isDeleted', false);
 		this.set('isSaving', false);
 		this.set('isReloading', false);
@@ -140,7 +144,7 @@ Eg.Model = Em.Object.extend({
 		}
 
 		this._loadAttributes(json, false);
-		this._loadRelationships(json, false);
+		this._loadRelationships(json);
 	},
 
 	/**

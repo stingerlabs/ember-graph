@@ -19,8 +19,21 @@ Eg.hasMany = function(options) {
 	};
 
 	var relationship = function(key, value) {
+		Eg.debug.assert('You can\'t set relationships directly.', value === undefined);
 
-	}.property().meta(meta);
+		var server = Eg.util.values(this.get('_serverRelationships'));
+		var client = Eg.util.values(this.get('_clientRelationships'));
+		var relationships = server.concat(client);
+
+		var found = [];
+		for (var i = 0; i < relationships.length; i = i + 1) {
+			if (relationships[i].relationshipName(this) === key) {
+				found.push(relationships[i].otherId(this));
+			}
+		}
+
+		return new Eg.OrderedStringSet(found);
+	}.property('_serverRelationships', '_clientRelationships').meta(meta);
 
 	return (meta.readOnly ? relationship.readOnly() : relationship);
 };
@@ -41,8 +54,20 @@ Eg.belongsTo = function(options) {
 	};
 
 	var relationship = function(key, value) {
+		Eg.debug.assert('You can\'t set relationships directly.', value === undefined);
 
-	}.property().meta(meta);
+		var server = Eg.util.values(this.get('_serverRelationships'));
+		var client = Eg.util.values(this.get('_clientRelationships'));
+		var relationships = server.concat(client);
+
+		for (var i = 0; i < relationships.length; i = i + 1) {
+			if (relationships[i].relationshipName(this) === key) {
+				return relationships[i].otherId(this);
+			}
+		}
+
+		return null;
+	}.property('_serverRelationships', '_clientRelationships').meta(meta);
 
 	return (meta.readOnly ? relationship.readOnly() : relationship);
 };
@@ -117,6 +142,43 @@ Eg.Model.reopen({
 	_serverRelationships: null,
 
 	/**
+	 * This returns a hash of relationship names to values. All known server
+	 * relationships are put into the hash, including deleted ones. This will
+	 * tell us which relationships already exist so we can determine which
+	 * ones to add, and which ones to delete completely.
+	 *
+	 * @returns {Object}
+	 * @private
+	 */
+	_serverJson: function() {
+		var relationships = {};
+		var deleted = Eg.util.values(this.get('_deletedRelationships'));
+		var server = Eg.util.values(this.get('_serverRelationships')).concat(deleted);
+
+		this.constructor.eachRelationship(function(name, meta) {
+			relationships[name] = (meta.kind === HAS_MANY_KEY ? [] : null);
+		});
+
+		server.forEach(function(relationship) {
+			var name = relationship.relationshipName(this);
+
+			if (name === null) {
+				return;
+			}
+
+			var id = relationship.otherId(this);
+
+			if (Em.isArray(relationships[name])) {
+				relationships[name].push(id);
+			} else {
+				relationships[name] = id;
+			}
+		}, this);
+
+		return relationships;
+	},
+
+	/**
 	 * Relationships that have been saved to the server, but aren't currently
 	 * connected to this record and are scheduled for deletion on the next save.
 	 *
@@ -143,20 +205,161 @@ Eg.Model.reopen({
 		var deleted = Em.keys(this.get('_deletedRelationships')).length > 0;
 
 		return client || deleted;
-	}.property(),
+	}.property('_clientRelationships', '_deletedRelationships'),
 
 	/**
-	 * Loads relationships from the server.
+	 * Loads relationships from the server. Completely replaces
+	 * the current relationships with the given ones.
 	 *
 	 * @param json The JSON with properties to load
-	 * @param merge False if the object is just created, false if the object is being reloaded
 	 * @private
 	 */
-	_loadRelationships: function(json, merge) {
-		if (!merge) {
-			this.set('_serverRelationships', {});
-			this.set('_clientRelationships', {});
-			this.set('_deletedRelationships', {});
+	_loadRelationships: function(json) {
+		var current = this._serverJson();
+		this.constructor.eachRelationship(function(name, meta) {
+			if (meta.isRequired && json[name] === undefined) {
+				throw new Error('You left out the required \'' + name + '\' relationship.');
+			}
+
+			json[name] = json[name] || meta.defaultValue;
+
+			if (meta.kind === HAS_MANY_KEY) {
+				var currentSet = new Eg.OrderedStringSet(current[name]);
+				var givenSet = new Eg.OrderedStringSet(json[name]);
+
+				var toRemove = currentSet.subtract(givenSet);
+				var toAdd = givenSet.subtract(currentSet);
+
+				toRemove.forEach(function(id) {
+					this._deleteServerRelationship(name, id);
+				}, this);
+
+				toAdd.forEach(function(id) {
+					this._addServerRelationship(name, id);
+				}, this);
+			} else {
+				if (current[name] === json[name]) {
+					return;
+				}
+
+				if (current[name] !== null) {
+					this._deleteServerRelationship(name, current[name]);
+				}
+
+				if (json[name] !== null) {
+					this._addServerRelationship(name, json[name]);
+				}
+			}
+		}, this);
+	},
+
+	/**
+	 * Destroys the specified relationship if it's connected to this record.
+	 *
+	 * @param {String} name The name of the relationship which links to the record
+	 * @param {String} id The ID of the record to which the relationship connects
+	 * @private
+	 */
+	_deleteServerRelationship: function(name, id) {
+		if (name === null) {
+			return;
+		}
+
+		var deleted = Eg.util.values(this.get('_deletedRelationships'));
+		var server = Eg.util.values(this.get('_serverRelationships')).concat(deleted);
+		var relationship;
+
+		for (var i = 0; i < server.length; i = i + 1) {
+			relationship = server[i];
+
+			if (relationship.relationshipName(this) === name && relationship.otherId(this) === id) {
+				this._deleteRelationship(relationship.get('id'));
+				break;
+			}
+		}
+	},
+
+	/**
+	 * Deletes a relationships completely, disconnecting from both
+	 * records and removing from the store queue if necessary.
+	 *
+	 * @param {String} id Relationship ID
+	 * @private
+	 */
+	_deleteRelationship: function(id) {
+		var relationship = Eg.Relationship.getRelationship(id);
+		if (!relationship) {
+			return;
+		}
+
+		var disconnectFromRecord = function(record) {
+			var server = record.get('_serverRelationships');
+			if (server.hasOwnProperty(id)) {
+				delete server[id];
+				record.notifyPropertyChange('_serverRelationships');
+				return true;
+			}
+
+			var deleted = record.get('_deletedRelationships');
+			if (deleted.hasOwnProperty(id)) {
+				delete deleted[id];
+				record.notifyPropertyChange('_deletedRelationships');
+				return true;
+			}
+
+			var client = record.get('_clientRelationships');
+			if (client.hasOwnProperty(id)) {
+				delete client[id];
+				record.notifyPropertyChange('_clientRelationships');
+				return true;
+			}
+
+			return false;
+		};
+
+		if (disconnectFromRecord(this) === true) {
+			var record = relationship.otherRecord(this);
+
+			if (record) {
+				disconnectFromRecord(record);
+			} else {
+				delete this.get('store._queuedRelationships')[id];
+				this.get('store').notifyPropertyChange('_queuedRelationships');
+			}
+
+			Eg.Relationship.deleteRelationship(id);
+		}
+	},
+
+	/**
+	 * Connects this record to the specified record on the specified relationship name.
+	 *
+	 * @param {String} name The name of the relationship which will link to the record
+	 * @param {String} id The ID of the record to connect to
+	 * @private
+	 */
+	_addServerRelationship: function(name, id) {
+		var store = this.get('store');
+		var meta = this.constructor.metaForRelationship(name);
+		var other = store.getRecord(meta.relatedType, id);
+
+		var relationship = Eg.Relationship.create({
+			object1: this,
+			relationship1: name,
+			object2: (other === null ? id : other),
+			relationship2: meta.inverse,
+			state: 'saved'
+		});
+
+		this.get('_serverRelationships')[relationship.get('id')] = relationship;
+		this.notifyPropertyChange('_serverRelationships');
+
+		if (other) {
+			other.get('_serverRelationships')[relationship.get('id')] = relationship;
+			other.notifyPropertyChange('_serverRelationships');
+		} else {
+			store.get('_queuedRelationships')[relationship.get('id')] = relationship;
+			store.notifyPropertyChange('_queuedRelationships');
 		}
 	},
 

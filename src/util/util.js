@@ -5,5 +5,11 @@ Eg.util = {
 			var v = (c == 'x' ? r : (r&0x3|0x8)); // jshint ignore:line
 			return v.toString(16);
 		});
+	},
+
+	values: function(obj) {
+		return Em.keys(obj).map(function(key) {
+			return obj[key];
+		});
 	}
 };

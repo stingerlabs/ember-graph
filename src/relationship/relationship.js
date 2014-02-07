@@ -1,4 +1,5 @@
 var nextRelationshipId = 0;
+var allRelationships = {};
 
 /**
  * A class used internally by Ember-Graph to keep the object-graph up-to-date.
@@ -42,6 +43,13 @@ Eg.Relationship = Em.Object.extend({
 	relationship1: null,
 
 	/**
+	 * Holds the type of the second object (populated automatically)
+	 *
+	 * @type {String}
+	 */
+	type1: null,
+
+	/**
 	 * The second object of the relationship. This object may be a
 	 * string ID if the record isn't loaded yet, although it must
 	 * be a permanent ID. If the relationship is one way, the
@@ -59,6 +67,13 @@ Eg.Relationship = Em.Object.extend({
 	 * @type {String}
 	 */
 	relationship2: null,
+
+	/**
+	 * Holds the type of the second object (populated automatically)
+	 *
+	 * @type {String}
+	 */
+	type2: null,
 
 	/**
 	 * Signifies that this relationship goes from object1 to object2, but not vice-versa.
@@ -119,10 +134,50 @@ Eg.Relationship = Em.Object.extend({
 		if (this.get('object1') === record) {
 			var object2 = this.get('object2');
 			return (typeof object2 === 'string' ? object2 : object2.get('id'));
-		} else if (this.get('object2') === record) {
-			return this.get('object1.id');
 		} else {
-			Eg.debug.assert('This relationship was referenced improperly.');
+			return this.get('object1.id');
+		}
+	},
+
+	/**
+	 * Returns the opposite record of the one given. If object2 is an ID, then
+	 * it will attempt to find the record. If it can't find the record, it
+	 * will return null. Do NOT call this with a record that isn't attached.
+	 *
+	 * @param {Model} record
+	 * @returns {Model|null}
+	 */
+	otherRecord: function(record) {
+		Eg.debug.assert(record instanceof Eg.Model);
+
+		var object1 = this.get('object1');
+		if (object1 === record) {
+			var object2 = this.get('object2');
+
+			if (typeof object2 === 'string') {
+				var inverse = object1.constructor.metaForRelationship(this.get('relationship1')).relatedType;
+				return object1.get('store').getRecord(inverse, object2);
+			} else {
+				return object2;
+			}
+		} else {
+			return object1;
+		}
+	},
+
+	/**
+	 * Given a record, returns the relationship name that belongs to that record.
+	 *
+	 * @param {Model} record
+	 * @return {String} Relationship name
+	 */
+	relationshipName: function(record) {
+		if (this.get('object1') === record) {
+			return this.get('relationship1');
+		} else if (this.get('object2') === record) {
+			return this.get('relationship2');
+		} else {
+			return undefined;
 		}
 	}
 });
@@ -151,6 +206,36 @@ Eg.Relationship.reopenClass({
 			typeof properties.relationship1 === 'string' || properties.relationship1 === null);
 		relationship.setProperties(properties);
 
+		relationship.set('type1', properties.object1.typeKey);
+
+		if (properties.object2 instanceof Eg.Model) {
+			relationship.set('type2', properties.object2.typeKey);
+		} else {
+			relationship.set('type2',
+				properties.object1.constructor.metaForRelationship(properties.relationship1).relatedType);
+		}
+
+		allRelationships[relationship.get('id')] = relationship;
+
 		return relationship;
+	},
+
+	/**
+	 * @param {String} id
+	 * @returns {Relationship|undefined}
+	 */
+	getRelationship: function(id) {
+		return allRelationships[id];
+	},
+
+	/**
+	 * Removes the relationship from the list of tracked relationships.
+	 * Doesn't disconnect it from anything. Just removes the reference
+	 * from this class so `getRelationship` will no longer find it.
+	 *
+	 * @param {String} id
+	 */
+	deleteRelationship: function(id) {
+		delete allRelationships[id];
 	}
 });

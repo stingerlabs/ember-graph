@@ -10,14 +10,28 @@
 			store.createModel('test1', {
 				children: Eg.hasMany({
 					relatedType: 'test2',
-					inverse: 'parent'
+					inverse: 'parent',
+					isRequired: false
+				}),
+
+				link: Eg.belongsTo({
+					relatedType: 'test2',
+					inverse: null,
+					isRequired: false
 				})
 			});
 
 			store.createModel('test2', {
 				parent: Eg.belongsTo({
 					relatedType: 'test1',
-					inverse: 'children'
+					inverse: 'children',
+					isRequired: false
+				}),
+
+				links: Eg.hasMany({
+					relatedType: 'test1',
+					inverse: null,
+					isRequired: false
 				})
 			});
 		}
@@ -109,7 +123,55 @@
 		ok(relationship.get('oneWay') === true);
 	});
 
-	test('', function() {
-		expect(0);
+	test('The other record is found if it\'s an ID that has been loaded', function() {
+		expect(2);
+
+		var temp1 = store.createRecord('test1', { id: 'temp1_id' });
+		var temp2 = store.createRecord('test2', { id: 'temp2_id' });
+
+		var relationship = Eg.Relationship.create({
+			object1: temp1,
+			relationship1: 'children',
+			object2: temp2.get('id'),
+			relationship2: 'parent',
+			state: 'new'
+		});
+
+		ok(relationship.otherId(temp1) === temp2.get('id'));
+		ok(relationship.otherRecord(temp1) === temp2);
+	});
+
+	test('The other record is null if it hasn\'t been loaded', function() {
+		expect(2);
+
+		var temp1 = store.createRecord('test1', { id: 'temp1_id' });
+
+		var relationship = Eg.Relationship.create({
+			object1: temp1,
+			relationship1: 'children',
+			object2: 'foo_id',
+			relationship2: 'parent',
+			state: 'new'
+		});
+
+		ok(relationship.otherId(temp1) === 'foo_id');
+		ok(relationship.otherRecord(temp1) === null);
+	});
+
+	test('The other record is still found if the relationship is oneWay', function() {
+		expect(2);
+
+		var temp1 = store.createRecord('test1', { id: 'temp1_id' });
+
+		var relationship = Eg.Relationship.create({
+			object1: temp1,
+			relationship1: 'link',
+			object2: 'foo_id',
+			relationship2: null,
+			state: 'new'
+		});
+
+		ok(relationship.otherId(temp1) === 'foo_id');
+		ok(relationship.otherRecord(temp1) === null);
 	});
 })();

@@ -15,13 +15,25 @@ Eg.Store = Em.Object.extend({
 	/**
 	 * Contains the records cached in the store. The keys are type names,
 	 * and the values are nested objects keyed at the ID of the record.
+	 *
+	 * @type {Object.<String, Model>}
 	 */
-	_records: {},
+	_records: null,
 
 	/**
 	 * Holds all currently registered model subtypes. (typeKey -> Model)
+	 *
+	 * @type {Object.<String, Model>}
 	 */
-	_types: {},
+	_types: null,
+
+	/**
+	 * Holds all of the relationships that are waiting to be connected to a record
+	 * when it gets loaded into the store. (relationship ID -> relationship)
+	 *
+	 * @type {Object.<String, Relationship>}
+	 */
+	_queuedRelationships: null,
 
 	/**
 	 * The adapter used by the store to communicate with the server.
@@ -38,6 +50,7 @@ Eg.Store = Em.Object.extend({
 	init: function() {
 		this.set('_records', {});
 		this.set('_types', {});
+		this.set('_queuedRelationships', {});
 
 		var adapter = this.get('adapter');
 
@@ -99,10 +112,42 @@ Eg.Store = Em.Object.extend({
 		json = json || {};
 
 		var record = this.modelForType(typeKey)._create();
-		record._create(json);
 		record.set('store', this);
+		record._create(json);
 
-		// TODO: Connect relationships
+		if (record.get('isNew') === false) {
+			var id = record.get('id');
+			var connected = [];
+			var queued = this.get('_queuedRelationships');
+
+			Eg.util.values(queued).forEach(function(relationship) {
+				if (relationship.get('object2') === id && relationship.get('type2') === record.typeKey) {
+					relationship.set('object2', record);
+
+					if (relationship.isNew()) {
+						record.get('_clientRelationships')[relationship.get('id')] = relationship;
+						record.notifyPropertyChange('_clientRelationships');
+						relationship.get('object1').notifyPropertyChange('_clientRelationships');
+					} else if (relationship.isSaved()) {
+						record.get('_serverRelationships')[relationship.get('id')] = relationship;
+						record.notifyPropertyChange('_serverRelationships');
+						relationship.get('object1').notifyPropertyChange('_serverRelationships');
+					} else /* isDeleted */ {
+						record.get('_deletedRelationships')[relationship.get('id')] = relationship;
+						record.notifyPropertyChange('_deletedRelationships');
+						relationship.get('object1').notifyPropertyChange('_deletedRelationships');
+					}
+
+					connected.push(relationship.get('id'));
+				}
+			}, this);
+
+			connected.forEach(function(id) {
+				delete queued[id];
+			});
+
+			this.notifyPropertyChange('_queuedRelationships');
+		}
 
 		this.set('_records.' + typeKey + '.' + record.get('id'), {
 			record: record,
@@ -172,7 +217,7 @@ Eg.Store = Em.Object.extend({
 	 * @returns {Model}
 	 * @private
 	 */
-	_getRecord: function(type, id) {
+	getRecord: function(type, id) {
 		type = (typeof type === 'string' ? type : type.typeKey);
 		var store = this.get('_records');
 		var records = store[type] || (store[type] = {});
@@ -197,7 +242,7 @@ Eg.Store = Em.Object.extend({
 	 * @private
 	 */
 	_findSinglePromise: function(type, id) {
-		var record = this._getRecord(type, id);
+		var record = this.getRecord(type, id);
 
 		if (record) {
 			return Em.RSVP.Promise.resolve(record);
@@ -264,7 +309,7 @@ Eg.Store = Em.Object.extend({
 	 * @returns {Boolean}
 	 */
 	hasRecord: function(type, id) {
-		return this._getRecord(type, id) !== null;
+		return this.getRecord(type, id) !== null;
 	},
 
 	/**
