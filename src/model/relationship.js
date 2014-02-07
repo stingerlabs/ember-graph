@@ -383,9 +383,8 @@ Eg.Model.reopen({
 	 *
 	 * @param {String} relationship The relationship to modify
 	 * @param {String} id The ID to add to the relationship
-	 * @param {Number} index The place in the array to add the ID. Defaults to the end
 	 */
-	addToRelationship: function(relationship, id, index) {
+	addToRelationship: function(relationship, id) {
 
 	},
 

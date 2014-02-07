@@ -148,34 +148,16 @@ Eg.Model = Em.Object.extend({
 	},
 
 	/**
-	 * Reloads the record by taking another record and merging the two
-	 * together. Should only be called by the store.
+	 * Reloads the record by taking in JSON and replacing the contents
+	 * of this record with the given JSON. But it only replaces the
+	 * latest server content, it doesn't overwrite any client-side
+	 * content that has been changed or generated.
 	 *
-	 * @param {Model} record
+	 * @param {Object} json
 	 */
-	_reloadRecord: function(record) {
-		this.set('_serverAttributes', record.get('_serverAttributes'));
-		this.set('_serverRelationships', record.get('_serverRelationships'));
-
-		this.constructor.eachAttribute(function(name, meta) {
-			var server = this.get('_serverAttributes.' + name);
-			var client = this.get('_clientAttributes.' + name);
-
-			if (meta.compare(server, client)) {
-				delete this.get('_clientAttributes')[name];
-				this.notifyPropertyChange('_clientAttributes');
-			}
-		}, this);
-
-		this.constructor.eachRelationship(function(name, meta) {
-			var server = this.get('_serverRelationships.' + name);
-			var client = this.get('_clientRelationships.' + name);
-
-			if (meta.compare(server, client)) {
-				delete this.get('_clientRelationships')[name];
-				this.notifyPropertyChange('_clientRelationships');
-			}
-		}, this);
+	_reloadRecord: function(json) {
+		this._loadRelationships(json);
+		this._loadAttributes(json, true);
 	},
 
 	/**

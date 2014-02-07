@@ -108,4 +108,31 @@
 		ok(user3.get('posts').contains('7'));
 		ok(post.get('author') === '3');
 	});
+
+	test('A new record attaches to current records correctly', function() {
+		expect(3);
+
+		var user = store.getRecord('user', '1');
+		var post = store.createRecord('post', { author: '1', tags: ['1', '2'] });
+
+		ok(post.get('author') === '1');
+		ok(post.get('tags').isEqual(['1', '2']));
+		ok(user.get('posts').contains(post.get('id')));
+	});
+
+	test('Adding to a hasMany works correctly', function() {
+		expect(0);
+
+//		var user1 = store.getRecord('user', '1');
+//		var post6 = store.getRecord('post', '6');
+//
+//		user1.addToRelationship('posts', '6');
+//
+//		ok(user1.get('posts').contains('6'));
+//		ok(post6.get('author') === '1');
+	});
+
+	test('A new permanent record loaded creates new server relationships', function() {
+		expect(0);
+	});
 })();
