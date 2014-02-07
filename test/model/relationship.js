@@ -87,4 +87,25 @@
 		ok(post.get('author') === null);
 		ok(post.get('tags').isEqual(['0']));
 	});
+
+	test('When a record is loaded, its pending relationships are attached', function() {
+		expect(4);
+
+		var user3 = store.getRecord('user', '3');
+		ok(user3.get('posts').contains('7'));
+
+		var queued = store.get('_queuedRelationships');
+		var rid = null;
+		Eg.util.values(queued).forEach(function(r) {
+			if (r.get('type2') === 'post' && r.get('object2') === '7') {
+				rid = r.get('id');
+			}
+		});
+
+		var post = store.createRecord('post', { id: '7', author: '3', tags: [] });
+
+		ok(queued[rid] === undefined);
+		ok(user3.get('posts').contains('7'));
+		ok(post.get('author') === '3');
+	});
 })();
