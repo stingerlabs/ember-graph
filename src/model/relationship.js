@@ -215,6 +215,8 @@ Eg.Model.reopen({
 	 * @private
 	 */
 	_loadRelationships: function(json) {
+		// TODO: Clean out deleted and client relationships if the server has deleted/saved them
+
 		var current = this._serverJson();
 		this.constructor.eachRelationship(function(name, meta) {
 			if (meta.isRequired && json[name] === undefined) {
@@ -261,7 +263,7 @@ Eg.Model.reopen({
 	 * @private
 	 */
 	_deleteServerRelationship: function(name, id) {
-		if (name === null) {
+		if (name === null || this._findRelationship(name, id) === null) {
 			return;
 		}
 
@@ -273,48 +275,77 @@ Eg.Model.reopen({
 			relationship = server[i];
 
 			if (relationship.relationshipName(this) === name && relationship.otherId(this) === id) {
-				this._deleteRelationship(relationship.get('id'));
+				this._deleteRelationship(relationship);
 				break;
 			}
 		}
 	},
 
 	/**
+	 * Given a relationship name and connected ID, find the relationship
+	 * that forms the connection, and which hash it lies in.
+	 *
+	 * @param {String} name
+	 * @param {String} id
+	 * @returns {Relationship}
+	 * @private
+	 */
+	_findRelationship: function(name, id) {
+		var i;
+
+		var server = Eg.util.values(this.get('_serverRelationships'));
+		for (i = 0; i < server.length; i = i + 1) {
+			if (server[i].relationshipName(this) === name && server[i].otherId(this) === id) {
+				return server[i];
+			}
+		}
+
+		var client = Eg.util.values(this.get('_clientRelationships'));
+		for (i = 0; i < client.length; i = i + 1) {
+			if (client[i].relationshipName(this) === name && client[i].otherId(this) === id) {
+				return client[i];
+			}
+		}
+
+		var deleted = Eg.util.values(this.get('_deletedRelationships'));
+		for (i = 0; i < deleted.length; i = i + 1) {
+			if (deleted[i].relationshipName(this) === name && deleted[i].otherId(this) === id) {
+				return deleted[i];
+			}
+		}
+
+		return null;
+	},
+
+	/**
 	 * Deletes a relationships completely, disconnecting from both
 	 * records and removing from the store queue if necessary.
 	 *
-	 * @param {String} id Relationship ID
+	 * @param {Relationship} relationship
 	 * @private
 	 */
-	_deleteRelationship: function(id) {
-		var relationship = Eg.Relationship.getRelationship(id);
-		if (!relationship) {
-			return;
-		}
+	_deleteRelationship: function(relationship) {
 
 		var disconnectFromRecord = function(record) {
-			var server = record.get('_serverRelationships');
-			if (server.hasOwnProperty(id)) {
-				delete server[id];
-				record.notifyPropertyChange('_serverRelationships');
-				return true;
+			var hash;
+
+			switch (relationship.get('state')) {
+				case 'saved':
+					hash = '_serverRelationships';
+					break;
+				case 'deleted':
+					hash = '_deletedRelationships';
+					break;
+				case 'new':
+					hash = '_clientRelationships';
+					break;
+				default:
+					return false;
 			}
 
-			var deleted = record.get('_deletedRelationships');
-			if (deleted.hasOwnProperty(id)) {
-				delete deleted[id];
-				record.notifyPropertyChange('_deletedRelationships');
-				return true;
-			}
-
-			var client = record.get('_clientRelationships');
-			if (client.hasOwnProperty(id)) {
-				delete client[id];
-				record.notifyPropertyChange('_clientRelationships');
-				return true;
-			}
-
-			return false;
+			delete record.get(hash)[relationship.get('id')];
+			record.notifyPropertyChange(hash);
+			return true;
 		};
 
 		if (disconnectFromRecord(this) === true) {
@@ -327,7 +358,7 @@ Eg.Model.reopen({
 				this.get('store').notifyPropertyChange('_queuedRelationships');
 			}
 
-			Eg.Relationship.deleteRelationship(id);
+			Eg.Relationship.deleteRelationship(relationship.get('id'));
 		}
 	},
 
@@ -339,6 +370,10 @@ Eg.Model.reopen({
 	 * @private
 	 */
 	_addServerRelationship: function(name, id) {
+		if (this._findRelationship(name, id) !== null) {
+			return;
+		}
+
 		var store = this.get('store');
 		var meta = this.constructor.metaForRelationship(name);
 		var other = store.getRecord(meta.relatedType, id);
@@ -396,7 +431,11 @@ Eg.Model.reopen({
 	 * @param {String} id The ID to add to the relationship
 	 */
 	removeFromRelationship: function(relationship, id) {
+		var r = this._findRelationship(relationship, id);
 
+		if (r !== null) {
+			this._deleteRelationship(r);
+		}
 	},
 
 	setBelongsTo: function(relationship, id) {
@@ -406,7 +445,15 @@ Eg.Model.reopen({
 	},
 
 	clearBelongsTo: function(relationship) {
+		var current = this.get(relationship);
 
+		if (current !== null) {
+			var r = this._findRelationship(relationship, current);
+
+			if (r !== null) {
+				this._deleteRelationship(r);
+			}
+		}
 	},
 
 	/**
@@ -422,5 +469,75 @@ Eg.Model.reopen({
 		// If we don't, they could become out of sync. (Is that so bad?)
 		// If we do, we could end up loading records that we don't need to,
 		// which is why we moved from Ember-Data in the first place.
+	},
+
+	/**
+	 * Determines if this record is linked to the given ID via the given relationship.
+	 * This will search all relationships: saved, deleted and new
+	 *
+	 * @param {String} relationship
+	 * @param {String} id
+	 * @returns {Boolean}
+	 */
+	_isLinkedTo: function(relationship, id) {
+		var server = Em.util.values(this.get('_serverRelationships'));
+		var client = Em.util.values(this.get('_clientRelationships'));
+		var deleted = Em.util.values(this.get('_deletedRelationships'));
+
+		var relationships = server.concat(client.concat(deleted));
+		for (var i = 0; i < relationships.length; i = i + 1) {
+			if (relationships[i].relationshipName(this) === relationship && relationships[i].otherId(this) === id) {
+				return true;
+			}
+		}
+
+		return false;
+	},
+
+	/**
+	 * Connects the given relationship blindly. Will not check to see if the
+	 * relationship is already connected, that should have done beforehand.
+	 * Relies on the relationship state to find the relationship.
+	 *
+	 * @param {Relationship} relationship
+	 * @private
+	 */
+	_connectRelationship: function(relationship) {
+		var hash = this._stateToHash(relationship.get('state'));
+		this.set(hash + '.' + relationship.get('id'), relationship);
+		this.notifyPropertyChange(hash);
+	},
+
+	/**
+	 * Disconnects the relationship from this record.
+	 * Relies on the relationship state to find the relationship.
+	 *
+	 * @param {Relationship} relationship
+	 * @private
+	 */
+	_disconnectRelationship: function(relationship) {
+		var hash = this._stateToHash(relationship.get('state'));
+		delete this.get(hash)[relationship.get('id')];
+		this.notifyPropertyChange(hash);
+	},
+
+	/**
+	 * Given the state of a relationship, returns the hash it should be in.
+	 *
+	 * @param {String} state
+	 * @returns {String}
+	 * @private
+	 */
+	_stateToHash: function(state) {
+		switch (state) {
+			case 'new':
+				return '_clientRelationships';
+			case 'saved':
+				return '_serverRelationships';
+			case 'deleted':
+				return '_deletedRelationships';
+			default:
+				throw new Error('The given state was invalid.');
+		}
 	}
 });

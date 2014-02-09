@@ -120,16 +120,37 @@
 		ok(user.get('posts').contains(post.get('id')));
 	});
 
-	test('Adding to a hasMany works correctly', function() {
-		expect(0);
+	test('Removing from a hasMany saved to the server works', function() {
+		expect(2);
 
-//		var user1 = store.getRecord('user', '1');
-//		var post6 = store.getRecord('post', '6');
-//
-//		user1.addToRelationship('posts', '6');
-//
-//		ok(user1.get('posts').contains('6'));
-//		ok(post6.get('author') === '1');
+		var post1 = store.getRecord('post', '1');
+		ok(post1.get('tags').isEqual(['1', '2', '3', '4']));
+
+		post1.removeFromRelationship('tags', '2');
+		ok(post1.get('tags').isEqual(['1', '3', '4']));
+	});
+
+	test('Removing a non existent hasMany item has no effect', function() {
+		expect(0);
+	});
+
+	test('Disconnecting a belongsTo saved to the server works', function() {
+		expect(4);
+
+		var user1 = store.getRecord('user', '1');
+		var post1 = store.getRecord('post', '1');
+
+		ok(user1.get('posts').contains('1'));
+		ok(post1.get('author') === '1');
+
+		post1.clearBelongsTo('author');
+
+		ok(post1.get('author') === null);
+		ok(!user1.get('posts').contains('1'));
+	});
+
+	test('Disconnecting a null belongsTo has no effect', function() {
+		expect(0);
 	});
 
 	test('A new permanent record loaded creates new server relationships', function() {

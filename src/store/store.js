@@ -8,7 +8,8 @@ Eg.Store = Em.Object.extend({
 
 	/**
 	 * The number of milliseconds after a record in the cache expires
-	 * and must be re-fetched from the server.
+	 * and must be re-fetched from the server. Leave at Infinity for
+	 * now, as finite timeouts will likely cause a lot of bugs.
 	 */
 	cacheTimeout: Infinity,
 
@@ -26,14 +27,6 @@ Eg.Store = Em.Object.extend({
 	 * @type {Object.<String, Model>}
 	 */
 	_types: null,
-
-	/**
-	 * Holds all of the relationships that are waiting to be connected to a record
-	 * when it gets loaded into the store. (relationship ID -> relationship)
-	 *
-	 * @type {Object.<String, Relationship>}
-	 */
-	_queuedRelationships: null,
 
 	/**
 	 * The adapter used by the store to communicate with the server.
@@ -64,7 +57,7 @@ Eg.Store = Em.Object.extend({
 	},
 
 	/**
-	 * Cretes a new subclass of Model.
+	 * Creates a new subclass of Model.
 	 *
 	 * @param {String} typeKey The name of the new type
 	 * @param {String} [parentKey] The parent type, if inheriting from a custom type
@@ -102,7 +95,9 @@ Eg.Store = Em.Object.extend({
 	},
 
 	/**
-	 * Creates a new record of the specified type.
+	 * Creates a record of the specified type. If the JSON has an ID,
+	 * then the record 'created' is a permanent record from the server.
+	 * If it contains no ID, the store assumes that it's new.
 	 *
 	 * @param {String} typeKey
 	 * @param {Object} json
@@ -110,6 +105,13 @@ Eg.Store = Em.Object.extend({
 	 */
 	createRecord: function(typeKey, json) {
 		json = json || {};
+
+		if (json.hasOwnProperty('id')) {
+			var current = this.get('_records.' + typeKey + '.' + json[id]);
+			if (current) {
+				return current;
+			}
+		}
 
 		var record = this.modelForType(typeKey)._create();
 		record.set('store', this);
@@ -160,15 +162,13 @@ Eg.Store = Em.Object.extend({
 	/**
 	 * Returns all records of the given type that are in the cache.
 	 *
-	 * @param {String|Model} type
+	 * @param {String} typeKey
 	 * @returns {Array} Array of records of the given type
 	 * @private
 	 */
-	_recordsForType: function(type) {
-		var records = this.get('_records.' + type) || {};
+	_recordsForType: function(typeKey) {
+		var records = this.get('_records.' + typeKey) || {};
 		var timeout = new Date().getTime() - this.get('cacheTimeout');
-
-		type = (typeof type === 'string' ? type : type.typeKey);
 
 		return Em.keys(records).map(function(id) {
 			var recordShell = records[id];
@@ -190,21 +190,19 @@ Eg.Store = Em.Object.extend({
 	 * Object - A query that is passed to the adapter
 	 * undefined - Fetches all records of a type
 	 *
-	 * @param {String|Model} type
-	 * @param {String|Enumerable|Object} options
+	 * @param {String} typeKey
+	 * @param {String|String[]|Object} options
 	 * @returns {PromiseObject|PromiseArray}
 	 */
-	find: function(type, options) {
-		type = (typeof type === 'string' ? type : type.typeKey);
-
+	find: function(typeKey, options) {
 		if (typeof options === 'string') {
-			return this._findSingle(type, options);
+			return this._findSingle(typeKey, options);
 		} else if (Em.isArray(options)) {
-			return this._findMany(type, options);
+			return this._findMany(typeKey, options);
 		} else if (typeof options === 'object') {
-			return this._findQuery(type);
+			return this._findQuery(typeKey, options);
 		} else {
-			return this._findAll(type);
+			return this._findAll(typeKey);
 		}
 	},
 
@@ -212,15 +210,14 @@ Eg.Store = Em.Object.extend({
 	 * Returns the record directly if the record is cached in the store.
 	 * Otherwise returns null.
 	 *
-	 * @param {String|Model} type
+	 * @param {String} typeKey
 	 * @param {String} id
 	 * @returns {Model}
 	 * @private
 	 */
-	getRecord: function(type, id) {
-		type = (typeof type === 'string' ? type : type.typeKey);
+	getRecord: function(typeKey, id) {
 		var store = this.get('_records');
-		var records = store[type] || (store[type] = {});
+		var records = store[typeKey] || (store[typeKey] = {});
 		var timeout = new Date().getTime() - this.get('cacheTimeout');
 
 		if (records[id]) {
@@ -231,74 +228,95 @@ Eg.Store = Em.Object.extend({
 	},
 
 	/**
-	 * Gets a record in the form of a promise. If the record is in
-	 * the cache, the promise resolves immediately. If the record
-	 * isn't in the cache, the promise will resolve when the adapter
-	 * resolves it's promise to get it from the server.
-	 *
-	 * @param {String|Model} type
-	 * @param {String} id
-	 * @returns {Promise}
-	 * @private
-	 */
-	_findSinglePromise: function(type, id) {
-		var record = this.getRecord(type, id);
-
-		if (record) {
-			return Em.RSVP.Promise.resolve(record);
-		} else {
-			return this.get('adapter').findRecord(type, id);
-		}
-	},
-
-	/**
 	 * Gets a single record from the adapter as a PromiseObject.
+	 *
+	 * @param {String} type
+	 * @param {String} id
+	 * @return {PromiseObject}
 	 * @private
 	 */
 	_findSingle: function(type, id) {
-		return Eg.PromiseObject.create({
-			promise: this._findSinglePromise(type, id)
-		});
+		var record = this.getRecord(type, id);
+		var promise;
+
+		if (record) {
+			promise = Em.RSVP.Promise.resolve(record);
+		} else {
+			promise = this.get('adapter').findRecord(type, id).then(function(json) {
+				return this.createRecord(type, json);
+			}.bind(this));
+		}
+
+		return Eg.PromiseObject.create({ promise: promise });
 	},
 
 	/**
 	 * Gets many records from the adapter as a PromiseArray.
+	 *
+	 * @param {String} type
+	 * @param {String[]} ids
+	 * @returns {PromiseArray}
 	 * @private
 	 */
 	_findMany: function(type, ids) {
-		return Eg.PromiseArray.create({
-			promise: Em.RSVP.Promise.all(ids.map(function(id) {
-				return this._findSinglePromise(type, id);
-			}, this))
-		});
+		var set = new Em.Set(ids);
+
+		ids.forEach(function(id) {
+			if (this.getRecord(type, id) !== null) {
+				set.removeObject(id);
+			}
+		}, this);
+
+		var promise = this.get('adapter').findMany(type, set.toArray()).then(function(array) {
+			array.forEach(function(json) {
+				this.createRecord(type, json);
+			}, this);
+
+			return ids.map(function(id) {
+				return this.getRecord(type, id);
+			}, this).toArray();
+		}.bind(this));
+
+		return Eg.PromiseArray.create({ promise: promise });
 	},
 
 	/**
 	 * Gets all of the records of a type from the adapter as a PromiseArray.
+	 *
+	 * @param {String} type
+	 * @returns {PromiseArray}
 	 * @private
 	 */
 	_findAll: function(type) {
 		var ids = this._recordsForType(type).mapBy('id');
+		var promise = this.get('adapter').findAll(type, ids).then(function(array) {
+			array.forEach(function(json) {
+				this.createRecord(type, json);
+			}, this);
 
-		return Eg.PromiseArray.create({
-			promise: this.get('adapter').findAll(type, ids).then(function(value) {
-				return value.toArray();
-			})
-		});
+			return this._recordsForType(type);
+		}.bind(this));
+
+		return Eg.PromiseArray.create({ promise: promise });
 	},
 
 	/**
 	 * Gets records for a query from the adapter as a PromiseArray.
+	 *
+	 * @param {String} typeKey
+	 * @param {Object} options
+	 * @returns {PromiseArray}
 	 * @private
 	 */
-	_findQuery: function(type, options) {
-		var ids = this._recordsForType(type).mapBy('id');
+	_findQuery: function(typeKey, options) {
+		var ids = this._recordsForType(typeKey).mapBy('id');
+		var promise = this.get('adapter').findQuery(typeKey, options, ids).then(function(array) {
+			return array.map(function(json) {
+				return this.createRecord(typeKey, json);
+			}, this);
+		}.bind(this));
 
-		return Eg.PromiseArray.create({
-			promise: this.get('adapter').findQuery(type, options, ids).then(function(value) {
-				return value.toArray();
-			})
-		});
+		return Eg.PromiseArray.create({ promise: promise });
 	},
 
 	/**
@@ -325,23 +343,26 @@ Eg.Store = Em.Object.extend({
 		record.set('isSaving', true);
 
 		if (isNew) {
-			return this.get('adapter').createRecord(record).then(function(createdRecord) {
+			return this.get('adapter').createRecord(record).then(function(json) {
+				record._reloadRecord(json);
 				record.set('isSaving', false);
 
+				var id = json.id;
 				var records = _this.get('_records.' + type);
 
 				delete records[tempId];
-				records[createdRecord.get('id')] = {
+				records[id] = {
 					timestamp: new Date().getTime(),
-					record: createdRecord
+					record: record
 				};
 
-				return createdRecord;
+				return record;
 			});
 		} else {
-			return this.get('adapter').updateRecord(record).then(function(savedRecord) {
+			return this.get('adapter').updateRecord(record).then(function(json) {
+				record._reloadRecord(json);
 				record.set('isSaving', false);
-				return savedRecord;
+				return record;
 			});
 		}
 	},
@@ -371,8 +392,8 @@ Eg.Store = Em.Object.extend({
 	reloadRecord: function(record) {
 		record.set('isReloading', true);
 
-		return this.get('adapter').find(record.typeKey, record.get('id')).then(function(reloadedRecord) {
-			record._reloadRecord(reloadedRecord);
+		return this.get('adapter').find(record.typeKey, record.get('id')).then(function(json) {
+			record._reloadRecord(json);
 			record.set('isReloading', false);
 			return true;
 		}).catch(function() {

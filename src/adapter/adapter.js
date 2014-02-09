@@ -19,23 +19,22 @@ Eg.Adapter = Em.Object.extend({
 	serializer: null,
 
 	/**
-	 * Persists a record to the server. When the record is returned
+	 * Persists a record to the server. When the JSON is returned
 	 * in the promise, it should contain a finalized ID.
 	 *
 	 * @param {Model} record The record to persist
-	 * @returns {Promise} A promise that resolves to the created record
+	 * @returns {Promise} A promise that resolves to the JSON of the created record
 	 */
 	createRecord: function(record) {
 		throw missingMethod('createRecord');
 	},
 
 	/**
-	 * Fetch a record from the server. The adapter should load the
-	 * returned JSON into a record and resolve it in the promise.
+	 * Fetch a record from the server.
 	 *
 	 * @param {String|Model} type A type string or Model subclass
 	 * @param {String} id The ID of the record to fetch
-	 * @returns {Promise} A promise that resolves to the fetched record
+	 * @returns {Promise} A promise that resolves to the JSON of the fetched record
 	 */
 	findRecord: function(type, id) {
 		throw missingMethod('findRecord');
@@ -47,7 +46,7 @@ Eg.Adapter = Em.Object.extend({
 	 *
 	 * @param {String|Model} type A type string or Model subclass
 	 * @param {Enumerable} ids Enumerable of IDs
-	 * @returns {Promise} A promise that resolves to an enumerable of fetched records
+	 * @returns {Promise} A promise that resolves to an enumerable of JSON records
 	 */
 	findMany: function(type, ids) {
 		throw missingMethod('findMany');
@@ -82,7 +81,7 @@ Eg.Adapter = Em.Object.extend({
 	 * Update the given record.
 	 *
 	 * @param {Model} record The model to save
-	 * @returns {Promise} A promise that resolves to the updated record
+	 * @returns {Promise} A promise that resolves to the JSON of the updated record
 	 */
 	updateRecord: function(record) {
 		throw missingMethod('updateRecord');

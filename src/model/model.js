@@ -156,6 +156,12 @@ Eg.Model = Em.Object.extend({
 	 * @param {Object} json
 	 */
 	_reloadRecord: function(json) {
+		json = json || {};
+
+		if (this.get('isNew') && json.hasOwnProperty('id') && !this.constructor.isTemporaryId(json.id)) {
+			this.set('id', json.id);
+		}
+
 		this._loadRelationships(json);
 		this._loadAttributes(json, true);
 	},
@@ -193,6 +199,13 @@ Eg.Model.reopenClass({
 	 * @static
 	 */
 	temporaryIdPrefix: 'EG_TEMP_ID_',
+
+	/**
+	 * @returns {Boolean}
+	 */
+	isTemporaryId: function(id) {
+		return Eg.String.startsWith(id, this.temporaryIdPrefix);
+	},
 
 	create: function() {
 		Eg.debug.assert('You can\'t create a record directly. Use the store.');

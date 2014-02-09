@@ -9,8 +9,9 @@
 	var Adapter = Eg.Adapter.extend({
 
 		createRecord: function(record) {
-			record.set('id', Eg.util.generateGUID());
-			return Em.RSVP.Promise.resolve(record);
+			var id = Eg.util.generateGUID();
+			record.set('id', id);
+			return Em.RSVP.Promise.resolve({ id: id });
 		},
 
 		findRecord: function(type, id) {
@@ -23,12 +24,12 @@
 			}));
 		},
 
-		findAll: function(type, ids) {
+		findAll: function(type) {
 			return this.findMany(type, ['1', '2', '3', '4']);
 		},
 
 		updateRecord: function(record) {
-			return Em.RSVP.Promise.resolve(record);
+			return Em.RSVP.Promise.resolve(records[id]);
 		},
 
 		deleteRecord: function(record) {
@@ -46,10 +47,10 @@
 			store.createModel('storeTest', {});
 
 			records = {
-				'1': store.createRecord(typeKey, { id: '1' }),
-				'2': store.createRecord(typeKey, { id: '2' }),
-				'3': store.createRecord(typeKey, { id: '3' }),
-				'4': store.createRecord(typeKey, { id: '4' })
+				'1': { id: '1' },
+				'2': { id: '2' },
+				'3': { id: '3' },
+				'4': { id: '4' }
 			};
 		}
 	});
@@ -61,11 +62,15 @@
 	});
 
 	test('The store can load records properly', function() {
-		expect(6);
+		expect(9);
 
-		ok(records[1].get('store') === store);
-		ok(records[2].get('store') === store);
-		ok(records[4].get('store') === store);
+		ok(store.hasRecord(typeKey, '1') === false);
+		ok(store.hasRecord(typeKey, '2') === false);
+		ok(store.hasRecord(typeKey, '4') === false);
+
+		ok(store.createRecord(typeKey, records[1]));
+		ok(store.createRecord(typeKey, records[2]));
+		ok(store.createRecord(typeKey, records[4]));
 
 		ok(store.hasRecord(typeKey, '1') === true);
 		ok(store.hasRecord(typeKey, '2') === true);
@@ -73,11 +78,13 @@
 	});
 
 	asyncTest('The store can find a single record properly', function() {
-		expect(1);
+		expect(3);
 
+		ok(store.hasRecord(typeKey, '1') === false);
 		store.find(typeKey, '1').then(function(record) {
 			start();
-			ok(record === records[1]);
+			ok(store.hasRecord(typeKey, '1') === true);
+			ok(record.get('id') === '1');
 		});
 	});
 
@@ -89,9 +96,9 @@
 
 			var set = new Em.Set(resolvedRecords);
 			ok(Em.get(set, 'length') === 3);
-			ok(set.contains(records[1]));
-			ok(set.contains(records[2]));
-			ok(set.contains(records[4]));
+			ok(store.hasRecord(typeKey, '1'));
+			ok(store.hasRecord(typeKey, '2'));
+			ok(store.hasRecord(typeKey, '4'));
 		});
 	});
 
@@ -102,11 +109,12 @@
 			start();
 
 			var set = new Em.Set(resolvedRecords);
+
 			ok(Em.get(set, 'length') === 4);
-			ok(set.contains(records[1]));
-			ok(set.contains(records[2]));
-			ok(set.contains(records[3]));
-			ok(set.contains(records[4]));
+			ok(store.hasRecord(typeKey, '1'));
+			ok(store.hasRecord(typeKey, '2'));
+			ok(store.hasRecord(typeKey, '3'));
+			ok(store.hasRecord(typeKey, '4'));
 		});
 	});
 
@@ -134,30 +142,24 @@
 	asyncTest('The store deletes a record properly', function() {
 		expect(5);
 
-		var promise = store.deleteRecord(records[1]);
+		var record;
 
-		ok(records[1].get('isDirty') === true);
-		ok(records[1].get('isDeleted') === true);
+		store.find(typeKey, '1').then(function(r) {
+			record = r;
+			var promise = record.destroy();
 
-		promise.then(function() {
+			start();
+			ok(record.get('isDirty') === true);
+			ok(record.get('isDeleted') === true);
+			stop();
+
+			return promise;
+		}).then(function() {
 			start();
 
 			ok(!store.hasRecord(typeKey, '1'));
-			ok(records[1].get('isDirty') === false);
-			ok(records[1].get('isDeleted') === true);
-		});
-	});
-
-	asyncTest('The store uses the cache properly', function() {
-		expect(1);
-
-		var deleted = records[1];
-		delete records[1];
-
-		store.find(typeKey, '1').then(function(record) {
-			start();
-
-			ok(deleted === record);
+			ok(record.get('isDirty') === false);
+			ok(record.get('isDeleted') === true);
 		});
 	});
 
