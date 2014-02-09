@@ -131,7 +131,13 @@
 	});
 
 	test('Removing a non existent hasMany item has no effect', function() {
-		expect(0);
+		expect(1);
+
+		var user1 = store.getRecord('user', '1');
+		var current = user1.get('posts').toArray();
+
+		user1.removeFromRelationship('posts', '298133');
+		ok(user1.get('posts').isEqual(current));
 	});
 
 	test('Disconnecting a belongsTo saved to the server works', function() {
@@ -150,6 +156,133 @@
 	});
 
 	test('Disconnecting a null belongsTo has no effect', function() {
+		expect(2);
+
+		var post6 = store.getRecord('post', '6');
+		ok(post6.get('author') === null);
+		post6.clearBelongsTo('author');
+		ok(post6.get('author') === null);
+	});
+
+	test('Changing a belongsTo from one record to another works', function() {
+		expect(6);
+
+		var user1 = store.getRecord('user', '1');
+		var user2 = store.getRecord('user', '2');
+		var post1 = store.getRecord('post', '1');
+
+		ok(user1.get('posts').contains('1'));
+		ok(!user2.get('posts').contains('1'));
+		ok(post1.get('author') === '1');
+
+		post1.setBelongsTo('author', '2');
+
+		ok(!user1.get('posts').contains('1'));
+		ok(user2.get('posts').contains('1'));
+		ok(post1.get('author') === '2');
+	});
+
+	test('Rolling back a record with no changes has no effect', function() {
+		expect(2);
+
+		var post1 = store.getRecord('post', '1');
+		var author = post1.get('author');
+		var tags = post1.get('tags').toArray();
+
+		post1.rollbackRelationships();
+
+		ok(post1.get('author') === author);
+		ok(post1.get('tags').isEqual(tags));
+	});
+
+	test('Adding to a hasMany works properly', function() {
+		expect(2);
+
+		var post2 = store.getRecord('post', '2');
+		ok(!post2.get('tags').contains('1'));
+		post2.addToRelationship('tags', '1');
+		ok(post2.get('tags').contains('1'));
+	});
+
+	test('Setting a belongsTo works properly', function() {
+		expect(4);
+
+		var user1 = store.getRecord('user', '1');
+		var post6 = store.getRecord('post', '6');
+
+		ok(!user1.get('posts').contains('6'));
+		ok(post6.get('author') === null);
+
+		post6.setBelongsTo('author', '1');
+
+		ok(user1.get('posts').contains('6'));
+		ok(post6.get('author') === '1');
+	});
+
+	test('Removing an item from a hasMany dirties both records', function() {
+		expect(4);
+
+		var user1 = store.getRecord('user', '1');
+		var post1 = store.getRecord('post', '1');
+
+		ok(!user1.get('isDirty'));
+		ok(!post1.get('isDirty'));
+
+		user1.removeFromRelationship('posts', '1');
+
+		ok(user1.get('isDirty'));
+		ok(post1.get('isDirty'));
+	});
+
+	test('Adding an item to a hasMany dirties both records', function() {
+		expect(4);
+
+		var user1 = store.getRecord('user', '1');
+		var post6 = store.getRecord('post', '6');
+
+		ok(!user1.get('isDirty'));
+		ok(!post6.get('isDirty'));
+
+		user1.addToRelationship('posts', '6');
+
+		ok(user1.get('isDirty'));
+		ok(post6.get('isDirty'));
+	});
+
+	test('Clearing a belongsTo dirties both records', function() {
+		expect(4);
+
+		var user1 = store.getRecord('user', '1');
+		var post1 = store.getRecord('post', '1');
+
+		ok(!user1.get('isDirty'));
+		ok(!post1.get('isDirty'));
+
+		post1.clearBelongsTo('author');
+
+		ok(user1.get('isDirty'));
+		ok(post1.get('isDirty'));
+	});
+
+	test('Settings a belongsTo dirties all three records (if applicable)', function() {
+		expect(6);
+
+		var user1 = store.getRecord('user', '1');
+		var user2 = store.getRecord('user', '2');
+		var post1 = store.getRecord('post', '1');
+
+		ok(!user1.get('isDirty'));
+		ok(!user2.get('isDirty'));
+		ok(!post1.get('isDirty'));
+
+		post1.setBelongsTo('author', '2');
+
+		ok(user1.get('isDirty'));
+		ok(user2.get('isDirty'));
+		ok(post1.get('isDirty'));
+	});
+
+	test('Changing a record that isn\'t loaded yet will load changes on load' , function() {
 		expect(0);
 	});
 

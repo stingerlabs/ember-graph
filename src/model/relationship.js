@@ -266,7 +266,14 @@ Eg.Model.reopen({
 	 * @param {String} id The ID to add to the relationship
 	 */
 	addToRelationship: function(relationship, id) {
+		if (this._isLinkedTo(relationship, id)) {
+			return;
+		}
 
+		var meta = this.constructor.metaForRelationship(relationship);
+
+		this.get('store')._createRelationship(this.typeKey, relationship,
+			this.get('id'), meta.relatedType, meta.inverse, id, false);
 	},
 
 	/**
@@ -285,9 +292,24 @@ Eg.Model.reopen({
 	},
 
 	setBelongsTo: function(relationship, id) {
+		var current = this.get(relationship);
+		if (current === id) {
+			return;
+		}
+
+		this.clearBelongsTo(relationship);
+
+		if (id === null) {
+			return;
+		}
+
 		if (id === null) {
 			return this.clearBelongsTo(relationship);
 		}
+
+		var meta = this.constructor.metaForRelationship(relationship);
+		this.get('store')._createRelationship(this.typeKey, relationship,
+			this.get('id'), meta.relatedType, meta.inverse, id, false);
 	},
 
 	clearBelongsTo: function(relationship) {
