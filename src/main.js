@@ -18,6 +18,7 @@ require('serializer/serializer');
 require('adapter/adapter');
 
 require('store/store');
+require('store/relationship');
 
 require('transform/transform');
 require('transform/boolean');

@@ -8,6 +8,24 @@ Eg.Store.reopen({
 	_queuedRelationships: null,
 
 	/**
+	 * @param {String} typeKey
+	 * @param {String} id
+	 * @returns {Boolean}
+	 * @private
+	 */
+	_hasQueuedRelationships: function(typeKey, id) {
+		var queued = Eg.util.values(this.get('_queuedRelationships'));
+
+		for (var i = 0; i < queued.length; i = i + 1) {
+			if (queued[i].get('type2') === typeKey && queued[i].get('object2') === id) {
+				return true;
+			}
+		}
+
+		return false;
+	},
+
+	/**
 	 * Will connect all queued relationships to the given record.
 	 *
 	 * @param {Model} record
@@ -19,6 +37,7 @@ Eg.Store.reopen({
 
 		toConnect.forEach(function(relationship) {
 			record._connectRelationship(relationship);
+			relationship.set('object2', record);
 			delete queued[relationship.get('id')];
 		});
 
@@ -29,14 +48,14 @@ Eg.Store.reopen({
 	 * Gets all of the relationships that are queued to be connected to the given record.
 	 * Does not deleted the relationships from the queue, just fetches them.
 	 *
-	 * @param {String} type
+	 * @param {String} typeKey
 	 * @param {String} id
 	 * @returns {Relationship[]}
 	 * @private
 	 */
-	_queuedRelationshipsFor: function(type, id) {
+	_queuedRelationshipsFor: function(typeKey, id) {
 		return Eg.util.values(this.get('_queuedRelationships')).filter(function(relationship) {
-			return (relationship.get('type2') === type && relationship.get('object2') === id);
+			return (relationship.get('type2') === typeKey && relationship.get('object2') === id);
 		});
 	},
 
@@ -86,7 +105,7 @@ Eg.Store.reopen({
 		var relationship = Eg.Relationship.create({
 			object1: record1,
 			relationship1: relationship1,
-			object2: id2,
+			object2: (record2 === null ? id2 : record2),
 			relationship2: relationship2,
 			state: (saved ? 'saved' : 'new')
 		});
@@ -106,7 +125,6 @@ Eg.Store.reopen({
 	 * then destroys, all references to the relationship.
 	 *
 	 * @param {String} id
-	 * @private
 	 */
 	_deleteRelationship: function(id) {
 		var relationship = Eg.Relationship.getRelationship(id);
@@ -126,5 +144,32 @@ Eg.Store.reopen({
 		}
 
 		Eg.Relationship.deleteRelationship(id);
+	},
+
+	_changeRelationshipState: function(id, state) {
+		var relationship = Eg.Relationship.getRelationship(id);
+		if (Em.isNone(relationship) || relationship.get('state') === state) {
+			return;
+		}
+
+		var object1 = relationship.get('object1');
+		var object2 = relationship.get('object2');
+
+		var oldHash = Eg.Relationship.stateToHash(relationship.get('state'));
+		var newHash = Eg.Relationship.stateToHash(state);
+
+		relationship.set('state', state);
+
+		object1.set(newHash + '.' + id, object1.get(oldHash + '.' + id));
+		delete object1.get(oldHash)[id];
+		object1.notifyPropertyChange(oldHash);
+		object1.notifyPropertyChange(newHash);
+
+		if (object2 instanceof Eg.Model) {
+			object2.set(newHash + '.' + id, object2.get(oldHash + '.' + id));
+			delete object2.get(oldHash)[id];
+			object2.notifyPropertyChange(oldHash);
+			object2.notifyPropertyChange(newHash);
+		}
 	}
 });

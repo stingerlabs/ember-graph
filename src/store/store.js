@@ -105,9 +105,10 @@ Eg.Store = Em.Object.extend({
 	 */
 	createRecord: function(typeKey, json) {
 		json = json || {};
+		var id = json.id;
 
-		if (json.hasOwnProperty('id')) {
-			var current = this.get('_records.' + typeKey + '.' + json[id]);
+		if (json.id !== undefined) {
+			var current = this.get('_records.' + typeKey + '.' + json.id);
 			if (current) {
 				return current;
 			}
@@ -117,44 +118,17 @@ Eg.Store = Em.Object.extend({
 		record.set('store', this);
 		record._create(json);
 
-		if (record.get('isNew') === false) {
-			var id = record.get('id');
-			var connected = [];
-			var queued = this.get('_queuedRelationships');
-
-			Eg.util.values(queued).forEach(function(relationship) {
-				if (relationship.get('object2') === id && relationship.get('type2') === record.typeKey) {
-					relationship.set('object2', record);
-
-					if (relationship.isNew()) {
-						record.get('_clientRelationships')[relationship.get('id')] = relationship;
-						record.notifyPropertyChange('_clientRelationships');
-						relationship.get('object1').notifyPropertyChange('_clientRelationships');
-					} else if (relationship.isSaved()) {
-						record.get('_serverRelationships')[relationship.get('id')] = relationship;
-						record.notifyPropertyChange('_serverRelationships');
-						relationship.get('object1').notifyPropertyChange('_serverRelationships');
-					} else /* isDeleted */ {
-						record.get('_deletedRelationships')[relationship.get('id')] = relationship;
-						record.notifyPropertyChange('_deletedRelationships');
-						relationship.get('object1').notifyPropertyChange('_deletedRelationships');
-					}
-
-					connected.push(relationship.get('id'));
-				}
-			}, this);
-
-			connected.forEach(function(id) {
-				delete queued[id];
-			});
-
-			this.notifyPropertyChange('_queuedRelationships');
-		}
-
 		this.set('_records.' + typeKey + '.' + record.get('id'), {
 			record: record,
 			timestamp: new Date().getTime()
 		});
+
+		if (this._hasQueuedRelationships(typeKey, id)) {
+			this._connectQueuedRelationships(record);
+		}
+
+		// TODO: This is a bad place for this. Fix the order of execution
+		record._loadRelationships(json);
 
 		return record;
 	},

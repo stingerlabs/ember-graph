@@ -237,5 +237,25 @@ Eg.Relationship.reopenClass({
 	 */
 	deleteRelationship: function(id) {
 		delete allRelationships[id];
+	},
+
+	/**
+	 * Given a relationship state, determines which hash in the model the relationship should be in.
+	 *
+	 * @param {String} state
+	 * @returns {String}
+	 */
+	stateToHash: function(state) {
+		switch (state) {
+			case 'new':
+				return '_clientRelationships';
+			case 'saved':
+				return '_serverRelationships';
+			case 'deleted':
+				return '_deletedRelationships';
+			default:
+				Eg.debug.assert('The given state was invalid.');
+				return '';
+		}
 	}
 });

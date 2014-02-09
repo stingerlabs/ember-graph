@@ -144,7 +144,6 @@ Eg.Model = Em.Object.extend({
 		}
 
 		this._loadAttributes(json, false);
-		this._loadRelationships(json);
 	},
 
 	/**
