@@ -11,7 +11,7 @@
 		expect(1);
 
 		var id = 'TEST_ID';
-		var model = store.createRecord('test', { id: id });
+		var model = store._loadRecord('test', { id: id });
 
 		ok(model.get('id') === id);
 	});
@@ -27,7 +27,7 @@
 	test('A permanent ID cannot be changed', function() {
 		expect(1);
 
-		var model = store.createRecord('test', { id: '1' });
+		var model = store._loadRecord('test', { id: '1' });
 
 		throws(function() {
 			model.set('id', '');

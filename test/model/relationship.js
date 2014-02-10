@@ -35,22 +35,22 @@
 
 			store.createModel('tag', {});
 
-			store.createRecord('user', { id: '1', posts: ['1', '2'] });
-			store.createRecord('user', { id: '2', posts: ['3'] });
-			store.createRecord('user', { id: '3', posts: ['4', '7'] });
-			store.createRecord('user', { id: '4', posts: [] });
+			store._loadRecord('user', { id: '1', posts: ['1', '2'] });
+			store._loadRecord('user', { id: '2', posts: ['3'] });
+			store._loadRecord('user', { id: '3', posts: ['4', '7'] });
+			store._loadRecord('user', { id: '4', posts: [] });
 
-			store.createRecord('post', { id: '1', author: '1', tags: ['1', '2', '3', '4'] });
-			store.createRecord('post', { id: '2', author: '1', tags: ['2', '3'] });
-			store.createRecord('post', { id: '3', author: '2', tags: [] });
-			store.createRecord('post', { id: '4', author: '3', tags: ['1', '4', '5'] });
-			store.createRecord('post', { id: '5', author: '5', tags: ['1', '4', '5'] });
-			store.createRecord('post', { id: '6', author: null, tags: ['1', '2', '5'] });
+			store._loadRecord('post', { id: '1', author: '1', tags: ['1', '2', '3', '4'] });
+			store._loadRecord('post', { id: '2', author: '1', tags: ['2', '3'] });
+			store._loadRecord('post', { id: '3', author: '2', tags: [] });
+			store._loadRecord('post', { id: '4', author: '3', tags: ['1', '4', '5'] });
+			store._loadRecord('post', { id: '5', author: '5', tags: ['1', '4', '5'] });
+			store._loadRecord('post', { id: '6', author: null, tags: ['1', '2', '5'] });
 
-			store.createRecord('tag', { id: '1' });
-			store.createRecord('tag', { id: '2' });
-			store.createRecord('tag', { id: '3' });
-			store.createRecord('tag', { id: '4' });
+			store._loadRecord('tag', { id: '1' });
+			store._loadRecord('tag', { id: '2' });
+			store._loadRecord('tag', { id: '3' });
+			store._loadRecord('tag', { id: '4' });
 		}
 	});
 
@@ -102,7 +102,7 @@
 			}
 		});
 
-		var post = store.createRecord('post', { id: '7', author: '3', tags: [] });
+		var post = store._loadRecord('post', { id: '7', author: '3', tags: [] });
 
 		ok(queued[rid] === undefined);
 		ok(user3.get('posts').contains('7'));

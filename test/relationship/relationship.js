@@ -126,8 +126,8 @@
 	test('The other record is found if it\'s an ID that has been loaded', function() {
 		expect(2);
 
-		var temp1 = store.createRecord('test1', { id: 'temp1_id' });
-		var temp2 = store.createRecord('test2', { id: 'temp2_id' });
+		var temp1 = store._loadRecord('test1', { id: 'temp1_id' });
+		var temp2 = store._loadRecord('test2', { id: 'temp2_id' });
 
 		var relationship = Eg.Relationship.create({
 			object1: temp1,

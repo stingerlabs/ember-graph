@@ -10,18 +10,19 @@
 
 		createRecord: function(record) {
 			var id = Eg.util.generateGUID();
-			record.set('id', id);
-			return Em.RSVP.Promise.resolve({ id: id });
+			return Em.RSVP.Promise.resolve({ id: id, storeTest: [{ id: id }] });
 		},
 
 		findRecord: function(type, id) {
-			return Em.RSVP.Promise.resolve(records[id]);
+			return Em.RSVP.Promise.resolve({ storeTest: [records[id]] });
 		},
 
 		findMany: function(type, ids) {
-			return Em.RSVP.Promise.resolve(ids.map(function(id) {
-				return records[id];
-			}));
+			return Em.RSVP.Promise.resolve({
+				storeTest: ids.map(function(id) {
+					return records[id];
+				})
+			});
 		},
 
 		findAll: function(type) {
@@ -29,11 +30,11 @@
 		},
 
 		updateRecord: function(record) {
-			return Em.RSVP.Promise.resolve(records[id]);
+			return Em.RSVP.Promise.resolve({ storeTest: [records[record.get('id')]] });
 		},
 
 		deleteRecord: function(record) {
-			return Em.RSVP.Promise.resolve();
+			return Em.RSVP.Promise.resolve({});
 		}
 	});
 
@@ -56,9 +57,10 @@
 	});
 
 	test('The store initializes the adapter properly', function() {
-		expect(1);
+		expect(2);
 
 		ok(store.get('adapter') instanceof Adapter);
+		ok(store.get('adapter.store') === store);
 	});
 
 	test('The store can load records properly', function() {
@@ -68,9 +70,9 @@
 		ok(store.hasRecord(typeKey, '2') === false);
 		ok(store.hasRecord(typeKey, '4') === false);
 
-		ok(store.createRecord(typeKey, records[1]));
-		ok(store.createRecord(typeKey, records[2]));
-		ok(store.createRecord(typeKey, records[4]));
+		ok(store._loadRecord(typeKey, records[1]));
+		ok(store._loadRecord(typeKey, records[2]));
+		ok(store._loadRecord(typeKey, records[4]));
 
 		ok(store.hasRecord(typeKey, '1') === true);
 		ok(store.hasRecord(typeKey, '2') === true);

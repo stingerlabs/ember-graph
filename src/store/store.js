@@ -54,6 +54,8 @@ Eg.Store = Em.Object.extend({
 		if (!(adapter instanceof Eg.Adapter)) {
 			this.set('adapter', adapter.create());
 		}
+
+		this.set('adapter.store', this);
 	},
 
 	/**
@@ -105,30 +107,43 @@ Eg.Store = Em.Object.extend({
 	 */
 	createRecord: function(typeKey, json) {
 		json = json || {};
-		var id = json.id;
-
-		if (json.id !== undefined) {
-			var current = this.get('_records.' + typeKey + '.' + json.id);
-			if (current) {
-				return current;
-			}
-		}
 
 		var record = this.modelForType(typeKey)._create();
 		record.set('store', this);
-		record._create(json);
+		record.set('id', Eg.Model.temporaryIdPrefix + Eg.util.generateGUID());
 
 		this.set('_records.' + typeKey + '.' + record.get('id'), {
 			record: record,
 			timestamp: new Date().getTime()
 		});
 
-		if (this._hasQueuedRelationships(typeKey, id)) {
+		record._loadData(json);
+
+		return record;
+	},
+
+	/**
+	 * Loads an already created record into the store. This method
+	 * should probably only be used by the store or adapter.
+	 *
+	 * @param typeKey
+	 * @param json
+	 */
+	_loadRecord: function(typeKey, json) {
+		var record = this.modelForType(typeKey)._create();
+		record.set('store', this);
+		record.set('id', json.id);
+
+		this.set('_records.' + typeKey + '.' + json.id, {
+			record: record,
+			timestamp: new Date().getTime()
+		});
+
+		if (this._hasQueuedRelationships(typeKey, json.id)) {
 			this._connectQueuedRelationships(record);
 		}
 
-		// TODO: This is a bad place for this. Fix the order of execution
-		record._loadRelationships(json);
+		record._loadData(json);
 
 		return record;
 	},
@@ -216,8 +231,9 @@ Eg.Store = Em.Object.extend({
 		if (record) {
 			promise = Em.RSVP.Promise.resolve(record);
 		} else {
-			promise = this.get('adapter').findRecord(type, id).then(function(json) {
-				return this.createRecord(type, json);
+			promise = this.get('adapter').findRecord(type, id).then(function(payload) {
+				this._extractPayload(payload);
+				return this.getRecord(type, id);
 			}.bind(this));
 		}
 
@@ -241,10 +257,8 @@ Eg.Store = Em.Object.extend({
 			}
 		}, this);
 
-		var promise = this.get('adapter').findMany(type, set.toArray()).then(function(array) {
-			array.forEach(function(json) {
-				this.createRecord(type, json);
-			}, this);
+		var promise = this.get('adapter').findMany(type, set.toArray()).then(function(payload) {
+			this._extractPayload(payload);
 
 			return ids.map(function(id) {
 				return this.getRecord(type, id);
@@ -263,11 +277,8 @@ Eg.Store = Em.Object.extend({
 	 */
 	_findAll: function(type) {
 		var ids = this._recordsForType(type).mapBy('id');
-		var promise = this.get('adapter').findAll(type, ids).then(function(array) {
-			array.forEach(function(json) {
-				this.createRecord(type, json);
-			}, this);
-
+		var promise = this.get('adapter').findAll(type, ids).then(function(payload) {
+			this._extractPayload(payload);
 			return this._recordsForType(type);
 		}.bind(this));
 
@@ -283,10 +294,14 @@ Eg.Store = Em.Object.extend({
 	 * @private
 	 */
 	_findQuery: function(typeKey, options) {
-		var ids = this._recordsForType(typeKey).mapBy('id');
-		var promise = this.get('adapter').findQuery(typeKey, options, ids).then(function(array) {
-			return array.map(function(json) {
-				return this.createRecord(typeKey, json);
+		var currentIds = this._recordsForType(typeKey).mapBy('id');
+		var promise = this.get('adapter').findQuery(typeKey, options, currentIds).then(function(payload) {
+			var ids = payload.ids;
+			delete payload.ids;
+			this._extractPayload(payload);
+
+			return ids.map(function(id) {
+				return this.getRecord(typeKey, id);
 			}, this);
 		}.bind(this));
 
@@ -306,7 +321,7 @@ Eg.Store = Em.Object.extend({
 
 	/**
 	 * @param {Model} record
-	 * @returns {Promise} The new record
+	 * @returns {Promise} The saved record
 	 */
 	saveRecord: function(record) {
 		var _this = this;
@@ -317,33 +332,33 @@ Eg.Store = Em.Object.extend({
 		record.set('isSaving', true);
 
 		if (isNew) {
-			return this.get('adapter').createRecord(record).then(function(json) {
-				record._reloadRecord(json);
+			return this.get('adapter').createRecord(record).then(function(payload) {
+				record.set('id', payload.id);
 				record.set('isSaving', false);
+				delete payload.id;
 
-				var id = json.id;
 				var records = _this.get('_records.' + type);
-
 				delete records[tempId];
-				records[id] = {
+				records[record.get('id')] = {
 					timestamp: new Date().getTime(),
 					record: record
 				};
 
+				this._extractPayload(payload);
 				return record;
-			});
+			}.bind(this));
 		} else {
-			return this.get('adapter').updateRecord(record).then(function(json) {
-				record._reloadRecord(json);
+			return this.get('adapter').updateRecord(record).then(function(payload) {
+				this._extractPayload(payload);
 				record.set('isSaving', false);
 				return record;
-			});
+			}.bind(this));
 		}
 	},
 
 	/**
 	 * @param {Model} record
-	 * @returns {Promise} True or false if the operation succeeds
+	 * @returns {Promise} Nothing on success, catch for error
 	 */
 	deleteRecord: function(record) {
 		var type = record.typeKey;
@@ -353,7 +368,8 @@ Eg.Store = Em.Object.extend({
 		record.set('isSaving', true);
 		record.set('isDeleted', true);
 
-		return this.get('adapter').deleteRecord(record).then(function() {
+		return this.get('adapter').deleteRecord(record).then(function(payload) {
+			this._extractPayload(payload);
 			record.set('isSaving', false);
 			delete this.get('_records.' + type)[id];
 		}.bind(this));
@@ -361,17 +377,31 @@ Eg.Store = Em.Object.extend({
 
 	/**
 	 * @param {Model} record
-	 * @returns {Promise} True or false if the operation succeeds
+	 * @returns {Promise} The reloaded record
 	 */
 	reloadRecord: function(record) {
 		record.set('isReloading', true);
 
-		return this.get('adapter').find(record.typeKey, record.get('id')).then(function(json) {
-			record._reloadRecord(json);
+		return this.get('adapter').find(record.typeKey, record.get('id')).then(function(payload) {
+			this._extractPayload(payload);
 			record.set('isReloading', false);
-			return true;
-		}).catch(function() {
-			return false;
-		});
+			return record;
+		}.bind(this));
+	},
+
+	_extractPayload: function(payload) {
+		Em.keys(payload).forEach(function(typeKey) {
+			var type = this.modelForType(typeKey);
+
+			payload[typeKey].forEach(function(json) {
+				var record = this.getRecord(typeKey, json.id);
+
+				if (record) {
+					record._loadData(json);
+				} else {
+					this._loadRecord(typeKey, json);
+				}
+			}, this);
+		}, this);
 	}
 });

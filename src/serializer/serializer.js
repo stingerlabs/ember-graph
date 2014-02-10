@@ -12,6 +12,12 @@ var methodMissing = function(method) {
 Eg.Serializer = Em.Object.extend({
 
 	/**
+	 * The store that the records will be loaded into.
+	 * This can be used for fetching models and their metadata.
+	 */
+	store: null,
+
+	/**
 	 * Converts a record to JSON for sending over the wire.
 	 *
 	 * @param {Model} record The record to serialize
@@ -31,7 +37,7 @@ Eg.Serializer = Em.Object.extend({
 	 *
 	 * @param {Object} payload
 	 * @param {Object} options Any options that were passed by the adapter
-	 * @returns {Enumerable} Records extracted from payload
+	 * @returns {Object} Normalized JSON Payload
 	 */
 	deserialize: function(payload, options) {
 		throw methodMissing('deserialize');

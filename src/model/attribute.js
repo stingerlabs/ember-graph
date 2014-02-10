@@ -105,8 +105,8 @@ Eg.Model.reopenClass({
 	/**
 	 * Calls the callback for each attribute defined on the model.
 	 *
-	 * @param callback Function that takes `name` and `meta` parameters
-	 * @param binding Object to use as `this`
+	 * @param {Function} callback Function that takes `name` and `meta` parameters
+	 * @param {*} [binding] Object to use as `this`
 	 * @static
 	 */
 	eachAttribute: function(callback, binding) {

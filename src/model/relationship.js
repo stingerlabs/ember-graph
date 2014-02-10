@@ -118,8 +118,8 @@ Eg.Model.reopenClass({
 	/**
 	 * Calls the callback for each relationship defined on the model.
 	 *
-	 * @param callback Function that takes `name` and `meta` parameters
-	 * @param binding Object to use as `this`
+	 * @param {Function} callback Function that takes `name` and `meta` parameters
+	 * @param {*} [binding] Object to use as `this`
 	 * @static
 	 */
 	eachRelationship: function(callback, binding) {
@@ -192,6 +192,7 @@ Eg.Model.reopen({
 	 * @private
 	 */
 	_loadRelationships: function(json) {
+		// TODO: Don't delete client side relationships
 		var store = this.get('store');
 
 		this.constructor.eachRelationship(function(name, meta) {

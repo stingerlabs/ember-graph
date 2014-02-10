@@ -131,38 +131,14 @@ Eg.Model = Em.Object.extend({
 	},
 
 	/**
-	 * @private
+	 * Loads JSON data from the server into the record. This may be used when
+	 * the record is brand new, or when the record is being reloaded.
 	 */
-	_create: function(json) {
+	_loadData: function(json) {
 		json = json || {};
-
-		if (json.hasOwnProperty('id')) {
-			this.set('id', json.id);
-			delete json.id;
-		} else {
-			this.set('id', Em.get(this.constructor, 'temporaryIdPrefix') + Eg.util.generateGUID());
-		}
 
 		this._loadAttributes(json, false);
-	},
-
-	/**
-	 * Reloads the record by taking in JSON and replacing the contents
-	 * of this record with the given JSON. But it only replaces the
-	 * latest server content, it doesn't overwrite any client-side
-	 * content that has been changed or generated.
-	 *
-	 * @param {Object} json
-	 */
-	_reloadRecord: function(json) {
-		json = json || {};
-
-		if (this.get('isNew') && json.hasOwnProperty('id') && !this.constructor.isTemporaryId(json.id)) {
-			this.set('id', json.id);
-		}
-
 		this._loadRelationships(json);
-		this._loadAttributes(json, true);
 	},
 
 	/**
