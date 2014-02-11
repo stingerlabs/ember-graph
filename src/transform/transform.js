@@ -32,7 +32,7 @@ Eg.registerTypeTransform = function(typeName, transform) {
 		throw new Error('Transform must be a subclass of `Eg.Transform`.');
 	}
 
-	Eg._typeTransformations[typeName] = transform;
+	Eg._typeTransformations[typeName] = instance;
 };
 
 Eg.typeTransformFor = function(typeName) {

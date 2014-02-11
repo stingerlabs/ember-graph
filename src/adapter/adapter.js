@@ -67,11 +67,11 @@ Eg.Adapter = Em.Object.extend({
 	/**
 	 * Fetch a record from the server.
 	 *
-	 * @param {String|Model} type A type string or Model subclass
+	 * @param {String|} typeKey
 	 * @param {String} id The ID of the record to fetch
 	 * @returns {Promise} A promise that resolves to normalized JSON
 	 */
-	findRecord: function(type, id) {
+	findRecord: function(typeKey, id) {
 		throw missingMethod('findRecord');
 	},
 
@@ -79,11 +79,11 @@ Eg.Adapter = Em.Object.extend({
 	 * The same as find, only it should load several records. The
 	 * promise can return any type of enumerable containing the records.
 	 *
-	 * @param {String|Model} type A type string or Model subclass
+	 * @param {String} typeKey
 	 * @param {Enumerable} ids Enumerable of IDs
 	 * @returns {Promise} A promise that resolves to normalized JSON
 	 */
-	findMany: function(type, ids) {
+	findMany: function(typeKey, ids) {
 		throw missingMethod('findMany');
 	},
 
@@ -91,11 +91,11 @@ Eg.Adapter = Em.Object.extend({
 	 * The same as find, only it should load all records of the given type.
 	 * The promise can return any type of enumerable containing the records.
 	 *
-	 * @param {String|Model} type A type string or Model subclass
+	 * @param {String} typeKey
 	 * @param {Enumerable} ids The IDs of records of this type that the store already has
 	 * @returns {Promise} A promise that resolves to normalized JSON
 	 */
-	findAll: function(type, ids) {
+	findAll: function(typeKey, ids) {
 		throw missingMethod('findAll');
 	},
 
@@ -106,12 +106,12 @@ Eg.Adapter = Em.Object.extend({
 	 * the query. This helps distinguish them from any other records of
 	 * that same type that may have been returned from the server.
 	 *
-	 * @param {String|Model} type A type string or Model subclass
+	 * @param {String} typeKey
 	 * @param {Object} query The query parameters that were passed into `find` earlier
 	 * @param {Enumerable} ids The IDs of records of this type that the store already has
 	 * @returns {Promise} A promise that resolves to normalized JSON
 	 */
-	findQuery: function(type, query, ids) {
+	findQuery: function(typeKey, query, ids) {
 		throw missingMethod('findQuery');
 	},
 

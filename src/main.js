@@ -2,6 +2,7 @@ require('global');
 
 require('util/util');
 require('util/string');
+require('util/inflector');
 require('util/debug');
 
 require('data/ordered_set');
