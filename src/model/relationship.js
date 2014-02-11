@@ -25,18 +25,7 @@ Eg.hasMany = function(options) {
 	var relationship = function(key, value) {
 		Eg.debug.assert('You can\'t set relationships directly.', value === undefined);
 
-		var server = Eg.util.values(this.get('_serverRelationships'));
-		var client = Eg.util.values(this.get('_clientRelationships'));
-		var relationships = server.concat(client);
-
-		var found = [];
-		for (var i = 0; i < relationships.length; i = i + 1) {
-			if (relationships[i].relationshipName(this) === key) {
-				found.push(relationships[i].otherId(this));
-			}
-		}
-
-		return new Em.Set(found);
+		return this._hasManyValue(key, false);
 	}.property('_serverRelationships', '_clientRelationships').meta(meta);
 
 	return (meta.readOnly ? relationship.readOnly() : relationship);
@@ -60,17 +49,7 @@ Eg.belongsTo = function(options) {
 	var relationship = function(key, value) {
 		Eg.debug.assert('You can\'t set relationships directly.', value === undefined);
 
-		var server = Eg.util.values(this.get('_serverRelationships'));
-		var client = Eg.util.values(this.get('_clientRelationships'));
-		var relationships = server.concat(client);
-
-		for (var i = 0; i < relationships.length; i = i + 1) {
-			if (relationships[i].relationshipName(this) === key) {
-				return relationships[i].otherId(this);
-			}
-		}
-
-		return null;
+		return this._belongsToValue(key, false);
 	}.property('_serverRelationships', '_clientRelationships').meta(meta);
 
 	return (meta.readOnly ? relationship.readOnly() : relationship);
@@ -165,6 +144,53 @@ Eg.Model.reopen({
 	_clientRelationships: null,
 
 	/**
+	 * Determines the value of a belongsTo relationship, either the
+	 * original value sent from the server, or the current client value.
+	 *
+	 * @param {String} relationship
+	 * @param {Boolean} server True for original value, false for client value
+	 * @returns {String}
+	 * @private
+	 */
+	_belongsToValue: function(relationship, server) {
+		var serverRelationships = Eg.util.values(this.get('_serverRelationships'));
+		var otherRelationships = Eg.util.values(this.get((server ? '_deleted' : '_client') + 'Relationships'));
+		var current = serverRelationships.concat(otherRelationships);
+
+		for (var i = 0; i < current.length; i = i + 1) {
+			if (current[i].relationshipName(this) === relationship) {
+				return current[i].otherId(this);
+			}
+		}
+
+		return null;
+	},
+
+	/**
+	 * Determines the value of a hasMany relationship, either the
+	 * original value sent from the server, or the current client value.
+	 *
+	 * @param {String} relationship
+	 * @param {Boolean} server True for original value, false for client value
+	 * @returns {Set}
+	 * @private
+	 */
+	_hasManyValue: function(relationship, server) {
+		var serverRelationships = Eg.util.values(this.get('_serverRelationships'));
+		var otherRelationships = Eg.util.values(this.get((server ? '_deleted' : '_client') + 'Relationships'));
+		var current = serverRelationships.concat(otherRelationships);
+
+		var found = [];
+		for (var i = 0; i < current.length; i = i + 1) {
+			if (current[i].relationshipName(this) === relationship) {
+				found.push(current[i].otherId(this));
+			}
+		}
+
+		return new Em.Set(found);
+	},
+
+	/**
 	 * Watches the client side attributes for changes and detects if there are
 	 * any dirty attributes based on how many client attributes differ from
 	 * the server attributes.
@@ -255,14 +281,50 @@ Eg.Model.reopen({
 	 * @returns {Object} Keys are relationship names, values are arrays with [oldVal, newVal]
 	 */
 	changedRelationships: function() {
+		var changed = {};
 
+		this.constructor.eachRelationship(function(name, meta) {
+			var oldVal, newVal;
+
+			if (meta.kind === HAS_MANY_KEY) {
+				oldVal = this._hasManyValue(name, true);
+				newVal = this._hasManyValue(name, false);
+
+				if (!oldVal.isEqual(newVal)) {
+					changed[name] = [oldVal, newVal];
+				}
+			} else {
+				oldVal = this._belongsToValue(name, true);
+				newVal = this._belongsToValue(name, false);
+
+				if (oldVal !== newVal) {
+					changed[name] = [oldVal, newVal];
+				}
+			}
+		}, this);
+
+		return changed;
 	},
 
 	/**
 	 * Resets all relationship changes to last known server relationships.
 	 */
 	rollbackRelationships: function() {
+		var store = this.get('store');
 
+		this._getAllRelationships().forEach(function(relationship) {
+			switch (relationship.get('state')) {
+				case NEW_STATE:
+					store._deleteRelationship(relationship.get('id'));
+					break;
+				case SAVED_STATE:
+					// NOP
+					break;
+				case DELETED_STATE:
+					store._changeRelationshipState(relationship.get('id'), SAVED_STATE);
+					break;
+			}
+		}, this);
 	},
 
 	/**
@@ -273,7 +335,13 @@ Eg.Model.reopen({
 	 * @param {String} id The ID to add to the relationship
 	 */
 	addToRelationship: function(relationship, id) {
-		if (this._isLinkedTo(relationship, id)) {
+		var link = this._findLinkTo(relationship, id);
+		if (link && (link.get('state') === NEW_STATE || link.get('state') === SAVED_STATE)) {
+			return;
+		}
+
+		if (link && link.get('state') === DELETED_STATE) {
+			this.get('store')._changeRelationshipState(link.get('id'), SAVED_STATE);
 			return;
 		}
 
@@ -309,8 +377,13 @@ Eg.Model.reopen({
 	},
 
 	setBelongsTo: function(relationship, id) {
-		var current = this.get(relationship);
-		if (current === id) {
+		var link = this._findLinkTo(relationship, id);
+		if (link && (link.get('state') === NEW_STATE || link.get('state') === SAVED_STATE)) {
+			return;
+		}
+
+		if (link && link.get('state') === DELETED_STATE) {
+			this.get('store')._changeRelationshipState(link.get('id'), SAVED_STATE);
 			return;
 		}
 

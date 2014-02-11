@@ -46,6 +46,8 @@
 			store._loadRecord('post', { id: '4', author: '3', tags: ['1', '4', '5'] });
 			store._loadRecord('post', { id: '5', author: '5', tags: ['1', '4', '5'] });
 			store._loadRecord('post', { id: '6', author: null, tags: ['1', '2', '5'] });
+			// 7 is used as an unloaded record
+			store._loadRecord('post', { id: '8', author: null, tags: ['4'] });
 
 			store._loadRecord('tag', { id: '1' });
 			store._loadRecord('tag', { id: '2' });
@@ -280,6 +282,96 @@
 		ok(user1.get('isDirty'));
 		ok(user2.get('isDirty'));
 		ok(post1.get('isDirty'));
+	});
+
+	test('Adding back a removed item to a hasMany cleans the record', function() {
+		expect(3);
+
+		var user1 = store.getRecord('user', '1');
+
+		ok(!user1.get('isDirty'));
+		user1.removeFromRelationship('posts', '1');
+		ok(user1.get('isDirty'));
+		user1.addToRelationship('posts', '1');
+		ok(!user1.get('isDirty'));
+	});
+
+	test('Removing an added item from a hasMany cleans the record', function() {
+		expect(3);
+
+		var user1 = store.getRecord('user', '1');
+
+		ok(!user1.get('isDirty'));
+		user1.addToRelationship('posts', '6');
+		ok(user1.get('isDirty'));
+		user1.removeFromRelationship('posts', '6');
+		ok(!user1.get('isDirty'));
+	});
+
+	test('Setting a cleared belongsTo to the old value cleans the record', function() {
+		expect(3);
+
+		var post1 = store.getRecord('post', '1');
+
+		ok(!post1.get('isDirty'));
+		post1.clearBelongsTo('author');
+		ok(post1.get('isDirty'));
+		post1.setBelongsTo('author', '1');
+		ok(!post1.get('isDirty'));
+	});
+
+	test('Clearing a set belongsTo cleans the record', function() {
+		expect(3);
+
+		var post6 = store.getRecord('post', '6');
+
+		ok(!post6.get('isDirty'));
+		post6.setBelongsTo('author', '1');
+		ok(post6.get('isDirty'));
+		post6.clearBelongsTo('author');
+		ok(!post6.get('isDirty'));
+	});
+
+	test('Rolling back relationship changes works', function() {
+		expect(5);
+
+		var post1 = store.getRecord('post', '1');
+		var tags = post1.get('tags').toArray();
+		var author = post1.get('author');
+
+		ok(!post1.get('isDirty'));
+
+		post1.clearBelongsTo('author');
+		post1.removeFromRelationship('tags', '1');
+		post1.addToRelationship('tags', '5');
+
+		ok(post1.get('isDirty'));
+
+		post1.rollbackRelationships();
+
+		ok(!post1.get('isDirty'));
+		ok(post1.get('tags').isEqual(tags));
+		ok(post1.get('author') === author);
+	});
+
+	test('Changed attributes are detected correctly', function() {
+		expect(4);
+
+		var post = store.getRecord('post', '8');
+		var author = post.get('author');
+		var tags = post.get('tags').toArray();
+
+		post.setBelongsTo('author', '1');
+		post.addToRelationship('tags', '1');
+		post.addToRelationship('tags', '2');
+		post.removeFromRelationship('tags', '4');
+
+		var changed = post.changedRelationships();
+
+		ok(changed.author[0] === null);
+		ok(changed.author[1] === '1');
+		ok(new Em.Set(changed.tags[0]).isEqual(tags));
+		ok(new Em.Set(changed.tags[1]).isEqual(['1', '2']));
 	});
 
 	test('Changing a record that isn\'t loaded yet will load changes on load' , function() {
