@@ -5,7 +5,7 @@ var NEW_STATE = Eg.Relationship.NEW_STATE;
 var SAVED_STATE = Eg.Relationship.SAVED_STATE;
 var DELETED_STATE = Eg.Relationship.DELETED_STATE;
 
-var disallowedRelationshipNames = new Em.Set(['id', 'type']);
+var disallowedRelationshipNames = new Em.Set(['id', 'type', 'content']);
 
 var createRelationship = function(kind, options) {
 	Eg.debug.assert('Your relationship must specify a relatedType.', typeof options.relatedType === 'string');

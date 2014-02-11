@@ -1,4 +1,4 @@
-var disallowedAttributeNames = new Em.Set(['id', 'type']);
+var disallowedAttributeNames = new Em.Set(['id', 'type', 'content']);
 
 /**
  * Possible options:
