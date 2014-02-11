@@ -1,20 +1,13 @@
 var disallowedAttributeNames = new Em.Set(['id', 'type']);
 
-var defaultCompare = function(oldVal, newVal) {
-	return (oldVal === newVal);
-};
-
-var defaultValidity = function(value) {
-	return true;
-};
-
 /**
  * Possible options:
  * type: Type of the attribute. Required.
- * defaultValue: Value if not present when created. If omitted, property is required.
- * compare: Function to compare two instances of it. Return true if equal, false otherwise. Defaults to using ===.
+ * isRequired: Whether or not the property can be omitted from the server. Defaults to false. Uses defaultValue.
+ * defaultValue: Value if not present when created. If omitted, uses the default value for the property type.
+ * isEqual: Function to compare two instances of the property. Defaults to using the type comparison function.
  * readOnly: True if the attribute should be immutable. Defaults to false.
- * valid: A function that returns whether the value is valid or not. Defaults to always valid.
+ * isValid: A function that returns whether the value is valid or not. Defaults to using the type validity function.
  *
  * @param options
  * @returns {Em.ComputedProperty}
