@@ -5,14 +5,13 @@ require('util/string');
 require('util/inflector');
 require('util/debug');
 
-require('data/ordered_set');
 require('data/promise_object');
+
+require('relationship/relationship');
 
 require('model/model');
 require('model/attribute');
 require('model/relationship');
-
-require('relationship/relationship');
 
 require('serializer/serializer');
 

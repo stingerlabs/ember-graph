@@ -1,3 +1,7 @@
+var NEW_STATE = 'new';
+var SAVED_STATE = 'saved';
+var DELETED_STATE = 'deleted';
+
 var nextRelationshipId = 0;
 var allRelationships = {};
 
@@ -99,7 +103,7 @@ Eg.Relationship = Em.Object.extend({
 	 * @returns {Boolean}
 	 */
 	isNew: function() {
-		return this.get('state') === 'new';
+		return this.get('state') === NEW_STATE;
 	},
 
 	/**
@@ -109,7 +113,7 @@ Eg.Relationship = Em.Object.extend({
 	 * @returns {Boolean}
 	 */
 	isSaved: function() {
-		return this.get('state') === 'saved';
+		return this.get('state') === SAVED_STATE;
 	},
 
 	/**
@@ -119,7 +123,7 @@ Eg.Relationship = Em.Object.extend({
 	 * @returns {Boolean}
 	 */
 	isDeleted: function() {
-		return this.get('state') === 'deleted';
+		return this.get('state') === DELETED_STATE;
 	},
 
 	/**
@@ -184,6 +188,10 @@ Eg.Relationship = Em.Object.extend({
 
 Eg.Relationship.reopenClass({
 
+	NEW_STATE: NEW_STATE,
+	SAVED_STATE: SAVED_STATE,
+	DELETED_STATE: DELETED_STATE,
+
 	/**
 	 * Overrides the create method so the object properties
 	 * can be included in the parameters like a constructor.
@@ -195,7 +203,7 @@ Eg.Relationship.reopenClass({
 		var relationship = this._super();
 
 		Eg.debug.assert('Possible state values are new, deleted or saved.',
-			properties.state === 'new' || properties.state === 'deleted' || properties.state === 'saved');
+			properties.state === NEW_STATE || properties.state === DELETED_STATE || properties.state === SAVED_STATE);
 		Eg.debug.assert('The first object must always be a record.', properties.object1 instanceof Eg.Model);
 		Eg.debug.assert('You must include a relationship name for the first object.',
 			typeof properties.relationship1 === 'string');
@@ -247,11 +255,11 @@ Eg.Relationship.reopenClass({
 	 */
 	stateToHash: function(state) {
 		switch (state) {
-			case 'new':
+			case NEW_STATE:
 				return '_clientRelationships';
-			case 'saved':
+			case SAVED_STATE:
 				return '_serverRelationships';
-			case 'deleted':
+			case DELETED_STATE:
 				return '_deletedRelationships';
 			default:
 				Eg.debug.assert('The given state was invalid.');

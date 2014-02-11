@@ -1,6 +1,10 @@
 var BELONGS_TO_KEY = Eg.Model.BELONGS_TO_KEY = 'belongsTo';
 var HAS_MANY_KEY = Eg.Model.HAS_MANY_KEY = 'hasMany';
 
+var NEW_STATE = Eg.Relationship.NEW_STATE;
+var SAVED_STATE = Eg.Relationship.SAVED_STATE;
+var DELETED_STATE = Eg.Relationship.DELETED_STATE;
+
 var disallowedRelationshipNames = new Em.Set(['id', 'type']);
 
 Eg.hasMany = function(options) {
@@ -95,6 +99,7 @@ Eg.Model.reopenClass({
 	/**
 	 * Just a more semantic alias for `metaForProperty`
 	 * @alias metaForProperty
+	 * @static
 	 */
 	metaForRelationship: Em.aliasMethod('metaForProperty'),
 
@@ -110,6 +115,7 @@ Eg.Model.reopenClass({
 	/**
 	 * @param name The name of the relationships
 	 * @returns {String} HAS_MANY_KEY or BELONGS_TO_KEY
+	 * @static
 	 */
 	relationshipKind: function(name) {
 		return this.metaForProperty(name).kind;
@@ -288,7 +294,17 @@ Eg.Model.reopen({
 		var r = this._findLinkTo(relationship, id);
 
 		if (r !== null) {
-			this.get('store')._deleteRelationship(r.get('id'));
+			switch (r.get('state')) {
+				case NEW_STATE:
+					this.get('store')._deleteRelationship(r.get('id'));
+					break;
+				case SAVED_STATE:
+					this.get('store')._changeRelationshipState(r.get('id'), DELETED_STATE);
+					break;
+				case DELETED_STATE:
+					// NOP?
+					break;
+			}
 		}
 	},
 
@@ -305,7 +321,8 @@ Eg.Model.reopen({
 		}
 
 		if (id === null) {
-			return this.clearBelongsTo(relationship);
+			this.clearBelongsTo(relationship);
+			return;
 		}
 
 		var meta = this.constructor.metaForRelationship(relationship);
@@ -320,7 +337,17 @@ Eg.Model.reopen({
 			var r = this._findLinkTo(relationship, current);
 
 			if (r !== null) {
-				this.get('store')._deleteRelationship(r.get('id'));
+				switch (r.get('state')) {
+					case NEW_STATE:
+						this.get('store')._deleteRelationship(r.get('id'));
+						break;
+					case SAVED_STATE:
+						this.get('store')._changeRelationshipState(r.get('id'), DELETED_STATE);
+						break;
+					case DELETED_STATE:
+						// NOP?
+						break;
+				}
 			}
 		}
 	},
@@ -381,7 +408,7 @@ Eg.Model.reopen({
 	 * @private
 	 */
 	_connectRelationship: function(relationship) {
-		var hash = this._stateToHash(relationship.get('state'));
+		var hash = Eg.Relationship.stateToHash(relationship.get('state'));
 		this.set(hash + '.' + relationship.get('id'), relationship);
 		this.notifyPropertyChange(hash);
 	},
@@ -394,28 +421,8 @@ Eg.Model.reopen({
 	 * @private
 	 */
 	_disconnectRelationship: function(relationship) {
-		var hash = this._stateToHash(relationship.get('state'));
+		var hash = Eg.Relationship.stateToHash(relationship.get('state'));
 		delete this.get(hash)[relationship.get('id')];
 		this.notifyPropertyChange(hash);
-	},
-
-	/**
-	 * Given the state of a relationship, returns the hash it should be in.
-	 *
-	 * @param {String} state
-	 * @returns {String}
-	 * @private
-	 */
-	_stateToHash: function(state) {
-		switch (state) {
-			case 'new':
-				return '_clientRelationships';
-			case 'saved':
-				return '_serverRelationships';
-			case 'deleted':
-				return '_deletedRelationships';
-			default:
-				throw new Error('The given state was invalid.');
-		}
 	}
 });
