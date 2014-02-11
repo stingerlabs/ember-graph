@@ -7,16 +7,16 @@ var DELETED_STATE = Eg.Relationship.DELETED_STATE;
 
 var disallowedRelationshipNames = new Em.Set(['id', 'type']);
 
-Eg.hasMany = function(options) {
+var createRelationship = function(kind, options) {
 	Eg.debug.assert('Your relationship must specify a relatedType.', typeof options.relatedType === 'string');
 	Eg.debug.assert('Your relationship must specify an inverse relationship.',
 		options.inverse === null || typeof options.inverse === 'string');
 
 	var meta = {
 		isRelationship: true,
-		kind: HAS_MANY_KEY,
+		kind: kind,
 		isRequired: options.isRequired !== false,
-		defaultValue: options.defaultValue || [],
+		defaultValue: options.defaultValue || (kind === HAS_MANY_KEY ? [] : null),
 		relatedType: options.relatedType,
 		inverse: options.inverse,
 		readOnly: options.readOnly === true
@@ -24,35 +24,19 @@ Eg.hasMany = function(options) {
 
 	var relationship = function(key, value) {
 		Eg.debug.assert('You can\'t set relationships directly.', value === undefined);
-
-		return this._hasManyValue(key, false);
+		var fun = (kind === HAS_MANY_KEY ? '_hasManyValue' : '_belongsToValue');
+		return this[fun](key, false);
 	}.property('_serverRelationships', '_clientRelationships').meta(meta);
 
 	return (meta.readOnly ? relationship.readOnly() : relationship);
 };
 
+Eg.hasMany = function(options) {
+	return createRelationship(HAS_MANY_KEY, options);
+};
+
 Eg.belongsTo = function(options) {
-	Eg.debug.assert('Your relationship must specify a relatedType.', typeof options.relatedType === 'string');
-	Eg.debug.assert('Your relationship must specify an inverse relationship.',
-		options.inverse === null || typeof options.inverse === 'string');
-
-	var meta = {
-		isRelationship: true,
-		kind: BELONGS_TO_KEY,
-		isRequired: options.isRequired !== false,
-		defaultValue: options.defaultValue || null,
-		relatedType: options.relatedType,
-		inverse: options.inverse,
-		readOnly: options.readOnly === true
-	};
-
-	var relationship = function(key, value) {
-		Eg.debug.assert('You can\'t set relationships directly.', value === undefined);
-
-		return this._belongsToValue(key, false);
-	}.property('_serverRelationships', '_clientRelationships').meta(meta);
-
-	return (meta.readOnly ? relationship.readOnly() : relationship);
+	return createRelationship(BELONGS_TO_KEY, options);
 };
 
 Eg.Model.reopenClass({
