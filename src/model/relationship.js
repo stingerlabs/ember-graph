@@ -360,6 +360,12 @@ Eg.Model.reopen({
 		}
 	},
 
+	/**
+	 * Sets the value of a belongsTo relationship to the given ID.
+	 *
+	 * @param {String} relationship
+	 * @param {String} id
+	 */
 	setBelongsTo: function(relationship, id) {
 		var link = this._findLinkTo(relationship, id);
 		if (link && (link.get('state') === NEW_STATE || link.get('state') === SAVED_STATE)) {
@@ -387,6 +393,10 @@ Eg.Model.reopen({
 			this.get('id'), meta.relatedType, meta.inverse, id, false);
 	},
 
+	/**
+	 * Sets the value of a belongsTo relationship to `null`.
+	 * @param {String} relationship
+	 */
 	clearBelongsTo: function(relationship) {
 		var current = this.get(relationship);
 

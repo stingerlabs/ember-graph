@@ -374,6 +374,10 @@
 		ok(new Em.Set(changed.tags[1]).isEqual(['1', '2']));
 	});
 
+	test('Reloading new server data works correctly', function() {
+		expect(0);
+	});
+
 	test('Changing a record that isn\'t loaded yet will load changes on load' , function() {
 		expect(0);
 	});

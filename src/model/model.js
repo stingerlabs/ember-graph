@@ -121,6 +121,9 @@ Eg.Model = Em.Object.extend({
 		this.set('_id', null);
 		this.set('store', null);
 
+		this.set('_serverAttributes', {});
+		this.set('_clientAttributes', {});
+
 		this.set('_serverRelationships', {});
 		this.set('_clientRelationships', {});
 		this.set('_deletedRelationships', {});
@@ -132,12 +135,13 @@ Eg.Model = Em.Object.extend({
 
 	/**
 	 * Loads JSON data from the server into the record. This may be used when
-	 * the record is brand new, or when the record is being reloaded.
+	 * the record is brand new, or when the record is being reloaded. This
+	 * should generally only be used by the store or for testing purposes.
 	 */
 	_loadData: function(json) {
 		json = json || {};
 
-		this._loadAttributes(json, false);
+		this._loadAttributes(json);
 		this._loadRelationships(json);
 	},
 

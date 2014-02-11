@@ -20,14 +20,17 @@ var defaultValidity = function(value) {
  * @returns {Em.ComputedProperty}
  */
 Eg.attr = function(options) {
+	var typeTransform = Eg.AttributeType.attributeTypeForName(options.type);
+
 	var meta = {
 		isAttribute: true,
 		type: options.type,
-		isRequired: !options.hasOwnProperty('defaultValue'),
-		defaultValue: options.defaultValue,
-		compare: options.compare || defaultCompare,
+		typeTransform: typeTransform,
+		isRequired: options.hasOwnProperty('isRequired') ? options.isRequired : !options.hasOwnProperty('defaultValue'),
+		defaultValue: options.defaultValue || typeTransform.get('defaultValue'),
+		isEqual: options.isEqual || typeTransform.isEqual,
 		readOnly: options.readOnly === true,
-		valid: options.valid || defaultValidity
+		isValid: options.isValid || typeTransform.isValid
 	};
 
 	var attribute = function(key, value) {
@@ -42,12 +45,12 @@ Eg.attr = function(options) {
 		});
 
 		if (value !== undefined) {
-			if (!meta.valid(value)) {
+			if (!meta.isValid(value)) {
 				Eg.debug.warn('The value \'' + value + '\' wasn\'t valid for the \'' + key + '\' property.');
 				return current;
 			}
 
-			if (meta.compare(server, value)) {
+			if (meta.isEqual(server, value)) {
 				delete this.get('_clientAttributes')[key];
 				this.notifyPropertyChange('_clientAttributes');
 				return server;
@@ -177,30 +180,25 @@ Eg.Model.reopen({
 	/**
 	 * Loads attributes from the server.
 	 *
-	 * @param json The JSON with properties to load
-	 * @param merge False if the object is just created, false if the object is being reloaded
+	 * @param {Object} json The JSON with properties to load
 	 * @private
 	 */
-	_loadAttributes: function(json, merge) {
-		// TODO: If merge, alert observer
-
-		if (!merge) {
-			this.set('_serverAttributes', {});
-			this.set('_clientAttributes', {});
-		}
-
+	_loadAttributes: function(json) {
 		this.constructor.eachAttribute(function(name, meta) {
-			if (json.hasOwnProperty(name) || !meta.isRequired) {
-				var value = json.hasOwnProperty(name) ? json[name] : meta.defaultValue;
+			Eg.debug.assert('Your JSON is missing the \'' + name + '\' property.',
+				!meta.isRequired || json.hasOwnProperty(name));
 
-				if (meta.valid(value)) {
-					this.set('_serverAttributes.' + name, value);
-				} else {
-					throw new Error('The value \'' + value + '\' for property \'' + name + '\' is invalid.');
-				}
-			} else if (!merge) {
-				throw new Error('The given JSON doesn\'t contain the \'' + name + '\' property.');
+			var value = (json.hasOwnProperty(name) ? json[name] : meta.defaultValue);
+
+			// TODO: Do we want a way to accept non-valid value from the server?
+			if (meta.isValid(value)) {
+				this.set('_serverAttributes.' + name, value);
+			} else {
+				Eg.debug.assert('Your value for the \'' + name + '\' property is inValid.');
+				this.set('_serverAttributes.' + name, meta.defaultValue);
 			}
 		}, this);
+
+		this.notifyPropertyChange('_serverAttributes');
 	}
 });

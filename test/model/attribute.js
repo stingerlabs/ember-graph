@@ -15,26 +15,7 @@
 		}),
 
 		birthday: Eg.attr({
-			type: 'date',
-			compare: function(a, b) {
-				var aNone = Em.isNone(a);
-				var bNone = Em.isNone(b);
-
-				if (aNone && bNone) {
-					return true;
-				} else if ((aNone && !bNone) || (!aNone && bNone)) {
-					return false;
-				} else {
-					return (new Date(a).getTime() === new Date(b).getTime());
-				}
-			},
-			valid: function(value) {
-				if (value === null) {
-					return true;
-				}
-
-				return (new Date(value).getTime() <= new Date().getTime());
-			}
+			type: 'date'
 		})
 	});
 
@@ -98,7 +79,7 @@
 		throws(function() {
 			store.createRecord('test', {
 				name: 'Bob',
-				birthday: new Date(new Date().getTime() + 5000)
+				birthday: 52
 			});
 		});
 	});
@@ -132,7 +113,7 @@
 		});
 	});
 
-	test('Setting an invalid property fails', function() {
+	test('Setting an invalid property value fails', function() {
 		expect(1);
 
 		var birthday = new Date();
@@ -141,8 +122,7 @@
 			birthday: birthday
 		});
 
-
-		model.set('birthday', new Date('2020-01-01'));
+		model.set('birthday', 42);
 		ok(model.get('birthday').getTime() === birthday.getTime());
 	});
 

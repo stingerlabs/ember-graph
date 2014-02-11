@@ -20,10 +20,10 @@ require('adapter/adapter');
 require('store/store');
 require('store/relationship');
 
-require('transform/transform');
-require('transform/boolean');
-require('transform/date');
-require('transform/number');
-require('transform/string');
+require('model/attribute_type/type');
+require('model/attribute_type/boolean');
+require('model/attribute_type/date');
+require('model/attribute_type/number');
+require('model/attribute_type/string');
 
 require('test');
