@@ -22,13 +22,10 @@ var createRelationship = function(kind, options) {
 		readOnly: options.readOnly === true
 	};
 
-	var relationship = function(key, value) {
-		Eg.debug.assert('You can\'t set relationships directly.', value === undefined);
+	return function(key, value) {
 		var fun = (kind === HAS_MANY_KEY ? '_hasManyValue' : '_belongsToValue');
 		return this[fun](key, false);
-	}.property('_serverRelationships', '_clientRelationships').meta(meta);
-
-	return (meta.readOnly ? relationship.readOnly() : relationship);
+	}.property('_serverRelationships', '_clientRelationships').meta(meta).readOnly();
 };
 
 Eg.hasMany = function(options) {
@@ -342,6 +339,12 @@ Eg.Model.reopen({
 	 * @param {String} id The ID to add to the relationship
 	 */
 	addToRelationship: function(relationship, id) {
+		var meta = this.constructor.metaForRelationship(relationship);
+		Eg.debug.assert('Cannot modify a read-only relationship', meta.readOnly === false);
+		if (meta.readOnly) {
+			return;
+		}
+
 		var link = this._findLinkTo(relationship, id);
 		if (link && (link.get('state') === NEW_STATE || link.get('state') === SAVED_STATE)) {
 			return;
@@ -351,8 +354,6 @@ Eg.Model.reopen({
 			this.get('store')._changeRelationshipState(link.get('id'), SAVED_STATE);
 			return;
 		}
-
-		var meta = this.constructor.metaForRelationship(relationship);
 
 		this.get('store')._createRelationship(this.typeKey, relationship,
 			this.get('id'), meta.relatedType, meta.inverse, id, false);
@@ -366,6 +367,12 @@ Eg.Model.reopen({
 	 * @param {String} id The ID to add to the relationship
 	 */
 	removeFromRelationship: function(relationship, id) {
+		var meta = this.constructor.metaForRelationship(relationship);
+		Eg.debug.assert('Cannot modify a read-only relationship', meta.readOnly === false);
+		if (meta.readOnly) {
+			return;
+		}
+
 		var r = this._findLinkTo(relationship, id);
 
 		if (r !== null) {
@@ -390,6 +397,12 @@ Eg.Model.reopen({
 	 * @param {String} id
 	 */
 	setBelongsTo: function(relationship, id) {
+		var meta = this.constructor.metaForRelationship(relationship);
+		Eg.debug.assert('Cannot modify a read-only relationship', meta.readOnly === false);
+		if (meta.readOnly) {
+			return;
+		}
+
 		var link = this._findLinkTo(relationship, id);
 		if (link && (link.get('state') === NEW_STATE || link.get('state') === SAVED_STATE)) {
 			return;
@@ -411,7 +424,6 @@ Eg.Model.reopen({
 			return;
 		}
 
-		var meta = this.constructor.metaForRelationship(relationship);
 		this.get('store')._createRelationship(this.typeKey, relationship,
 			this.get('id'), meta.relatedType, meta.inverse, id, false);
 	},
@@ -421,6 +433,12 @@ Eg.Model.reopen({
 	 * @param {String} relationship
 	 */
 	clearBelongsTo: function(relationship) {
+		var meta = this.constructor.metaForRelationship(relationship);
+		Eg.debug.assert('Cannot modify a read-only relationship', meta.readOnly === false);
+		if (meta.readOnly) {
+			return;
+		}
+
 		var current = this.get(relationship);
 
 		if (current !== null) {
