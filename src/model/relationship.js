@@ -42,6 +42,29 @@ Eg.belongsTo = function(options) {
 Eg.Model.reopenClass({
 
 	/**
+	 * Goes through the subclass and declares an additional property for
+	 * each relationship. The properties will be capitalized and then prefixed
+	 * with 'loaded'. So rather than 'projects', use 'loadedProjects'.
+	 * This will return the relationship as a promise rather than in ID form.
+	 *
+	 * @static
+	 * @private
+	 */
+	_declareRelationships: function() {
+		this.eachRelationship(function(name, meta) {
+			var obj = {};
+
+			obj['loaded' + Eg.String.capitalize(name)] = function(key, value) {
+				Eg.debug.assert('You can\'t set relationships directly.', value === undefined);
+				var id = (meta.kind === HAS_MANY_KEY ? this.get(name).toArray() : this.get(name));
+				return this.get('store').find(meta.relatedType, id);
+			}.property(name);
+
+			this.reopen(obj);
+		}, this);
+	},
+
+	/**
 	 * @static
 	 */
 	relationships: function() {

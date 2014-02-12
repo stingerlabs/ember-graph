@@ -206,6 +206,8 @@ Eg.Model.reopenClass({
 		return function(typeKey, mixins, options) {
 			var subclass = _super.apply(this, mixins.concat([options]));
 
+			subclass._declareRelationships();
+
 			subclass.reopen({
 				typeKey: typeKey
 			});
