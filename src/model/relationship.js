@@ -22,10 +22,19 @@ var createRelationship = function(kind, options) {
 		readOnly: options.readOnly === true
 	};
 
-	return function(key, value) {
-		var fun = (kind === HAS_MANY_KEY ? '_hasManyValue' : '_belongsToValue');
-		return this[fun](key, false);
-	}.property('_serverRelationships', '_clientRelationships').meta(meta).readOnly();
+	var relationship;
+
+	if (kind === HAS_MANY_KEY) {
+		relationship = function(key) {
+			return this._hasManyValue(key);
+		};
+	} else {
+		relationship = function(key) {
+			return this._belongsToValue(key);
+		};
+	}
+
+	return relationship.property('_serverRelationships', '_clientRelationships').meta(meta).readOnly();
 };
 
 Eg.hasMany = function(options) {
@@ -51,11 +60,20 @@ Eg.Model.reopenClass({
 		this.eachRelationship(function(name, meta) {
 			var obj = {};
 
-			obj['loaded' + Eg.String.capitalize(name)] = function(key, value) {
-				Eg.debug.assert('You can\'t set relationships directly.', value === undefined);
-				var id = (meta.kind === HAS_MANY_KEY ? this.get(name).toArray() : this.get(name));
-				return this.get('store').find(meta.relatedType, id);
-			}.property(name);
+			var relationship;
+			var relatedType = meta.relatedType;
+
+			if (meta.kind === HAS_MANY_KEY) {
+				relationship = function() {
+					return this.get('store').find(relatedType, this.get(name).toArray());
+				};
+			} else {
+				relationship = function() {
+					return this.get('store').find(relatedType, this.get(name));
+				};
+			}
+
+			obj[Eg.String.capitalize(name)] = relationship.property(name).readOnly();
 
 			this.reopen(obj);
 		}, this);
@@ -71,6 +89,7 @@ Eg.Model.reopenClass({
 			if (meta.isRelationship) {
 				Eg.debug.assert('The ' + name + ' cannot be used as a relationship name.',
 					!disallowedRelationshipNames.contains(name));
+				Eg.debug.assert('Relationship names must start with a lowercase letter.', name[0].match(/[a-b]/g));
 
 				relationships.addObject(name);
 			}
@@ -85,15 +104,6 @@ Eg.Model.reopenClass({
 	 * @static
 	 */
 	metaForRelationship: Em.aliasMethod('metaForProperty'),
-
-	/**
-	 * @param name Name of property
-	 * @returns {Boolean} True if relationship, false otherwise
-	 * @static
-	 */
-	isRelationship: function(name) {
-		return Em.get(this, 'relationships').contains(name);
-	},
 
 	/**
 	 * @param name The name of the relationships

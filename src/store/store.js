@@ -249,6 +249,7 @@ Eg.Store = Em.Object.extend({
 	 * @private
 	 */
 	_findMany: function(type, ids) {
+		ids = ids || [];
 		var set = new Em.Set(ids);
 
 		ids.forEach(function(id) {
@@ -257,13 +258,22 @@ Eg.Store = Em.Object.extend({
 			}
 		}, this);
 
-		var promise = this.get('adapter').findMany(type, set.toArray()).then(function(payload) {
-			this._extractPayload(payload);
+		// TODO: If we have them all, don't go to the adapter
+		var promise;
 
-			return ids.map(function(id) {
+		if (set.length === 0) {
+			promise = Em.RSVP.Promise.resolve(ids.map(function(id) {
 				return this.getRecord(type, id);
-			}, this).toArray();
-		}.bind(this));
+			}, this));
+		} else {
+			promise = this.get('adapter').findMany(type, set.toArray()).then(function(payload) {
+				this._extractPayload(payload);
+
+				return ids.map(function(id) {
+					return this.getRecord(type, id);
+				}, this).toArray();
+			}.bind(this));
+		}
 
 		return Eg.PromiseArray.create({ promise: promise });
 	},

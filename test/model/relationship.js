@@ -455,4 +455,45 @@
 		user.rollbackRelationships();
 		ok(user.get('posts').contains('50'));
 	});
+
+	asyncTest('Loading a belongsTo relationship fully returns the correct record', function() {
+		expect(2);
+
+		var post = store.getRecord('post', '1');
+		var user = store.getRecord('user', '1');
+		var promise = post.get('Author');
+
+		start();
+		ok(promise instanceof Eg.PromiseObject);
+		stop();
+
+		promise.then(function(author) {
+			start(0);
+			ok(user === author);
+		});
+	});
+
+	asyncTest('Loading a hasMany relationship fully returns the correct records', function() {
+		expect(3);
+
+		var user = store.getRecord('user', '1');
+		var post1 = store.getRecord('post', '1');
+		var post2 = store.getRecord('post', '2');
+
+		var promise = user.get('Posts');
+
+		start();
+		ok(promise instanceof Eg.PromiseArray);
+		stop();
+
+		promise.then(function(posts) {
+			start(0);
+
+			var set1 = new Em.Set(posts);
+			var set2 = new Em.Set([post1, post2]);
+
+			ok(posts.length === 2);
+			ok(set1.isEqual(set2));
+		});
+	});
 })();
