@@ -63,26 +63,28 @@
 		ok(model.get('posts') === 0);
 	});
 
-	test('Creating an object with a missing required property throws', function() {
-		expect(1);
+	if (window.DEBUG_MODE === true) {
+		test('Creating an object with a missing required property throws', function() {
+			expect(1);
 
-		throws(function() {
-			store.createRecord('test', {
-				name: 'Bob'
+			throws(function() {
+				store.createRecord('test', {
+					name: 'Bob'
+				});
 			});
 		});
-	});
 
-	test('Creating an object with an invalid property value throws', function() {
-		expect(1);
+		test('Creating an object with an invalid property value throws', function() {
+			expect(1);
 
-		throws(function() {
-			store.createRecord('test', {
-				name: 'Bob',
-				birthday: 52
+			throws(function() {
+				store.createRecord('test', {
+					name: 'Bob',
+					birthday: 52
+				});
 			});
 		});
-	});
+	}
 
 	test('Setting attributes sets them correctly', function() {
 		expect(2);

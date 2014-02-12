@@ -91,21 +91,23 @@
 		});
 	});
 
-	test('A temporary ID for object 2 throws', function() {
-		expect(1);
+	if (window.DEBUG_MODE === true) {
+		test('A temporary ID for object 2 throws', function() {
+			expect(1);
 
-		var temp = store.createRecord('test1');
+			var temp = store.createRecord('test1');
 
-		throws(function() {
-			Eg.Relationship.create({
-				object1: temp,
-				relationship1: 'children',
-				object2: Eg.Model.temporaryIdPrefix + 'foo',
-				relationship2: 'parent',
-				state: 'new'
+			throws(function() {
+				Eg.Relationship.create({
+					object1: temp,
+					relationship1: 'children',
+					object2: Eg.Model.temporaryIdPrefix + 'foo',
+					relationship2: 'parent',
+					state: 'new'
+				});
 			});
 		});
-	});
+	}
 
 	test('relationship2 can be null', function() {
 		expect(1);

@@ -2,6 +2,10 @@ Eg.debug = function(fn) {
 	fn();
 };
 
+Eg.debug(function() {
+	window.DEBUG_MODE = true;
+});
+
 Eg.debug.assert = function(message, test) {
 	if (typeof message !== 'string') {
 		test = message;
