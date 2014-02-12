@@ -380,6 +380,8 @@ Eg.Store = Em.Object.extend({
 	 * @returns {Promise} The reloaded record
 	 */
 	reloadRecord: function(record) {
+		Eg.debug.assert('You can\'t reload record `' + record.typeKey + ':' +
+			record.get('id') + '` while it\'s dirty.', !record.get('isDirty'));
 		record.set('isReloading', true);
 
 		return this.get('adapter').find(record.typeKey, record.get('id')).then(function(payload) {
@@ -397,7 +399,13 @@ Eg.Store = Em.Object.extend({
 				var record = this.getRecord(typeKey, json.id);
 
 				if (record) {
-					record._loadData(json);
+					// TODO: Reloading dirty records
+					if (!record.get('isDirty')) {
+						record._loadData(json);
+					} else {
+						Eg.debug.warn('The record `' + typeKey + ':' + json.id + '` was attempted to be' +
+							'reloaded while dirty.');
+					}
 				} else {
 					this._loadRecord(typeKey, json);
 				}

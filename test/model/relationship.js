@@ -374,15 +374,85 @@
 		ok(new Em.Set(changed.tags[1]).isEqual(['1', '2']));
 	});
 
-	test('Reloading new server data works correctly', function() {
-		expect(0);
+	test('Reloading a changed belongsTo from the server works correctly (clean record)', function() {
+		expect(2);
+
+		var post = store.getRecord('post', '1');
+		post._loadData({
+			author: '50',
+			tags: post.get('tags').toArray()
+		});
+
+		ok(post.get('author') === '50');
+		var user = store.getRecord('user', '1');
+		ok(!user.get('posts').contains('1'));
+	});
+
+	test('Reloading a cleared belongsTo from the server works correctly (clean record)', function() {
+		expect(2);
+
+		var post = store.getRecord('post', '1');
+		post._loadData({
+			author: null,
+			tags: post.get('tags').toArray()
+		});
+
+		ok(post.get('author') === null);
+		var user = store.getRecord('user', '1');
+		ok(!user.get('posts').contains('1'));
+	});
+
+	test('Reloading a changed hasMany from the server works correctly (clean record)', function() {
+		expect(3);
+
+		var user = store.getRecord('user', '1');
+		user._loadData({
+			posts: ['1', '50', '51']
+		});
+
+		var post1 = store.getRecord('post', '1');
+		var post2 = store.getRecord('post', '2');
+
+		ok(user.get('posts').isEqual(['1', '50', '51']));
+		ok(post1.get('author') === '1');
+		ok(post2.get('author') === null);
+	});
+
+	test('Reloading a record with missing relationships loads the defaults correctly', function() {
+		expect(3);
+
+		var post = store.getRecord('post', '1');
+		var user = store.getRecord('user', post.get('author'));
+		post._loadData({});
+
+		ok(post.get('author') === null);
+		ok(!user.get('posts').contains('1'));
+		ok(post.get('tags').isEqual(['0']));
 	});
 
 	test('Changing a record that isn\'t loaded yet will load changes on load' , function() {
-		expect(0);
+		expect(4);
+
+		var user = store.getRecord('user', '3');
+		ok(user.get('posts').contains('7'));
+		user.removeFromRelationship('posts', '7');
+		ok(!user.get('posts').contains('7'));
+
+		var post = store._loadRecord('post', { id: '7', author: '3', tags: [] });
+
+		ok(post.get('author') === null);
+		post.rollbackRelationships();
+		ok(post.get('author') === '3');
 	});
 
 	test('A new permanent record loaded creates new server relationships', function() {
-		expect(0);
+		expect(3);
+
+		var post = store._loadRecord('post', { id: '50', author: '1' });
+		ok(post.get('author') === '1');
+		var user = store.getRecord('user', '1');
+		ok(user.get('posts').contains('50'));
+		user.rollbackRelationships();
+		ok(user.get('posts').contains('50'));
 	});
 })();
