@@ -1,7 +1,7 @@
 module.exports = {
 	compile: {
 		files: {
-			'ember-graph.js': 'ember-graph.js'
+			'ember-graph.prod.js': 'ember-graph.js'
 		},
 
 		options: {

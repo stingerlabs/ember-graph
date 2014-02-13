@@ -6,7 +6,7 @@ module.exports = {
 
 	release: {
 		files: {
-			'ember-graph.js': 'ember-graph.js'
+			'ember-graph.min.js': 'ember-graph.prod.js'
 		}
 	}
 };
