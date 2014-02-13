@@ -1,0 +1,16 @@
+{
+	"name": "ember-graph",
+	"version": "0.1.0",
+	"main": ["ember-graph.js", "ember-graph.prod.js", "ember-graph.min.js"],
+	"ignore": [
+		"**/*."
+	],
+	"dependencies": {
+		"ember": "1.3.2"
+	},
+	"devDependencies": {
+		"qunit": "1.14",
+		"primer": "git@github.com:gordonkristan/primer.git"
+	},
+	"private": true
+}
