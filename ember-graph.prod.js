@@ -3,6 +3,14 @@
 window.EmberGraph = {};
 window.Eg = window.EmberGraph;
 
+if (Ember.libraries) {
+	// Neuter will take care of inserting the version number from bower.json
+	var VERSION = '0.1.0';
+
+	Ember.libraries.register('Ember Graph', VERSION);
+}
+
+
 })();
 
 (function() {

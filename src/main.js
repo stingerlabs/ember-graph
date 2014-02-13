@@ -1,4 +1,12 @@
-require('global');
+window.EmberGraph = {};
+window.Eg = window.EmberGraph;
+
+if (Ember.libraries) {
+	// Neuter will take care of inserting the version number from bower.json
+	var VERSION = '<%= version %>';
+
+	Ember.libraries.register('Ember Graph', VERSION);
+}
 
 require('util/util');
 require('util/string');

@@ -1,6 +1,5 @@
 {
 	"name": "ember-graph",
-	"version": "0.0.1",
 	"devDependencies": {
 		"grunt": "0.4.2",
 		"grunt-contrib-qunit": "0.4.0",
