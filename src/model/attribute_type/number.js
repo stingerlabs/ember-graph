@@ -1,7 +1,5 @@
 /**
- * The number type expects only numbers from the server and expects you
- * to only set number property types to number values. By default, the
- * validity function will prevent you from setting the value to a non-number.
+ * Will coerce any type to a number (0 being the default). `null` is not a valid value.
  */
 Eg.NumberType = Eg.AttributeType.extend({
 
@@ -9,6 +7,22 @@ Eg.NumberType = Eg.AttributeType.extend({
 	 * The default value to use if a value of this type is missing.
 	 */
 	defaultValue: 0,
+
+	/**
+	 * @param {*} obj Javascript object
+	 * @returns {Object} JSON representation
+	 */
+	serialize: function(obj) {
+		return Number(obj) || 0;
+	},
+
+	/**
+	 * @param {Object} json JSON representation of object
+	 * @returns {*} Javascript object
+	 */
+	deserialize: function(json) {
+		return Number(json) || 0;
+	},
 
 	/**
 	 * @param {*} obj Javascript object

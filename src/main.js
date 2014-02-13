@@ -14,7 +14,8 @@ require('model/attribute_type/boolean');
 require('model/attribute_type/date');
 require('model/attribute_type/number');
 require('model/attribute_type/string');
-
+require('model/attribute_type/object');
+require('model/attribute_type/array');
 
 require('model/model');
 require('model/attribute');

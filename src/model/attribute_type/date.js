@@ -1,8 +1,8 @@
 /**
- * The date type expects only timestamps from the server and expects you
- * to only the set date property types to date objects. By default, the
- * validity function will prevent you from setting the value to a non-date.
- * Note: `null` counts as a valid date value.
+ * When serializing, will coerce to a timestamp. Numbers, dates and strings are are converted to dates,
+ * then timestamps. Everything else serializes to null.
+ *
+ * When deserializing, numbers and strings are converted to dates, everything is is converted to null.
  */
 Eg.DateType = Eg.AttributeType.extend({
 
@@ -11,7 +11,15 @@ Eg.DateType = Eg.AttributeType.extend({
 	 * @returns {Object} JSON representation
 	 */
 	serialize: function(obj) {
-		return (obj === null ? null : obj.getTime());
+		if (obj instanceof Date) {
+			return obj.getTime();
+		} else if (typeof obj === 'number') {
+			return obj;
+		} else if (typeof obj === 'string') {
+			return new Date(obj).getTime();
+		} else {
+			return null;
+		}
 	},
 
 	/**
@@ -19,7 +27,11 @@ Eg.DateType = Eg.AttributeType.extend({
 	 * @returns {*} Javascript object
 	 */
 	deserialize: function(json) {
-		return (json === null ? null : new Date(json));
+		if (typeof obj === 'number' || typeof obj === 'string') {
+			return new Date(obj);
+		} else {
+			return null;
+		}
 	},
 
 	/**

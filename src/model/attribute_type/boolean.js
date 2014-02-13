@@ -1,7 +1,5 @@
 /**
- * The boolean type expects only booleans from the server and expects you
- * to only set boolean property types to boolean values. By default, the
- * validity function will prevent you from setting the value to a non-boolean.
+ * Will coerce any type to a boolean (`null` being the default). `null` is not a valid value.
  */
 Eg.BooleanType = Eg.AttributeType.extend({
 
@@ -9,6 +7,22 @@ Eg.BooleanType = Eg.AttributeType.extend({
 	 * The default value to use if a value of this type is missing.
 	 */
 	defaultValue: false,
+
+	/**
+	 * @param {*} obj Javascript object
+	 * @returns {Object} JSON representation
+	 */
+	serialize: function(obj) {
+		return !!obj;
+	},
+
+	/**
+	 * @param {Object} json JSON representation of object
+	 * @returns {*} Javascript object
+	 */
+	deserialize: function(json) {
+		return !!json;
+	},
 
 	/**
 	 * @param {*} obj Javascript object

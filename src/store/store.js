@@ -258,7 +258,6 @@ Eg.Store = Em.Object.extend({
 			}
 		}, this);
 
-		// TODO: If we have them all, don't go to the adapter
 		var promise;
 
 		if (set.length === 0) {
