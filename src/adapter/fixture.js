@@ -1,53 +1,58 @@
-var missingMethod = function(method) {
-	return new Error('Your adapter failed to implement the \'' + method + '\' method.');
-};
-
 /**
- * An interface for an adapter. And adapter is used to communicated with
- * the server. The adapter is never called directly, its methods are
- * called by the store to perform its operations.
- *
- * The adapter should return normalized JSON from its operations. Normalized JSON
- * is a single object whose keys are the type names of the records being returned.
- * The JSON cannot contain any other keys. The value of each key will be the
- * records of that type that were returned by the server. The records must be
- * in normalized JSON form which means that they must contain an `id` field,
- * and they must contain the required attributes and relationships to
- * create a record of that type.
- *
- * Example:
- * {
- *     user: [{ id: 3, posts: [1,2] }],
- *     post: [{ id: 1 }, { id: 2 }]
- * }
- *
- * @class {Adapter}
+ * @class FixtureAdapter
  */
-Eg.Adapter = Em.Object.extend({
+Eg.FixtureAdapter = Eg.Adapter.extend({
 
 	/**
-	 * The store that this adapter belongs to.
-	 * This might be needed to get models and their metadata.
+	 * typeKey -> record ID -> Record
+	 *
+	 * @type {Object.<String, Object.<String, Object>>
 	 */
-	store: null,
+	_fixtures: null,
 
 	/**
-	 * Should be overridden with a serializer instance. This class will
-	 * proxy to the serializer for the serialize methods of this class.
+	 * Initializes the _fixtures object.
 	 */
-	serializer: null,
+	init: function() {
+		var adapter = this._super();
+		this.set('_fixtures', {});
+		return adapter;
+	},
 
 	/**
-	 * Observer method to set the store property on the serializer.
-	 * @private
+	 * Register models with the adapter.
+	 *
+	 * @param {String} typeKey
+	 * @param {Object[]} fixtures
 	 */
-	_serializerDidChange: function() {
-		var serializer = this.get('serializer');
+	registerFixtures: function(typeKey, fixtures) {
+		var _fixtures = this.get('_fixtures');
+		_fixtures[typeKey] = _fixtures[typeKey] || {};
 
-		if (serializer) {
-			serializer.set('store', this.get('store'));
-		}
-	}.observes('serializer').on('init'),
+		var type = this.get('store').modelForType(typeKey);
+		var verify = function(record) {
+			if (typeof record.id !== 'string') {
+				throw new Error('Fixture records must have an `id` property.');
+			}
+
+			type.eachAttribute(function(name, meta) {
+				if (meta.isRequired && !record.hasOwnProperty(name)) {
+					throw new Error('Your fixture record was missing the `' + name + '` property.');
+				}
+			});
+
+			type.eachRelationship(function(name, meta) {
+				if (meta.isRequired && !record.hasOwnProperty(name)) {
+					throw new Error('Your fixture record was missing the `' + name + '` relationship.');
+				}
+			});
+		};
+
+		fixtures.forEach(function(record) {
+			verify(record);
+			_fixtures[typeKey][record.id] = record;
+		}, this);
+	},
 
 	/**
 	 * Persists a record to the server. This method returns normalized JSON
@@ -61,7 +66,9 @@ Eg.Adapter = Em.Object.extend({
 	 * @returns {Promise} A promise that resolves to normalized JSON
 	 */
 	createRecord: function(record) {
-		throw missingMethod('createRecord');
+		var json = this.serialize(record);
+		this.get('_fixtures')[record.typeKey][json.id] = json;
+		return Em.RSVP.Promise.resolve({});
 	},
 
 	/**
@@ -72,7 +79,9 @@ Eg.Adapter = Em.Object.extend({
 	 * @returns {Promise} A promise that resolves to normalized JSON
 	 */
 	findRecord: function(typeKey, id) {
-		throw missingMethod('findRecord');
+		var json = {};
+		json[typeKey] = [this.get('_fixtures')[typeKey][id]];
+		return Em.RSVP.Promise.resolve(json);
 	},
 
 	/**
@@ -84,7 +93,11 @@ Eg.Adapter = Em.Object.extend({
 	 * @returns {Promise} A promise that resolves to normalized JSON
 	 */
 	findMany: function(typeKey, ids) {
-		throw missingMethod('findMany');
+		var json = {};
+		json[typeKey] = ids.map(function(id) {
+			return this.get('_fixtures')[typeKey][id];
+		}, this);
+		return Em.RSVP.Promise.resolve(json);
 	},
 
 	/**
@@ -96,7 +109,7 @@ Eg.Adapter = Em.Object.extend({
 	 * @returns {Promise} A promise that resolves to normalized JSON
 	 */
 	findAll: function(typeKey, ids) {
-		throw missingMethod('findAll');
+		return this.findMany(typeKey, Em.keys(this.get('_fixtures')[typeKey]));
 	},
 
 	/**
@@ -112,7 +125,7 @@ Eg.Adapter = Em.Object.extend({
 	 * @returns {Promise} A promise that resolves to normalized JSON
 	 */
 	findQuery: function(typeKey, query, ids) {
-		throw missingMethod('findQuery');
+		throw new Error('The fixture adapter doesn\'t implement `findQuery`.');
 	},
 
 	/**
@@ -122,7 +135,9 @@ Eg.Adapter = Em.Object.extend({
 	 * @returns {Promise} A promise that resolves to normalized JSON
 	 */
 	updateRecord: function(record) {
-		throw missingMethod('updateRecord');
+		var json = this.serialize(record);
+		this.get('_fixtures')[record.typeKey][json.id] = json;
+		return Em.RSVP.Promise.resolve({});
 	},
 
 	/**
@@ -132,20 +147,26 @@ Eg.Adapter = Em.Object.extend({
 	 * @returns {Promise} A promise that resolves to normalized JSON
 	 */
 	deleteRecord: function(record) {
-		throw missingMethod('deleteRecord');
+		delete this.get('_fixtures')[record.typeKey][record.get('id')];
+		return Em.RSVP.Promise.resolve({});
 	},
 
 	/**
 	 * Proxies to the serializer of this class.
 	 */
 	serialize: function(record, options) {
-		return this.get('serializer').serialize(record, options);
-	},
+		var json = {};
 
-	/**
-	 * Proxies to the serializer of this class.
-	 */
-	deserialize: function(payload, options) {
-		return this.get('serializer').deserialize(payload, options);
+		json.id = record.get('id');
+
+		record.constructor.eachAttribute(function(name, meta) {
+			json[name] = record.get(name);
+		});
+
+		record.constructor.eachRelationship(function(name, meta) {
+			json[name] = record.get(name);
+		});
+
+		return json;
 	}
 });

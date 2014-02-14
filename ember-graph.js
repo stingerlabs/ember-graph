@@ -1910,7 +1910,7 @@ var methodMissing = function(method) {
  * objects back and forth between the JSON that the server uses,
  * and the records that are used on the client side.
  *
- * @type {Serializer}
+ * @class {Serializer}
  */
 Eg.Serializer = Em.Object.extend({
 
@@ -2034,7 +2034,7 @@ Eg.Adapter = Em.Object.extend({
 	 * promise can return any type of enumerable containing the records.
 	 *
 	 * @param {String} typeKey
-	 * @param {Enumerable} ids Enumerable of IDs
+	 * @param {String[]} ids Enumerable of IDs
 	 * @returns {Promise} A promise that resolves to normalized JSON
 	 */
 	findMany: function(typeKey, ids) {
@@ -2046,7 +2046,7 @@ Eg.Adapter = Em.Object.extend({
 	 * The promise can return any type of enumerable containing the records.
 	 *
 	 * @param {String} typeKey
-	 * @param {Enumerable} ids The IDs of records of this type that the store already has
+	 * @param {String[]} ids The IDs of records of this type that the store already has
 	 * @returns {Promise} A promise that resolves to normalized JSON
 	 */
 	findAll: function(typeKey, ids) {
@@ -2062,7 +2062,7 @@ Eg.Adapter = Em.Object.extend({
 	 *
 	 * @param {String} typeKey
 	 * @param {Object} query The query parameters that were passed into `find` earlier
-	 * @param {Enumerable} ids The IDs of records of this type that the store already has
+	 * @param {String[]} ids The IDs of records of this type that the store already has
 	 * @returns {Promise} A promise that resolves to normalized JSON
 	 */
 	findQuery: function(typeKey, query, ids) {

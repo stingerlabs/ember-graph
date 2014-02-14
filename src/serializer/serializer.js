@@ -7,7 +7,7 @@ var methodMissing = function(method) {
  * objects back and forth between the JSON that the server uses,
  * and the records that are used on the client side.
  *
- * @type {Serializer}
+ * @class {Serializer}
  */
 Eg.Serializer = Em.Object.extend({
 
