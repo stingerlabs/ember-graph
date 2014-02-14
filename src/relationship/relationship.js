@@ -28,7 +28,21 @@ Eg.Relationship = Em.Object.extend({
 	 *
 	 * @type {String}
 	 */
-	state: null,
+	state: (function() {
+		var state = NEW_STATE;
+
+		return function(key, value) {
+			if (arguments.length > 1) {
+				if (value === NEW_STATE || value === SAVED_STATE || value === DELETED_STATE) {
+					state = value;
+				} else {
+					throw new Error('\'' + value + '\' is an invalid relationship state.');
+				}
+			}
+
+			return state;
+		};
+	})(),
 
 	/**
 	 * The first object of this relationship. This object must always
@@ -265,5 +279,36 @@ Eg.Relationship.reopenClass({
 				Eg.debug.assert('The given state was invalid.');
 				return '';
 		}
+	},
+
+	/**
+	 * Gets all relationships related to the given record.
+	 *
+	 * @param {String} typeKey
+	 * @param {String} name
+	 * @param {String} id
+	 * @returns {Boolean}
+	 */
+	relationshipsForRecord: function(typeKey, name, id) {
+		return Eg.util.values(allRelationships).filter(function(relationship) {
+			if (relationship.get('type1') === typeKey && relationship.get('id') === id &&
+				relationship.get('relationship1') === name) {
+				return true;
+			}
+
+			if (relationship.get('type2') === typeKey && relationship.get('relationship2') === name) {
+				var object2 = relationship.get('object2');
+
+				if (typeof object2 === 'string') {
+					if (object2 === id) {
+						return true;
+					}
+				} else if (object2.get('id') === id) {
+					return true;
+				}
+			}
+
+			return false;
+		});
 	}
 });

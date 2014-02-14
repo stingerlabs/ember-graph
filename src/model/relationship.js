@@ -89,7 +89,7 @@ Eg.Model.reopenClass({
 			if (meta.isRelationship) {
 				Eg.debug.assert('The ' + name + ' cannot be used as a relationship name.',
 					!disallowedRelationshipNames.contains(name));
-				Eg.debug.assert('Relationship names must start with a lowercase letter.', name[0].match(/[a-b]/g));
+				Eg.debug.assert('Relationship names must start with a lowercase letter.', name[0].match(/[a-z]/g));
 
 				relationships.addObject(name);
 			}
@@ -238,7 +238,6 @@ Eg.Model.reopen({
 	 * @private
 	 */
 	_loadRelationships: function(json) {
-		// TODO: Don't delete client side relationships
 		var store = this.get('store');
 
 		this.constructor.eachRelationship(function(name, meta) {
@@ -270,7 +269,7 @@ Eg.Model.reopen({
 						return;
 					}
 
-					store._createRelationship(this.typeKey, name,
+					this._createRelationship(this.typeKey, name,
 						this.get('id'), meta.relatedType, meta.inverse, id, true);
 				}, this);
 			} else {
@@ -284,11 +283,71 @@ Eg.Model.reopen({
 				}
 
 				if (json[name] !== null) {
-					store._createRelationship(this.typeKey, name,
+					this._createRelationship(this.typeKey, name,
 						this.get('id'), meta.relatedType, meta.inverse, json[name], true);
 				}
 			}
 		}, this);
+	},
+
+	/**
+	 * Creates a new relationship in the same manner that the store would. Only this
+	 * will ensure that conflicting relationships are properly deleted first. To aid
+	 * in this process, type1, relationship1 and id1 should always be the data
+	 * corresponding to `this`.
+	 *
+	 * @param {String} type1
+	 * @param {String} relationship1
+	 * @param {String} id1
+	 * @param {String} type2
+	 * @param {String} relationship2
+	 * @param {String} id2
+	 * @param {Boolean} saved True if a server side relationship, false if a client side relationship
+	 */
+	_createRelationship: function(type1, relationship1, id1, type2, relationship2, id2, saved) { // jshint ignore:line
+		var store = this.get('store');
+		var meta = this.constructor.metaForRelationship(relationship1);
+
+		if (meta.inverse !== null) {
+			var otherType = store.modelForType(type2);
+			var otherMeta = otherType.metaForRelationship(relationship2);
+
+			if (otherMeta.kind === BELONGS_TO_KEY) {
+				var conflicting = Eg.Relationship.relationshipsForRecord(type2, relationship2, id2);
+
+				if (saved) {
+					conflicting.forEach(function(conflict) {
+						switch (conflict.get('state')) {
+							case DELETED_STATE:
+								// NOP
+								break;
+							case SAVED_STATE:
+								store._changeRelationshipState(conflict.get('id'), DELETED_STATE);
+								break;
+							case NEW_STATE:
+								// store._deleteRelationship(conflict.get('id'));
+								break;
+						}
+					}, this);
+				} else {
+					conflicting.forEach(function(conflict) {
+						switch (conflict.get('state')) {
+							case DELETED_STATE:
+								// NOP
+								break;
+							case SAVED_STATE:
+								store._changeRelationshipState(conflict.get('id'), DELETED_STATE);
+								break;
+							case NEW_STATE:
+								store._deleteRelationship(conflict.get('id'));
+								break;
+						}
+					}, this);
+				}
+			}
+		}
+
+		store._createRelationship(type1, relationship1, id1, type2, relationship2, id2, saved);
 	},
 
 	/**
@@ -365,7 +424,7 @@ Eg.Model.reopen({
 			return;
 		}
 
-		this.get('store')._createRelationship(this.typeKey, relationship,
+		this._createRelationship(this.typeKey, relationship,
 			this.get('id'), meta.relatedType, meta.inverse, id, false);
 	},
 
@@ -434,7 +493,7 @@ Eg.Model.reopen({
 			return;
 		}
 
-		this.get('store')._createRelationship(this.typeKey, relationship,
+		this._createRelationship(this.typeKey, relationship,
 			this.get('id'), meta.relatedType, meta.inverse, id, false);
 	},
 

@@ -1,6 +1,3 @@
-var HAS_MANY_KEY = Eg.Model.HAS_MANY_KEY;
-var BELONGS_TO_KEY = Eg.Model.BELONGS_TO_KEY;
-
 /**
  * @class {JSONSerializer}
  */
@@ -22,7 +19,7 @@ Eg.JSONSerializer = Em.Object.extend({
 		var json = {};
 
 		if (options.includeId) {
-			json.id = json.get('id');
+			json.id = record.get('id');
 		}
 
 		record.constructor.eachAttribute(function(name, meta) {
@@ -30,18 +27,22 @@ Eg.JSONSerializer = Em.Object.extend({
 			json[name] = type.serialize(record.get(name));
 		}, this);
 
+		if (Em.get(record.constructor, 'relationships').length > 0) {
+			json.links = {};
+		}
+
 		record.constructor.eachRelationship(function(name, meta) {
 			var val = record.get(name);
 
-			if (meta.kind === HAS_MANY_KEY) {
-				json[name] = val.filter(function(id) {
+			if (meta.kind === Eg.Model.HAS_MANY_KEY) {
+				json.links[name] = val.filter(function(id) {
 					return (!Eg.Model.isTemporaryId(id));
 				});
 			} else {
 				if (val === null || Eg.Model.isTemporaryId(val)) {
-					json[name] = null;
+					json.links[name] = null;
 				} else {
-					json[name] = val;
+					json.links[name] = val;
 				}
 			}
 		});
@@ -58,33 +59,120 @@ Eg.JSONSerializer = Em.Object.extend({
 	 * @returns {Object} Normalized JSON Payload
 	 */
 	deserialize: function(payload, options) {
+		var json = this._extract(payload);
 
-	},
-
-	_extract: function(payload) {
-		var json = (payload.hasOwnProperty('linked') ? this._extract(json.linked) : {});
-
-		Em.keys(payload).forEach(function(key) {
-			if (key === 'meta' || key === 'linked') {
-				return;
-			}
-
-			var normalized = payload[key].map(function(record) {
-				return this._extractSingle(record);
-			}, this).filter(function(record) { return !!record; });
-
-			//json[Eg.String.singularize(key)];
+		Em.keys(json).forEach(function(typeKey) {
+			json[typeKey] = json[typeKey].map(function(record) {
+				return this._deserializeSingle(typeKey, record);
+			}, this).filter(function(item) { return !!item; });
 		}, this);
 
 		return json;
 	},
 
-	_extractSingle: function(typeKey, json) {
-		// extract id
-		// extract relationships (copy them)
-		// ensure that no extra relationships exist
-		// extract attributes (copy them) (deserialize them as well)
-		// ensure that no extra attributes exist
-		// log any errors and return null
+	/**
+	 * Takes the JSON payload and converts it halfway to normalized JSON.
+	 * The records are all in the correct arrays, but the individual
+	 * records themselves have yet to be deserialized.
+	 *
+	 * @param {Object} payload
+	 * @returns {Object} Normalized JSON
+	 * @private
+	 */
+	_extract: function(payload) {
+		var json = (payload.hasOwnProperty('linked') ? this._extract(payload.linked) : {});
+
+		Em.keys(payload).forEach(function(key) {
+			if (key === 'linked' || key === 'meta') {
+				return;
+			}
+
+			var typeKey = key.singularize();
+			json[typeKey] = payload[key].concat(json[typeKey] || []);
+		}, this);
+
+		return json;
+	},
+
+	/**
+	 * Deserializes individual records. First it converts the ID to a string.
+	 * Then it extracts all attributes, making sure all required attributes
+	 * exist, and no extras are found. It repeats the process for the,
+	 * relationships only it converts all IDs to strings in the process.
+	 *
+	 * @param typeKey
+	 * @param json
+	 * @returns {null}
+	 * @private
+	 */
+	_deserializeSingle: function(typeKey, json) {
+		try {
+			json = json || {};
+			json.links = json.links || {};
+
+			var model = this.get('store').modelForType(typeKey);
+			var record = { id: json.id + '' };
+
+			Eg.debug(function() {
+				var attributes = model.get('attributes');
+				var givenAttributes = new Em.Set(Em.keys(json));
+				givenAttributes.removeObject(['id', 'links']);
+				var extra = givenAttributes.without(attributes);
+
+				if (extra.length > 0) {
+					throw new Error('Your JSON contained extra attributes: ' + extra.toArray().join(','));
+				}
+
+				model.eachAttribute(function(name, meta) {
+					if (!json.hasOwnProperty(name) && meta.isRequired) {
+						throw new Error('Your JSON is missing the required `' + name + '` attribute.');
+					}
+				});
+			});
+
+			Em.keys(json).forEach(function(attribute) {
+				if (attribute === 'id' || attribute === 'links') {
+					return;
+				}
+
+				var meta = model.metaForAttribute(attribute);
+				var type = Eg.AttributeType.attributeTypeForName(meta.type);
+				record[attribute] = type.deserialize(json[attribute]);
+			});
+
+			Eg.debug(function() {
+				var relationships = model.get('relationships');
+				var givenRelationships = new Em.Set(Em.keys(json));
+				givenRelationships.removeObject(['id', 'links']);
+				var extra = givenRelationships.without(relationships);
+
+				if (extra.length > 0) {
+					throw new Error('Your JSON contained extra relationships: ' + extra.toArray().join(','));
+				}
+
+				model.eachRelationship(function(name, meta) {
+					if (!json.links.hasOwnProperty(name) && meta.isRequired) {
+						throw new Error('Your JSON is missing the required `' + name + '` relationship.');
+					}
+				});
+			});
+
+			Em.keys(json.links).forEach(function(relationship) {
+				var meta = model.metaForRelationship(relationship);
+
+				if (meta.kind === Eg.Model.HAS_MANY_KEY) {
+					record[relationship] = json[relationship].map(function(id) {
+						return '' + id;
+					});
+				} else {
+					record[relationship] = '' + json[relationship];
+				}
+			});
+
+			return record;
+		} catch (e) {
+			Eg.debug.warn(e);
+			return null;
+		}
 	}
 });

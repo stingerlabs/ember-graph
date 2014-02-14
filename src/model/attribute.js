@@ -67,6 +67,7 @@ Eg.Model.reopenClass({
 
 	/**
 	 * @static
+	 * @type {Set}
 	 */
 	attributes: function() {
 		var attributes = new Em.Set();

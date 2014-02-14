@@ -98,7 +98,7 @@ Eg.Store.reopen({
 		}
 
 		if (record1._isLinkedTo(relationship1, id2)) {
-			// Do we need to check both sides, or can we assume consistency?
+			// TODO: Do we need to check both sides, or can we assume consistency?
 			return;
 		}
 

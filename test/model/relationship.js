@@ -496,4 +496,31 @@
 			ok(set1.isEqual(set2));
 		});
 	});
+
+	test('Client relationships can override server relationships', function() {
+		expect(3);
+
+		var post = store.getRecord('post', '1');
+		ok(post.get('author') === '1');
+
+		var user = store.createRecord('user', { posts: ['1'] });
+		ok(user.get('posts').contains('1'));
+		ok(post.get('author') === user.get('id'));
+	});
+
+	test('A server side relationship on a non-loaded record can be overridden by a client side one', function() {
+		expect(7);
+
+		var user1 = store.getRecord('user', '1');
+		var user3 = store.getRecord('user', '3');
+		ok(!user1.get('posts').contains('7'));
+		ok(user3.get('posts').contains('7'));
+		user1.addToRelationship('posts', '7');
+		ok(user1.get('posts').contains('7'));
+		ok(!user3.get('posts').contains('7'));
+		var post7 = store._loadRecord('post', { id: '7', author: '3', tags: ['1', '2'] });
+		ok(user1.get('posts').contains('7'));
+		ok(!user3.get('posts').contains('7'));
+		ok(post7.get('author') === '1');
+	});
 })();
