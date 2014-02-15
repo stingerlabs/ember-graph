@@ -234,120 +234,219 @@ Eg.Model.reopen({
 	 * Loads relationships from the server. Completely replaces
 	 * the current relationships with the given ones.
 	 *
+	 * TODO: Clean this shit up yo...
+	 *
 	 * @param json The JSON with properties to load
 	 * @private
 	 */
 	_loadRelationships: function(json) {
 		var store = this.get('store');
+		var sideWithClient = store.get('sideWithClientOnConflict');
 
 		this.constructor.eachRelationship(function(name, meta) {
-			if (meta.isRequired && json[name] === undefined) {
+			if (meta.isRequired && !json.hasOwnProperty(name)) {
 				throw new Error('You left out the required \'' + name + '\' relationship.');
 			}
 
-			json[name] = json[name] || meta.defaultValue;
+			var value = json[name] || meta.defaultValue;
 
-			if (meta.kind === HAS_MANY_KEY) {
-				var currentSet = new Em.Set();
-				var givenSet = new Em.Set(json[name]);
+			// Delete ALL server relationships with this name
+			var client = this._relationshipsForName(name).filter(function(relationship) {
+				// If a DELETED relationship is the same as one given by the server
+				// it's considered a conflict and has to be dealt with accordingly
+				var state = relationship.get('state');
+				if (state === DELETED_STATE) {
+					var otherId = relationship.otherId(this);
 
-				this._relationshipsForName(name).forEach(function(relationship) {
-					var id = relationship.otherId(this);
-					currentSet.addObject(id);
-
-					if (givenSet.contains(id)) {
-						if (relationship.isNew()) {
-							store._changeRelationshipState(relationship.get('id'), 'saved');
+					if (meta.kind === HAS_MANY_KEY) {
+						if (new Em.Set(value).contains(otherId)) {
+							if (sideWithClient) {
+								// Leave it alone
+							} else {
+								store._changeRelationshipState(relationship.get('id'), SAVED_STATE);
+							}
 						}
 					} else {
-						store._deleteRelationship(relationship.get('id'));
+						if (value === otherId) {
+							if (sideWithClient) {
+								// Leave it alone
+							} else {
+								store._changeRelationshipState(relationship.get('id'), SAVED_STATE);
+							}
+						}
+					}
+
+					return false;
+				}
+
+				if (state === SAVED_STATE) {
+					store._deleteRelationship(relationship.get('id'));
+					return false;
+				} else {
+					return true;
+				}
+			}, this);
+
+			if (meta.kind === HAS_MANY_KEY) {
+				var given = new Em.Set(value);
+
+				// Update client side relationships that have been saved
+				client.forEach(function(relationship) {
+					if (given.contains(relationship.otherId(this))) {
+						store._changeRelationshipState(relationship.get('id'), SAVED_STATE);
 					}
 				}, this);
 
-				givenSet.forEach(function(id) {
-					if (currentSet.contains(id)) {
-						return;
+				var current = this.get(name);
+				// These are OK for now, because they're not in conflict
+				var clientNotOnServer = current.without(given);
+				// These have to be created
+				var serverNotInClient = given.without(current);
+				serverNotInClient.forEach(function(id) {
+					var addState = SAVED_STATE;
+					var conflict = this._belongsToConflict(name, id);
+					if (conflict !== null) {
+						switch (conflict.get('state')) {
+							case DELETED_STATE:
+							case SAVED_STATE:
+								// Delete it because the server says that relationship no longer exists.
+								// It is now occupied by another relationship
+								store._deleteRelationship(conflict.get('id'));
+								break;
+							case NEW_STATE:
+								if (sideWithClient) {
+									// We have to side with the client, so leave it alone, add ours as deleted
+									addState = DELETED_STATE;
+								} else {
+									// We have to side with the server, so delete it
+									store._deleteRelationship(conflict.get('id'));
+								}
+								break;
+						}
 					}
 
-					this._createRelationship(this.typeKey, name,
-						this.get('id'), meta.relatedType, meta.inverse, id, true);
+					store._createRelationship(this.typeKey, name, this.get('id'),
+						meta.relatedType, meta.inverse, id, addState);
 				}, this);
 			} else {
-				var current = this.get(name);
-				if (current === json[name]) {
-					return;
-				}
+				// There should only be one relationship in there
+				Eg.debug.assert('An unknown relationship error occurred.', client.length <= 1);
 
-				if (current !== null) {
-					store._deleteRelationship(Em.get(this._findLinkTo(name, current), 'id'));
-				}
+				var conflict = this._belongsToConflict(name, value);
 
-				if (json[name] !== null) {
-					this._createRelationship(this.typeKey, name,
-						this.get('id'), meta.relatedType, meta.inverse, json[name], true);
+				// Update client side relationships that have been saved
+				if (client.length === 1) {
+					if (client[0].otherId(this) === value) {
+						store._changeRelationshipState(client[0].get('id'), SAVED_STATE);
+					} else {
+						// The server is in conflict with the client
+						if (sideWithClient) {
+							if (value !== null) {
+								if (conflict !== null) { // jshint ignore:line
+									switch (conflict.get('state')) {
+										case DELETED_STATE:
+										case SAVED_STATE:
+											// Delete it because the server says that relationship no longer exists.
+											// It is now occupied by another relationship
+											store._deleteRelationship(conflict.get('id'));
+											break;
+										case NEW_STATE:
+											// We have to side with the client, so leave it alone
+											break;
+									}
+								}
+
+								// Add the server relationship as deleted
+								store._createRelationship(this.typeKey, name, this.get('id'),
+									meta.relatedType, meta.inverse, value, DELETED_STATE);
+							}
+						} else {
+							// Delete the client side relationship
+							store._deleteRelationship(client[0].get('id'));
+							if (value !== null) {
+								if (conflict !== null) { // jshint ignore:line
+									// Delete it because the server says that relationship no longer exists.
+									// It is now occupied by another relationship
+									store._deleteRelationship(conflict.get('id'));
+								}
+
+								store._createRelationship(this.typeKey, name, this.get('id'),
+									meta.relatedType, meta.inverse, value, SAVED_STATE);
+							}
+						}
+					}
+				} else if (client.length === 0) {
+					// We can simply create the server relationship
+					if (value !== null) {
+						if (conflict !== null) { // jshint ignore:line
+							// Delete it because the server says that relationship no longer exists.
+							// It is now occupied by another relationship
+							store._deleteRelationship(conflict.get('id'));
+						}
+
+						store._createRelationship(this.typeKey, name, this.get('id'),
+							meta.relatedType, meta.inverse, value, SAVED_STATE);
+					}
+				} else {
+					// TODO: This should really never happen in production.
+					// What should we do? Can we guarantee this never happens?
 				}
 			}
 		}, this);
 	},
 
 	/**
-	 * Creates a new relationship in the same manner that the store would. Only this
-	 * will ensure that conflicting relationships are properly deleted first. To aid
-	 * in this process, type1, relationship1 and id1 should always be the data
-	 * corresponding to `this`.
+	 * This method is used to determine if adding a relationship will create
+	 * a conflict on the other side of the relationship with a belongsTo
+	 * relationship. If there is a conflict on the other record, this will
+	 * return the relationship that is in conflict.
 	 *
-	 * @param {String} type1
-	 * @param {String} relationship1
-	 * @param {String} id1
-	 * @param {String} type2
-	 * @param {String} relationship2
-	 * @param {String} id2
-	 * @param {Boolean} saved True if a server side relationship, false if a client side relationship
+	 * @param {String} relationship Relationship on this side that goes to the other record
+	 * @param {String} id ID of the other record
+	 * @returns {Relationship}
+	 * @private
 	 */
-	_createRelationship: function(type1, relationship1, id1, type2, relationship2, id2, saved) { // jshint ignore:line
-		var store = this.get('store');
-		var meta = this.constructor.metaForRelationship(relationship1);
-
-		if (meta.inverse !== null) {
-			var otherType = store.modelForType(type2);
-			var otherMeta = otherType.metaForRelationship(relationship2);
-
-			if (otherMeta.kind === BELONGS_TO_KEY) {
-				var conflicting = Eg.Relationship.relationshipsForRecord(type2, relationship2, id2);
-
-				if (saved) {
-					conflicting.forEach(function(conflict) {
-						switch (conflict.get('state')) {
-							case DELETED_STATE:
-								// NOP
-								break;
-							case SAVED_STATE:
-								store._changeRelationshipState(conflict.get('id'), DELETED_STATE);
-								break;
-							case NEW_STATE:
-								// store._deleteRelationship(conflict.get('id'));
-								break;
-						}
-					}, this);
-				} else {
-					conflicting.forEach(function(conflict) {
-						switch (conflict.get('state')) {
-							case DELETED_STATE:
-								// NOP
-								break;
-							case SAVED_STATE:
-								store._changeRelationshipState(conflict.get('id'), DELETED_STATE);
-								break;
-							case NEW_STATE:
-								store._deleteRelationship(conflict.get('id'));
-								break;
-						}
-					}, this);
-				}
-			}
+	_belongsToConflict: function(relationship, id) {
+		if (id === null) {
+			return null;
 		}
 
-		store._createRelationship(type1, relationship1, id1, type2, relationship2, id2, saved);
+		var meta = this.constructor.metaForRelationship(relationship);
+		if (meta.inverse === null) {
+			return null;
+		}
+
+		var model = this.get('store').modelForType(meta.relatedType);
+		var otherMeta = model.metaForRelationship(meta.inverse);
+		if (otherMeta.kind !== BELONGS_TO_KEY) {
+			return null;
+		}
+
+		// We need to detect unloaded records too
+		var record = this.get('store').getRecord(meta.relatedType, id);
+		if (record) {
+			var current = record.get(meta.inverse);
+			if (current === null || current === this.get('id')) {
+				return null;
+			}
+
+			return record._findLinkTo(meta.inverse, current);
+		} else {
+			var relationships = Eg.Relationship.relationshipsForRecord(meta.relatedType, meta.inverse, id);
+			if (relationships.length === 0) {
+				return null;
+			}
+
+			// It's a belongsTo, so relationships can only have one NEW or SAVED relationship
+			relationships = relationships.filter(function(relationship) {
+				 var state = relationship.get('state');
+				return (state === SAVED_STATE || state === NEW_STATE);
+			});
+
+			Eg.debug.assert('An unknown relationship error occurred', relationships.length <= 1);
+
+			return (relationships.length > 0 ? relationships[0] : null);
+		}
 	},
 
 	/**
@@ -408,6 +507,7 @@ Eg.Model.reopen({
 	 * @param {String} id The ID to add to the relationship
 	 */
 	addToRelationship: function(relationship, id) {
+		var store = this.get('store');
 		var meta = this.constructor.metaForRelationship(relationship);
 		Eg.debug.assert('Cannot modify a read-only relationship', meta.readOnly === false);
 		if (meta.readOnly) {
@@ -424,8 +524,34 @@ Eg.Model.reopen({
 			return;
 		}
 
-		this._createRelationship(this.typeKey, relationship,
-			this.get('id'), meta.relatedType, meta.inverse, id, false);
+		// If the other side is a belongsTo, we have to clear it first
+//		if (meta.inverse !== null) {
+//			var otherType = store.modelForType(meta.relatedType);
+//			var otherKind = otherType.metaForRelationship(meta.inverse);
+//
+//			if (otherKind === BELONGS_TO_KEY) {
+//				var relationships = Eg.Relationship.relationshipsForRecord(meta.relatedType, meta.inverse, id);
+//			}
+//		}
+
+
+		var conflict = this._belongsToConflict(relationship, id);
+		if (conflict !== null) {
+			switch (conflict.get('state')) {
+				case DELETED_STATE:
+					// NOP
+					break;
+				case SAVED_STATE:
+					store._changeRelationshipState(conflict.get('id'), DELETED_STATE);
+					break;
+				case NEW_STATE:
+					store._deleteRelationship(conflict.get('id'));
+					break;
+			}
+		}
+
+		store._createRelationship(this.typeKey, relationship,
+			this.get('id'), meta.relatedType, meta.inverse, id, NEW_STATE);
 	},
 
 	/**
@@ -493,8 +619,24 @@ Eg.Model.reopen({
 			return;
 		}
 
-		this._createRelationship(this.typeKey, relationship,
-			this.get('id'), meta.relatedType, meta.inverse, id, false);
+		var store = this.get('store');
+		var conflict = this._belongsToConflict(relationship, id);
+		if (conflict !== null) {
+			switch (conflict.get('state')) {
+				case DELETED_STATE:
+					// NOP
+					break;
+				case SAVED_STATE:
+					store._changeRelationshipState(conflict.get('id'), DELETED_STATE);
+					break;
+				case NEW_STATE:
+					store._deleteRelationship(conflict.get('id'));
+					break;
+			}
+		}
+
+		store._createRelationship(this.typeKey, relationship,
+			this.get('id'), meta.relatedType, meta.inverse, id, NEW_STATE);
 	},
 
 	/**

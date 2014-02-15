@@ -137,9 +137,12 @@ Eg.Model = Em.Object.extend({
 	 * Loads JSON data from the server into the record. This may be used when
 	 * the record is brand new, or when the record is being reloaded. This
 	 * should generally only be used by the store or for testing purposes.
+	 * If called directly in production, this will have unintended consequences.
 	 */
 	_loadData: function(json) {
 		json = json || {};
+		Eg.debug.assert('The record `' + this.typeKey + ':' + this.get('id') + '` was attempted to be reloaded ' +
+			'while dirty with `reloadDirty` disabled.', !this.get('isDirty') || this.get('store.reloadDirty'));
 
 		this._loadAttributes(json);
 		this._loadRelationships(json);

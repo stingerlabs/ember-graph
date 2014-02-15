@@ -508,6 +508,35 @@
 		ok(post.get('author') === user.get('id'));
 	});
 
+	test('A hasMany can be changed by removing the record from its inverse', function() {
+		expect(2);
+
+		var user = store.getRecord('user', '1');
+		var post = store.getRecord('post', '1');
+		post.clearBelongsTo('author');
+
+		ok(!user.get('posts').contains('1'));
+		ok(post.get('author') === null);
+	});
+
+	test('Changing a relationship on one record propagates to the second and third records', function() {
+		expect(6);
+
+		var user1 = store.getRecord('user', '1');
+		var user2 = store.getRecord('user', '2');
+		var post = store.getRecord('post', '1');
+
+		ok(user1.get('posts').contains('1'));
+		ok(!user2.get('posts').contains('1'));
+		ok(post.get('author') === '1');
+
+		user2.addToRelationship('posts', '1');
+
+		ok(!user1.get('posts').contains('1'));
+		ok(user2.get('posts').contains('1'));
+		ok(post.get('author') === '2');
+	});
+
 	test('A server side relationship on a non-loaded record can be overridden by a client side one', function() {
 		expect(7);
 

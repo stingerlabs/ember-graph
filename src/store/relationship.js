@@ -69,9 +69,9 @@ Eg.Store.reopen({
 	 * @param {String} type2
 	 * @param {String} relationship2
 	 * @param {String} id2
-	 * @param {Boolean} saved True if a server side relationship, false if a client side relationship
+	 * @param {String} state The state of the relationship
 	 */
-	_createRelationship: function(type1, relationship1, id1, type2, relationship2, id2, saved) { // jshint ignore:line
+	_createRelationship: function(type1, relationship1, id1, type2, relationship2, id2, state) { // jshint ignore:line
 		var record1 = this.getRecord(type1, id1);
 		var record2 = this.getRecord(type2, id2);
 
@@ -107,7 +107,7 @@ Eg.Store.reopen({
 			relationship1: relationship1,
 			object2: (record2 === null ? id2 : record2),
 			relationship2: relationship2,
-			state: (saved ? 'saved' : 'new')
+			state: state
 		});
 
 		record1._connectRelationship(relationship);

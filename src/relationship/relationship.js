@@ -261,6 +261,11 @@ Eg.Relationship.reopenClass({
 		delete allRelationships[id];
 	},
 
+	// TODO: These can't be static. This has to move to the store
+	deleteAllRelationships: function() {
+		allRelationships = {};
+	},
+
 	/**
 	 * Given a relationship state, determines which hash in the model the relationship should be in.
 	 *
