@@ -272,7 +272,7 @@ Eg.Store = Em.Object.extend({
 			promise = Em.RSVP.Promise.resolve(record);
 		} else {
 			promise = this.get('adapter').findRecord(type, id).then(function(payload) {
-				this._extractPayload(payload);
+				this.extractPayload(payload);
 				return this.getRecord(type, id);
 			}.bind(this));
 		}
@@ -306,7 +306,7 @@ Eg.Store = Em.Object.extend({
 			}, this));
 		} else {
 			promise = this.get('adapter').findMany(type, set.toArray()).then(function(payload) {
-				this._extractPayload(payload);
+				this.extractPayload(payload);
 
 				return ids.map(function(id) {
 					return this.getRecord(type, id);
@@ -327,7 +327,7 @@ Eg.Store = Em.Object.extend({
 	_findAll: function(type) {
 		var ids = this._recordsForType(type).mapBy('id');
 		var promise = this.get('adapter').findAll(type, ids).then(function(payload) {
-			this._extractPayload(payload);
+			this.extractPayload(payload);
 			return this._recordsForType(type);
 		}.bind(this));
 
@@ -347,7 +347,7 @@ Eg.Store = Em.Object.extend({
 		var promise = this.get('adapter').findQuery(typeKey, options, currentIds).then(function(payload) {
 			var ids = payload.ids;
 			delete payload.ids;
-			this._extractPayload(payload);
+			this.extractPayload(payload);
 
 			return ids.map(function(id) {
 				return this.getRecord(typeKey, id);
@@ -393,12 +393,12 @@ Eg.Store = Em.Object.extend({
 					record: record
 				};
 
-				this._extractPayload(payload);
+				this.extractPayload(payload);
 				return record;
 			}.bind(this));
 		} else {
 			return this.get('adapter').updateRecord(record).then(function(payload) {
-				this._extractPayload(payload);
+				this.extractPayload(payload);
 				record.set('isSaving', false);
 				return record;
 			}.bind(this));
@@ -418,7 +418,7 @@ Eg.Store = Em.Object.extend({
 		record.set('isDeleted', true);
 
 		return this.get('adapter').deleteRecord(record).then(function(payload) {
-			this._extractPayload(payload);
+			this.extractPayload(payload);
 			record.set('isSaving', false);
 			delete this.get('_records.' + type)[id];
 		}.bind(this));
@@ -434,13 +434,18 @@ Eg.Store = Em.Object.extend({
 		record.set('isReloading', true);
 
 		return this.get('adapter').find(record.typeKey, record.get('id')).then(function(payload) {
-			this._extractPayload(payload);
+			this.extractPayload(payload);
 			record.set('isReloading', false);
 			return record;
 		}.bind(this));
 	},
 
-	_extractPayload: function(payload) {
+	/**
+	 * Takes a normalized JSON payload and loads it into the store.
+	 *
+	 * @param {Object} payload Normalized JSON
+	 */
+	extractPayload: function(payload) {
 		var reloadDirty = this.get('reloadDirty');
 
 		Em.keys(payload).forEach(function(typeKey) {

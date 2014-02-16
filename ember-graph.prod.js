@@ -205,6 +205,1020 @@ if (Em.EXTEND_PROTOTYPES === true || Em.EXTEND_PROTOTYPES.String) {
 
 (function() {
 
+var methodMissing = function(method) {
+	return new Error('Your serializer failed to implement the \'' + method + '\' method.');
+};
+
+/**
+ * An interface for a serializer. A serializer is used to convert
+ * objects back and forth between the JSON that the server uses,
+ * and the records that are used on the client side.
+ *
+ * @class {Serializer}
+ */
+Eg.Serializer = Em.Object.extend({
+
+	/**
+	 * The store that the records will be loaded into.
+	 * This can be used for fetching models and their metadata.
+	 */
+	store: null,
+
+	/**
+	 * Converts a record to JSON for sending over the wire.
+	 *
+	 * @param {Model} record The record to serialize
+	 * @param {Object} options Any options that were passed by the adapter
+	 * @returns {Object} JSON representation of record
+	 */
+	serialize: function(record, options) {
+		throw methodMissing('serialize');
+	},
+
+	/**
+	 * Converts a payload from the server into one or more records to
+	 * be loaded into the store. The method should use the options
+	 * object to obtain any information it needs to correctly form
+	 * the records. This method should return an enumerable of records
+	 * no matter how many records the server sent back.
+	 *
+	 * @param {Object} payload
+	 * @param {Object} options Any options that were passed by the adapter
+	 * @returns {Object} Normalized JSON Payload
+	 */
+	deserialize: function(payload, options) {
+		throw methodMissing('deserialize');
+	}
+});
+
+
+})();
+
+(function() {
+
+/**
+ * @class {JSONSerializer}
+ */
+Eg.JSONSerializer = Em.Object.extend({
+
+	/**
+	 * Converts the record given to a JSON representation where the ID
+	 * and attributes are stored at the top level, and relationships
+	 * are stored as strings (or arrays) in a `links` object.
+	 *
+	 * Note: Temporary IDs are not included in relationships
+	 *
+	 * @param {Model} record The record to serialize
+	 * @param {Object} options Any options that were passed by the adapter
+	 * @returns {Object} JSON representation of record
+	 */
+	serialize: function(record, options) {
+		options = options || {};
+		var json = {};
+
+		if (options.includeId) {
+			json.id = record.get('id');
+		}
+
+		record.constructor.eachAttribute(function(name, meta) {
+			var type = Eg.AttributeType.attributeTypeForName(meta.type);
+			json[name] = type.serialize(record.get(name));
+		}, this);
+
+		if (Em.get(record.constructor, 'relationships').length > 0) {
+			json.links = {};
+		}
+
+		record.constructor.eachRelationship(function(name, meta) {
+			var val = record.get(name);
+
+			if (meta.kind === Eg.Model.HAS_MANY_KEY) {
+				json.links[name] = val.filter(function(id) {
+					return (!Eg.Model.isTemporaryId(id));
+				});
+			} else {
+				if (val === null || Eg.Model.isTemporaryId(val)) {
+					json.links[name] = null;
+				} else {
+					json.links[name] = val;
+				}
+			}
+		});
+
+		return json;
+	},
+
+	/**
+	 * Extracts records from a JSON payload. The payload should follow
+	 * the JSON API (http://jsonapi.org/format/) format for IDs.
+	 *
+	 * @param {Object} payload
+	 * @param {Object} options Any options that were passed by the adapter
+	 * @returns {Object} Normalized JSON Payload
+	 */
+	deserialize: function(payload, options) {
+		var json = this._extract(payload);
+
+		Em.keys(json).forEach(function(typeKey) {
+			json[typeKey] = json[typeKey].map(function(record) {
+				return this._deserializeSingle(typeKey, record);
+			}, this).filter(function(item) { return !!item; });
+		}, this);
+
+		return json;
+	},
+
+	/**
+	 * Takes the JSON payload and converts it halfway to normalized JSON.
+	 * The records are all in the correct arrays, but the individual
+	 * records themselves have yet to be deserialized.
+	 *
+	 * @param {Object} payload
+	 * @returns {Object} Normalized JSON
+	 * @private
+	 */
+	_extract: function(payload) {
+		var json = (payload.hasOwnProperty('linked') ? this._extract(payload.linked) : {});
+
+		Em.keys(payload).forEach(function(key) {
+			if (key === 'linked' || key === 'meta') {
+				return;
+			}
+
+			var typeKey = key.singularize();
+			json[typeKey] = payload[key].concat(json[typeKey] || []);
+		}, this);
+
+		return json;
+	},
+
+	/**
+	 * Deserializes individual records. First it converts the ID to a string.
+	 * Then it extracts all attributes, making sure all required attributes
+	 * exist, and no extras are found. It repeats the process for the,
+	 * relationships only it converts all IDs to strings in the process.
+	 *
+	 * @param typeKey
+	 * @param json
+	 * @returns {null}
+	 * @private
+	 */
+	_deserializeSingle: function(typeKey, json) {
+		try {
+			json = json || {};
+			json.links = json.links || {};
+
+			var model = this.get('store').modelForType(typeKey);
+			var record = { id: json.id + '' };
+
+			
+
+			Em.keys(json).forEach(function(attribute) {
+				if (attribute === 'id' || attribute === 'links') {
+					return;
+				}
+
+				var meta = model.metaForAttribute(attribute);
+				var type = Eg.AttributeType.attributeTypeForName(meta.type);
+				record[attribute] = type.deserialize(json[attribute]);
+			});
+
+			
+
+			Em.keys(json.links).forEach(function(relationship) {
+				var meta = model.metaForRelationship(relationship);
+
+				if (meta.kind === Eg.Model.HAS_MANY_KEY) {
+					record[relationship] = json[relationship].map(function(id) {
+						return '' + id;
+					});
+				} else {
+					record[relationship] = '' + json[relationship];
+				}
+			});
+
+			return record;
+		} catch (e) {
+			
+			return null;
+		}
+	}
+});
+
+})();
+
+(function() {
+
+var missingMethod = function(method) {
+	return new Error('Your adapter failed to implement the \'' + method + '\' method.');
+};
+
+/**
+ * An interface for an adapter. And adapter is used to communicated with
+ * the server. The adapter is never called directly, its methods are
+ * called by the store to perform its operations.
+ *
+ * The adapter should return normalized JSON from its operations. Normalized JSON
+ * is a single object whose keys are the type names of the records being returned.
+ * The JSON cannot contain any other keys. The value of each key will be the
+ * records of that type that were returned by the server. The records must be
+ * in normalized JSON form which means that they must contain an `id` field,
+ * and they must contain the required attributes and relationships to
+ * create a record of that type.
+ *
+ * Example:
+ * {
+ *     user: [{ id: 3, posts: [1,2] }],
+ *     post: [{ id: 1 }, { id: 2 }]
+ * }
+ *
+ * @class {Adapter}
+ */
+Eg.Adapter = Em.Object.extend({
+
+	/**
+	 * The store that this adapter belongs to.
+	 * This might be needed to get models and their metadata.
+	 */
+	store: null,
+
+	/**
+	 * Should be overridden with a serializer instance. This class will
+	 * proxy to the serializer for the serialize methods of this class.
+	 */
+	serializer: null,
+
+	/**
+	 * Observer method to set the store property on the serializer.
+	 * @private
+	 */
+	_serializerDidChange: function() {
+		var serializer = this.get('serializer');
+
+		if (serializer) {
+			serializer.set('store', this.get('store'));
+		}
+	}.observes('serializer').on('init'),
+
+	/**
+	 * Persists a record to the server. This method returns normalized JSON
+	 * as the other methods do, but the normalized JSON must contain one
+	 * extra field. It must contain an `id` field that represents the
+	 * permanent ID of the record that was created. This helps distinguish
+	 * it from any other records of that same type that may have been
+	 * returned from the server.
+	 *
+	 * @param {Model} record The record to persist
+	 * @returns {Promise} A promise that resolves to normalized JSON
+	 */
+	createRecord: function(record) {
+		throw missingMethod('createRecord');
+	},
+
+	/**
+	 * Fetch a record from the server.
+	 *
+	 * @param {String|} typeKey
+	 * @param {String} id The ID of the record to fetch
+	 * @returns {Promise} A promise that resolves to normalized JSON
+	 */
+	findRecord: function(typeKey, id) {
+		throw missingMethod('findRecord');
+	},
+
+	/**
+	 * The same as find, only it should load several records. The
+	 * promise can return any type of enumerable containing the records.
+	 *
+	 * @param {String} typeKey
+	 * @param {String[]} ids Enumerable of IDs
+	 * @returns {Promise} A promise that resolves to normalized JSON
+	 */
+	findMany: function(typeKey, ids) {
+		throw missingMethod('findMany');
+	},
+
+	/**
+	 * The same as find, only it should load all records of the given type.
+	 * The promise can return any type of enumerable containing the records.
+	 *
+	 * @param {String} typeKey
+	 * @param {String[]} ids The IDs of records of this type that the store already has
+	 * @returns {Promise} A promise that resolves to normalized JSON
+	 */
+	findAll: function(typeKey, ids) {
+		throw missingMethod('findAll');
+	},
+
+	/**
+	 * This method returns normalized JSON as the other methods do, but
+	 * the normalized JSON must contain one extra field. It must contain
+	 * an `ids` field that represents the IDs of the records that matched
+	 * the query. This helps distinguish them from any other records of
+	 * that same type that may have been returned from the server.
+	 *
+	 * @param {String} typeKey
+	 * @param {Object} query The query parameters that were passed into `find` earlier
+	 * @param {String[]} ids The IDs of records of this type that the store already has
+	 * @returns {Promise} A promise that resolves to normalized JSON
+	 */
+	findQuery: function(typeKey, query, ids) {
+		throw missingMethod('findQuery');
+	},
+
+	/**
+	 * Update the given record.
+	 *
+	 * @param {Model} record The model to save
+	 * @returns {Promise} A promise that resolves to normalized JSON
+	 */
+	updateRecord: function(record) {
+		throw missingMethod('updateRecord');
+	},
+
+	/**
+	 * Update the given record.
+	 *
+	 * @param {Model} record The model to save
+	 * @returns {Promise} A promise that resolves to normalized JSON
+	 */
+	deleteRecord: function(record) {
+		throw missingMethod('deleteRecord');
+	},
+
+	/**
+	 * Proxies to the serializer of this class.
+	 */
+	serialize: function(record, options) {
+		return this.get('serializer').serialize(record, options);
+	},
+
+	/**
+	 * Proxies to the serializer of this class.
+	 */
+	deserialize: function(payload, options) {
+		return this.get('serializer').deserialize(payload, options);
+	}
+});
+
+
+})();
+
+(function() {
+
+/**
+ * The store is used to manage all records in the application.
+ * Ideally, there should only be one store for an application.
+ *
+ * @type {Store}
+ */
+Eg.Store = Em.Object.extend({
+
+	/**
+	 * The number of milliseconds after a record in the cache expires
+	 * and must be re-fetched from the server. Leave at Infinity for
+	 * now, as finite timeouts will likely cause a lot of bugs.
+	 */
+	cacheTimeout: Infinity,
+
+	/**
+	 * A boolean for whether or not to reload dirty records. If this is
+	 * true, data from the server will be merged with the data on the
+	 * client according to the other options defined on this class.
+	 * If it's false, calling reload on a dirty record will throw an
+	 * error, and any side loaded data from the server will be discarded.
+	 *
+	 * @type {Boolean}
+	 */
+	reloadDirty: true,
+
+	/**
+	 * If reloadDirty is true, this determines which side the store will
+	 * settle conflicts for. If true, new client side relationships always
+	 * take precedence over server side relationships loaded when the
+	 * record is dirty. If false, server side relationships will overwrite
+	 * any temporary client side relationships on reload.
+	 *
+	 * Note: This only affects relationships. Attributes aren't as tricky,
+	 * so the server data can be loaded without affecting the client data.
+	 * To have the server overwrite client data, use the option below.
+	 *
+	 * @type {Boolean}
+	 */
+	sideWithClientOnConflict: true,
+
+	/**
+	 * If reloadDirty is true, this will overwrite client attributes on
+	 * reload. Because of the more simplistic nature of attributes, it is
+	 * recommended to keep this false. The server data will still be loaded
+	 * into the record and can be activated at any time by rolling back
+	 * attribute changes on the record.
+	 *
+	 * @type {Boolean}
+	 */
+	overwriteClientAttributes: false,
+
+	/**
+	 * Contains the records cached in the store. The keys are type names,
+	 * and the values are nested objects keyed at the ID of the record.
+	 *
+	 * @type {Object.<String, Model>}
+	 */
+	_records: {},
+
+	/**
+	 * Holds all currently registered model subtypes. (typeKey -> Model)
+	 *
+	 * @type {Object.<String, Model>}
+	 */
+	_types: {},
+
+	/**
+	 * The adapter used by the store to communicate with the server.
+	 * This should be overridden by `create` or `extend`. It can
+	 * either be an adapter instance or adapter subclass.
+	 *
+	 * @type {Adapter}
+	 */
+	adapter: null,
+
+	/**
+	 * Initializes all of the variables properly
+	 */
+	init: function() {
+		this.set('_records', {});
+		this.set('_types', {});
+		this.set('_queuedRelationships', {});
+
+		// TODO: This is bad. We need to fix it.
+		Eg.Relationship.deleteAllRelationships();
+
+		var adapter = this.get('adapter');
+
+		if (adapter === null) {
+			return;
+		}
+
+		if (!(adapter instanceof Eg.Adapter)) {
+			this.set('adapter', adapter.create());
+		}
+
+		this.set('adapter.store', this);
+	},
+
+	/**
+	 * Creates a new subclass of Model.
+	 *
+	 * @param {String} typeKey The name of the new type
+	 * @param {String} [parentKey] The parent type, if inheriting from a custom type
+	 * @param {Array} [mixins] The mixins to create the type with
+	 * @param {Object} options The attributes and relationships of the type
+	 * @returns {Model}
+	 */
+	createModel: function(typeKey, parentKey, mixins, options) {
+		
+
+		options = arguments[arguments.length -1];
+
+		var base = Eg.Model;
+		if (typeof parentKey === 'string') {
+			
+			base = this.get('_types.' + parentKey);
+		}
+
+		mixins = (Em.isArray(mixins) ? mixins : (Em.isArray(parentKey) ? parentKey : []));
+
+		var subclass = base._extend(typeKey, mixins, options);
+
+		this.set('_types.' + typeKey, subclass);
+		this.set('_records.' + typeKey, {});
+		return subclass;
+	},
+
+	/**
+	 * @param {String} typeKey
+	 * @returns {Model}
+	 */
+	modelForType: function(typeKey) {
+		
+		return this.get('_types.' + typeKey);
+	},
+
+	/**
+	 * Creates a record of the specified type. If the JSON has an ID,
+	 * then the record 'created' is a permanent record from the server.
+	 * If it contains no ID, the store assumes that it's new.
+	 *
+	 * @param {String} typeKey
+	 * @param {Object} json
+	 * @returns {Model}
+	 */
+	createRecord: function(typeKey, json) {
+		json = json || {};
+
+		var record = this.modelForType(typeKey)._create();
+		record.set('store', this);
+		record.set('id', Eg.Model.temporaryIdPrefix + Eg.util.generateGUID());
+
+		this.set('_records.' + typeKey + '.' + record.get('id'), {
+			record: record,
+			timestamp: new Date().getTime()
+		});
+
+		record._loadData(json);
+
+		return record;
+	},
+
+	/**
+	 * Loads an already created record into the store. This method
+	 * should probably only be used by the store or adapter.
+	 *
+	 * @param typeKey
+	 * @param json
+	 */
+	_loadRecord: function(typeKey, json) {
+		var record = this.modelForType(typeKey)._create();
+		record.set('store', this);
+		record.set('id', json.id);
+
+		this.set('_records.' + typeKey + '.' + json.id, {
+			record: record,
+			timestamp: new Date().getTime()
+		});
+
+		if (this._hasQueuedRelationships(typeKey, json.id)) {
+			this._connectQueuedRelationships(record);
+		}
+
+		record._loadData(json);
+
+		return record;
+	},
+
+	/**
+	 * Returns all records of the given type that are in the cache.
+	 *
+	 * @param {String} typeKey
+	 * @returns {Array} Array of records of the given type
+	 * @private
+	 */
+	_recordsForType: function(typeKey) {
+		var records = this.get('_records.' + typeKey) || {};
+		var timeout = new Date().getTime() - this.get('cacheTimeout');
+
+		return Em.keys(records).map(function(id) {
+			var recordShell = records[id];
+
+			if (recordShell.timestamp >= timeout) {
+				return recordShell.record;
+			} else {
+				return undefined;
+			}
+		});
+	},
+
+	/**
+	 * Fetches a record (or records), either from the cache or from the server.
+	 * Options can be different types which have different functions:
+	 *
+	 * ID String - Fetches a single record by ID
+	 * ID Enumerable - Fetches many records by the IDs
+	 * Object - A query that is passed to the adapter
+	 * undefined - Fetches all records of a type
+	 *
+	 * @param {String} typeKey
+	 * @param {String|String[]|Object} options
+	 * @returns {PromiseObject|PromiseArray}
+	 */
+	find: function(typeKey, options) {
+		if (typeof options === 'string') {
+			return this._findSingle(typeKey, options);
+		} else if (Em.isArray(options)) {
+			return this._findMany(typeKey, options);
+		} else if (typeof options === 'object') {
+			return this._findQuery(typeKey, options);
+		} else {
+			return this._findAll(typeKey);
+		}
+	},
+
+	/**
+	 * Returns the record directly if the record is cached in the store.
+	 * Otherwise returns null.
+	 *
+	 * @param {String} typeKey
+	 * @param {String} id
+	 * @returns {Model}
+	 * @private
+	 */
+	getRecord: function(typeKey, id) {
+		var store = this.get('_records');
+		var records = store[typeKey] || (store[typeKey] = {});
+		var timeout = new Date().getTime() - this.get('cacheTimeout');
+
+		if (records[id]) {
+			return (records[id].timestamp >= timeout ? records[id].record : null);
+		} else {
+			return null;
+		}
+	},
+
+	/**
+	 * Gets a single record from the adapter as a PromiseObject.
+	 *
+	 * @param {String} type
+	 * @param {String} id
+	 * @return {PromiseObject}
+	 * @private
+	 */
+	_findSingle: function(type, id) {
+		var record = this.getRecord(type, id);
+		var promise;
+
+		if (record) {
+			promise = Em.RSVP.Promise.resolve(record);
+		} else {
+			promise = this.get('adapter').findRecord(type, id).then(function(payload) {
+				this.extractPayload(payload);
+				return this.getRecord(type, id);
+			}.bind(this));
+		}
+
+		return Eg.PromiseObject.create({ promise: promise });
+	},
+
+	/**
+	 * Gets many records from the adapter as a PromiseArray.
+	 *
+	 * @param {String} type
+	 * @param {String[]} ids
+	 * @returns {PromiseArray}
+	 * @private
+	 */
+	_findMany: function(type, ids) {
+		ids = ids || [];
+		var set = new Em.Set(ids);
+
+		ids.forEach(function(id) {
+			if (this.getRecord(type, id) !== null) {
+				set.removeObject(id);
+			}
+		}, this);
+
+		var promise;
+
+		if (set.length === 0) {
+			promise = Em.RSVP.Promise.resolve(ids.map(function(id) {
+				return this.getRecord(type, id);
+			}, this));
+		} else {
+			promise = this.get('adapter').findMany(type, set.toArray()).then(function(payload) {
+				this.extractPayload(payload);
+
+				return ids.map(function(id) {
+					return this.getRecord(type, id);
+				}, this).toArray();
+			}.bind(this));
+		}
+
+		return Eg.PromiseArray.create({ promise: promise });
+	},
+
+	/**
+	 * Gets all of the records of a type from the adapter as a PromiseArray.
+	 *
+	 * @param {String} type
+	 * @returns {PromiseArray}
+	 * @private
+	 */
+	_findAll: function(type) {
+		var ids = this._recordsForType(type).mapBy('id');
+		var promise = this.get('adapter').findAll(type, ids).then(function(payload) {
+			this.extractPayload(payload);
+			return this._recordsForType(type);
+		}.bind(this));
+
+		return Eg.PromiseArray.create({ promise: promise });
+	},
+
+	/**
+	 * Gets records for a query from the adapter as a PromiseArray.
+	 *
+	 * @param {String} typeKey
+	 * @param {Object} options
+	 * @returns {PromiseArray}
+	 * @private
+	 */
+	_findQuery: function(typeKey, options) {
+		var currentIds = this._recordsForType(typeKey).mapBy('id');
+		var promise = this.get('adapter').findQuery(typeKey, options, currentIds).then(function(payload) {
+			var ids = payload.ids;
+			delete payload.ids;
+			this.extractPayload(payload);
+
+			return ids.map(function(id) {
+				return this.getRecord(typeKey, id);
+			}, this);
+		}.bind(this));
+
+		return Eg.PromiseArray.create({ promise: promise });
+	},
+
+	/**
+	 * Returns true if the record is cached in the store, false otherwise.
+	 *
+	 * @param {String|Model} type
+	 * @param {String} id
+	 * @returns {Boolean}
+	 */
+	hasRecord: function(type, id) {
+		return this.getRecord(type, id) !== null;
+	},
+
+	/**
+	 * @param {Model} record
+	 * @returns {Promise} The saved record
+	 */
+	saveRecord: function(record) {
+		var _this = this;
+		var type = record.typeKey;
+		var isNew = record.get('isNew');
+		var tempId = record.get('id');
+
+		record.set('isSaving', true);
+
+		if (isNew) {
+			return this.get('adapter').createRecord(record).then(function(payload) {
+				record.set('id', payload.id);
+				record.set('isSaving', false);
+				delete payload.id;
+
+				var records = _this.get('_records.' + type);
+				delete records[tempId];
+				records[record.get('id')] = {
+					timestamp: new Date().getTime(),
+					record: record
+				};
+
+				this.extractPayload(payload);
+				return record;
+			}.bind(this));
+		} else {
+			return this.get('adapter').updateRecord(record).then(function(payload) {
+				this.extractPayload(payload);
+				record.set('isSaving', false);
+				return record;
+			}.bind(this));
+		}
+	},
+
+	/**
+	 * @param {Model} record
+	 * @returns {Promise} Nothing on success, catch for error
+	 */
+	deleteRecord: function(record) {
+		var type = record.typeKey;
+		var id = record.get('id');
+		var records = (this.get('_records.' + type) || {});
+
+		record.set('isSaving', true);
+		record.set('isDeleted', true);
+
+		return this.get('adapter').deleteRecord(record).then(function(payload) {
+			this.extractPayload(payload);
+			record.set('isSaving', false);
+			delete this.get('_records.' + type)[id];
+		}.bind(this));
+	},
+
+	/**
+	 * @param {Model} record
+	 * @returns {Promise} The reloaded record
+	 */
+	reloadRecord: function(record) {
+		
+		record.set('isReloading', true);
+
+		return this.get('adapter').find(record.typeKey, record.get('id')).then(function(payload) {
+			this.extractPayload(payload);
+			record.set('isReloading', false);
+			return record;
+		}.bind(this));
+	},
+
+	/**
+	 * Takes a normalized JSON payload and loads it into the store.
+	 *
+	 * @param {Object} payload Normalized JSON
+	 */
+	extractPayload: function(payload) {
+		var reloadDirty = this.get('reloadDirty');
+
+		Em.keys(payload).forEach(function(typeKey) {
+			var type = this.modelForType(typeKey);
+
+			payload[typeKey].forEach(function(json) {
+				var record = this.getRecord(typeKey, json.id);
+
+				if (record) {
+					if (!record.get('isDirty') || reloadDirty) {
+						record._loadData(json);
+					}
+				} else {
+					this._loadRecord(typeKey, json);
+				}
+			}, this);
+		}, this);
+	}
+});
+
+
+})();
+
+(function() {
+
+Eg.Store.reopen({
+	/**
+	 * Holds all of the relationships that are waiting to be connected to a record
+	 * when it gets loaded into the store. (relationship ID -> relationship)
+	 *
+	 * @type {Object.<String, Relationship>}
+	 */
+	_queuedRelationships: null,
+
+	/**
+	 * @param {String} typeKey
+	 * @param {String} id
+	 * @returns {Boolean}
+	 * @private
+	 */
+	_hasQueuedRelationships: function(typeKey, id) {
+		var queued = Eg.util.values(this.get('_queuedRelationships'));
+
+		for (var i = 0; i < queued.length; i = i + 1) {
+			if (queued[i].get('type2') === typeKey && queued[i].get('object2') === id) {
+				return true;
+			}
+		}
+
+		return false;
+	},
+
+	/**
+	 * Will connect all queued relationships to the given record.
+	 *
+	 * @param {Model} record
+	 * @private
+	 */
+	_connectQueuedRelationships: function(record) {
+		var queued = this.get('_queuedRelationships');
+		var toConnect = this._queuedRelationshipsFor(record.typeKey, record.get('id'));
+
+		toConnect.forEach(function(relationship) {
+			record._connectRelationship(relationship);
+			relationship.set('object2', record);
+			delete queued[relationship.get('id')];
+		});
+
+		this.notifyPropertyChange('_queuedRelationships');
+	},
+
+	/**
+	 * Gets all of the relationships that are queued to be connected to the given record.
+	 * Does not deleted the relationships from the queue, just fetches them.
+	 *
+	 * @param {String} typeKey
+	 * @param {String} id
+	 * @returns {Relationship[]}
+	 * @private
+	 */
+	_queuedRelationshipsFor: function(typeKey, id) {
+		return Eg.util.values(this.get('_queuedRelationships')).filter(function(relationship) {
+			return (relationship.get('type2') === typeKey && relationship.get('object2') === id);
+		});
+	},
+
+	/**
+	 * Creates a new relationship and connects the two records,
+	 * queueing the relationship if necessary.
+	 *
+	 * @param {String} type1
+	 * @param {String} relationship1
+	 * @param {String} id1
+	 * @param {String} type2
+	 * @param {String} relationship2
+	 * @param {String} id2
+	 * @param {String} state The state of the relationship
+	 */
+	_createRelationship: function(type1, relationship1, id1, type2, relationship2, id2, state) { // jshint ignore:line
+		var record1 = this.getRecord(type1, id1);
+		var record2 = this.getRecord(type2, id2);
+
+		if (record1 === null && record2 === null) {
+			return;
+		}
+
+		if (record1 === null) {
+			var temp = record1;
+			record1 = record2;
+			record2 = temp;
+
+			temp = id1;
+			id1 = id2;
+			id2 = id1;
+
+			temp = relationship1;
+			relationship1 = relationship2;
+			relationship2 = temp;
+		}
+
+		if (relationship1 === null) {
+			return;
+		}
+
+		if (record1._isLinkedTo(relationship1, id2)) {
+			// TODO: Do we need to check both sides, or can we assume consistency?
+			return;
+		}
+
+		var relationship = Eg.Relationship.create({
+			object1: record1,
+			relationship1: relationship1,
+			object2: (record2 === null ? id2 : record2),
+			relationship2: relationship2,
+			state: state
+		});
+
+		record1._connectRelationship(relationship);
+
+		if (record2 !== null) {
+			record2._connectRelationship(relationship);
+		} else {
+			this.set('_queuedRelationships.' + relationship.get('id'), relationship);
+			this.notifyPropertyChange('_queuedRelationships');
+		}
+	},
+
+	/**
+	 * Deletes the given relationship. Disconnects from both records,
+	 * then destroys, all references to the relationship.
+	 *
+	 * @param {String} id
+	 */
+	_deleteRelationship: function(id) {
+		var relationship = Eg.Relationship.getRelationship(id);
+		if (Em.isNone(relationship)) {
+			return;
+		}
+
+		var object1 = relationship.get('object1');
+		var object2 = relationship.get('object2');
+
+		object1._disconnectRelationship(relationship);
+		if (object2 instanceof Eg.Model) {
+			object2._disconnectRelationship(relationship);
+		} else {
+			delete this.get('_queuedRelationships')[id];
+			this.notifyPropertyChange('_queuedRelationships');
+		}
+
+		Eg.Relationship.deleteRelationship(id);
+	},
+
+	_changeRelationshipState: function(id, state) {
+		var relationship = Eg.Relationship.getRelationship(id);
+		if (Em.isNone(relationship) || relationship.get('state') === state) {
+			return;
+		}
+
+		var object1 = relationship.get('object1');
+		var object2 = relationship.get('object2');
+
+		var oldHash = Eg.Relationship.stateToHash(relationship.get('state'));
+		var newHash = Eg.Relationship.stateToHash(state);
+
+		relationship.set('state', state);
+
+		object1.set(newHash + '.' + id, object1.get(oldHash + '.' + id));
+		delete object1.get(oldHash)[id];
+		object1.notifyPropertyChange(oldHash);
+		object1.notifyPropertyChange(newHash);
+
+		if (object2 instanceof Eg.Model) {
+			object2.set(newHash + '.' + id, object2.get(oldHash + '.' + id));
+			delete object2.get(oldHash)[id];
+			object2.notifyPropertyChange(oldHash);
+			object2.notifyPropertyChange(newHash);
+		}
+	}
+});
+
+
+})();
+
+(function() {
+
 /**
  * @class {PromiseObject}
  */
@@ -249,7 +1263,21 @@ Eg.Relationship = Em.Object.extend({
 	 *
 	 * @type {String}
 	 */
-	state: null,
+	state: (function() {
+		var state = NEW_STATE;
+
+		return function(key, value) {
+			if (arguments.length > 1) {
+				if (value === NEW_STATE || value === SAVED_STATE || value === DELETED_STATE) {
+					state = value;
+				} else {
+					throw new Error('\'' + value + '\' is an invalid relationship state.');
+				}
+			}
+
+			return state;
+		};
+	})(),
 
 	/**
 	 * The first object of this relationship. This object must always
@@ -463,6 +1491,11 @@ Eg.Relationship.reopenClass({
 		delete allRelationships[id];
 	},
 
+	// TODO: These can't be static. This has to move to the store
+	deleteAllRelationships: function() {
+		allRelationships = {};
+	},
+
 	/**
 	 * Given a relationship state, determines which hash in the model the relationship should be in.
 	 *
@@ -481,6 +1514,37 @@ Eg.Relationship.reopenClass({
 				
 				return '';
 		}
+	},
+
+	/**
+	 * Gets all relationships related to the given record.
+	 *
+	 * @param {String} typeKey
+	 * @param {String} name
+	 * @param {String} id
+	 * @returns {Boolean}
+	 */
+	relationshipsForRecord: function(typeKey, name, id) {
+		return Eg.util.values(allRelationships).filter(function(relationship) {
+			if (relationship.get('type1') === typeKey && relationship.get('id') === id &&
+				relationship.get('relationship1') === name) {
+				return true;
+			}
+
+			if (relationship.get('type2') === typeKey && relationship.get('relationship2') === name) {
+				var object2 = relationship.get('object2');
+
+				if (typeof object2 === 'string') {
+					if (object2 === id) {
+						return true;
+					}
+				} else if (object2.get('id') === id) {
+					return true;
+				}
+			}
+
+			return false;
+		});
 	}
 });
 
@@ -1034,9 +2098,11 @@ Eg.Model = Em.Object.extend({
 	 * Loads JSON data from the server into the record. This may be used when
 	 * the record is brand new, or when the record is being reloaded. This
 	 * should generally only be used by the store or for testing purposes.
+	 * If called directly in production, this will have unintended consequences.
 	 */
 	_loadData: function(json) {
 		json = json || {};
+		
 
 		this._loadAttributes(json);
 		this._loadRelationships(json);
@@ -1189,6 +2255,7 @@ Eg.Model.reopenClass({
 
 	/**
 	 * @static
+	 * @type {Set}
 	 */
 	attributes: function() {
 		var attributes = new Em.Set();
@@ -1554,61 +2621,219 @@ Eg.Model.reopen({
 	 * Loads relationships from the server. Completely replaces
 	 * the current relationships with the given ones.
 	 *
+	 * TODO: Clean this shit up yo...
+	 *
 	 * @param json The JSON with properties to load
 	 * @private
 	 */
 	_loadRelationships: function(json) {
-		// TODO: Don't delete client side relationships
 		var store = this.get('store');
+		var sideWithClient = store.get('sideWithClientOnConflict');
 
 		this.constructor.eachRelationship(function(name, meta) {
-			if (meta.isRequired && json[name] === undefined) {
+			if (meta.isRequired && !json.hasOwnProperty(name)) {
 				throw new Error('You left out the required \'' + name + '\' relationship.');
 			}
 
-			json[name] = json[name] || meta.defaultValue;
+			var value = json[name] || meta.defaultValue;
 
-			if (meta.kind === HAS_MANY_KEY) {
-				var currentSet = new Em.Set();
-				var givenSet = new Em.Set(json[name]);
+			// Delete ALL server relationships with this name
+			var client = this._relationshipsForName(name).filter(function(relationship) {
+				// If a DELETED relationship is the same as one given by the server
+				// it's considered a conflict and has to be dealt with accordingly
+				var state = relationship.get('state');
+				if (state === DELETED_STATE) {
+					var otherId = relationship.otherId(this);
 
-				this._relationshipsForName(name).forEach(function(relationship) {
-					var id = relationship.otherId(this);
-					currentSet.addObject(id);
-
-					if (givenSet.contains(id)) {
-						if (relationship.isNew()) {
-							store._changeRelationshipState(relationship.get('id'), 'saved');
+					if (meta.kind === HAS_MANY_KEY) {
+						if (new Em.Set(value).contains(otherId)) {
+							if (sideWithClient) {
+								// Leave it alone
+							} else {
+								store._changeRelationshipState(relationship.get('id'), SAVED_STATE);
+							}
 						}
 					} else {
-						store._deleteRelationship(relationship.get('id'));
+						if (value === otherId) {
+							if (sideWithClient) {
+								// Leave it alone
+							} else {
+								store._changeRelationshipState(relationship.get('id'), SAVED_STATE);
+							}
+						}
+					}
+
+					return false;
+				}
+
+				if (state === SAVED_STATE) {
+					store._deleteRelationship(relationship.get('id'));
+					return false;
+				} else {
+					return true;
+				}
+			}, this);
+
+			if (meta.kind === HAS_MANY_KEY) {
+				var given = new Em.Set(value);
+
+				// Update client side relationships that have been saved
+				client.forEach(function(relationship) {
+					if (given.contains(relationship.otherId(this))) {
+						store._changeRelationshipState(relationship.get('id'), SAVED_STATE);
 					}
 				}, this);
 
-				givenSet.forEach(function(id) {
-					if (currentSet.contains(id)) {
-						return;
+				var current = this.get(name);
+				// These are OK for now, because they're not in conflict
+				var clientNotOnServer = current.without(given);
+				// These have to be created
+				var serverNotInClient = given.without(current);
+				serverNotInClient.forEach(function(id) {
+					var addState = SAVED_STATE;
+					var conflict = this._belongsToConflict(name, id);
+					if (conflict !== null) {
+						switch (conflict.get('state')) {
+							case DELETED_STATE:
+							case SAVED_STATE:
+								// Delete it because the server says that relationship no longer exists.
+								// It is now occupied by another relationship
+								store._deleteRelationship(conflict.get('id'));
+								break;
+							case NEW_STATE:
+								if (sideWithClient) {
+									// We have to side with the client, so leave it alone, add ours as deleted
+									addState = DELETED_STATE;
+								} else {
+									// We have to side with the server, so delete it
+									store._deleteRelationship(conflict.get('id'));
+								}
+								break;
+						}
 					}
 
-					store._createRelationship(this.typeKey, name,
-						this.get('id'), meta.relatedType, meta.inverse, id, true);
+					store._createRelationship(this.typeKey, name, this.get('id'),
+						meta.relatedType, meta.inverse, id, addState);
 				}, this);
 			} else {
-				var current = this.get(name);
-				if (current === json[name]) {
-					return;
-				}
+				// There should only be one relationship in there
+				
 
-				if (current !== null) {
-					store._deleteRelationship(Em.get(this._findLinkTo(name, current), 'id'));
-				}
+				var conflict = this._belongsToConflict(name, value);
 
-				if (json[name] !== null) {
-					store._createRelationship(this.typeKey, name,
-						this.get('id'), meta.relatedType, meta.inverse, json[name], true);
+				// Update client side relationships that have been saved
+				if (client.length === 1) {
+					if (client[0].otherId(this) === value) {
+						store._changeRelationshipState(client[0].get('id'), SAVED_STATE);
+					} else {
+						// The server is in conflict with the client
+						if (sideWithClient) {
+							if (value !== null) {
+								if (conflict !== null) { // jshint ignore:line
+									switch (conflict.get('state')) {
+										case DELETED_STATE:
+										case SAVED_STATE:
+											// Delete it because the server says that relationship no longer exists.
+											// It is now occupied by another relationship
+											store._deleteRelationship(conflict.get('id'));
+											break;
+										case NEW_STATE:
+											// We have to side with the client, so leave it alone
+											break;
+									}
+								}
+
+								// Add the server relationship as deleted
+								store._createRelationship(this.typeKey, name, this.get('id'),
+									meta.relatedType, meta.inverse, value, DELETED_STATE);
+							}
+						} else {
+							// Delete the client side relationship
+							store._deleteRelationship(client[0].get('id'));
+							if (value !== null) {
+								if (conflict !== null) { // jshint ignore:line
+									// Delete it because the server says that relationship no longer exists.
+									// It is now occupied by another relationship
+									store._deleteRelationship(conflict.get('id'));
+								}
+
+								store._createRelationship(this.typeKey, name, this.get('id'),
+									meta.relatedType, meta.inverse, value, SAVED_STATE);
+							}
+						}
+					}
+				} else if (client.length === 0) {
+					// We can simply create the server relationship
+					if (value !== null) {
+						if (conflict !== null) { // jshint ignore:line
+							// Delete it because the server says that relationship no longer exists.
+							// It is now occupied by another relationship
+							store._deleteRelationship(conflict.get('id'));
+						}
+
+						store._createRelationship(this.typeKey, name, this.get('id'),
+							meta.relatedType, meta.inverse, value, SAVED_STATE);
+					}
+				} else {
+					// TODO: This should really never happen in production.
+					// What should we do? Can we guarantee this never happens?
 				}
 			}
 		}, this);
+	},
+
+	/**
+	 * This method is used to determine if adding a relationship will create
+	 * a conflict on the other side of the relationship with a belongsTo
+	 * relationship. If there is a conflict on the other record, this will
+	 * return the relationship that is in conflict.
+	 *
+	 * @param {String} relationship Relationship on this side that goes to the other record
+	 * @param {String} id ID of the other record
+	 * @returns {Relationship}
+	 * @private
+	 */
+	_belongsToConflict: function(relationship, id) {
+		if (id === null) {
+			return null;
+		}
+
+		var meta = this.constructor.metaForRelationship(relationship);
+		if (meta.inverse === null) {
+			return null;
+		}
+
+		var model = this.get('store').modelForType(meta.relatedType);
+		var otherMeta = model.metaForRelationship(meta.inverse);
+		if (otherMeta.kind !== BELONGS_TO_KEY) {
+			return null;
+		}
+
+		// We need to detect unloaded records too
+		var record = this.get('store').getRecord(meta.relatedType, id);
+		if (record) {
+			var current = record.get(meta.inverse);
+			if (current === null || current === this.get('id')) {
+				return null;
+			}
+
+			return record._findLinkTo(meta.inverse, current);
+		} else {
+			var relationships = Eg.Relationship.relationshipsForRecord(meta.relatedType, meta.inverse, id);
+			if (relationships.length === 0) {
+				return null;
+			}
+
+			// It's a belongsTo, so relationships can only have one NEW or SAVED relationship
+			relationships = relationships.filter(function(relationship) {
+				 var state = relationship.get('state');
+				return (state === SAVED_STATE || state === NEW_STATE);
+			});
+
+			
+
+			return (relationships.length > 0 ? relationships[0] : null);
+		}
 	},
 
 	/**
@@ -1669,6 +2894,7 @@ Eg.Model.reopen({
 	 * @param {String} id The ID to add to the relationship
 	 */
 	addToRelationship: function(relationship, id) {
+		var store = this.get('store');
 		var meta = this.constructor.metaForRelationship(relationship);
 		
 		if (meta.readOnly) {
@@ -1685,8 +2911,34 @@ Eg.Model.reopen({
 			return;
 		}
 
-		this.get('store')._createRelationship(this.typeKey, relationship,
-			this.get('id'), meta.relatedType, meta.inverse, id, false);
+		// If the other side is a belongsTo, we have to clear it first
+//		if (meta.inverse !== null) {
+//			var otherType = store.modelForType(meta.relatedType);
+//			var otherKind = otherType.metaForRelationship(meta.inverse);
+//
+//			if (otherKind === BELONGS_TO_KEY) {
+//				var relationships = Eg.Relationship.relationshipsForRecord(meta.relatedType, meta.inverse, id);
+//			}
+//		}
+
+
+		var conflict = this._belongsToConflict(relationship, id);
+		if (conflict !== null) {
+			switch (conflict.get('state')) {
+				case DELETED_STATE:
+					// NOP
+					break;
+				case SAVED_STATE:
+					store._changeRelationshipState(conflict.get('id'), DELETED_STATE);
+					break;
+				case NEW_STATE:
+					store._deleteRelationship(conflict.get('id'));
+					break;
+			}
+		}
+
+		store._createRelationship(this.typeKey, relationship,
+			this.get('id'), meta.relatedType, meta.inverse, id, NEW_STATE);
 	},
 
 	/**
@@ -1754,8 +3006,24 @@ Eg.Model.reopen({
 			return;
 		}
 
-		this.get('store')._createRelationship(this.typeKey, relationship,
-			this.get('id'), meta.relatedType, meta.inverse, id, false);
+		var store = this.get('store');
+		var conflict = this._belongsToConflict(relationship, id);
+		if (conflict !== null) {
+			switch (conflict.get('state')) {
+				case DELETED_STATE:
+					// NOP
+					break;
+				case SAVED_STATE:
+					store._changeRelationshipState(conflict.get('id'), DELETED_STATE);
+					break;
+				case NEW_STATE:
+					store._deleteRelationship(conflict.get('id'));
+					break;
+			}
+		}
+
+		store._createRelationship(this.typeKey, relationship,
+			this.get('id'), meta.relatedType, meta.inverse, id, NEW_STATE);
 	},
 
 	/**
@@ -1864,822 +3132,5 @@ Eg.Model.reopen({
 		this.notifyPropertyChange(hash);
 	}
 });
-
-})();
-
-(function() {
-
-var methodMissing = function(method) {
-	return new Error('Your serializer failed to implement the \'' + method + '\' method.');
-};
-
-/**
- * An interface for a serializer. A serializer is used to convert
- * objects back and forth between the JSON that the server uses,
- * and the records that are used on the client side.
- *
- * @type {Serializer}
- */
-Eg.Serializer = Em.Object.extend({
-
-	/**
-	 * The store that the records will be loaded into.
-	 * This can be used for fetching models and their metadata.
-	 */
-	store: null,
-
-	/**
-	 * Converts a record to JSON for sending over the wire.
-	 *
-	 * @param {Model} record The record to serialize
-	 * @param {Object} options Any options that were passed by the adapter
-	 * @returns {Object} JSON representation of record
-	 */
-	serialize: function(record, options) {
-		throw methodMissing('serialize');
-	},
-
-	/**
-	 * Converts a payload from the server into one or more records to
-	 * be loaded into the store. The method should use the options
-	 * object to obtain any information it needs to correctly form
-	 * the records. This method should return an enumerable of records
-	 * no matter how many records the server sent back.
-	 *
-	 * @param {Object} payload
-	 * @param {Object} options Any options that were passed by the adapter
-	 * @returns {Object} Normalized JSON Payload
-	 */
-	deserialize: function(payload, options) {
-		throw methodMissing('deserialize');
-	}
-});
-
-
-})();
-
-(function() {
-
-var missingMethod = function(method) {
-	return new Error('Your adapter failed to implement the \'' + method + '\' method.');
-};
-
-/**
- * An interface for an adapter. And adapter is used to communicated with
- * the server. The adapter is never called directly, its methods are
- * called by the store to perform its operations.
- *
- * The adapter should return normalized JSON from its operations. Normalized JSON
- * is a single object whose keys are the type names of the records being returned.
- * The JSON cannot contain any other keys. The value of each key will be the
- * records of that type that were returned by the server. The records must be
- * in normalized JSON form which means that they must contain an `id` field,
- * and they must contain the required attributes and relationships to
- * create a record of that type.
- *
- * Example:
- * {
- *     user: [{ id: 3, posts: [1,2] }],
- *     post: [{ id: 1 }, { id: 2 }]
- * }
- *
- * @class {Adapter}
- */
-Eg.Adapter = Em.Object.extend({
-
-	/**
-	 * The store that this adapter belongs to.
-	 * This might be needed to get models and their metadata.
-	 */
-	store: null,
-
-	/**
-	 * Should be overridden with a serializer instance. This class will
-	 * proxy to the serializer for the serialize methods of this class.
-	 */
-	serializer: null,
-
-	/**
-	 * Observer method to set the store property on the serializer.
-	 * @private
-	 */
-	_serializerDidChange: function() {
-		var serializer = this.get('serializer');
-
-		if (serializer) {
-			serializer.set('store', this.get('store'));
-		}
-	}.observes('serializer').on('init'),
-
-	/**
-	 * Persists a record to the server. This method returns normalized JSON
-	 * as the other methods do, but the normalized JSON must contain one
-	 * extra field. It must contain an `id` field that represents the
-	 * permanent ID of the record that was created. This helps distinguish
-	 * it from any other records of that same type that may have been
-	 * returned from the server.
-	 *
-	 * @param {Model} record The record to persist
-	 * @returns {Promise} A promise that resolves to normalized JSON
-	 */
-	createRecord: function(record) {
-		throw missingMethod('createRecord');
-	},
-
-	/**
-	 * Fetch a record from the server.
-	 *
-	 * @param {String|} typeKey
-	 * @param {String} id The ID of the record to fetch
-	 * @returns {Promise} A promise that resolves to normalized JSON
-	 */
-	findRecord: function(typeKey, id) {
-		throw missingMethod('findRecord');
-	},
-
-	/**
-	 * The same as find, only it should load several records. The
-	 * promise can return any type of enumerable containing the records.
-	 *
-	 * @param {String} typeKey
-	 * @param {Enumerable} ids Enumerable of IDs
-	 * @returns {Promise} A promise that resolves to normalized JSON
-	 */
-	findMany: function(typeKey, ids) {
-		throw missingMethod('findMany');
-	},
-
-	/**
-	 * The same as find, only it should load all records of the given type.
-	 * The promise can return any type of enumerable containing the records.
-	 *
-	 * @param {String} typeKey
-	 * @param {Enumerable} ids The IDs of records of this type that the store already has
-	 * @returns {Promise} A promise that resolves to normalized JSON
-	 */
-	findAll: function(typeKey, ids) {
-		throw missingMethod('findAll');
-	},
-
-	/**
-	 * This method returns normalized JSON as the other methods do, but
-	 * the normalized JSON must contain one extra field. It must contain
-	 * an `ids` field that represents the IDs of the records that matched
-	 * the query. This helps distinguish them from any other records of
-	 * that same type that may have been returned from the server.
-	 *
-	 * @param {String} typeKey
-	 * @param {Object} query The query parameters that were passed into `find` earlier
-	 * @param {Enumerable} ids The IDs of records of this type that the store already has
-	 * @returns {Promise} A promise that resolves to normalized JSON
-	 */
-	findQuery: function(typeKey, query, ids) {
-		throw missingMethod('findQuery');
-	},
-
-	/**
-	 * Update the given record.
-	 *
-	 * @param {Model} record The model to save
-	 * @returns {Promise} A promise that resolves to normalized JSON
-	 */
-	updateRecord: function(record) {
-		throw missingMethod('updateRecord');
-	},
-
-	/**
-	 * Update the given record.
-	 *
-	 * @param {Model} record The model to save
-	 * @returns {Promise} A promise that resolves to normalized JSON
-	 */
-	deleteRecord: function(record) {
-		throw missingMethod('deleteRecord');
-	},
-
-	/**
-	 * Proxies to the serializer of this class.
-	 */
-	serialize: function(record, options) {
-		return this.get('serializer').serialize(record, options);
-	},
-
-	/**
-	 * Proxies to the serializer of this class.
-	 */
-	deserialize: function(payload, options) {
-		return this.get('serializer').deserialize(payload, options);
-	}
-});
-
-
-})();
-
-(function() {
-
-/**
- * The store is used to manage all records in the application.
- * Ideally, there should only be one store for an application.
- *
- * @type {Store}
- */
-Eg.Store = Em.Object.extend({
-
-	/**
-	 * The number of milliseconds after a record in the cache expires
-	 * and must be re-fetched from the server. Leave at Infinity for
-	 * now, as finite timeouts will likely cause a lot of bugs.
-	 */
-	cacheTimeout: Infinity,
-
-	/**
-	 * Contains the records cached in the store. The keys are type names,
-	 * and the values are nested objects keyed at the ID of the record.
-	 *
-	 * @type {Object.<String, Model>}
-	 */
-	_records: null,
-
-	/**
-	 * Holds all currently registered model subtypes. (typeKey -> Model)
-	 *
-	 * @type {Object.<String, Model>}
-	 */
-	_types: null,
-
-	/**
-	 * The adapter used by the store to communicate with the server.
-	 * This should be overridden by `create` or `extend`. It can
-	 * either be an adapter instance or adapter subclass.
-	 *
-	 * @type {Adapter}
-	 */
-	adapter: null,
-
-	/**
-	 * Initializes all of the variables properly
-	 */
-	init: function() {
-		this.set('_records', {});
-		this.set('_types', {});
-		this.set('_queuedRelationships', {});
-
-		var adapter = this.get('adapter');
-
-		if (adapter === null) {
-			return;
-		}
-
-		if (!(adapter instanceof Eg.Adapter)) {
-			this.set('adapter', adapter.create());
-		}
-
-		this.set('adapter.store', this);
-	},
-
-	/**
-	 * Creates a new subclass of Model.
-	 *
-	 * @param {String} typeKey The name of the new type
-	 * @param {String} [parentKey] The parent type, if inheriting from a custom type
-	 * @param {Array} [mixins] The mixins to create the type with
-	 * @param {Object} options The attributes and relationships of the type
-	 * @returns {Model}
-	 */
-	createModel: function(typeKey, parentKey, mixins, options) {
-		
-
-		options = arguments[arguments.length -1];
-
-		var base = Eg.Model;
-		if (typeof parentKey === 'string') {
-			
-			base = this.get('_types.' + parentKey);
-		}
-
-		mixins = (Em.isArray(mixins) ? mixins : (Em.isArray(parentKey) ? parentKey : []));
-
-		var subclass = base._extend(typeKey, mixins, options);
-
-		this.set('_types.' + typeKey, subclass);
-		this.set('_records.' + typeKey, {});
-		return subclass;
-	},
-
-	/**
-	 * @param {String} typeKey
-	 * @returns {Model}
-	 */
-	modelForType: function(typeKey) {
-		
-		return this.get('_types.' + typeKey);
-	},
-
-	/**
-	 * Creates a record of the specified type. If the JSON has an ID,
-	 * then the record 'created' is a permanent record from the server.
-	 * If it contains no ID, the store assumes that it's new.
-	 *
-	 * @param {String} typeKey
-	 * @param {Object} json
-	 * @returns {Model}
-	 */
-	createRecord: function(typeKey, json) {
-		json = json || {};
-
-		var record = this.modelForType(typeKey)._create();
-		record.set('store', this);
-		record.set('id', Eg.Model.temporaryIdPrefix + Eg.util.generateGUID());
-
-		this.set('_records.' + typeKey + '.' + record.get('id'), {
-			record: record,
-			timestamp: new Date().getTime()
-		});
-
-		record._loadData(json);
-
-		return record;
-	},
-
-	/**
-	 * Loads an already created record into the store. This method
-	 * should probably only be used by the store or adapter.
-	 *
-	 * @param typeKey
-	 * @param json
-	 */
-	_loadRecord: function(typeKey, json) {
-		var record = this.modelForType(typeKey)._create();
-		record.set('store', this);
-		record.set('id', json.id);
-
-		this.set('_records.' + typeKey + '.' + json.id, {
-			record: record,
-			timestamp: new Date().getTime()
-		});
-
-		if (this._hasQueuedRelationships(typeKey, json.id)) {
-			this._connectQueuedRelationships(record);
-		}
-
-		record._loadData(json);
-
-		return record;
-	},
-
-	/**
-	 * Returns all records of the given type that are in the cache.
-	 *
-	 * @param {String} typeKey
-	 * @returns {Array} Array of records of the given type
-	 * @private
-	 */
-	_recordsForType: function(typeKey) {
-		var records = this.get('_records.' + typeKey) || {};
-		var timeout = new Date().getTime() - this.get('cacheTimeout');
-
-		return Em.keys(records).map(function(id) {
-			var recordShell = records[id];
-
-			if (recordShell.timestamp >= timeout) {
-				return recordShell.record;
-			} else {
-				return undefined;
-			}
-		});
-	},
-
-	/**
-	 * Fetches a record (or records), either from the cache or from the server.
-	 * Options can be different types which have different functions:
-	 *
-	 * ID String - Fetches a single record by ID
-	 * ID Enumerable - Fetches many records by the IDs
-	 * Object - A query that is passed to the adapter
-	 * undefined - Fetches all records of a type
-	 *
-	 * @param {String} typeKey
-	 * @param {String|String[]|Object} options
-	 * @returns {PromiseObject|PromiseArray}
-	 */
-	find: function(typeKey, options) {
-		if (typeof options === 'string') {
-			return this._findSingle(typeKey, options);
-		} else if (Em.isArray(options)) {
-			return this._findMany(typeKey, options);
-		} else if (typeof options === 'object') {
-			return this._findQuery(typeKey, options);
-		} else {
-			return this._findAll(typeKey);
-		}
-	},
-
-	/**
-	 * Returns the record directly if the record is cached in the store.
-	 * Otherwise returns null.
-	 *
-	 * @param {String} typeKey
-	 * @param {String} id
-	 * @returns {Model}
-	 * @private
-	 */
-	getRecord: function(typeKey, id) {
-		var store = this.get('_records');
-		var records = store[typeKey] || (store[typeKey] = {});
-		var timeout = new Date().getTime() - this.get('cacheTimeout');
-
-		if (records[id]) {
-			return (records[id].timestamp >= timeout ? records[id].record : null);
-		} else {
-			return null;
-		}
-	},
-
-	/**
-	 * Gets a single record from the adapter as a PromiseObject.
-	 *
-	 * @param {String} type
-	 * @param {String} id
-	 * @return {PromiseObject}
-	 * @private
-	 */
-	_findSingle: function(type, id) {
-		var record = this.getRecord(type, id);
-		var promise;
-
-		if (record) {
-			promise = Em.RSVP.Promise.resolve(record);
-		} else {
-			promise = this.get('adapter').findRecord(type, id).then(function(payload) {
-				this._extractPayload(payload);
-				return this.getRecord(type, id);
-			}.bind(this));
-		}
-
-		return Eg.PromiseObject.create({ promise: promise });
-	},
-
-	/**
-	 * Gets many records from the adapter as a PromiseArray.
-	 *
-	 * @param {String} type
-	 * @param {String[]} ids
-	 * @returns {PromiseArray}
-	 * @private
-	 */
-	_findMany: function(type, ids) {
-		ids = ids || [];
-		var set = new Em.Set(ids);
-
-		ids.forEach(function(id) {
-			if (this.getRecord(type, id) !== null) {
-				set.removeObject(id);
-			}
-		}, this);
-
-		var promise;
-
-		if (set.length === 0) {
-			promise = Em.RSVP.Promise.resolve(ids.map(function(id) {
-				return this.getRecord(type, id);
-			}, this));
-		} else {
-			promise = this.get('adapter').findMany(type, set.toArray()).then(function(payload) {
-				this._extractPayload(payload);
-
-				return ids.map(function(id) {
-					return this.getRecord(type, id);
-				}, this).toArray();
-			}.bind(this));
-		}
-
-		return Eg.PromiseArray.create({ promise: promise });
-	},
-
-	/**
-	 * Gets all of the records of a type from the adapter as a PromiseArray.
-	 *
-	 * @param {String} type
-	 * @returns {PromiseArray}
-	 * @private
-	 */
-	_findAll: function(type) {
-		var ids = this._recordsForType(type).mapBy('id');
-		var promise = this.get('adapter').findAll(type, ids).then(function(payload) {
-			this._extractPayload(payload);
-			return this._recordsForType(type);
-		}.bind(this));
-
-		return Eg.PromiseArray.create({ promise: promise });
-	},
-
-	/**
-	 * Gets records for a query from the adapter as a PromiseArray.
-	 *
-	 * @param {String} typeKey
-	 * @param {Object} options
-	 * @returns {PromiseArray}
-	 * @private
-	 */
-	_findQuery: function(typeKey, options) {
-		var currentIds = this._recordsForType(typeKey).mapBy('id');
-		var promise = this.get('adapter').findQuery(typeKey, options, currentIds).then(function(payload) {
-			var ids = payload.ids;
-			delete payload.ids;
-			this._extractPayload(payload);
-
-			return ids.map(function(id) {
-				return this.getRecord(typeKey, id);
-			}, this);
-		}.bind(this));
-
-		return Eg.PromiseArray.create({ promise: promise });
-	},
-
-	/**
-	 * Returns true if the record is cached in the store, false otherwise.
-	 *
-	 * @param {String|Model} type
-	 * @param {String} id
-	 * @returns {Boolean}
-	 */
-	hasRecord: function(type, id) {
-		return this.getRecord(type, id) !== null;
-	},
-
-	/**
-	 * @param {Model} record
-	 * @returns {Promise} The saved record
-	 */
-	saveRecord: function(record) {
-		var _this = this;
-		var type = record.typeKey;
-		var isNew = record.get('isNew');
-		var tempId = record.get('id');
-
-		record.set('isSaving', true);
-
-		if (isNew) {
-			return this.get('adapter').createRecord(record).then(function(payload) {
-				record.set('id', payload.id);
-				record.set('isSaving', false);
-				delete payload.id;
-
-				var records = _this.get('_records.' + type);
-				delete records[tempId];
-				records[record.get('id')] = {
-					timestamp: new Date().getTime(),
-					record: record
-				};
-
-				this._extractPayload(payload);
-				return record;
-			}.bind(this));
-		} else {
-			return this.get('adapter').updateRecord(record).then(function(payload) {
-				this._extractPayload(payload);
-				record.set('isSaving', false);
-				return record;
-			}.bind(this));
-		}
-	},
-
-	/**
-	 * @param {Model} record
-	 * @returns {Promise} Nothing on success, catch for error
-	 */
-	deleteRecord: function(record) {
-		var type = record.typeKey;
-		var id = record.get('id');
-		var records = (this.get('_records.' + type) || {});
-
-		record.set('isSaving', true);
-		record.set('isDeleted', true);
-
-		return this.get('adapter').deleteRecord(record).then(function(payload) {
-			this._extractPayload(payload);
-			record.set('isSaving', false);
-			delete this.get('_records.' + type)[id];
-		}.bind(this));
-	},
-
-	/**
-	 * @param {Model} record
-	 * @returns {Promise} The reloaded record
-	 */
-	reloadRecord: function(record) {
-		
-		record.set('isReloading', true);
-
-		return this.get('adapter').find(record.typeKey, record.get('id')).then(function(payload) {
-			this._extractPayload(payload);
-			record.set('isReloading', false);
-			return record;
-		}.bind(this));
-	},
-
-	_extractPayload: function(payload) {
-		Em.keys(payload).forEach(function(typeKey) {
-			var type = this.modelForType(typeKey);
-
-			payload[typeKey].forEach(function(json) {
-				var record = this.getRecord(typeKey, json.id);
-
-				if (record) {
-					// TODO: Reloading dirty records
-					if (!record.get('isDirty')) {
-						record._loadData(json);
-					} else {
-						
-					}
-				} else {
-					this._loadRecord(typeKey, json);
-				}
-			}, this);
-		}, this);
-	}
-});
-
-
-})();
-
-(function() {
-
-Eg.Store.reopen({
-	/**
-	 * Holds all of the relationships that are waiting to be connected to a record
-	 * when it gets loaded into the store. (relationship ID -> relationship)
-	 *
-	 * @type {Object.<String, Relationship>}
-	 */
-	_queuedRelationships: null,
-
-	/**
-	 * @param {String} typeKey
-	 * @param {String} id
-	 * @returns {Boolean}
-	 * @private
-	 */
-	_hasQueuedRelationships: function(typeKey, id) {
-		var queued = Eg.util.values(this.get('_queuedRelationships'));
-
-		for (var i = 0; i < queued.length; i = i + 1) {
-			if (queued[i].get('type2') === typeKey && queued[i].get('object2') === id) {
-				return true;
-			}
-		}
-
-		return false;
-	},
-
-	/**
-	 * Will connect all queued relationships to the given record.
-	 *
-	 * @param {Model} record
-	 * @private
-	 */
-	_connectQueuedRelationships: function(record) {
-		var queued = this.get('_queuedRelationships');
-		var toConnect = this._queuedRelationshipsFor(record.typeKey, record.get('id'));
-
-		toConnect.forEach(function(relationship) {
-			record._connectRelationship(relationship);
-			relationship.set('object2', record);
-			delete queued[relationship.get('id')];
-		});
-
-		this.notifyPropertyChange('_queuedRelationships');
-	},
-
-	/**
-	 * Gets all of the relationships that are queued to be connected to the given record.
-	 * Does not deleted the relationships from the queue, just fetches them.
-	 *
-	 * @param {String} typeKey
-	 * @param {String} id
-	 * @returns {Relationship[]}
-	 * @private
-	 */
-	_queuedRelationshipsFor: function(typeKey, id) {
-		return Eg.util.values(this.get('_queuedRelationships')).filter(function(relationship) {
-			return (relationship.get('type2') === typeKey && relationship.get('object2') === id);
-		});
-	},
-
-	/**
-	 * Creates a new relationship and connects the two records,
-	 * queueing the relationship if necessary.
-	 *
-	 * @param {String} type1
-	 * @param {String} relationship1
-	 * @param {String} id1
-	 * @param {String} type2
-	 * @param {String} relationship2
-	 * @param {String} id2
-	 * @param {Boolean} saved True if a server side relationship, false if a client side relationship
-	 */
-	_createRelationship: function(type1, relationship1, id1, type2, relationship2, id2, saved) { // jshint ignore:line
-		var record1 = this.getRecord(type1, id1);
-		var record2 = this.getRecord(type2, id2);
-
-		if (record1 === null && record2 === null) {
-			return;
-		}
-
-		if (record1 === null) {
-			var temp = record1;
-			record1 = record2;
-			record2 = temp;
-
-			temp = id1;
-			id1 = id2;
-			id2 = id1;
-
-			temp = relationship1;
-			relationship1 = relationship2;
-			relationship2 = temp;
-		}
-
-		if (relationship1 === null) {
-			return;
-		}
-
-		if (record1._isLinkedTo(relationship1, id2)) {
-			// Do we need to check both sides, or can we assume consistency?
-			return;
-		}
-
-		var relationship = Eg.Relationship.create({
-			object1: record1,
-			relationship1: relationship1,
-			object2: (record2 === null ? id2 : record2),
-			relationship2: relationship2,
-			state: (saved ? 'saved' : 'new')
-		});
-
-		record1._connectRelationship(relationship);
-
-		if (record2 !== null) {
-			record2._connectRelationship(relationship);
-		} else {
-			this.set('_queuedRelationships.' + relationship.get('id'), relationship);
-			this.notifyPropertyChange('_queuedRelationships');
-		}
-	},
-
-	/**
-	 * Deletes the given relationship. Disconnects from both records,
-	 * then destroys, all references to the relationship.
-	 *
-	 * @param {String} id
-	 */
-	_deleteRelationship: function(id) {
-		var relationship = Eg.Relationship.getRelationship(id);
-		if (Em.isNone(relationship)) {
-			return;
-		}
-
-		var object1 = relationship.get('object1');
-		var object2 = relationship.get('object2');
-
-		object1._disconnectRelationship(relationship);
-		if (object2 instanceof Eg.Model) {
-			object2._disconnectRelationship(relationship);
-		} else {
-			delete this.get('_queuedRelationships')[id];
-			this.notifyPropertyChange('_queuedRelationships');
-		}
-
-		Eg.Relationship.deleteRelationship(id);
-	},
-
-	_changeRelationshipState: function(id, state) {
-		var relationship = Eg.Relationship.getRelationship(id);
-		if (Em.isNone(relationship) || relationship.get('state') === state) {
-			return;
-		}
-
-		var object1 = relationship.get('object1');
-		var object2 = relationship.get('object2');
-
-		var oldHash = Eg.Relationship.stateToHash(relationship.get('state'));
-		var newHash = Eg.Relationship.stateToHash(state);
-
-		relationship.set('state', state);
-
-		object1.set(newHash + '.' + id, object1.get(oldHash + '.' + id));
-		delete object1.get(oldHash)[id];
-		object1.notifyPropertyChange(oldHash);
-		object1.notifyPropertyChange(newHash);
-
-		if (object2 instanceof Eg.Model) {
-			object2.set(newHash + '.' + id, object2.get(oldHash + '.' + id));
-			delete object2.get(oldHash)[id];
-			object2.notifyPropertyChange(oldHash);
-			object2.notifyPropertyChange(newHash);
-		}
-	}
-});
-
 
 })();
