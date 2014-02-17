@@ -20,7 +20,7 @@ Ember.onLoad('Ember.Application', function(Application) {
 		name: 'store',
 
 		initialize: function(container, App) {
-			App.register('store:main', App.Store || window.Store);
+			App.register('store:main', App.Store || Eg.Store);
 			container.lookup('store:main');
 		}
 	});
