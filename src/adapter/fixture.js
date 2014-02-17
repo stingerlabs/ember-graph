@@ -1,3 +1,7 @@
+var removeEmpty = function(item) {
+	return !Em.isEmpty(item);
+};
+
 /**
  * @class FixtureAdapter
  */
@@ -66,6 +70,7 @@ Eg.FixtureAdapter = Eg.Adapter.extend({
 	 * @returns {Promise} A promise that resolves to normalized JSON
 	 */
 	createRecord: function(record) {
+		record.set('id', Eg.util.generateGUID());
 		var json = this.serialize(record);
 		this.get('_fixtures')[record.typeKey][json.id] = json;
 		return Em.RSVP.Promise.resolve({});
@@ -80,7 +85,7 @@ Eg.FixtureAdapter = Eg.Adapter.extend({
 	 */
 	findRecord: function(typeKey, id) {
 		var json = {};
-		json[typeKey] = [this.get('_fixtures')[typeKey][id]];
+		json[typeKey] = [this.get('_fixtures')[typeKey][id]].filter(removeEmpty);
 		return Em.RSVP.Promise.resolve(json);
 	},
 
@@ -96,7 +101,7 @@ Eg.FixtureAdapter = Eg.Adapter.extend({
 		var json = {};
 		json[typeKey] = ids.map(function(id) {
 			return this.get('_fixtures')[typeKey][id];
-		}, this);
+		}, this).filter(removeEmpty);
 		return Em.RSVP.Promise.resolve(json);
 	},
 
@@ -165,6 +170,10 @@ Eg.FixtureAdapter = Eg.Adapter.extend({
 
 		record.constructor.eachRelationship(function(name, meta) {
 			json[name] = record.get(name);
+
+			if (meta.kind === Eg.Model.HAS_MANY_KEY) {
+				json[name] = json[name].toArray();
+			}
 		});
 
 		return json;

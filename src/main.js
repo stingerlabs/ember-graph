@@ -18,6 +18,7 @@ require('serializer/serializer');
 require('serializer/json');
 
 require('adapter/adapter');
+require('adapter/fixture');
 
 require('store/store');
 require('store/relationship');
