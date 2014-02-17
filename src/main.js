@@ -8,6 +8,8 @@ if (Ember.libraries) {
 	Ember.libraries.register('Ember Graph', VERSION);
 }
 
+require('initialization');
+
 require('util/util');
 require('util/set');
 require('util/string');
