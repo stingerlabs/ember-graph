@@ -95,47 +95,168 @@
 		ok(post.get('tags').contains(tag.get('id')));
 	});
 
-	test('The serializer uses type serializers correctly', function() {
-		expect(0);
+	test('Deserialization extracts a single record properly', function() {
+		expect(1);
+
+		var payload = {
+			posts: [{ id: '100', title: 52, body: 53, links: { author: '1', tags: [] } }]
+		};
+
+		var expected = {
+			post: [{
+				id: '100',
+				title: '52',
+				body: '53',
+				author: '1',
+				tags: []
+			}]
+		};
+
+		deepEqual(serializer.deserialize(payload), expected);
 	});
 
-	test('Deserialization extracts a single record properly', function() {
-		expect(0);
+	test('The serializer uses type serializers correctly', function() {
+		expect(1);
+
+		var payload = {
+			posts: [{ id: '100', title: 52, body: 53, links: { author: '1', tags: [] } }]
+		};
+
+		var expected = {
+			post: [{
+				id: '100',
+				title: '52',
+				body: '53',
+				author: '1',
+				tags: []
+			}]
+		};
+
+		deepEqual(serializer.deserialize(payload), expected);
 	});
 
 	test('Deserialization extracts fetched records of different types properly', function() {
-		expect(0);
+		expect(1);
+
+		var payload = {
+			users: [{ id: '100', email: '', links: { posts: ['100', '101'] } }],
+			posts: [
+				{ id: '100', title: '', body: '', links: { author: '100', tags: [] } },
+				{ id: '101', title: '', body: '', links: { author: '100', tags: [] } }
+			]
+		};
+
+		var expected = {
+			user: [{ id: '100', email: '', posts: ['100', '101'] }],
+			post: [
+				{ id: '100', title: '', body: '', author: '100', tags: [] },
+				{ id: '101', title: '', body: '', author: '100', tags: [] }
+			]
+		};
+
+		deepEqual(serializer.deserialize(payload), expected);
 	});
 
 	test('Deserialization extracts linked records properly', function() {
-		expect(0);
+		expect(1);
+
+		var payload = {
+			posts: [{ id: '100', title: '', body: '', links: { author: '100', tags: ['100', '101' ]} }],
+			linked: {
+				users: [{ id: '100', email: '', links: { posts: ['100'] }}],
+				tags: [{ id: '100', name: '' }, { id: '101', name: '' }]
+			}
+		};
+
+		var expected = {
+			post: [{ id: '100', title: '', body: '', author: '100', tags: ['100', '101'] }],
+			user: [{ id: '100', email: '', posts: ['100'] }],
+			tag: [{ id: '100', name: '' }, { id: '101', name: '' }]
+		};
+
+		deepEqual(serializer.deserialize(payload), expected);
 	});
 
 	test('Deserialization converts IDs to strings', function() {
-		expect(0);
+		expect(1);
+
+		var payload = {
+			users: [{ id: '100', email: '', links: { posts: [1, 2, 3, 4] } }]
+		};
+
+		var expected = {
+			user: [{ id: '100', email: '', posts: ['1', '2', '3', '4'] }]
+		};
+
+		deepEqual(serializer.deserialize(payload), expected);
 	});
 
 	test('Deserialization detects a missing ID', function() {
-		expect(0);
+		expect(1);
+
+		var payload = {
+			tags: [{ name: '' }]
+		};
+
+		var result = serializer.deserialize(payload);
+		ok(!result.tag || result.tag.length === 0);
 	});
 
 	test('Deserialization detects missing attributes', function() {
-		expect(0);
+		expect(1);
+
+		var payload = {
+			tags: [{ id: 1 }]
+		};
+
+		var result = serializer.deserialize(payload);
+		ok(!result.tag || result.tag.length === 0);
 	});
 
 	test('Deserialization detects extra attributes', function() {
-		expect(0);
+		expect(1);
+
+		var payload = {
+			tags: [{ id: 1, name: '', foo: null }]
+		};
+
+		var result = serializer.deserialize(payload);
+		ok(!result.tag || result.tag.length === 0);
 	});
 
 	test('Deserialization detects missing relationships', function() {
-		expect(0);
+		expect(1);
+
+		var payload = {
+			posts: [{ id: 1, title: '', body: '' }]
+		};
+
+		var result = serializer.deserialize(payload);
+		ok(!result.post || result.post.length === 0);
 	});
 
 	test('Deserialization detects extra relationships', function() {
-		expect(0);
+		expect(1);
+
+		var payload = {
+			posts: [{ id: 1, title: '', body: '' , links: { author: 100, tags: [], none: null } }]
+		};
+
+		var result = serializer.deserialize(payload);
+		ok(!result.post || result.post.length === 0);
 	});
 
 	test('Deserialization works with a missing `links` object (if no relationships are defined)', function() {
-		expect(0);
+		expect(1);
+
+		var payload = {
+			tags: [{ id: 100, name: '' }, { id: 101, name: '' }]
+		};
+
+		var expected = {
+			tag: [{ id: '100', name: '' }, { id: '101', name: '' }]
+		};
+
+		deepEqual(serializer.deserialize(payload), expected);
 	});
 })();

@@ -35,6 +35,25 @@ Eg.util = {
 
 (function() {
 
+Em.Set.reopen({
+
+	/**
+	 * Returns a copy of this set without the passed items.
+	 *
+	 * @param {Array} items
+	 * @returns {Set}
+	 */
+	withoutAll: function(items) {
+		var ret = this.copy();
+		ret.removeObjects(items);
+		return ret;
+	}
+});
+
+})();
+
+(function() {
+
 Eg.String = {
 	startsWith: function(string, prefix) {
 		return string.indexOf(prefix) === 0;
@@ -368,6 +387,10 @@ Eg.JSONSerializer = Em.Object.extend({
 			json = json || {};
 			json.links = json.links || {};
 
+			if (typeof json.id !== 'string' && typeof json.id !== 'number') {
+				throw new Error('Your JSON was missing an ID.');
+			}
+
 			var model = this.get('store').modelForType(typeKey);
 			var record = { id: json.id + '' };
 
@@ -389,11 +412,11 @@ Eg.JSONSerializer = Em.Object.extend({
 				var meta = model.metaForRelationship(relationship);
 
 				if (meta.kind === Eg.Model.HAS_MANY_KEY) {
-					record[relationship] = json[relationship].map(function(id) {
+					record[relationship] = json.links[relationship].map(function(id) {
 						return '' + id;
 					});
 				} else {
-					record[relationship] = '' + json[relationship];
+					record[relationship] = '' + json.links[relationship];
 				}
 			});
 

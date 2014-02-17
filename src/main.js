@@ -9,6 +9,7 @@ if (Ember.libraries) {
 }
 
 require('util/util');
+require('util/set');
 require('util/string');
 require('util/inflector');
 require('util/debug');

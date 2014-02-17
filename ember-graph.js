@@ -35,6 +35,25 @@ Eg.util = {
 
 (function() {
 
+Em.Set.reopen({
+
+	/**
+	 * Returns a copy of this set without the passed items.
+	 *
+	 * @param {Array} items
+	 * @returns {Set}
+	 */
+	withoutAll: function(items) {
+		var ret = this.copy();
+		ret.removeObjects(items);
+		return ret;
+	}
+});
+
+})();
+
+(function() {
+
 Eg.String = {
 	startsWith: function(string, prefix) {
 		return string.indexOf(prefix) === 0;
@@ -387,14 +406,18 @@ Eg.JSONSerializer = Em.Object.extend({
 			json = json || {};
 			json.links = json.links || {};
 
+			if (typeof json.id !== 'string' && typeof json.id !== 'number') {
+				throw new Error('Your JSON was missing an ID.');
+			}
+
 			var model = this.get('store').modelForType(typeKey);
 			var record = { id: json.id + '' };
 
 			Eg.debug(function() {
-				var attributes = model.get('attributes');
+				var attributes = Em.get(model, 'attributes');
 				var givenAttributes = new Em.Set(Em.keys(json));
-				givenAttributes.removeObject(['id', 'links']);
-				var extra = givenAttributes.without(attributes);
+				givenAttributes.removeObjects(['id', 'links']);
+				var extra = givenAttributes.withoutAll(attributes);
 
 				if (extra.length > 0) {
 					throw new Error('Your JSON contained extra attributes: ' + extra.toArray().join(','));
@@ -418,10 +441,9 @@ Eg.JSONSerializer = Em.Object.extend({
 			});
 
 			Eg.debug(function() {
-				var relationships = model.get('relationships');
-				var givenRelationships = new Em.Set(Em.keys(json));
-				givenRelationships.removeObject(['id', 'links']);
-				var extra = givenRelationships.without(relationships);
+				var relationships = Em.get(model, 'relationships');
+				var givenRelationships = new Em.Set(Em.keys(json.links));
+				var extra = givenRelationships.withoutAll(relationships);
 
 				if (extra.length > 0) {
 					throw new Error('Your JSON contained extra relationships: ' + extra.toArray().join(','));
@@ -438,11 +460,11 @@ Eg.JSONSerializer = Em.Object.extend({
 				var meta = model.metaForRelationship(relationship);
 
 				if (meta.kind === Eg.Model.HAS_MANY_KEY) {
-					record[relationship] = json[relationship].map(function(id) {
+					record[relationship] = json.links[relationship].map(function(id) {
 						return '' + id;
 					});
 				} else {
-					record[relationship] = '' + json[relationship];
+					record[relationship] = '' + json.links[relationship];
 				}
 			});
 
