@@ -59,8 +59,8 @@
 	test('The store initializes the adapter properly', function() {
 		expect(2);
 
-		ok(store.get('adapter') instanceof Adapter);
-		ok(store.get('adapter.store') === store);
+		ok(store.get('_adapter') instanceof Adapter);
+		ok(store.get('_adapter.store') === store);
 	});
 
 	test('The store can load records properly', function() {

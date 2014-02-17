@@ -23,7 +23,12 @@ var missingMethod = function(method) {
  *
  * @class {Adapter}
  */
-Eg.Adapter = Em.Object.extend({
+EG.Adapter = Em.Object.extend({
+
+	/**
+	 * The application's container.
+	 */
+	container: null,
 
 	/**
 	 * The store that this adapter belongs to.

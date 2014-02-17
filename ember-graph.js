@@ -1,13 +1,12 @@
 (function() {
 
-window.EmberGraph = {};
-window.Eg = window.EmberGraph;
+window.EmberGraph = window.Eg = window.EG = Em.Namespace.create({
+	// Neuter will take care of inserting the version number from bower.json
+	VERSION: '0.1.0'
+});
 
 if (Ember.libraries) {
-	// Neuter will take care of inserting the version number from bower.json
-	var VERSION = '0.1.0';
-
-	Ember.libraries.register('Ember Graph', VERSION);
+	Ember.libraries.register('Ember Graph', EG.VERSION);
 }
 
 
@@ -15,27 +14,32 @@ if (Ember.libraries) {
 
 (function() {
 
-Ember.onLoad('Ember.Application', function(Application) {
-	Application.initializer({
-		name: 'store',
+if (Em) {
+	Em.onLoad('Ember.Application', function(Application) {
+		Application.initializer({
+			name: 'store',
 
-		initialize: function(container, App) {
-			App.register('store:main', App.Store || Eg.Store);
-			container.lookup('store:main');
-		}
+			initialize: function(container, App) {
+				App.register('store:main', App.Store || Eg.Store);
+				// Generate the singleton store
+				var store = container.lookup('store:main');
+				// Inject the container into the store
+				store.set('container', container);
+			}
+		});
+
+		Application.initializer({
+			name: 'injectStore',
+			before: 'store',
+
+			initialize: function(container, App) {
+				App.inject('controller', 'store', 'store:main');
+				App.inject('route', 'store', 'store:main');
+				// TODO: Use this to inject store into other items (adapters, serializers, models)
+			}
+		});
 	});
-
-	Application.initializer({
-		name: 'injectStore',
-		before: 'store',
-
-		initialize: function(container, App) {
-			App.inject('controller', 'store', 'store:main');
-			App.inject('route', 'store', 'store:main');
-			// TODO: Use this to inject store into other items (adapters, serializers, models)
-		}
-	});
-});
+}
 
 })();
 
@@ -531,7 +535,12 @@ var missingMethod = function(method) {
  *
  * @class {Adapter}
  */
-Eg.Adapter = Em.Object.extend({
+EG.Adapter = Em.Object.extend({
+
+	/**
+	 * The application's container.
+	 */
+	container: null,
 
 	/**
 	 * The store that this adapter belongs to.
@@ -857,6 +866,13 @@ Eg.FixtureAdapter = Eg.Adapter.extend({
  */
 Eg.Store = Em.Object.extend({
 
+	defaultAdapter: 'json',
+
+	/**
+	 * The application's container.
+	 */
+	container: null,
+
 	/**
 	 * The number of milliseconds after a record in the cache expires
 	 * and must be re-fetched from the server. Leave at Infinity for
@@ -882,34 +898,52 @@ Eg.Store = Em.Object.extend({
 	/**
 	 * The adapter used by the store to communicate with the server.
 	 * This should be overridden by `create` or `extend`. It can
-	 * either be an adapter instance or adapter subclass.
+	 * either be an adapter subclass or a string.
 	 *
+	 * @type {String|Adapter}
+	 */
+	adapter: 'json',
+
+	/**
 	 * @type {Adapter}
 	 */
-	adapter: null,
+	_adapter: function() {
+		var adapter = this.get('adapter');
+		var container = this.get('container');
+
+		Em.assert('The adapter that you provide to the store should either be a subclass or a string.',
+			!(adapter instanceof EG.Adapter));
+
+		if (typeof adapter === 'string') {
+			adapter = container.lookup('adapter:' + adapter);
+		}
+
+		if (EG.Adapter.detect(adapter)) {
+			adapter = adapter.create();
+		}
+
+		if (!adapter) {
+			adapter = container.lookup('adapter:application') || container.lookup('adapter:json');
+		}
+
+		adapter.set('store', this);
+		adapter.set('container', container);
+
+		return adapter;
+	}.property(),
 
 	/**
 	 * Initializes all of the variables properly
 	 */
 	init: function() {
+		this.set('container', null);
+
 		this.set('_records', {});
 		this.set('_types', {});
 		this.set('_queuedRelationships', {});
 
 		// TODO: This is bad. We need to fix it.
-		Eg.Relationship.deleteAllRelationships();
-
-		var adapter = this.get('adapter');
-
-		if (adapter === null) {
-			return;
-		}
-
-		if (!(adapter instanceof Eg.Adapter)) {
-			this.set('adapter', adapter.create());
-		}
-
-		this.set('adapter.store', this);
+		EG.Relationship.deleteAllRelationships();
 	},
 
 	/**
@@ -1086,7 +1120,7 @@ Eg.Store = Em.Object.extend({
 		if (record) {
 			promise = Em.RSVP.Promise.resolve(record);
 		} else {
-			promise = this.get('adapter').findRecord(type, id).then(function(payload) {
+			promise = this.get('_adapter').findRecord(type, id).then(function(payload) {
 				this.extractPayload(payload);
 				return this.getRecord(type, id);
 			}.bind(this));
@@ -1120,7 +1154,7 @@ Eg.Store = Em.Object.extend({
 				return this.getRecord(type, id);
 			}, this));
 		} else {
-			promise = this.get('adapter').findMany(type, set.toArray()).then(function(payload) {
+			promise = this.get('_adapter').findMany(type, set.toArray()).then(function(payload) {
 				this.extractPayload(payload);
 
 				return ids.map(function(id) {
@@ -1141,7 +1175,7 @@ Eg.Store = Em.Object.extend({
 	 */
 	_findAll: function(type) {
 		var ids = this._recordsForType(type).mapBy('id');
-		var promise = this.get('adapter').findAll(type, ids).then(function(payload) {
+		var promise = this.get('_adapter').findAll(type, ids).then(function(payload) {
 			this.extractPayload(payload);
 			return this._recordsForType(type);
 		}.bind(this));
@@ -1159,7 +1193,7 @@ Eg.Store = Em.Object.extend({
 	 */
 	_findQuery: function(typeKey, options) {
 		var currentIds = this._recordsForType(typeKey).mapBy('id');
-		var promise = this.get('adapter').findQuery(typeKey, options, currentIds).then(function(payload) {
+		var promise = this.get('_adapter').findQuery(typeKey, options, currentIds).then(function(payload) {
 			var ids = payload.ids;
 			delete payload.ids;
 			this.extractPayload(payload);
@@ -1196,7 +1230,7 @@ Eg.Store = Em.Object.extend({
 		record.set('isSaving', true);
 
 		if (isNew) {
-			return this.get('adapter').createRecord(record).then(function(payload) {
+			return this.get('_adapter').createRecord(record).then(function(payload) {
 				record.set('id', payload.id);
 				record.set('isSaving', false);
 				delete payload.id;
@@ -1212,7 +1246,7 @@ Eg.Store = Em.Object.extend({
 				return record;
 			}.bind(this));
 		} else {
-			return this.get('adapter').updateRecord(record).then(function(payload) {
+			return this.get('_adapter').updateRecord(record).then(function(payload) {
 				this.extractPayload(payload);
 				record.set('isSaving', false);
 				return record;
@@ -1232,7 +1266,7 @@ Eg.Store = Em.Object.extend({
 		record.set('isSaving', true);
 		record.set('isDeleted', true);
 
-		return this.get('adapter').deleteRecord(record).then(function(payload) {
+		return this.get('_adapter').deleteRecord(record).then(function(payload) {
 			this.extractPayload(payload);
 			record.set('isSaving', false);
 			delete this.get('_records.' + type)[id];
@@ -1248,7 +1282,7 @@ Eg.Store = Em.Object.extend({
 			record.get('id') + '` while it\'s dirty.', !record.get('isDirty'));
 		record.set('isReloading', true);
 
-		return this.get('adapter').find(record.typeKey, record.get('id')).then(function(payload) {
+		return this.get('_adapter').find(record.typeKey, record.get('id')).then(function(payload) {
 			this.extractPayload(payload);
 			record.set('isReloading', false);
 			return record;
