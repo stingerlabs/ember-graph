@@ -3,8 +3,7 @@
 
 	var typeKey = 'storeTest';
 
-	var store;
-	var records;
+	var store, records;
 
 	var Adapter = Eg.Adapter.extend({
 
@@ -40,12 +39,7 @@
 
 	module('Store Test', {
 		setup: function() {
-			store = Eg.Store.create({
-				adapter: Adapter,
-				cacheTimeout: 60*1000
-			});
-
-			store.createModel('storeTest', {});
+			store = setupStore({ adapter: Adapter }, { storeTest: EG.Model.extend() });
 
 			records = {
 				'1': { id: '1' },
@@ -163,21 +157,5 @@
 			ok(record.get('isDirty') === false);
 			ok(record.get('isDeleted') === true);
 		});
-	});
-
-	test('The store detects the overridden cacheTimeout properly', function() {
-		expect(1);
-
-		ok(store.cacheTimeout === 60*1000);
-	});
-
-	test('The store invalidates records in the cache after the timeout period', function() {
-		expect(1);
-
-		Date.setTime(5*60*1000, true);
-
-		ok(store.hasRecord(typeKey, '1') === false);
-
-		Date.resetTime();
 	});
 })();

@@ -1,29 +1,34 @@
 (function() {
 	'use strict';
 
-	var store = Eg.Store.create();
+	var store;
 
-	var TestModel = store.createModel('test', {
-		name: Eg.attr({
-			type: 'string',
-			readOnly: true
-		}),
+	module('Model Attribute Test', {
+		setup: function() {
+			store = setupStore({}, {
+				test: EG.Model.extend({
+					name: EG.attr({
+						type: 'string',
+						readOnly: true
+					}),
 
-		posts: Eg.attr({
-			type: 'number',
-			defaultValue: 0
-		}),
+					posts: EG.attr({
+						type: 'number',
+						defaultValue: 0
+					}),
 
-		birthday: Eg.attr({
-			type: 'date'
-		})
+					birthday: EG.attr({
+						type: 'date'
+					})
+				})
+			});
+		}
 	});
-
-	module('Model Attribute Test');
 
 	test('The class properly detects every attribute (and only those attributes)', function() {
 		expect(1);
 
+		var TestModel = store.modelForType('test');
 		var expectedAttributes = new Em.Set(['name', 'posts', 'birthday']);
 
 		ok(Em.get(TestModel, 'attributes').isEqual(expectedAttributes));
@@ -31,6 +36,8 @@
 
 	test('The class knows which properties are attributes', function() {
 		expect(3);
+
+		var TestModel = store.modelForType('test');
 
 		ok(TestModel.isAttribute('name'));
 		ok(!TestModel.isAttribute('foofoo'));
@@ -200,6 +207,7 @@
 	test('metaForAttribute returns the correct metadata', function() {
 		expect(2);
 
+		var TestModel = store.modelForType('test');
 		var meta = TestModel.metaForRelationship('name');
 
 		ok(meta.isAttribute === true);

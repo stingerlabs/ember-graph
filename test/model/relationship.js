@@ -8,32 +8,32 @@
 
 	module('Relationship Functionality Test', {
 		setup: function() {
-			store = Eg.Store.create();
-
-			store.createModel('user', {
-				posts: Eg.hasMany({
-					relatedType: 'post',
-					inverse: 'author',
-					isRequired: false
-				})
-			});
-
-			store.createModel('post', {
-				author: Eg.belongsTo({
-					relatedType: 'user',
-					inverse: 'posts',
-					isRequired: false
+			store = setupStore({}, {
+				user: EG.Model.extend({
+					posts: Eg.hasMany({
+						relatedType: 'post',
+						inverse: 'author',
+						isRequired: false
+					})
 				}),
 
-				tags: Eg.hasMany({
-					relatedType: 'tag',
-					inverse: null,
-					isRequired: false,
-					defaultValue: ['0']
-				})
-			});
+				post: EG.Model.extend({
+					author: Eg.belongsTo({
+						relatedType: 'user',
+						inverse: 'posts',
+						isRequired: false
+					}),
 
-			store.createModel('tag', {});
+					tags: Eg.hasMany({
+						relatedType: 'tag',
+						inverse: null,
+						isRequired: false,
+						defaultValue: ['0']
+					})
+				}),
+
+				tag: EG.Model.extend()
+			});
 
 			store._loadRecord('user', { id: '1', posts: ['1', '2'] });
 			store._loadRecord('user', { id: '2', posts: ['3'] });

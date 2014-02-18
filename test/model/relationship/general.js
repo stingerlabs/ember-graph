@@ -5,33 +5,33 @@
 
 	module('General Relationship Functionality', {
 		setup: function() {
-			store = Eg.Store.create();
-
-			store.createModel('user', {
-				vertices: Eg.hasMany({
-					relatedType: 'vertex',
-					isRequired: false,
-					inverse: 'owner',
-					defaultValue: ['0']
-				})
-			});
-
-			store.createModel('vertex', {
-				owner: Eg.belongsTo({
-					relatedType: 'user',
-					isRequired: true,
-					inverse: 'vertices',
-					readOnly: true
+			store = setupStore({}, {
+				user: EG.Model.extend({
+					vertices: Eg.hasMany({
+						relatedType: 'vertex',
+						isRequired: false,
+						inverse: 'owner',
+						defaultValue: ['0']
+					})
 				}),
 
-				tags: Eg.hasMany({
-					relatedType: 'tag',
-					isRequired: false,
-					inverse: null
-				})
-			});
+				vertex: EG.Model.extend({
+					owner: Eg.belongsTo({
+						relatedType: 'user',
+						isRequired: true,
+						inverse: 'vertices',
+						readOnly: true
+					}),
 
-			store.createModel('tag');
+					tags: Eg.hasMany({
+						relatedType: 'tag',
+						isRequired: false,
+						inverse: null
+					})
+				}),
+
+				tag: EG.Model.extend()
+			});
 
 			store._loadRecord('user', { id: '1', vertices: ['1', '2', '3'] });
 			store._loadRecord('user', { id: '2' });

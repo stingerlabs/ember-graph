@@ -6,7 +6,7 @@
  */
 Eg.Store = Em.Object.extend({
 
-	defaultAdapter: 'json',
+	defaultAdapter: 'rest',
 
 	/**
 	 * The application's container.
@@ -29,13 +29,6 @@ Eg.Store = Em.Object.extend({
 	_records: {},
 
 	/**
-	 * Holds all currently registered model subtypes. (typeKey -> Model)
-	 *
-	 * @type {Object.<String, Model>}
-	 */
-	_types: {},
-
-	/**
 	 * The adapter used by the store to communicate with the server.
 	 * This should be overridden by `create` or `extend`. It can
 	 * either be an adapter subclass or a string.
@@ -48,28 +41,32 @@ Eg.Store = Em.Object.extend({
 	 * @type {Adapter}
 	 */
 	_adapter: function() {
-		var adapter = this.get('adapter');
-		var container = this.get('container');
+		if (!this._cachedAdapter) {
+			var adapter = this.get('adapter');
+			var container = this.get('container');
 
-		Em.assert('The adapter that you provide to the store should either be a subclass or a string.',
-			!(adapter instanceof EG.Adapter));
+			Em.assert('The adapter that you provide to the store should either be a subclass or a string.',
+				!(adapter instanceof EG.Adapter));
 
-		if (typeof adapter === 'string') {
-			adapter = container.lookup('adapter:' + adapter);
+			if (typeof adapter === 'string') {
+				adapter = container.lookup('adapter:' + adapter);
+			}
+
+			if (EG.Adapter.detect(adapter)) {
+				adapter = adapter.create();
+			}
+
+			if (!adapter) {
+				adapter = container.lookup('adapter:application') || container.lookup('adapter:json');
+			}
+
+			adapter.set('store', this);
+			adapter.set('container', container);
+
+			this._cachedAdapter = adapter;
 		}
 
-		if (EG.Adapter.detect(adapter)) {
-			adapter = adapter.create();
-		}
-
-		if (!adapter) {
-			adapter = container.lookup('adapter:application') || container.lookup('adapter:json');
-		}
-
-		adapter.set('store', this);
-		adapter.set('container', container);
-
-		return adapter;
+		return this._cachedAdapter;
 	}.property(),
 
 	/**
@@ -87,6 +84,49 @@ Eg.Store = Em.Object.extend({
 	},
 
 	/**
+	 * Gets a record from the store's cached records (including timestamp).
+	 *
+	 * @param {String} typeKey
+	 * @param {String} id
+	 * @private
+	 */
+	_getRecord: function(typeKey, id) {
+		var records = this.get('_records');
+		records[typeKey] = records[typeKey] || {};
+		return records[typeKey][id];
+	},
+
+	/**
+	 * Puts a record into the store's cached records.
+	 * Overwrites the old instance of it if it exists.
+	 *
+	 * @param {String} typeKey
+	 * @param {Model} record
+	 * @private
+	 */
+	_setRecord: function(typeKey, record) {
+		var records = this.get('_records');
+		records[typeKey] = records[typeKey] || {};
+		records[typeKey][record.get('id')] = {
+			record: record,
+			timestamp: new Date().getTime()
+		};
+	},
+
+	/**
+	 * Deletes a record from the store's cached records.
+	 *
+	 * @param {Store} typeKey
+	 * @param {String} id
+	 * @private
+	 */
+	_deleteRecord: function(typeKey, id) {
+		var records = this.get('_records');
+		records[typeKey] = records[typeKey] || {};
+		delete records[typeKey][id];
+	},
+
+	/**
 	 * Creates a new subclass of Model.
 	 *
 	 * @param {String} typeKey The name of the new type
@@ -96,24 +136,7 @@ Eg.Store = Em.Object.extend({
 	 * @returns {Model}
 	 */
 	createModel: function(typeKey, parentKey, mixins, options) {
-		Eg.debug.assert('The type \'' + typeKey + '\' already exists.', !this._types.hasOwnProperty(typeKey));
-
-		options = arguments[arguments.length -1];
-		options = (typeof options === 'object' ? options : {});
-
-		var base = Eg.Model;
-		if (typeof parentKey === 'string') {
-			Eg.debug.assert('The type \'' + parentKey + '\' doesn\'t exist.', this._types.hasOwnProperty(parentKey));
-			base = this.get('_types.' + parentKey);
-		}
-
-		mixins = (Em.isArray(mixins) ? mixins : (Em.isArray(parentKey) ? parentKey : []));
-
-		var subclass = base._extend(typeKey, mixins, options);
-
-		this.set('_types.' + typeKey, subclass);
-		this.set('_records.' + typeKey, {});
-		return subclass;
+		throw new Error('`createModel` is deprecated.');
 	},
 
 	/**
@@ -121,8 +144,16 @@ Eg.Store = Em.Object.extend({
 	 * @returns {Model}
 	 */
 	modelForType: function(typeKey) {
-		Eg.debug.assert('The type \'' + typeKey + '\' doesn\'t exist.', this.get('_types').hasOwnProperty(typeKey));
-		return this.get('_types.' + typeKey);
+		this._modelCache = this._modelCache || {};
+		var factory = this.get('container').lookupFactory('model:' + typeKey);
+
+		if (!this._modelCache[typeKey]) {
+			this._modelCache[typeKey] = factory;
+			factory.reopen({ typeKey: typeKey });
+			factory.reopenClass({ typeKey: typeKey });
+		}
+
+		return factory;
 	},
 
 	/**
@@ -141,10 +172,7 @@ Eg.Store = Em.Object.extend({
 		record.set('store', this);
 		record.set('id', Eg.Model.temporaryIdPrefix + Eg.util.generateGUID());
 
-		this.set('_records.' + typeKey + '.' + record.get('id'), {
-			record: record,
-			timestamp: new Date().getTime()
-		});
+		this._setRecord(typeKey, record);
 
 		record._loadData(json);
 
@@ -163,10 +191,7 @@ Eg.Store = Em.Object.extend({
 		record.set('store', this);
 		record.set('id', json.id);
 
-		this.set('_records.' + typeKey + '.' + json.id, {
-			record: record,
-			timestamp: new Date().getTime()
-		});
+		this._setRecord(typeKey, record);
 
 		if (this._hasQueuedRelationships(typeKey, json.id)) {
 			this._connectQueuedRelationships(record);
@@ -234,12 +259,11 @@ Eg.Store = Em.Object.extend({
 	 * @private
 	 */
 	getRecord: function(typeKey, id) {
-		var store = this.get('_records');
-		var records = store[typeKey] || (store[typeKey] = {});
+		var record = this._getRecord(typeKey, id);
 		var timeout = new Date().getTime() - this.get('cacheTimeout');
 
-		if (records[id]) {
-			return (records[id].timestamp >= timeout ? records[id].record : null);
+		if (record && record.record) {
+			return (record.timestamp >= timeout ? record.record : null);
 		} else {
 			return null;
 		}
@@ -375,12 +399,8 @@ Eg.Store = Em.Object.extend({
 				record.set('isSaving', false);
 				delete payload.id;
 
-				var records = _this.get('_records.' + type);
-				delete records[tempId];
-				records[record.get('id')] = {
-					timestamp: new Date().getTime(),
-					record: record
-				};
+				this._deleteRecord(type, tempId);
+				this._setRecord(type, record);
 
 				this.extractPayload(payload);
 				return record;

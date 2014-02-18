@@ -196,31 +196,9 @@ Eg.Model.reopenClass({
 	_create: Eg.Model.create,
 
 	extend: function() {
-		Eg.debug.assert('You can\'t extend a model directly. Use the store.');
-	},
-
-	/**
-	 * Modifies the extend method to ensure that the typeKey is available on
-	 * both the class an instances. Also registers it with the system.
-	 *
-	 * @returns {Model}
-	 */
-	_extend: (function(_super) {
-		return function(typeKey, mixins, options) {
-			var subclass = _super.apply(this, mixins.concat([options]));
-
-			subclass._declareRelationships();
-
-			subclass.reopen({
-				typeKey: typeKey
-			});
-
-			subclass.reopenClass({
-				typeKey: typeKey
-			});
-
-			return subclass;
-		};
-	})(Eg.Model.extend)
+		var subclass = this._super.apply(this, arguments);
+		subclass._declareRelationships();
+		return subclass;
+	}
 });
 

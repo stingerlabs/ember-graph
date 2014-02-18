@@ -1,9 +1,7 @@
 (function() {
 	'use strict';
 
-	var store = Eg.Store.create();
-
-	var TestModel = store.createModel('test', {});
+	var store = setupStore({}, { test: EG.Model.extend() });
 
 	module('Model ID Test');
 

@@ -6,56 +6,57 @@
 
 	module('JSON Serializer Test', {
 		setup: function() {
-			store = Eg.Store.create();
-			serializer = Eg.JSONSerializer.create({ store: store });
+			store = setupStore({}, {
+				user: EG.Model.extend({
+					email: EG.attr({
+						type: 'string',
+						isRequired: true,
+						readOnly: true
+					}),
 
-			store.createModel('user', {
-				email: Eg.attr({
-					type: 'string',
-					isRequired: true,
-					readOnly: true
+					posts: EG.hasMany({
+						relatedType: 'post',
+						inverse: 'author',
+						isRequired: true
+					})
 				}),
 
-				posts: Eg.hasMany({
-					relatedType: 'post',
-					inverse: 'author',
-					isRequired: true
+				post: EG.Model.extend({
+					title: EG.attr({
+						type: 'string',
+						isRequired: true,
+						readOnly: true
+					}),
+
+					body: EG.attr({
+						type: 'string',
+						isRequired: false,
+						defaultValue: ''
+					}),
+
+					author: EG.belongsTo({
+						relatedType: 'user',
+						inverse: 'posts',
+						isRequired: true
+					}),
+
+					tags: EG.hasMany({
+						relatedType: 'tag',
+						inverse: null,
+						isRequired: true
+					})
+				}),
+
+				tag: EG.Model.extend({
+					name: EG.attr({
+						type: 'string',
+						isRequired: true,
+						readOnly: true
+					})
 				})
 			});
 
-			store.createModel('post', {
-				title: Eg.attr({
-					type: 'string',
-					isRequired: true,
-					readOnly: true
-				}),
-
-				body: Eg.attr({
-					type: 'string',
-					isRequired: false,
-					defaultValue: ''
-				}),
-
-				author: Eg.belongsTo({
-					relatedType: 'user',
-					inverse: 'posts',
-					isRequired: true
-				}),
-
-				tags: Eg.hasMany({
-					relatedType: 'tag',
-					inverse: null,
-					isRequired: true
-				})
-			});
-
-			store.createModel('tag', {
-				name: Eg.attr({
-					type: 'string',
-					isRequired: true,
-					readOnly: true
-				})
-			});
+			serializer = EG.JSONSerializer.create({ store: store });
 
 			store._loadRecord('user', { id: '1', email: 'test@test.com', posts: ['1', '2'] });
 

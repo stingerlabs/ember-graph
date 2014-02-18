@@ -5,23 +5,23 @@
 
 	module('Relationship Modification', {
 		setup: function() {
-			store = Eg.Store.create();
+			store = setupStore({}, {
+				test1: EG.Model.extend({
+					belongsToNull: Eg.belongsTo({ relatedType: 'test3', inverse: null }),
+					belongsToBelongsTo: Eg.belongsTo({ relatedType: 'test2', inverse: 'belongsTo' }),
+					belongsToHasMany: Eg.belongsTo({ relatedType: 'test2', inverse: 'hasManyBelongsTo' }),
+					hasMany: Eg.hasMany({ relatedType: 'test2', inverse: 'hasManyHasMany' })
+				}),
 
-			store.createModel('test1', {
-				belongsToNull: Eg.belongsTo({ relatedType: 'test3', inverse: null }),
-				belongsToBelongsTo: Eg.belongsTo({ relatedType: 'test2', inverse: 'belongsTo' }),
-				belongsToHasMany: Eg.belongsTo({ relatedType: 'test2', inverse: 'hasManyBelongsTo' }),
-				hasMany: Eg.hasMany({ relatedType: 'test2', inverse: 'hasManyHasMany' })
+				test2: EG.Model.extend({
+					hasManyNull: Eg.hasMany({ relatedType: 'test3', inverse: null }),
+					hasManyBelongsTo: Eg.hasMany({ relatedType: 'test1', inverse: 'belongsToHasMany' }),
+					hasManyHasMany: Eg.hasMany({ relatedType: 'test1', inverse: 'hasMany' }),
+					belongsTo: Eg.belongsTo({ relatedType: 'test1', inverse: 'belongsToBelongsTo' })
+				}),
+
+				test3: EG.Model.extend()
 			});
-
-			store.createModel('test2', {
-				hasManyNull: Eg.hasMany({ relatedType: 'test3', inverse: null }),
-				hasManyBelongsTo: Eg.hasMany({ relatedType: 'test1', inverse: 'belongsToHasMany' }),
-				hasManyHasMany: Eg.hasMany({ relatedType: 'test1', inverse: 'hasMany' }),
-				belongsTo: Eg.belongsTo({ relatedType: 'test1', inverse: 'belongsToBelongsTo' })
-			});
-
-			store.createModel('test3');
 
 			store._loadRecord('test2', { id: '1', hasManyNull: [],
 				hasManyBelongsTo: [], hasManyHasMany: [], belongsTo: null });

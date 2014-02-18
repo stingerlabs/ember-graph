@@ -4,11 +4,7 @@ if (Em) {
 			name: 'store',
 
 			initialize: function(container, App) {
-				App.register('store:main', App.Store || Eg.Store);
-				// Generate the singleton store
-				var store = container.lookup('store:main');
-				// Inject the container into the store
-				store.set('container', container);
+				App.register('store:main', App.Store || EG.Store);
 			}
 		});
 

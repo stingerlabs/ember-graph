@@ -1,9 +1,7 @@
 (function() {
 	'use strict';
 
-	var store = Eg.Store.create();
-
-	var TestModel = store.createModel('test', {});
+	var store = setupStore({}, { test: EG.Model.extend() });
 
 	module('Model Type Property Test');
 
@@ -18,12 +16,14 @@
 	test('typeKey exists on the class', function() {
 		expect(1);
 
+		var TestModel = store.modelForType('test');
+
 		ok(TestModel.typeKey === 'test');
 	});
 
 	test('Looking up a type from the store works', function() {
 		expect(1);
 
-		ok(store.modelForType('test') === TestModel);
+		ok(EG.Model.detect(store.modelForType('test')));
 	});
 })();

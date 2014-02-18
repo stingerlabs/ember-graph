@@ -5,33 +5,33 @@
 
 	module('Relationship Object Test', {
 		setup: function() {
-			store = Eg.Store.create();
+			store = setupStore({}, {
+				test1: EG.Model.extend({
+					children: Eg.hasMany({
+						relatedType: 'test2',
+						inverse: 'parent',
+						isRequired: false
+					}),
 
-			store.createModel('test1', {
-				children: Eg.hasMany({
-					relatedType: 'test2',
-					inverse: 'parent',
-					isRequired: false
+					link: Eg.belongsTo({
+						relatedType: 'test2',
+						inverse: null,
+						isRequired: false
+					})
 				}),
 
-				link: Eg.belongsTo({
-					relatedType: 'test2',
-					inverse: null,
-					isRequired: false
-				})
-			});
+				test2: EG.Model.extend({
+					parent: Eg.belongsTo({
+						relatedType: 'test1',
+						inverse: 'children',
+						isRequired: false
+					}),
 
-			store.createModel('test2', {
-				parent: Eg.belongsTo({
-					relatedType: 'test1',
-					inverse: 'children',
-					isRequired: false
-				}),
-
-				links: Eg.hasMany({
-					relatedType: 'test1',
-					inverse: null,
-					isRequired: false
+					links: Eg.hasMany({
+						relatedType: 'test1',
+						inverse: null,
+						isRequired: false
+					})
 				})
 			});
 		}
