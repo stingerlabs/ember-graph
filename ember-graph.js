@@ -949,7 +949,7 @@ Eg.Store = Em.Object.extend({
 		var adapter = container.lookup('adapter:application') ||
 			 container.lookup('adapter:' + this.get('defaultAdapter'));
 
-		Em.assert('A valid adapter could not be found.', EG.Adapter.detect(adapter));
+		Em.assert('A valid adapter could not be found.', EG.Adapter.detectInstance(adapter));
 
 		return adapter;
 	}.property(),
