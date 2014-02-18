@@ -5,7 +5,7 @@
  *
  * @class {Model}
  */
-Eg.Model = Em.Object.extend({
+Eg.Model = Em.Object.extend(Em.Evented, {
 
 	/**
 	 * Should be overridden in all subclasses with a name for this

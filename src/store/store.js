@@ -107,19 +107,6 @@ Eg.Store = Em.Object.extend({
 	},
 
 	/**
-	 * Creates a new subclass of Model.
-	 *
-	 * @param {String} typeKey The name of the new type
-	 * @param {String} [parentKey] The parent type, if inheriting from a custom type
-	 * @param {Array} [mixins] The mixins to create the type with
-	 * @param {Object} options The attributes and relationships of the type
-	 * @returns {Model}
-	 */
-	createModel: function(typeKey, parentKey, mixins, options) {
-		throw new Error('`createModel` is deprecated.');
-	},
-
-	/**
 	 * @param {String} typeKey
 	 * @returns {Model}
 	 */
