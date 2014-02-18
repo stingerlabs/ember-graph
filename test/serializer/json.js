@@ -6,7 +6,7 @@
 
 	module('JSON Serializer Test', {
 		setup: function() {
-			store = setupStore({}, {
+			store = setupStore({
 				user: EG.Model.extend({
 					email: EG.attr({
 						type: 'string',

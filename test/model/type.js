@@ -1,7 +1,7 @@
 (function() {
 	'use strict';
 
-	var store = setupStore({}, { test: EG.Model.extend() });
+	var store = setupStore({ test: EG.Model.extend() });
 
 	module('Model Type Property Test');
 

@@ -48,9 +48,11 @@ EG.Adapter = Em.Object.extend({
 	 */
 	_serializerDidChange: function() {
 		var serializer = this.get('serializer');
+		var container = this.get('container');
 
 		if (serializer) {
 			serializer.set('store', this.get('store'));
+			serializer.set('container', container);
 		}
 	}.observes('serializer').on('init'),
 

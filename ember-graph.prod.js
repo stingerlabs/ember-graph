@@ -1,13 +1,12 @@
 (function() {
 
-window.EmberGraph = {};
-window.Eg = window.EmberGraph;
+window.EmberGraph = window.Eg = window.EG = Em.Namespace.create({
+	// Neuter will take care of inserting the version number from bower.json
+	VERSION: '0.1.0'
+});
 
 if (Ember.libraries) {
-	// Neuter will take care of inserting the version number from bower.json
-	var VERSION = '0.1.0';
-
-	Ember.libraries.register('Ember Graph', VERSION);
+	Ember.libraries.register('Ember Graph', EG.VERSION);
 }
 
 
@@ -15,27 +14,37 @@ if (Ember.libraries) {
 
 (function() {
 
-Ember.onLoad('Ember.Application', function(Application) {
-	Application.initializer({
-		name: 'store',
+if (Em) {
+	// Remember, these are run AFTER the application becomes ready
+	Em.onLoad('Ember.Application', function(Application) {
+		Application.initializer({
+			name: 'store',
 
-		initialize: function(container, App) {
-			App.register('store:main', App.Store || Eg.Store);
-			container.lookup('store:main');
-		}
+			initialize: function(container, App) {
+				App.register('store:main', App.Store || EG.Store, { singleton: true });
+
+				App.register('adapter:rest', EG.RESTAdapter, { singleton: true });
+				App.register('adapter:fixture', EG.FixtureAdapter, { singleton: true });
+				App.register('serializer:json', EG.JSONSerializer, { singleton: true });
+
+				container.lookup('store:main');
+			}
+		});
+
+		Application.initializer({
+			name: 'injectStore',
+			before: 'store',
+
+			initialize: function(container, App) {
+				App.inject('controller', 'store', 'store:main');
+				App.inject('route', 'store', 'store:main');
+				App.inject('adapter', 'store', 'store:main');
+				App.inject('serializer', 'store', 'store:main');
+				// TODO: Use this to inject store into other items (adapters, serializers, models)
+			}
+		});
 	});
-
-	Application.initializer({
-		name: 'injectStore',
-		before: 'store',
-
-		initialize: function(container, App) {
-			App.inject('controller', 'store', 'store:main');
-			App.inject('route', 'store', 'store:main');
-			// TODO: Use this to inject store into other items (adapters, serializers, models)
-		}
-	});
-});
+}
 
 })();
 
@@ -264,6 +273,11 @@ var methodMissing = function(method) {
 Eg.Serializer = Em.Object.extend({
 
 	/**
+	 * The application's container.
+	 */
+	container: null,
+
+	/**
 	 * The store that the records will be loaded into.
 	 * This can be used for fetching models and their metadata.
 	 */
@@ -483,7 +497,12 @@ var missingMethod = function(method) {
  *
  * @class {Adapter}
  */
-Eg.Adapter = Em.Object.extend({
+EG.Adapter = Em.Object.extend({
+
+	/**
+	 * The application's container.
+	 */
+	container: null,
 
 	/**
 	 * The store that this adapter belongs to.
@@ -503,9 +522,11 @@ Eg.Adapter = Em.Object.extend({
 	 */
 	_serializerDidChange: function() {
 		var serializer = this.get('serializer');
+		var container = this.get('container');
 
 		if (serializer) {
 			serializer.set('store', this.get('store'));
+			serializer.set('container', container);
 		}
 	}.observes('serializer').on('init'),
 
@@ -623,56 +644,79 @@ var removeEmpty = function(item) {
  * @class FixtureAdapter
  */
 Eg.FixtureAdapter = Eg.Adapter.extend({
+	// TODO: Refactor this into a base class called 'SynchronousAdapter'
+	// Then make two subclasses, fixture and localStorage
 
 	/**
-	 * typeKey -> record ID -> Record
+	 * Gets a record from the appropriate fixtures array.
 	 *
-	 * @type {Object.<String, Object.<String, Object>>
+	 * @param {String} typeKey
+	 * @param {String} id
+	 * @return {Object}
+	 * @private
 	 */
-	_fixtures: null,
+	_getRecord: function(typeKey, id) {
+		var model = this.get('store').modelForType(typeKey);
+		model.FIXTURES = model.FIXTURES || [];
 
-	/**
-	 * Initializes the _fixtures object.
-	 */
-	init: function() {
-		var adapter = this._super();
-		this.set('_fixtures', {});
-		return adapter;
+		for (var i = 0; i < model.FIXTURES.length; i+=1) {
+			if (model.FIXTURES[i].id === id) {
+				return model.FIXTURES[i];
+			}
+		}
+
+		return null;
 	},
 
 	/**
-	 * Register models with the adapter.
+	 * Gets all fixtures of the specified type.
 	 *
 	 * @param {String} typeKey
-	 * @param {Object[]} fixtures
+	 * @returns {Array}
+	 * @private
 	 */
-	registerFixtures: function(typeKey, fixtures) {
-		var _fixtures = this.get('_fixtures');
-		_fixtures[typeKey] = _fixtures[typeKey] || {};
+	_getRecords: function(typeKey) {
+		return this.get('store').modelForType(typeKey).FIXTURES || [];
+	},
 
-		var type = this.get('store').modelForType(typeKey);
-		var verify = function(record) {
-			if (typeof record.id !== 'string') {
-				throw new Error('Fixture records must have an `id` property.');
+	/**
+	 * Puts a record in the appropriate fixtures array.
+	 *
+	 * @param {String} typeKey
+	 * @param {Object} json
+	 * @private
+	 */
+	_setRecord: function(typeKey, json) {
+		var model = this.get('store').modelForType(typeKey);
+		model.FIXTURES = model.FIXTURES || [];
+
+		for (var i = 0; i < model.FIXTURES.length; i+=1) {
+			if (model.FIXTURES[i].id === json.id) {
+				model.FIXTURES[i] = json;
+				return;
 			}
+		}
 
-			type.eachAttribute(function(name, meta) {
-				if (meta.isRequired && !record.hasOwnProperty(name)) {
-					throw new Error('Your fixture record was missing the `' + name + '` property.');
-				}
-			});
+		model.FIXTURES.push(json);
+	},
 
-			type.eachRelationship(function(name, meta) {
-				if (meta.isRequired && !record.hasOwnProperty(name)) {
-					throw new Error('Your fixture record was missing the `' + name + '` relationship.');
-				}
-			});
-		};
+	/**
+	 * Deletes a record from the appropriate fixtures array.
+	 *
+	 * @param {String} typeKey
+	 * @param {String} id
+	 * @private
+	 */
+	_deleteRecord: function(typeKey, id) {
+		var model = this.get('store').modelForType(typeKey);
+		model.FIXTURES = model.FIXTURES || [];
 
-		fixtures.forEach(function(record) {
-			verify(record);
-			_fixtures[typeKey][record.id] = record;
-		}, this);
+		for (var i = 0; i < model.FIXTURES.length; i+=1) {
+			if (model.FIXTURES[i].id === id) {
+				model.FIXTURES.splice(i, 1);
+				return;
+			}
+		}
 	},
 
 	/**
@@ -689,7 +733,7 @@ Eg.FixtureAdapter = Eg.Adapter.extend({
 	createRecord: function(record) {
 		record.set('id', Eg.util.generateGUID());
 		var json = this.serialize(record);
-		this.get('_fixtures')[record.typeKey][json.id] = json;
+		this._setRecord(record.typeKey, json);
 		return Em.RSVP.Promise.resolve({});
 	},
 
@@ -702,7 +746,7 @@ Eg.FixtureAdapter = Eg.Adapter.extend({
 	 */
 	findRecord: function(typeKey, id) {
 		var json = {};
-		json[typeKey] = [this.get('_fixtures')[typeKey][id]].filter(removeEmpty);
+		json[typeKey] = [this._getRecord(typeKey, id)].filter(removeEmpty);
 		return Em.RSVP.Promise.resolve(json);
 	},
 
@@ -717,7 +761,7 @@ Eg.FixtureAdapter = Eg.Adapter.extend({
 	findMany: function(typeKey, ids) {
 		var json = {};
 		json[typeKey] = ids.map(function(id) {
-			return this.get('_fixtures')[typeKey][id];
+			return this._getRecord(typeKey, id);
 		}, this).filter(removeEmpty);
 		return Em.RSVP.Promise.resolve(json);
 	},
@@ -731,7 +775,9 @@ Eg.FixtureAdapter = Eg.Adapter.extend({
 	 * @returns {Promise} A promise that resolves to normalized JSON
 	 */
 	findAll: function(typeKey, ids) {
-		return this.findMany(typeKey, Em.keys(this.get('_fixtures')[typeKey]));
+		var json = {};
+		json[typeKey] = this._getRecords(typeKey);
+		return Em.RSVP.Promise.resolve(json);
 	},
 
 	/**
@@ -758,7 +804,7 @@ Eg.FixtureAdapter = Eg.Adapter.extend({
 	 */
 	updateRecord: function(record) {
 		var json = this.serialize(record);
-		this.get('_fixtures')[record.typeKey][json.id] = json;
+		this._setRecord(record.typeKey, json);
 		return Em.RSVP.Promise.resolve({});
 	},
 
@@ -769,7 +815,7 @@ Eg.FixtureAdapter = Eg.Adapter.extend({
 	 * @returns {Promise} A promise that resolves to normalized JSON
 	 */
 	deleteRecord: function(record) {
-		delete this.get('_fixtures')[record.typeKey][record.get('id')];
+		this._deleteRecord(record.typeKey, record.get('id'));
 		return Em.RSVP.Promise.resolve({});
 	},
 
@@ -801,6 +847,12 @@ Eg.FixtureAdapter = Eg.Adapter.extend({
 
 (function() {
 
+EG.RESTAdapter = EG.Adapter.extend();
+
+})();
+
+(function() {
+
 /**
  * The store is used to manage all records in the application.
  * Ideally, there should only be one store for an application.
@@ -808,6 +860,18 @@ Eg.FixtureAdapter = Eg.Adapter.extend({
  * @type {Store}
  */
 Eg.Store = Em.Object.extend({
+
+	/**
+	 * The adapter to use if an application adapter is not found.
+	 *
+	 * @type {String}
+	 */
+	defaultAdapter: 'rest',
+
+	/**
+	 * The application's container.
+	 */
+	container: null,
 
 	/**
 	 * The number of milliseconds after a record in the cache expires
@@ -825,20 +889,22 @@ Eg.Store = Em.Object.extend({
 	_records: {},
 
 	/**
-	 * Holds all currently registered model subtypes. (typeKey -> Model)
-	 *
-	 * @type {Object.<String, Model>}
-	 */
-	_types: {},
-
-	/**
 	 * The adapter used by the store to communicate with the server.
-	 * This should be overridden by `create` or `extend`. It can
-	 * either be an adapter instance or adapter subclass.
+	 * The adapter is found by looking for App.ApplicationAdapter.
+	 * If not found, defaults to the REST adapter.
 	 *
 	 * @type {Adapter}
+	 * @private
 	 */
-	adapter: null,
+	adapter: function() {
+		var container = this.get('container');
+		var adapter = container.lookup('adapter:application') ||
+			 container.lookup('adapter:' + this.get('defaultAdapter'));
+
+		
+
+		return adapter;
+	}.property(),
 
 	/**
 	 * Initializes all of the variables properly
@@ -849,19 +915,50 @@ Eg.Store = Em.Object.extend({
 		this.set('_queuedRelationships', {});
 
 		// TODO: This is bad. We need to fix it.
-		Eg.Relationship.deleteAllRelationships();
+		EG.Relationship.deleteAllRelationships();
+	},
 
-		var adapter = this.get('adapter');
+	/**
+	 * Gets a record from the store's cached records (including timestamp).
+	 *
+	 * @param {String} typeKey
+	 * @param {String} id
+	 * @private
+	 */
+	_getRecord: function(typeKey, id) {
+		var records = this.get('_records');
+		records[typeKey] = records[typeKey] || {};
+		return records[typeKey][id];
+	},
 
-		if (adapter === null) {
-			return;
-		}
+	/**
+	 * Puts a record into the store's cached records.
+	 * Overwrites the old instance of it if it exists.
+	 *
+	 * @param {String} typeKey
+	 * @param {Model} record
+	 * @private
+	 */
+	_setRecord: function(typeKey, record) {
+		var records = this.get('_records');
+		records[typeKey] = records[typeKey] || {};
+		records[typeKey][record.get('id')] = {
+			record: record,
+			timestamp: new Date().getTime()
+		};
+	},
 
-		if (!(adapter instanceof Eg.Adapter)) {
-			this.set('adapter', adapter.create());
-		}
-
-		this.set('adapter.store', this);
+	/**
+	 * Deletes a record from the store's cached records.
+	 *
+	 * @param {Store} typeKey
+	 * @param {String} id
+	 * @private
+	 */
+	_deleteRecord: function(typeKey, id) {
+		var records = this.get('_records');
+		records[typeKey] = records[typeKey] || {};
+		delete records[typeKey][id];
 	},
 
 	/**
@@ -874,24 +971,7 @@ Eg.Store = Em.Object.extend({
 	 * @returns {Model}
 	 */
 	createModel: function(typeKey, parentKey, mixins, options) {
-		
-
-		options = arguments[arguments.length -1];
-		options = (typeof options === 'object' ? options : {});
-
-		var base = Eg.Model;
-		if (typeof parentKey === 'string') {
-			
-			base = this.get('_types.' + parentKey);
-		}
-
-		mixins = (Em.isArray(mixins) ? mixins : (Em.isArray(parentKey) ? parentKey : []));
-
-		var subclass = base._extend(typeKey, mixins, options);
-
-		this.set('_types.' + typeKey, subclass);
-		this.set('_records.' + typeKey, {});
-		return subclass;
+		throw new Error('`createModel` is deprecated.');
 	},
 
 	/**
@@ -899,8 +979,16 @@ Eg.Store = Em.Object.extend({
 	 * @returns {Model}
 	 */
 	modelForType: function(typeKey) {
-		
-		return this.get('_types.' + typeKey);
+		this._modelCache = this._modelCache || {};
+		var factory = this.get('container').lookupFactory('model:' + typeKey);
+
+		if (!this._modelCache[typeKey]) {
+			this._modelCache[typeKey] = factory;
+			factory.reopen({ typeKey: typeKey });
+			factory.reopenClass({ typeKey: typeKey });
+		}
+
+		return factory;
 	},
 
 	/**
@@ -919,10 +1007,7 @@ Eg.Store = Em.Object.extend({
 		record.set('store', this);
 		record.set('id', Eg.Model.temporaryIdPrefix + Eg.util.generateGUID());
 
-		this.set('_records.' + typeKey + '.' + record.get('id'), {
-			record: record,
-			timestamp: new Date().getTime()
-		});
+		this._setRecord(typeKey, record);
 
 		record._loadData(json);
 
@@ -941,10 +1026,7 @@ Eg.Store = Em.Object.extend({
 		record.set('store', this);
 		record.set('id', json.id);
 
-		this.set('_records.' + typeKey + '.' + json.id, {
-			record: record,
-			timestamp: new Date().getTime()
-		});
+		this._setRecord(typeKey, record);
 
 		if (this._hasQueuedRelationships(typeKey, json.id)) {
 			this._connectQueuedRelationships(record);
@@ -1012,12 +1094,11 @@ Eg.Store = Em.Object.extend({
 	 * @private
 	 */
 	getRecord: function(typeKey, id) {
-		var store = this.get('_records');
-		var records = store[typeKey] || (store[typeKey] = {});
+		var record = this._getRecord(typeKey, id);
 		var timeout = new Date().getTime() - this.get('cacheTimeout');
 
-		if (records[id]) {
-			return (records[id].timestamp >= timeout ? records[id].record : null);
+		if (record && record.record) {
+			return (record.timestamp >= timeout ? record.record : null);
 		} else {
 			return null;
 		}
@@ -1153,12 +1234,8 @@ Eg.Store = Em.Object.extend({
 				record.set('isSaving', false);
 				delete payload.id;
 
-				var records = _this.get('_records.' + type);
-				delete records[tempId];
-				records[record.get('id')] = {
-					timestamp: new Date().getTime(),
-					record: record
-				};
+				this._deleteRecord(type, tempId);
+				this._setRecord(type, record);
 
 				this.extractPayload(payload);
 				return record;
@@ -2403,32 +2480,10 @@ Eg.Model.reopenClass({
 	_create: Eg.Model.create,
 
 	extend: function() {
-		
-	},
-
-	/**
-	 * Modifies the extend method to ensure that the typeKey is available on
-	 * both the class an instances. Also registers it with the system.
-	 *
-	 * @returns {Model}
-	 */
-	_extend: (function(_super) {
-		return function(typeKey, mixins, options) {
-			var subclass = _super.apply(this, mixins.concat([options]));
-
-			subclass._declareRelationships();
-
-			subclass.reopen({
-				typeKey: typeKey
-			});
-
-			subclass.reopenClass({
-				typeKey: typeKey
-			});
-
-			return subclass;
-		};
-	})(Eg.Model.extend)
+		var subclass = this._super.apply(this, arguments);
+		subclass._declareRelationships();
+		return subclass;
+	}
 });
 
 

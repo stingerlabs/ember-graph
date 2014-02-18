@@ -1,0 +1,1 @@
+EG.RESTAdapter = EG.Adapter.extend();

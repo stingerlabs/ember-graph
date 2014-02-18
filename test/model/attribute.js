@@ -5,7 +5,7 @@
 
 	module('Model Attribute Test', {
 		setup: function() {
-			store = setupStore({}, {
+			store = setupStore({
 				test: EG.Model.extend({
 					name: EG.attr({
 						type: 'string',

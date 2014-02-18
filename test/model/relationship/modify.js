@@ -5,7 +5,7 @@
 
 	module('Relationship Modification', {
 		setup: function() {
-			store = setupStore({}, {
+			store = setupStore({
 				test1: EG.Model.extend({
 					belongsToNull: Eg.belongsTo({ relatedType: 'test3', inverse: null }),
 					belongsToBelongsTo: Eg.belongsTo({ relatedType: 'test2', inverse: 'belongsTo' }),

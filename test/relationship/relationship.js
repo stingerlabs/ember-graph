@@ -5,7 +5,7 @@
 
 	module('Relationship Object Test', {
 		setup: function() {
-			store = setupStore({}, {
+			store = setupStore({
 				test1: EG.Model.extend({
 					children: Eg.hasMany({
 						relatedType: 'test2',

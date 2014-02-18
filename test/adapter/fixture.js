@@ -5,25 +5,33 @@
 
 	module('Fixture Adapter', {
 		setup: function() {
-			store = setupStore({ adapter: EG.FixtureAdapter }, {
-				user: EG.Model.extend({
-					name: EG.attr({ type: 'string' }),
-					spam: EG.belongsTo({ relatedType: 'spam', inverse: null }),
-					eggs: EG.hasMany({ relatedType: 'egg', inverse: null })
-				}),
-
-				spam: EG.Model.extend(),
-				egg: EG.Model.extend()
+			var User = EG.Model.extend({
+				name: EG.attr({ type: 'string' }),
+				spam: EG.belongsTo({ relatedType: 'spam', inverse: null }),
+				eggs: EG.hasMany({ relatedType: 'egg', inverse: null })
 			});
 
-			adapter = store.get('_adapter');
-
-			adapter.registerFixtures('user', [
+			User.FIXTURES = [
 				{ id: '1', name: 'Alice', spam: '1', eggs: ['2', '4'] },
 				{ id: '2', name: 'Bob', spam: '8', eggs: ['1', '3'] },
 				{ id: '3', name: 'Carol', spam: '9', eggs: ['1', '2', '3', '4'] }
-			]);
+			];
+
+			store = setupStore({
+				user: User,
+
+				spam: EG.Model.extend(),
+				egg: EG.Model.extend()
+			}, {}, EG.Store.extend({ defaultAdapter: 'fixture' }));
+
+			adapter = store.get('adapter');
 		}
+	});
+
+	test('The store is setup properly', function() {
+		expect(1);
+
+		strictEqual(adapter.get('store'), store);
 	});
 
 	asyncTest('A single record can be found', function() {

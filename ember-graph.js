@@ -15,12 +15,19 @@ if (Ember.libraries) {
 (function() {
 
 if (Em) {
+	// Remember, these are run AFTER the application becomes ready
 	Em.onLoad('Ember.Application', function(Application) {
 		Application.initializer({
 			name: 'store',
 
 			initialize: function(container, App) {
-				App.register('store:main', App.Store || EG.Store);
+				App.register('store:main', App.Store || EG.Store, { singleton: true });
+
+				App.register('adapter:rest', EG.RESTAdapter, { singleton: true });
+				App.register('adapter:fixture', EG.FixtureAdapter, { singleton: true });
+				App.register('serializer:json', EG.JSONSerializer, { singleton: true });
+
+				container.lookup('store:main');
 			}
 		});
 
@@ -31,6 +38,8 @@ if (Em) {
 			initialize: function(container, App) {
 				App.inject('controller', 'store', 'store:main');
 				App.inject('route', 'store', 'store:main');
+				App.inject('adapter', 'store', 'store:main');
+				App.inject('serializer', 'store', 'store:main');
 				// TODO: Use this to inject store into other items (adapters, serializers, models)
 			}
 		});
@@ -281,6 +290,11 @@ var methodMissing = function(method) {
  * @class {Serializer}
  */
 Eg.Serializer = Em.Object.extend({
+
+	/**
+	 * The application's container.
+	 */
+	container: null,
 
 	/**
 	 * The store that the records will be loaded into.
@@ -556,9 +570,11 @@ EG.Adapter = Em.Object.extend({
 	 */
 	_serializerDidChange: function() {
 		var serializer = this.get('serializer');
+		var container = this.get('container');
 
 		if (serializer) {
 			serializer.set('store', this.get('store'));
+			serializer.set('container', container);
 		}
 	}.observes('serializer').on('init'),
 
@@ -676,56 +692,79 @@ var removeEmpty = function(item) {
  * @class FixtureAdapter
  */
 Eg.FixtureAdapter = Eg.Adapter.extend({
+	// TODO: Refactor this into a base class called 'SynchronousAdapter'
+	// Then make two subclasses, fixture and localStorage
 
 	/**
-	 * typeKey -> record ID -> Record
+	 * Gets a record from the appropriate fixtures array.
 	 *
-	 * @type {Object.<String, Object.<String, Object>>
+	 * @param {String} typeKey
+	 * @param {String} id
+	 * @return {Object}
+	 * @private
 	 */
-	_fixtures: null,
+	_getRecord: function(typeKey, id) {
+		var model = this.get('store').modelForType(typeKey);
+		model.FIXTURES = model.FIXTURES || [];
 
-	/**
-	 * Initializes the _fixtures object.
-	 */
-	init: function() {
-		var adapter = this._super();
-		this.set('_fixtures', {});
-		return adapter;
+		for (var i = 0; i < model.FIXTURES.length; i+=1) {
+			if (model.FIXTURES[i].id === id) {
+				return model.FIXTURES[i];
+			}
+		}
+
+		return null;
 	},
 
 	/**
-	 * Register models with the adapter.
+	 * Gets all fixtures of the specified type.
 	 *
 	 * @param {String} typeKey
-	 * @param {Object[]} fixtures
+	 * @returns {Array}
+	 * @private
 	 */
-	registerFixtures: function(typeKey, fixtures) {
-		var _fixtures = this.get('_fixtures');
-		_fixtures[typeKey] = _fixtures[typeKey] || {};
+	_getRecords: function(typeKey) {
+		return this.get('store').modelForType(typeKey).FIXTURES || [];
+	},
 
-		var type = this.get('store').modelForType(typeKey);
-		var verify = function(record) {
-			if (typeof record.id !== 'string') {
-				throw new Error('Fixture records must have an `id` property.');
+	/**
+	 * Puts a record in the appropriate fixtures array.
+	 *
+	 * @param {String} typeKey
+	 * @param {Object} json
+	 * @private
+	 */
+	_setRecord: function(typeKey, json) {
+		var model = this.get('store').modelForType(typeKey);
+		model.FIXTURES = model.FIXTURES || [];
+
+		for (var i = 0; i < model.FIXTURES.length; i+=1) {
+			if (model.FIXTURES[i].id === json.id) {
+				model.FIXTURES[i] = json;
+				return;
 			}
+		}
 
-			type.eachAttribute(function(name, meta) {
-				if (meta.isRequired && !record.hasOwnProperty(name)) {
-					throw new Error('Your fixture record was missing the `' + name + '` property.');
-				}
-			});
+		model.FIXTURES.push(json);
+	},
 
-			type.eachRelationship(function(name, meta) {
-				if (meta.isRequired && !record.hasOwnProperty(name)) {
-					throw new Error('Your fixture record was missing the `' + name + '` relationship.');
-				}
-			});
-		};
+	/**
+	 * Deletes a record from the appropriate fixtures array.
+	 *
+	 * @param {String} typeKey
+	 * @param {String} id
+	 * @private
+	 */
+	_deleteRecord: function(typeKey, id) {
+		var model = this.get('store').modelForType(typeKey);
+		model.FIXTURES = model.FIXTURES || [];
 
-		fixtures.forEach(function(record) {
-			verify(record);
-			_fixtures[typeKey][record.id] = record;
-		}, this);
+		for (var i = 0; i < model.FIXTURES.length; i+=1) {
+			if (model.FIXTURES[i].id === id) {
+				model.FIXTURES.splice(i, 1);
+				return;
+			}
+		}
 	},
 
 	/**
@@ -742,7 +781,7 @@ Eg.FixtureAdapter = Eg.Adapter.extend({
 	createRecord: function(record) {
 		record.set('id', Eg.util.generateGUID());
 		var json = this.serialize(record);
-		this.get('_fixtures')[record.typeKey][json.id] = json;
+		this._setRecord(record.typeKey, json);
 		return Em.RSVP.Promise.resolve({});
 	},
 
@@ -755,7 +794,7 @@ Eg.FixtureAdapter = Eg.Adapter.extend({
 	 */
 	findRecord: function(typeKey, id) {
 		var json = {};
-		json[typeKey] = [this.get('_fixtures')[typeKey][id]].filter(removeEmpty);
+		json[typeKey] = [this._getRecord(typeKey, id)].filter(removeEmpty);
 		return Em.RSVP.Promise.resolve(json);
 	},
 
@@ -770,7 +809,7 @@ Eg.FixtureAdapter = Eg.Adapter.extend({
 	findMany: function(typeKey, ids) {
 		var json = {};
 		json[typeKey] = ids.map(function(id) {
-			return this.get('_fixtures')[typeKey][id];
+			return this._getRecord(typeKey, id);
 		}, this).filter(removeEmpty);
 		return Em.RSVP.Promise.resolve(json);
 	},
@@ -784,7 +823,9 @@ Eg.FixtureAdapter = Eg.Adapter.extend({
 	 * @returns {Promise} A promise that resolves to normalized JSON
 	 */
 	findAll: function(typeKey, ids) {
-		return this.findMany(typeKey, Em.keys(this.get('_fixtures')[typeKey]));
+		var json = {};
+		json[typeKey] = this._getRecords(typeKey);
+		return Em.RSVP.Promise.resolve(json);
 	},
 
 	/**
@@ -811,7 +852,7 @@ Eg.FixtureAdapter = Eg.Adapter.extend({
 	 */
 	updateRecord: function(record) {
 		var json = this.serialize(record);
-		this.get('_fixtures')[record.typeKey][json.id] = json;
+		this._setRecord(record.typeKey, json);
 		return Em.RSVP.Promise.resolve({});
 	},
 
@@ -822,7 +863,7 @@ Eg.FixtureAdapter = Eg.Adapter.extend({
 	 * @returns {Promise} A promise that resolves to normalized JSON
 	 */
 	deleteRecord: function(record) {
-		delete this.get('_fixtures')[record.typeKey][record.get('id')];
+		this._deleteRecord(record.typeKey, record.get('id'));
 		return Em.RSVP.Promise.resolve({});
 	},
 
@@ -854,6 +895,12 @@ Eg.FixtureAdapter = Eg.Adapter.extend({
 
 (function() {
 
+EG.RESTAdapter = EG.Adapter.extend();
+
+})();
+
+(function() {
+
 /**
  * The store is used to manage all records in the application.
  * Ideally, there should only be one store for an application.
@@ -862,6 +909,11 @@ Eg.FixtureAdapter = Eg.Adapter.extend({
  */
 Eg.Store = Em.Object.extend({
 
+	/**
+	 * The adapter to use if an application adapter is not found.
+	 *
+	 * @type {String}
+	 */
 	defaultAdapter: 'rest',
 
 	/**
@@ -886,51 +938,26 @@ Eg.Store = Em.Object.extend({
 
 	/**
 	 * The adapter used by the store to communicate with the server.
-	 * This should be overridden by `create` or `extend`. It can
-	 * either be an adapter subclass or a string.
+	 * The adapter is found by looking for App.ApplicationAdapter.
+	 * If not found, defaults to the REST adapter.
 	 *
-	 * @type {String|Adapter}
-	 */
-	adapter: 'json',
-
-	/**
 	 * @type {Adapter}
+	 * @private
 	 */
-	_adapter: function() {
-		if (!this._cachedAdapter) {
-			var adapter = this.get('adapter');
-			var container = this.get('container');
+	adapter: function() {
+		var container = this.get('container');
+		var adapter = container.lookup('adapter:application') ||
+			 container.lookup('adapter:' + this.get('defaultAdapter'));
 
-			Em.assert('The adapter that you provide to the store should either be a subclass or a string.',
-				!(adapter instanceof EG.Adapter));
+		Em.assert('A valid adapter could not be found.', EG.Adapter.detect(adapter));
 
-			if (typeof adapter === 'string') {
-				adapter = container.lookup('adapter:' + adapter);
-			}
-
-			if (EG.Adapter.detect(adapter)) {
-				adapter = adapter.create();
-			}
-
-			if (!adapter) {
-				adapter = container.lookup('adapter:application') || container.lookup('adapter:json');
-			}
-
-			adapter.set('store', this);
-			adapter.set('container', container);
-
-			this._cachedAdapter = adapter;
-		}
-
-		return this._cachedAdapter;
+		return adapter;
 	}.property(),
 
 	/**
 	 * Initializes all of the variables properly
 	 */
 	init: function() {
-		this.set('container', null);
-
 		this.set('_records', {});
 		this.set('_types', {});
 		this.set('_queuedRelationships', {});
@@ -1140,7 +1167,7 @@ Eg.Store = Em.Object.extend({
 		if (record) {
 			promise = Em.RSVP.Promise.resolve(record);
 		} else {
-			promise = this.get('_adapter').findRecord(type, id).then(function(payload) {
+			promise = this.get('adapter').findRecord(type, id).then(function(payload) {
 				this.extractPayload(payload);
 				return this.getRecord(type, id);
 			}.bind(this));
@@ -1174,7 +1201,7 @@ Eg.Store = Em.Object.extend({
 				return this.getRecord(type, id);
 			}, this));
 		} else {
-			promise = this.get('_adapter').findMany(type, set.toArray()).then(function(payload) {
+			promise = this.get('adapter').findMany(type, set.toArray()).then(function(payload) {
 				this.extractPayload(payload);
 
 				return ids.map(function(id) {
@@ -1195,7 +1222,7 @@ Eg.Store = Em.Object.extend({
 	 */
 	_findAll: function(type) {
 		var ids = this._recordsForType(type).mapBy('id');
-		var promise = this.get('_adapter').findAll(type, ids).then(function(payload) {
+		var promise = this.get('adapter').findAll(type, ids).then(function(payload) {
 			this.extractPayload(payload);
 			return this._recordsForType(type);
 		}.bind(this));
@@ -1213,7 +1240,7 @@ Eg.Store = Em.Object.extend({
 	 */
 	_findQuery: function(typeKey, options) {
 		var currentIds = this._recordsForType(typeKey).mapBy('id');
-		var promise = this.get('_adapter').findQuery(typeKey, options, currentIds).then(function(payload) {
+		var promise = this.get('adapter').findQuery(typeKey, options, currentIds).then(function(payload) {
 			var ids = payload.ids;
 			delete payload.ids;
 			this.extractPayload(payload);
@@ -1250,7 +1277,7 @@ Eg.Store = Em.Object.extend({
 		record.set('isSaving', true);
 
 		if (isNew) {
-			return this.get('_adapter').createRecord(record).then(function(payload) {
+			return this.get('adapter').createRecord(record).then(function(payload) {
 				record.set('id', payload.id);
 				record.set('isSaving', false);
 				delete payload.id;
@@ -1262,7 +1289,7 @@ Eg.Store = Em.Object.extend({
 				return record;
 			}.bind(this));
 		} else {
-			return this.get('_adapter').updateRecord(record).then(function(payload) {
+			return this.get('adapter').updateRecord(record).then(function(payload) {
 				this.extractPayload(payload);
 				record.set('isSaving', false);
 				return record;
@@ -1282,7 +1309,7 @@ Eg.Store = Em.Object.extend({
 		record.set('isSaving', true);
 		record.set('isDeleted', true);
 
-		return this.get('_adapter').deleteRecord(record).then(function(payload) {
+		return this.get('adapter').deleteRecord(record).then(function(payload) {
 			this.extractPayload(payload);
 			record.set('isSaving', false);
 			delete this.get('_records.' + type)[id];
@@ -1298,7 +1325,7 @@ Eg.Store = Em.Object.extend({
 			record.get('id') + '` while it\'s dirty.', !record.get('isDirty'));
 		record.set('isReloading', true);
 
-		return this.get('_adapter').find(record.typeKey, record.get('id')).then(function(payload) {
+		return this.get('adapter').find(record.typeKey, record.get('id')).then(function(payload) {
 			this.extractPayload(payload);
 			record.set('isReloading', false);
 			return record;

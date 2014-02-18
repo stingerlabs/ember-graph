@@ -20,6 +20,7 @@ require('serializer/json');
 
 require('adapter/adapter');
 require('adapter/fixture');
+require('adapter/rest');
 
 require('store/store');
 require('store/relationship');

@@ -8,7 +8,7 @@
 
 	module('Relationship Functionality Test', {
 		setup: function() {
-			store = setupStore({}, {
+			store = setupStore({
 				user: EG.Model.extend({
 					posts: Eg.hasMany({
 						relatedType: 'post',

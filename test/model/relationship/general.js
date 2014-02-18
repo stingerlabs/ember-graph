@@ -5,7 +5,7 @@
 
 	module('General Relationship Functionality', {
 		setup: function() {
-			store = setupStore({}, {
+			store = setupStore({
 				user: EG.Model.extend({
 					vertices: Eg.hasMany({
 						relatedType: 'vertex',

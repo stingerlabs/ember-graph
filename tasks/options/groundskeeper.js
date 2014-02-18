@@ -7,7 +7,7 @@ module.exports = {
 		options: {
 			console: false,
 			debugger: false,
-			namespace: ['Eg.debug']
+			namespace: ['Eg.debug', 'Em.assert', 'Ember.assert']
 		}
 	}
 };

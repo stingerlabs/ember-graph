@@ -6,56 +6,79 @@ var removeEmpty = function(item) {
  * @class FixtureAdapter
  */
 Eg.FixtureAdapter = Eg.Adapter.extend({
+	// TODO: Refactor this into a base class called 'SynchronousAdapter'
+	// Then make two subclasses, fixture and localStorage
 
 	/**
-	 * typeKey -> record ID -> Record
+	 * Gets a record from the appropriate fixtures array.
 	 *
-	 * @type {Object.<String, Object.<String, Object>>
+	 * @param {String} typeKey
+	 * @param {String} id
+	 * @return {Object}
+	 * @private
 	 */
-	_fixtures: null,
+	_getRecord: function(typeKey, id) {
+		var model = this.get('store').modelForType(typeKey);
+		model.FIXTURES = model.FIXTURES || [];
 
-	/**
-	 * Initializes the _fixtures object.
-	 */
-	init: function() {
-		var adapter = this._super();
-		this.set('_fixtures', {});
-		return adapter;
+		for (var i = 0; i < model.FIXTURES.length; i+=1) {
+			if (model.FIXTURES[i].id === id) {
+				return model.FIXTURES[i];
+			}
+		}
+
+		return null;
 	},
 
 	/**
-	 * Register models with the adapter.
+	 * Gets all fixtures of the specified type.
 	 *
 	 * @param {String} typeKey
-	 * @param {Object[]} fixtures
+	 * @returns {Array}
+	 * @private
 	 */
-	registerFixtures: function(typeKey, fixtures) {
-		var _fixtures = this.get('_fixtures');
-		_fixtures[typeKey] = _fixtures[typeKey] || {};
+	_getRecords: function(typeKey) {
+		return this.get('store').modelForType(typeKey).FIXTURES || [];
+	},
 
-		var type = this.get('store').modelForType(typeKey);
-		var verify = function(record) {
-			if (typeof record.id !== 'string') {
-				throw new Error('Fixture records must have an `id` property.');
+	/**
+	 * Puts a record in the appropriate fixtures array.
+	 *
+	 * @param {String} typeKey
+	 * @param {Object} json
+	 * @private
+	 */
+	_setRecord: function(typeKey, json) {
+		var model = this.get('store').modelForType(typeKey);
+		model.FIXTURES = model.FIXTURES || [];
+
+		for (var i = 0; i < model.FIXTURES.length; i+=1) {
+			if (model.FIXTURES[i].id === json.id) {
+				model.FIXTURES[i] = json;
+				return;
 			}
+		}
 
-			type.eachAttribute(function(name, meta) {
-				if (meta.isRequired && !record.hasOwnProperty(name)) {
-					throw new Error('Your fixture record was missing the `' + name + '` property.');
-				}
-			});
+		model.FIXTURES.push(json);
+	},
 
-			type.eachRelationship(function(name, meta) {
-				if (meta.isRequired && !record.hasOwnProperty(name)) {
-					throw new Error('Your fixture record was missing the `' + name + '` relationship.');
-				}
-			});
-		};
+	/**
+	 * Deletes a record from the appropriate fixtures array.
+	 *
+	 * @param {String} typeKey
+	 * @param {String} id
+	 * @private
+	 */
+	_deleteRecord: function(typeKey, id) {
+		var model = this.get('store').modelForType(typeKey);
+		model.FIXTURES = model.FIXTURES || [];
 
-		fixtures.forEach(function(record) {
-			verify(record);
-			_fixtures[typeKey][record.id] = record;
-		}, this);
+		for (var i = 0; i < model.FIXTURES.length; i+=1) {
+			if (model.FIXTURES[i].id === id) {
+				model.FIXTURES.splice(i, 1);
+				return;
+			}
+		}
 	},
 
 	/**
@@ -72,7 +95,7 @@ Eg.FixtureAdapter = Eg.Adapter.extend({
 	createRecord: function(record) {
 		record.set('id', Eg.util.generateGUID());
 		var json = this.serialize(record);
-		this.get('_fixtures')[record.typeKey][json.id] = json;
+		this._setRecord(record.typeKey, json);
 		return Em.RSVP.Promise.resolve({});
 	},
 
@@ -85,7 +108,7 @@ Eg.FixtureAdapter = Eg.Adapter.extend({
 	 */
 	findRecord: function(typeKey, id) {
 		var json = {};
-		json[typeKey] = [this.get('_fixtures')[typeKey][id]].filter(removeEmpty);
+		json[typeKey] = [this._getRecord(typeKey, id)].filter(removeEmpty);
 		return Em.RSVP.Promise.resolve(json);
 	},
 
@@ -100,7 +123,7 @@ Eg.FixtureAdapter = Eg.Adapter.extend({
 	findMany: function(typeKey, ids) {
 		var json = {};
 		json[typeKey] = ids.map(function(id) {
-			return this.get('_fixtures')[typeKey][id];
+			return this._getRecord(typeKey, id);
 		}, this).filter(removeEmpty);
 		return Em.RSVP.Promise.resolve(json);
 	},
@@ -114,7 +137,9 @@ Eg.FixtureAdapter = Eg.Adapter.extend({
 	 * @returns {Promise} A promise that resolves to normalized JSON
 	 */
 	findAll: function(typeKey, ids) {
-		return this.findMany(typeKey, Em.keys(this.get('_fixtures')[typeKey]));
+		var json = {};
+		json[typeKey] = this._getRecords(typeKey);
+		return Em.RSVP.Promise.resolve(json);
 	},
 
 	/**
@@ -141,7 +166,7 @@ Eg.FixtureAdapter = Eg.Adapter.extend({
 	 */
 	updateRecord: function(record) {
 		var json = this.serialize(record);
-		this.get('_fixtures')[record.typeKey][json.id] = json;
+		this._setRecord(record.typeKey, json);
 		return Em.RSVP.Promise.resolve({});
 	},
 
@@ -152,7 +177,7 @@ Eg.FixtureAdapter = Eg.Adapter.extend({
 	 * @returns {Promise} A promise that resolves to normalized JSON
 	 */
 	deleteRecord: function(record) {
-		delete this.get('_fixtures')[record.typeKey][record.get('id')];
+		this._deleteRecord(record.typeKey, record.get('id'));
 		return Em.RSVP.Promise.resolve({});
 	},
 
