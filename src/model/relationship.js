@@ -7,13 +7,29 @@ var DELETED_STATE = Eg.Relationship.DELETED_STATE;
 
 var disallowedRelationshipNames = new Em.Set(['id', 'type', 'content']);
 
+Eg.hasMany = function(options) {
+	return {
+		isRelationship: true,
+		kind: HAS_MANY_KEY,
+		options: options
+	};
+};
+
+Eg.belongsTo = function(options) {
+	return {
+		isRelationship: true,
+		kind: BELONGS_TO_KEY,
+		options: options
+	};
+};
+
 var createRelationship = function(kind, options) {
 	Eg.debug.assert('Your relationship must specify a relatedType.', typeof options.relatedType === 'string');
 	Eg.debug.assert('Your relationship must specify an inverse relationship.',
 		options.inverse === null || typeof options.inverse === 'string');
 
 	var meta = {
-		isRelationship: true,
+		isRelationship: false,
 		kind: kind,
 		isRequired: options.isRequired !== false,
 		defaultValue: options.defaultValue || (kind === HAS_MANY_KEY ? [] : null),
@@ -26,23 +42,16 @@ var createRelationship = function(kind, options) {
 
 	if (kind === HAS_MANY_KEY) {
 		relationship = function(key) {
-			return this._hasManyValue(key);
+			return this._hasManyValue(key.substring(1));
 		};
 	} else {
 		relationship = function(key) {
-			return this._belongsToValue(key);
+			return this._belongsToValue(key.substring(1));
 		};
 	}
 
+	// TODO: We can't rely on prototype extension, so no .property
 	return relationship.property('_serverRelationships', '_clientRelationships').meta(meta).readOnly();
-};
-
-Eg.hasMany = function(options) {
-	return createRelationship(HAS_MANY_KEY, options);
-};
-
-Eg.belongsTo = function(options) {
-	return createRelationship(BELONGS_TO_KEY, options);
 };
 
 Eg.Model.reopenClass({
@@ -56,27 +65,33 @@ Eg.Model.reopenClass({
 	 * @static
 	 * @private
 	 */
-	_declareRelationships: function() {
-		this.eachRelationship(function(name, meta) {
-			var obj = {};
+	_declareRelationships: function(relationships) {
+		var obj = {};
+
+		Em.keys(relationships).forEach(function(name) {
+			var kind = relationships[name].kind;
+			var options = relationships[name].options;
+			var relatedType = options.relatedType;
 
 			var relationship;
-			var relatedType = meta.relatedType;
 
-			if (meta.kind === HAS_MANY_KEY) {
+			if (kind === HAS_MANY_KEY) {
 				relationship = function() {
-					return this.get('store').find(relatedType, this.get(name).toArray());
+					return this.get('store').find(relatedType, this.get('_' + name).toArray());
 				};
 			} else {
 				relationship = function() {
-					return this.get('store').find(relatedType, this.get(name));
+					return this.get('store').find(relatedType, this.get('_' + name));
 				};
 			}
 
-			obj[Eg.String.capitalize(name)] = relationship.property(name).readOnly();
+			obj['_' + name] = createRelationship(kind, options);
+			var meta = Em.copy(obj['_' + name].meta(), true);
+			meta.isRelationship = true;
+			obj[name] = relationship.property('_' + name).meta(meta).readOnly();
+		});
 
-			this.reopen(obj);
-		}, this);
+		this.reopen(obj);
 	},
 
 	/**
@@ -111,7 +126,7 @@ Eg.Model.reopenClass({
 	 * @static
 	 */
 	relationshipKind: function(name) {
-		return this.metaForProperty(name).kind;
+		return this.metaForRelationship(name).kind;
 	},
 
 	/**
@@ -297,7 +312,7 @@ Eg.Model.reopen({
 					}
 				}, this);
 
-				var current = this.get(name);
+				var current = this._hasManyValue(name);
 				// These are OK for now, because they're not in conflict
 				var clientNotOnServer = current.without(given);
 				// These have to be created
@@ -425,7 +440,7 @@ Eg.Model.reopen({
 		// We need to detect unloaded records too
 		var record = this.get('store').getRecord(meta.relatedType, id);
 		if (record) {
-			var current = record.get(meta.inverse);
+			var current = record._belongsToValue(meta.inverse);
 			if (current === null || current === this.get('id')) {
 				return null;
 			}
@@ -523,17 +538,6 @@ Eg.Model.reopen({
 			this.get('store')._changeRelationshipState(link.get('id'), SAVED_STATE);
 			return;
 		}
-
-		// If the other side is a belongsTo, we have to clear it first
-//		if (meta.inverse !== null) {
-//			var otherType = store.modelForType(meta.relatedType);
-//			var otherKind = otherType.metaForRelationship(meta.inverse);
-//
-//			if (otherKind === BELONGS_TO_KEY) {
-//				var relationships = Eg.Relationship.relationshipsForRecord(meta.relatedType, meta.inverse, id);
-//			}
-//		}
-
 
 		var conflict = this._belongsToConflict(relationship, id);
 		if (conflict !== null) {
@@ -650,7 +654,7 @@ Eg.Model.reopen({
 			return;
 		}
 
-		var current = this.get(relationship);
+		var current = this._belongsToValue(relationship);
 
 		if (current !== null) {
 			var r = this._findLinkTo(relationship, current);

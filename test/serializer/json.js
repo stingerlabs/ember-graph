@@ -79,8 +79,8 @@
 		ok(json.id === post.get('id'));
 		ok(json.title === post.get('title'));
 		ok(json.body === post.get('body'));
-		ok(json.links.author === post.get('author'));
-		ok(new Em.Set(json.links.tags).isEqual(post.get('tags')));
+		ok(json.links.author === post.get('_author'));
+		ok(new Em.Set(json.links.tags).isEqual(post.get('_tags')));
 	});
 
 	test('The serializer leaves out temporary IDs in relationships', function() {
@@ -91,9 +91,9 @@
 		var user = store.createRecord('user', { email: 'temp', posts: ['1'] });
 		post.addToRelationship('tags', tag.get('id'));
 
-		ok(post.get('author') === user.get('id'));
-		ok(user.get('posts').contains('1'));
-		ok(post.get('tags').contains(tag.get('id')));
+		ok(post.get('_author') === user.get('id'));
+		ok(user.get('_posts').contains('1'));
+		ok(post.get('_tags').contains(tag.get('id')));
 	});
 
 	test('Deserialization extracts a single record properly', function() {

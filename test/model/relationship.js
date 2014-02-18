@@ -66,35 +66,35 @@
 		var post5 = store.getRecord('post', '5');
 		var post6 = store.getRecord('post', '6');
 
-		ok(user1.get('posts').isEqual(['1', '2']));
-		ok(user4.get('posts.length') === 0);
+		ok(user1.get('_posts').isEqual(['1', '2']));
+		ok(user4.get('_posts.length') === 0);
 
-		ok(post1.get('author') === '1');
-		ok(post1.get('tags').isEqual(['1', '2', '3', '4']));
-		ok(post3.get('author') === '2');
-		ok(post3.get('tags.length') === 0);
-		ok(post5.get('author') === '5');
-		ok(post5.get('tags').isEqual(['1', '4', '5']));
-		ok(post6.get('author') === null);
-		ok(post6.get('tags').isEqual(['1', '2', '5']));
+		ok(post1.get('_author') === '1');
+		ok(post1.get('_tags').isEqual(['1', '2', '3', '4']));
+		ok(post3.get('_author') === '2');
+		ok(post3.get('_tags.length') === 0);
+		ok(post5.get('_author') === '5');
+		ok(post5.get('_tags').isEqual(['1', '4', '5']));
+		ok(post6.get('_author') === null);
+		ok(post6.get('_tags').isEqual(['1', '2', '5']));
 	});
 
 	test('Relationship defaults are loaded correctly', function() {
 		expect(3);
 
 		var user = store.createRecord('user');
-		ok(user.get('posts.length') === 0);
+		ok(user.get('_posts.length') === 0);
 
 		var post = store.createRecord('post');
-		ok(post.get('author') === null);
-		ok(post.get('tags').isEqual(['0']));
+		ok(post.get('_author') === null);
+		ok(post.get('_tags').isEqual(['0']));
 	});
 
 	test('When a record is loaded, its pending relationships are attached', function() {
 		expect(4);
 
 		var user3 = store.getRecord('user', '3');
-		ok(user3.get('posts').contains('7'));
+		ok(user3.get('_posts').contains('7'));
 
 		var queued = store.get('_queuedRelationships');
 		var rid = null;
@@ -107,8 +107,8 @@
 		var post = store._loadRecord('post', { id: '7', author: '3', tags: [] });
 
 		ok(queued[rid] === undefined);
-		ok(user3.get('posts').contains('7'));
-		ok(post.get('author') === '3');
+		ok(user3.get('_posts').contains('7'));
+		ok(post.get('_author') === '3');
 	});
 
 	test('A new record attaches to current records correctly', function() {
@@ -117,29 +117,29 @@
 		var user = store.getRecord('user', '1');
 		var post = store.createRecord('post', { author: '1', tags: ['1', '2'] });
 
-		ok(post.get('author') === '1');
-		ok(post.get('tags').isEqual(['1', '2']));
-		ok(user.get('posts').contains(post.get('id')));
+		ok(post.get('_author') === '1');
+		ok(post.get('_tags').isEqual(['1', '2']));
+		ok(user.get('_posts').contains(post.get('id')));
 	});
 
 	test('Removing from a hasMany saved to the server works', function() {
 		expect(2);
 
 		var post1 = store.getRecord('post', '1');
-		ok(post1.get('tags').isEqual(['1', '2', '3', '4']));
+		ok(post1.get('_tags').isEqual(['1', '2', '3', '4']));
 
 		post1.removeFromRelationship('tags', '2');
-		ok(post1.get('tags').isEqual(['1', '3', '4']));
+		ok(post1.get('_tags').isEqual(['1', '3', '4']));
 	});
 
 	test('Removing a non existent hasMany item has no effect', function() {
 		expect(1);
 
 		var user1 = store.getRecord('user', '1');
-		var current = user1.get('posts').toArray();
+		var current = user1.get('_posts').toArray();
 
 		user1.removeFromRelationship('posts', '298133');
-		ok(user1.get('posts').isEqual(current));
+		ok(user1.get('_posts').isEqual(current));
 	});
 
 	test('Disconnecting a belongsTo saved to the server works', function() {
@@ -148,22 +148,22 @@
 		var user1 = store.getRecord('user', '1');
 		var post1 = store.getRecord('post', '1');
 
-		ok(user1.get('posts').contains('1'));
-		ok(post1.get('author') === '1');
+		ok(user1.get('_posts').contains('1'));
+		ok(post1.get('_author') === '1');
 
 		post1.clearBelongsTo('author');
 
-		ok(post1.get('author') === null);
-		ok(!user1.get('posts').contains('1'));
+		ok(post1.get('_author') === null);
+		ok(!user1.get('_posts').contains('1'));
 	});
 
 	test('Disconnecting a null belongsTo has no effect', function() {
 		expect(2);
 
 		var post6 = store.getRecord('post', '6');
-		ok(post6.get('author') === null);
+		ok(post6.get('_author') === null);
 		post6.clearBelongsTo('author');
-		ok(post6.get('author') === null);
+		ok(post6.get('_author') === null);
 	});
 
 	test('Changing a belongsTo from one record to another works', function() {
@@ -173,37 +173,37 @@
 		var user2 = store.getRecord('user', '2');
 		var post1 = store.getRecord('post', '1');
 
-		ok(user1.get('posts').contains('1'));
-		ok(!user2.get('posts').contains('1'));
-		ok(post1.get('author') === '1');
+		ok(user1.get('_posts').contains('1'));
+		ok(!user2.get('_posts').contains('1'));
+		ok(post1.get('_author') === '1');
 
 		post1.setBelongsTo('author', '2');
 
-		ok(!user1.get('posts').contains('1'));
-		ok(user2.get('posts').contains('1'));
-		ok(post1.get('author') === '2');
+		ok(!user1.get('_posts').contains('1'));
+		ok(user2.get('_posts').contains('1'));
+		ok(post1.get('_author') === '2');
 	});
 
 	test('Rolling back a record with no changes has no effect', function() {
 		expect(2);
 
 		var post1 = store.getRecord('post', '1');
-		var author = post1.get('author');
-		var tags = post1.get('tags').toArray();
+		var author = post1.get('_author');
+		var tags = post1.get('_tags').toArray();
 
 		post1.rollbackRelationships();
 
-		ok(post1.get('author') === author);
-		ok(post1.get('tags').isEqual(tags));
+		ok(post1.get('_author') === author);
+		ok(post1.get('_tags').isEqual(tags));
 	});
 
 	test('Adding to a hasMany works properly', function() {
 		expect(2);
 
 		var post2 = store.getRecord('post', '2');
-		ok(!post2.get('tags').contains('1'));
+		ok(!post2.get('_tags').contains('1'));
 		post2.addToRelationship('tags', '1');
-		ok(post2.get('tags').contains('1'));
+		ok(post2.get('_tags').contains('1'));
 	});
 
 	test('Setting a belongsTo works properly', function() {
@@ -212,13 +212,13 @@
 		var user1 = store.getRecord('user', '1');
 		var post6 = store.getRecord('post', '6');
 
-		ok(!user1.get('posts').contains('6'));
-		ok(post6.get('author') === null);
+		ok(!user1.get('_posts').contains('6'));
+		ok(post6.get('_author') === null);
 
 		post6.setBelongsTo('author', '1');
 
-		ok(user1.get('posts').contains('6'));
-		ok(post6.get('author') === '1');
+		ok(user1.get('_posts').contains('6'));
+		ok(post6.get('_author') === '1');
 	});
 
 	test('Removing an item from a hasMany dirties both records', function() {
@@ -336,8 +336,8 @@
 		expect(5);
 
 		var post1 = store.getRecord('post', '1');
-		var tags = post1.get('tags').toArray();
-		var author = post1.get('author');
+		var tags = post1.get('_tags').toArray();
+		var author = post1.get('_author');
 
 		ok(!post1.get('isDirty'));
 
@@ -350,16 +350,16 @@
 		post1.rollbackRelationships();
 
 		ok(!post1.get('isDirty'));
-		ok(post1.get('tags').isEqual(tags));
-		ok(post1.get('author') === author);
+		ok(post1.get('_tags').isEqual(tags));
+		ok(post1.get('_author') === author);
 	});
 
 	test('Changed attributes are detected correctly', function() {
 		expect(4);
 
 		var post = store.getRecord('post', '8');
-		var author = post.get('author');
-		var tags = post.get('tags').toArray();
+		var author = post.get('_author');
+		var tags = post.get('_tags').toArray();
 
 		post.setBelongsTo('author', '1');
 		post.addToRelationship('tags', '1');
@@ -380,12 +380,12 @@
 		var post = store.getRecord('post', '1');
 		post._loadData({
 			author: '50',
-			tags: post.get('tags').toArray()
+			tags: post.get('_tags').toArray()
 		});
 
-		ok(post.get('author') === '50');
+		ok(post.get('_author') === '50');
 		var user = store.getRecord('user', '1');
-		ok(!user.get('posts').contains('1'));
+		ok(!user.get('_posts').contains('1'));
 	});
 
 	test('Reloading a cleared belongsTo from the server works correctly (clean record)', function() {
@@ -394,12 +394,12 @@
 		var post = store.getRecord('post', '1');
 		post._loadData({
 			author: null,
-			tags: post.get('tags').toArray()
+			tags: post.get('_tags').toArray()
 		});
 
-		ok(post.get('author') === null);
+		ok(post.get('_author') === null);
 		var user = store.getRecord('user', '1');
-		ok(!user.get('posts').contains('1'));
+		ok(!user.get('_posts').contains('1'));
 	});
 
 	test('Reloading a changed hasMany from the server works correctly (clean record)', function() {
@@ -413,47 +413,47 @@
 		var post1 = store.getRecord('post', '1');
 		var post2 = store.getRecord('post', '2');
 
-		ok(user.get('posts').isEqual(['1', '50', '51']));
-		ok(post1.get('author') === '1');
-		ok(post2.get('author') === null);
+		ok(user.get('_posts').isEqual(['1', '50', '51']));
+		ok(post1.get('_author') === '1');
+		ok(post2.get('_author') === null);
 	});
 
 	test('Reloading a record with missing relationships loads the defaults correctly', function() {
 		expect(3);
 
 		var post = store.getRecord('post', '1');
-		var user = store.getRecord('user', post.get('author'));
+		var user = store.getRecord('user', post.get('_author'));
 		post._loadData({});
 
-		ok(post.get('author') === null);
-		ok(!user.get('posts').contains('1'));
-		ok(post.get('tags').isEqual(['0']));
+		ok(post.get('_author') === null);
+		ok(!user.get('_posts').contains('1'));
+		ok(post.get('_tags').isEqual(['0']));
 	});
 
 	test('Changing a record that isn\'t loaded yet will load changes on load' , function() {
 		expect(4);
 
 		var user = store.getRecord('user', '3');
-		ok(user.get('posts').contains('7'));
+		ok(user.get('_posts').contains('7'));
 		user.removeFromRelationship('posts', '7');
-		ok(!user.get('posts').contains('7'));
+		ok(!user.get('_posts').contains('7'));
 
 		var post = store._loadRecord('post', { id: '7', author: '3', tags: [] });
 
-		ok(post.get('author') === null);
+		ok(post.get('_author') === null);
 		post.rollbackRelationships();
-		ok(post.get('author') === '3');
+		ok(post.get('_author') === '3');
 	});
 
 	test('A new permanent record loaded creates new server relationships', function() {
 		expect(3);
 
 		var post = store._loadRecord('post', { id: '50', author: '1' });
-		ok(post.get('author') === '1');
+		ok(post.get('_author') === '1');
 		var user = store.getRecord('user', '1');
-		ok(user.get('posts').contains('50'));
+		ok(user.get('_posts').contains('50'));
 		user.rollbackRelationships();
-		ok(user.get('posts').contains('50'));
+		ok(user.get('_posts').contains('50'));
 	});
 
 	asyncTest('Loading a belongsTo relationship fully returns the correct record', function() {
@@ -461,7 +461,7 @@
 
 		var post = store.getRecord('post', '1');
 		var user = store.getRecord('user', '1');
-		var promise = post.get('Author');
+		var promise = post.get('author');
 
 		start();
 		ok(promise instanceof Eg.PromiseObject);
@@ -480,7 +480,7 @@
 		var post1 = store.getRecord('post', '1');
 		var post2 = store.getRecord('post', '2');
 
-		var promise = user.get('Posts');
+		var promise = user.get('posts');
 
 		start();
 		ok(promise instanceof Eg.PromiseArray);
@@ -501,11 +501,11 @@
 		expect(3);
 
 		var post = store.getRecord('post', '1');
-		ok(post.get('author') === '1');
+		ok(post.get('_author') === '1');
 
 		var user = store.createRecord('user', { posts: ['1'] });
-		ok(user.get('posts').contains('1'));
-		ok(post.get('author') === user.get('id'));
+		ok(user.get('_posts').contains('1'));
+		ok(post.get('_author') === user.get('id'));
 	});
 
 	test('A hasMany can be changed by removing the record from its inverse', function() {
@@ -515,8 +515,8 @@
 		var post = store.getRecord('post', '1');
 		post.clearBelongsTo('author');
 
-		ok(!user.get('posts').contains('1'));
-		ok(post.get('author') === null);
+		ok(!user.get('_posts').contains('1'));
+		ok(post.get('_author') === null);
 	});
 
 	test('Changing a relationship on one record propagates to the second and third records', function() {
@@ -526,15 +526,15 @@
 		var user2 = store.getRecord('user', '2');
 		var post = store.getRecord('post', '1');
 
-		ok(user1.get('posts').contains('1'));
-		ok(!user2.get('posts').contains('1'));
-		ok(post.get('author') === '1');
+		ok(user1.get('_posts').contains('1'));
+		ok(!user2.get('_posts').contains('1'));
+		ok(post.get('_author') === '1');
 
 		user2.addToRelationship('posts', '1');
 
-		ok(!user1.get('posts').contains('1'));
-		ok(user2.get('posts').contains('1'));
-		ok(post.get('author') === '2');
+		ok(!user1.get('_posts').contains('1'));
+		ok(user2.get('_posts').contains('1'));
+		ok(post.get('_author') === '2');
 	});
 
 	test('A server side relationship on a non-loaded record can be overridden by a client side one', function() {
@@ -542,14 +542,14 @@
 
 		var user1 = store.getRecord('user', '1');
 		var user3 = store.getRecord('user', '3');
-		ok(!user1.get('posts').contains('7'));
-		ok(user3.get('posts').contains('7'));
+		ok(!user1.get('_posts').contains('7'));
+		ok(user3.get('_posts').contains('7'));
 		user1.addToRelationship('posts', '7');
-		ok(user1.get('posts').contains('7'));
-		ok(!user3.get('posts').contains('7'));
+		ok(user1.get('_posts').contains('7'));
+		ok(!user3.get('_posts').contains('7'));
 		var post7 = store._loadRecord('post', { id: '7', author: '3', tags: ['1', '2'] });
-		ok(user1.get('posts').contains('7'));
-		ok(!user3.get('posts').contains('7'));
-		ok(post7.get('author') === '1');
+		ok(user1.get('_posts').contains('7'));
+		ok(!user3.get('_posts').contains('7'));
+		ok(post7.get('_author') === '1');
 	});
 })();

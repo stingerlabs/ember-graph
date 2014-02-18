@@ -194,7 +194,7 @@ Eg.FixtureAdapter = Eg.Adapter.extend({
 		});
 
 		record.constructor.eachRelationship(function(name, meta) {
-			json[name] = record.get(name);
+			json[name] = record.get('_' + name);
 
 			if (meta.kind === Eg.Model.HAS_MANY_KEY) {
 				json[name] = json[name].toArray();

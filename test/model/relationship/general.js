@@ -59,21 +59,21 @@
 		expect(3);
 
 		var user = store.getRecord('user', '1');
-		ok(user.get('vertices').isEqual(['1', '3', '2']));
+		ok(user.get('_vertices').isEqual(['1', '3', '2']));
 
 		var vertex = store.getRecord('vertex', '2');
-		ok(vertex.get('tags').isEqual(['6', '4' ,'2']));
-		strictEqual(vertex.get('owner'), '1');
+		ok(vertex.get('_tags').isEqual(['6', '4' ,'2']));
+		strictEqual(vertex.get('_owner'), '1');
 	});
 
 	test('Default relationship values are populated properly', function() {
 		expect(2);
 
 		var user = store.getRecord('user', '2');
-		ok(user.get('vertices').isEqual(['0']));
+		ok(user.get('_vertices').isEqual(['0']));
 
 		var vertex = store.getRecord('vertex', '4');
-		ok(vertex.get('tags').isEqual([]));
+		ok(vertex.get('_tags').isEqual([]));
 	});
 
 	test('Leaving out a required relationship causes an exception', function() {

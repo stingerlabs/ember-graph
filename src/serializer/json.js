@@ -32,7 +32,7 @@ Eg.JSONSerializer = Em.Object.extend({
 		}
 
 		record.constructor.eachRelationship(function(name, meta) {
-			var val = record.get(name);
+			var val = record.get('_' + name);
 
 			if (meta.kind === Eg.Model.HAS_MANY_KEY) {
 				json.links[name] = val.filter(function(id) {

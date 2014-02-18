@@ -196,8 +196,25 @@ Eg.Model.reopenClass({
 	_create: Eg.Model.create,
 
 	extend: function() {
-		var subclass = this._super.apply(this, arguments);
-		subclass._declareRelationships();
+		var args = Array.prototype.slice.call(arguments, 0);
+		var options = args.pop() || {};
+		var relationships = {};
+
+		if (!(options instanceof Em.Mixin)) {
+			Em.keys(options).forEach(function(key) {
+				var value = options[key];
+
+				if (options[key] && options[key].isRelationship) {
+					relationships[key] = value;
+					delete options[key];
+				}
+			});
+		}
+
+		args.push(options);
+
+		var subclass = this._super.apply(this, args);
+		subclass._declareRelationships(relationships);
 		return subclass;
 	}
 });

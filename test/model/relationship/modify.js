@@ -35,9 +35,9 @@
 		expect(2);
 
 		var test2 = store.getRecord('test2', '1');
-		ok(!test2.get('hasManyNull').contains('-1'));
+		ok(!test2.get('_hasManyNull').contains('-1'));
 		test2.addToRelationship('hasManyNull', '-1');
-		ok(test2.get('hasManyNull').contains('-1'));
+		ok(test2.get('_hasManyNull').contains('-1'));
 	});
 
 	test('Adding to a hasMany(->belongsTo) works properly', function() {
@@ -46,13 +46,13 @@
 		var test1 = store.getRecord('test1', '1');
 		var test2 = store.getRecord('test2', '1');
 
-		strictEqual(test1.get('belongsToHasMany'), null);
-		ok(!test2.get('hasManyBelongsTo').contains('1'));
+		strictEqual(test1.get('_belongsToHasMany'), null);
+		ok(!test2.get('_hasManyBelongsTo').contains('1'));
 
 		test2.addToRelationship('hasManyBelongsTo', '1');
 
-		strictEqual(test1.get('belongsToHasMany'), '1');
-		ok(test2.get('hasManyBelongsTo').contains('1'));
+		strictEqual(test1.get('_belongsToHasMany'), '1');
+		ok(test2.get('_hasManyBelongsTo').contains('1'));
 	});
 
 	test('Adding to a hasMany(->hasMany) works properly', function() {
@@ -61,12 +61,12 @@
 		var test1 = store.getRecord('test1', '1');
 		var test2 = store.getRecord('test2', '1');
 
-		ok(!test1.get('hasMany').contains('1'));
-		ok(!test2.get('hasManyHasMany').contains('1'));
+		ok(!test1.get('_hasMany').contains('1'));
+		ok(!test2.get('_hasManyHasMany').contains('1'));
 
 		test2.addToRelationship('hasManyHasMany', '1');
 
-		ok(test1.get('hasMany').contains('1'));
-		ok(test2.get('hasManyHasMany').contains('1'));
+		ok(test1.get('_hasMany').contains('1'));
+		ok(test2.get('_hasManyHasMany').contains('1'));
 	});
 })();
