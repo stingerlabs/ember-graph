@@ -1,7 +1,7 @@
 /**
  * @class {JSONSerializer}
  */
-Eg.JSONSerializer = Em.Object.extend({
+EG.JSONSerializer = Em.Object.extend({
 
 	/**
 	 * Converts the record given to a JSON representation where the ID
@@ -9,6 +9,9 @@ Eg.JSONSerializer = Em.Object.extend({
 	 * are stored as strings (or arrays) in a `links` object.
 	 *
 	 * Note: Temporary IDs are not included in relationships
+	 *
+	 * Current options:
+	 * includeId: true to include the ID in the JSON, should default to false
 	 *
 	 * @param {Model} record The record to serialize
 	 * @param {Object} options Any options that were passed by the adapter
@@ -23,7 +26,7 @@ Eg.JSONSerializer = Em.Object.extend({
 		}
 
 		record.constructor.eachAttribute(function(name, meta) {
-			var type = Eg.AttributeType.attributeTypeForName(meta.type);
+			var type = EG.AttributeType.attributeTypeForName(meta.type);
 			json[name] = type.serialize(record.get(name));
 		}, this);
 
@@ -34,12 +37,12 @@ Eg.JSONSerializer = Em.Object.extend({
 		record.constructor.eachRelationship(function(name, meta) {
 			var val = record.get('_' + name);
 
-			if (meta.kind === Eg.Model.HAS_MANY_KEY) {
+			if (meta.kind === EG.Model.HAS_MANY_KEY) {
 				json.links[name] = val.filter(function(id) {
-					return (!Eg.Model.isTemporaryId(id));
+					return (!EG.Model.isTemporaryId(id));
 				});
 			} else {
-				if (val === null || Eg.Model.isTemporaryId(val)) {
+				if (val === null || EG.Model.isTemporaryId(val)) {
 					json.links[name] = null;
 				} else {
 					json.links[name] = val;
@@ -54,12 +57,19 @@ Eg.JSONSerializer = Em.Object.extend({
 	 * Extracts records from a JSON payload. The payload should follow
 	 * the JSON API (http://jsonapi.org/format/) format for IDs.
 	 *
+	 * Current options:
+	 * isQuery: true to preserver the top-level `ids` key, defaults to false
+	 *
 	 * @param {Object} payload
 	 * @param {Object} options Any options that were passed by the adapter
 	 * @returns {Object} Normalized JSON Payload
 	 */
 	deserialize: function(payload, options) {
 		var json = this._extract(payload);
+
+		if (options && options.isQuery) {
+			json.ids = payload.ids;
+		}
 
 		Em.keys(json).forEach(function(typeKey) {
 			json[typeKey] = json[typeKey].map(function(record) {
@@ -117,7 +127,7 @@ Eg.JSONSerializer = Em.Object.extend({
 			var model = this.get('store').modelForType(typeKey);
 			var record = { id: json.id + '' };
 
-			Eg.debug(function() {
+			EG.debug(function() {
 				var attributes = Em.get(model, 'attributes');
 				var givenAttributes = new Em.Set(Em.keys(json));
 				givenAttributes.removeObjects(['id', 'links']);
@@ -140,11 +150,11 @@ Eg.JSONSerializer = Em.Object.extend({
 				}
 
 				var meta = model.metaForAttribute(attribute);
-				var type = Eg.AttributeType.attributeTypeForName(meta.type);
+				var type = EG.AttributeType.attributeTypeForName(meta.type);
 				record[attribute] = type.deserialize(json[attribute]);
 			});
 
-			Eg.debug(function() {
+			EG.debug(function() {
 				var relationships = Em.get(model, 'relationships');
 				var givenRelationships = new Em.Set(Em.keys(json.links));
 				var extra = givenRelationships.withoutAll(relationships);
@@ -163,7 +173,7 @@ Eg.JSONSerializer = Em.Object.extend({
 			Em.keys(json.links).forEach(function(relationship) {
 				var meta = model.metaForRelationship(relationship);
 
-				if (meta.kind === Eg.Model.HAS_MANY_KEY) {
+				if (meta.kind === EG.Model.HAS_MANY_KEY) {
 					record[relationship] = json.links[relationship].map(function(id) {
 						return '' + id;
 					});
@@ -174,7 +184,7 @@ Eg.JSONSerializer = Em.Object.extend({
 
 			return record;
 		} catch (e) {
-			Eg.debug.warn(e);
+			Em.warn(e);
 			return null;
 		}
 	}

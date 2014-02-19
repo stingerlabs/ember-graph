@@ -37,24 +37,22 @@ EG.Adapter = Em.Object.extend({
 	store: null,
 
 	/**
-	 * Should be overridden with a serializer instance. This class will
-	 * proxy to the serializer for the serialize methods of this class.
+	 * The serializer to use if an application serializer is not found.
 	 */
-	serializer: null,
+	defaultSerializer: 'json',
 
 	/**
-	 * Observer method to set the store property on the serializer.
-	 * @private
+	 * This class will proxy to the serializer for the serialize methods of this class.
 	 */
-	_serializerDidChange: function() {
-		var serializer = this.get('serializer');
+	serializer: Em.computed(function() {
 		var container = this.get('container');
+		var serializer = container.lookup('serializer:application') ||
+			container.lookup('serializer:' + this.get('defaultSerializer'));
 
-		if (serializer) {
-			serializer.set('store', this.get('store'));
-			serializer.set('container', container);
-		}
-	}.observes('serializer').on('init'),
+		Em.assert('A valid serializer could not be found.', EG.Adapter.detectInstance(serializer));
+
+		return serializer;
+	}).property().readOnly(),
 
 	/**
 	 * Persists a record to the server. This method returns normalized JSON

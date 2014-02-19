@@ -289,7 +289,7 @@ var methodMissing = function(method) {
  *
  * @class {Serializer}
  */
-Eg.Serializer = Em.Object.extend({
+EG.Serializer = Em.Object.extend({
 
 	/**
 	 * The application's container.
@@ -305,6 +305,9 @@ Eg.Serializer = Em.Object.extend({
 	/**
 	 * Converts a record to JSON for sending over the wire.
 	 *
+	 * Current options:
+	 * includeId: true to include the ID in the JSON, should default to false
+	 *
 	 * @param {Model} record The record to serialize
 	 * @param {Object} options Any options that were passed by the adapter
 	 * @returns {Object} JSON representation of record
@@ -319,6 +322,9 @@ Eg.Serializer = Em.Object.extend({
 	 * object to obtain any information it needs to correctly form
 	 * the records. This method should return an enumerable of records
 	 * no matter how many records the server sent back.
+	 *
+	 * Current options:
+	 * isQuery: true to preserver the top-level `ids` key, defaults to false
 	 *
 	 * @param {Object} payload
 	 * @param {Object} options Any options that were passed by the adapter
@@ -337,7 +343,7 @@ Eg.Serializer = Em.Object.extend({
 /**
  * @class {JSONSerializer}
  */
-Eg.JSONSerializer = Em.Object.extend({
+EG.JSONSerializer = Em.Object.extend({
 
 	/**
 	 * Converts the record given to a JSON representation where the ID
@@ -345,6 +351,9 @@ Eg.JSONSerializer = Em.Object.extend({
 	 * are stored as strings (or arrays) in a `links` object.
 	 *
 	 * Note: Temporary IDs are not included in relationships
+	 *
+	 * Current options:
+	 * includeId: true to include the ID in the JSON, should default to false
 	 *
 	 * @param {Model} record The record to serialize
 	 * @param {Object} options Any options that were passed by the adapter
@@ -359,7 +368,7 @@ Eg.JSONSerializer = Em.Object.extend({
 		}
 
 		record.constructor.eachAttribute(function(name, meta) {
-			var type = Eg.AttributeType.attributeTypeForName(meta.type);
+			var type = EG.AttributeType.attributeTypeForName(meta.type);
 			json[name] = type.serialize(record.get(name));
 		}, this);
 
@@ -370,12 +379,12 @@ Eg.JSONSerializer = Em.Object.extend({
 		record.constructor.eachRelationship(function(name, meta) {
 			var val = record.get('_' + name);
 
-			if (meta.kind === Eg.Model.HAS_MANY_KEY) {
+			if (meta.kind === EG.Model.HAS_MANY_KEY) {
 				json.links[name] = val.filter(function(id) {
-					return (!Eg.Model.isTemporaryId(id));
+					return (!EG.Model.isTemporaryId(id));
 				});
 			} else {
-				if (val === null || Eg.Model.isTemporaryId(val)) {
+				if (val === null || EG.Model.isTemporaryId(val)) {
 					json.links[name] = null;
 				} else {
 					json.links[name] = val;
@@ -390,12 +399,19 @@ Eg.JSONSerializer = Em.Object.extend({
 	 * Extracts records from a JSON payload. The payload should follow
 	 * the JSON API (http://jsonapi.org/format/) format for IDs.
 	 *
+	 * Current options:
+	 * isQuery: true to preserver the top-level `ids` key, defaults to false
+	 *
 	 * @param {Object} payload
 	 * @param {Object} options Any options that were passed by the adapter
 	 * @returns {Object} Normalized JSON Payload
 	 */
 	deserialize: function(payload, options) {
 		var json = this._extract(payload);
+
+		if (options && options.isQuery) {
+			json.ids = payload.ids;
+		}
 
 		Em.keys(json).forEach(function(typeKey) {
 			json[typeKey] = json[typeKey].map(function(record) {
@@ -453,7 +469,7 @@ Eg.JSONSerializer = Em.Object.extend({
 			var model = this.get('store').modelForType(typeKey);
 			var record = { id: json.id + '' };
 
-			Eg.debug(function() {
+			EG.debug(function() {
 				var attributes = Em.get(model, 'attributes');
 				var givenAttributes = new Em.Set(Em.keys(json));
 				givenAttributes.removeObjects(['id', 'links']);
@@ -476,11 +492,11 @@ Eg.JSONSerializer = Em.Object.extend({
 				}
 
 				var meta = model.metaForAttribute(attribute);
-				var type = Eg.AttributeType.attributeTypeForName(meta.type);
+				var type = EG.AttributeType.attributeTypeForName(meta.type);
 				record[attribute] = type.deserialize(json[attribute]);
 			});
 
-			Eg.debug(function() {
+			EG.debug(function() {
 				var relationships = Em.get(model, 'relationships');
 				var givenRelationships = new Em.Set(Em.keys(json.links));
 				var extra = givenRelationships.withoutAll(relationships);
@@ -499,7 +515,7 @@ Eg.JSONSerializer = Em.Object.extend({
 			Em.keys(json.links).forEach(function(relationship) {
 				var meta = model.metaForRelationship(relationship);
 
-				if (meta.kind === Eg.Model.HAS_MANY_KEY) {
+				if (meta.kind === EG.Model.HAS_MANY_KEY) {
 					record[relationship] = json.links[relationship].map(function(id) {
 						return '' + id;
 					});
@@ -510,7 +526,7 @@ Eg.JSONSerializer = Em.Object.extend({
 
 			return record;
 		} catch (e) {
-			Eg.debug.warn(e);
+			Em.warn(e);
 			return null;
 		}
 	}
@@ -559,24 +575,22 @@ EG.Adapter = Em.Object.extend({
 	store: null,
 
 	/**
-	 * Should be overridden with a serializer instance. This class will
-	 * proxy to the serializer for the serialize methods of this class.
+	 * The serializer to use if an application serializer is not found.
 	 */
-	serializer: null,
+	defaultSerializer: 'json',
 
 	/**
-	 * Observer method to set the store property on the serializer.
-	 * @private
+	 * This class will proxy to the serializer for the serialize methods of this class.
 	 */
-	_serializerDidChange: function() {
-		var serializer = this.get('serializer');
+	serializer: Em.computed(function() {
 		var container = this.get('container');
+		var serializer = container.lookup('serializer:application') ||
+			container.lookup('serializer:' + this.get('defaultSerializer'));
 
-		if (serializer) {
-			serializer.set('store', this.get('store'));
-			serializer.set('container', container);
-		}
-	}.observes('serializer').on('init'),
+		Em.assert('A valid serializer could not be found.', EG.Adapter.detectInstance(serializer));
+
+		return serializer;
+	}).property().readOnly(),
 
 	/**
 	 * Persists a record to the server. This method returns normalized JSON
@@ -895,7 +909,210 @@ Eg.FixtureAdapter = Eg.Adapter.extend({
 
 (function() {
 
-EG.RESTAdapter = EG.Adapter.extend();
+EG.RESTAdapter = EG.Adapter.extend({
+
+	/**
+	 * Persists a record to the server. This method returns normalized JSON
+	 * as the other methods do, but the normalized JSON must contain one
+	 * extra field. It must contain an `id` field that represents the
+	 * permanent ID of the record that was created. This helps distinguish
+	 * it from any other records of that same type that may have been
+	 * returned from the server.
+	 *
+	 * @param {Model} record The record to persist
+	 * @returns {Promise} A promise that resolves to normalized JSON
+	 */
+	createRecord: function(record) {
+		var url = this._buildUrl(record.typeKey, null);
+		var json = this.serialize(record, { includeId: false });
+
+		return this._ajax(url, 'POST', {}, json).then(function(payload) {
+			return this.deserialize(payload);
+		}.bind(this));
+	},
+
+	/**
+	 * Fetch a record from the server.
+	 *
+	 * @param {String|} typeKey
+	 * @param {String} id The ID of the record to fetch
+	 * @returns {Promise} A promise that resolves to normalized JSON
+	 */
+	findRecord: function(typeKey, id) {
+		var url = this._buildUrl(typeKey, id);
+
+		return this._ajax(url, 'GET').then(function(payload) {
+			return this.deserialize(payload);
+		}.bind(this));
+	},
+
+	/**
+	 * The same as find, only it should load several records. The
+	 * promise can return any type of enumerable containing the records.
+	 *
+	 * @param {String} typeKey
+	 * @param {String[]} ids Enumerable of IDs
+	 * @returns {Promise} A promise that resolves to normalized JSON
+	 */
+	findMany: function(typeKey, ids) {
+		var url = this._buildUrl(typeKey, ids.join());
+
+		return this._ajax(url, 'GET').then(function(payload) {
+			return this.deserialize(payload);
+		}.bind(this));
+	},
+
+	/**
+	 * The same as find, only it should load all records of the given type.
+	 * The promise can return any type of enumerable containing the records.
+	 *
+	 * @param {String} typeKey
+	 * @param {String[]} ids The IDs of records of this type that the store already has
+	 * @returns {Promise} A promise that resolves to normalized JSON
+	 */
+	findAll: function(typeKey, ids) {
+		var url = this._buildUrl(typeKey, null, { ids: ids.join() });
+
+		return this._ajax(url, 'GET').then(function(payload) {
+			return this.deserialize(payload);
+		}.bind(this));
+	},
+
+	/**
+	 * This method returns normalized JSON as the other methods do, but
+	 * the normalized JSON must contain one extra field. It must contain
+	 * an `ids` field that represents the IDs of the records that matched
+	 * the query. This helps distinguish them from any other records of
+	 * that same type that may have been returned from the server.
+	 *
+	 * @param {String} typeKey
+	 * @param {Object} query The query parameters that were passed into `find` earlier
+	 * @param {String[]} ids The IDs of records of this type that the store already has
+	 * @returns {Promise} A promise that resolves to normalized JSON
+	 */
+	findQuery: function(typeKey, query, ids) {
+		var options = { ids: ids.join() };
+
+		Em.keys(query).forEach(function(key) {
+			options[key] = '' + query[key];
+		});
+
+		var url = this._buildUrl(typeKey, null, options);
+
+		return this._ajax(url, 'GET').then(function(payload) {
+			return this.deserialize(payload, { isQuery: true });
+		}.bind(this));
+	},
+
+	/**
+	 * Update the given record.
+	 *
+	 * @param {Model} record The model to save
+	 * @returns {Promise} A promise that resolves to normalized JSON
+	 */
+	updateRecord: function(record) {
+		var url = this._buildUrl(record.typeKey, record.get('id'));
+		var json = this.serialize(record, { includeId: true });
+
+		return this._ajax(url, 'PATCH', json).then(function(payload) {
+			return this.deserialize(payload);
+		}.bind(this));
+	},
+
+	/**
+	 * Update the given record.
+	 *
+	 * @param {Model} record The model to save
+	 * @returns {Promise} A promise that resolves to normalized JSON
+	 */
+	deleteRecord: function(record) {
+		var url = this._buildUrl(record.typeKey, record.get('id'));
+
+		return this._ajax(url, 'DELETE').then(function(payload) {
+			return this.deserialize(payload) || {};
+		}.bind(this));
+	},
+
+	/**
+	 * This function will build the URL that the request will be posted to.
+	 * If an ID is provided, it will used the singular version of the
+	 * typeKey given (`/user/52`). If no ID is provided, it uses the plural
+	 * version of the typeKey given (`/users`). Either way, it appends the
+	 * options passed in as query parameters. The options must be strings,
+	 * but they don't have to be escaped, this function will do that.
+	 *
+	 * @param {String} typeKey
+	 * @param {String} id
+	 * @param {Object.<String,String>} [options]
+	 * @returns {String}
+	 * @private
+	 */
+	_buildUrl: function(typeKey, id, options) {
+		var url = this._prefix() + '/';
+
+		if (id) {
+			url += (typeKey + '/' + id);
+		} else {
+			url += EG.String.pluralize(typeKey);
+		}
+
+		if (options) {
+			Em.keys(options).forEach(function(key, index) {
+				url += ((index === 0) ? '?' : '&') + key + '=' + encodeURIComponent(options[key]);
+			});
+		}
+
+		return url;
+	},
+
+	/**
+	 * This hook is called by the adapter when forming the URL for requests.
+	 * The adapter normally makes requests to the current location. So the URL
+	 * looks like `/user/6`. If you want to add a different host, or a prefix,
+	 * override this hook.
+	 *
+	 * Warning: Do NOT put a trailing slash. The adapter won't check for
+	 * mistakes, so just don't do it.
+	 *
+	 * @private
+	 */
+	_prefix: function() {
+		return '';
+	},
+
+	/**
+	 * This method sends the request to the server.
+	 * The response is processed in the Ember run-loop.
+	 *
+	 * @param {String} url
+	 * @param {String} verb GET, POST, PUT or DELETE
+	 * @param {Object.<String, String>} [headers]
+	 * @param {String} [body]
+	 * @returns {Promise}
+	 * @private
+	 */
+	_ajax: function(url, verb, headers, body) {
+		return new Em.RSVP.Promise(function(resolve, reject) {
+			$.ajax({
+				cache: false,
+				contentType: 'application/json',
+				data: (body === undefined ? undefined : (typeof body === 'string' ? body : JSON.stringify(body))),
+				headers: headers || {},
+				processData: false,
+				type: verb,
+				url: url,
+
+				error: function(jqXHR, textStatus, error) {
+					Em.run(null, reject, error);
+				},
+
+				success: function(data, status, jqXHR) {
+					Em.run(null, resolve, data);
+				}
+			});
+		});
+	}
+});
 
 })();
 
@@ -1007,19 +1224,6 @@ Eg.Store = Em.Object.extend({
 		var records = this.get('_records');
 		records[typeKey] = records[typeKey] || {};
 		delete records[typeKey][id];
-	},
-
-	/**
-	 * Creates a new subclass of Model.
-	 *
-	 * @param {String} typeKey The name of the new type
-	 * @param {String} [parentKey] The parent type, if inheriting from a custom type
-	 * @param {Array} [mixins] The mixins to create the type with
-	 * @param {Object} options The attributes and relationships of the type
-	 * @returns {Model}
-	 */
-	createModel: function(typeKey, parentKey, mixins, options) {
-		throw new Error('`createModel` is deprecated.');
 	},
 
 	/**
@@ -2344,7 +2548,7 @@ Eg.AttributeType.registerAttributeType('array', Eg.ArrayType);
  *
  * @class {Model}
  */
-Eg.Model = Em.Object.extend({
+Eg.Model = Em.Object.extend(Em.Evented, {
 
 	/**
 	 * Should be overridden in all subclasses with a name for this

@@ -9,7 +9,7 @@ var methodMissing = function(method) {
  *
  * @class {Serializer}
  */
-Eg.Serializer = Em.Object.extend({
+EG.Serializer = Em.Object.extend({
 
 	/**
 	 * The application's container.
@@ -25,6 +25,9 @@ Eg.Serializer = Em.Object.extend({
 	/**
 	 * Converts a record to JSON for sending over the wire.
 	 *
+	 * Current options:
+	 * includeId: true to include the ID in the JSON, should default to false
+	 *
 	 * @param {Model} record The record to serialize
 	 * @param {Object} options Any options that were passed by the adapter
 	 * @returns {Object} JSON representation of record
@@ -39,6 +42,9 @@ Eg.Serializer = Em.Object.extend({
 	 * object to obtain any information it needs to correctly form
 	 * the records. This method should return an enumerable of records
 	 * no matter how many records the server sent back.
+	 *
+	 * Current options:
+	 * isQuery: true to preserver the top-level `ids` key, defaults to false
 	 *
 	 * @param {Object} payload
 	 * @param {Object} options Any options that were passed by the adapter
