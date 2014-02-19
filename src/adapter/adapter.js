@@ -97,10 +97,9 @@ EG.Adapter = Em.Object.extend({
 	 * The promise can return any type of enumerable containing the records.
 	 *
 	 * @param {String} typeKey
-	 * @param {String[]} ids The IDs of records of this type that the store already has
 	 * @returns {Promise} A promise that resolves to normalized JSON
 	 */
-	findAll: function(typeKey, ids) {
+	findAll: function(typeKey) {
 		throw missingMethod('findAll');
 	},
 
@@ -113,10 +112,9 @@ EG.Adapter = Em.Object.extend({
 	 *
 	 * @param {String} typeKey
 	 * @param {Object} query The query parameters that were passed into `find` earlier
-	 * @param {String[]} ids The IDs of records of this type that the store already has
 	 * @returns {Promise} A promise that resolves to normalized JSON
 	 */
-	findQuery: function(typeKey, query, ids) {
+	findQuery: function(typeKey, query) {
 		throw missingMethod('findQuery');
 	},
 

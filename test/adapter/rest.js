@@ -81,14 +81,14 @@
 		adapter._ajax = function(url, verb, headers, body) {
 			start();
 
-			strictEqual(url, prefix + '/tests?ids=' + encodeURIComponent('1,2,3'));
+			strictEqual(url, prefix + '/tests');
 			strictEqual(verb, 'GET');
 			ok(body === undefined || body === '');
 
 			return Em.RSVP.resolve();
 		};
 
-		adapter.findAll('test', ['1', '2', '3']);
+		adapter.findAll('test');
 	});
 
 	asyncTest('Find query requests are properly formed', function() {
@@ -97,15 +97,14 @@
 		adapter._ajax = function(url, verb, headers, body) {
 			start();
 
-			strictEqual(url, prefix + '/tests?ids=' + encodeURIComponent('1,2,3') +
-				'&search=' + encodeURIComponent('this should be escaped'));
+			strictEqual(url, prefix + '/tests?' + 'search=' + encodeURIComponent('this should be escaped'));
 			strictEqual(verb, 'GET');
 			ok(body === undefined || body === '');
 
 			return Em.RSVP.resolve();
 		};
 
-		adapter.findQuery('test', { search: 'this should be escaped' }, ['1', '2', '3']);
+		adapter.findQuery('test', { search: 'this should be escaped' });
 	});
 
 	asyncTest('Create requests are properly formed', function() {

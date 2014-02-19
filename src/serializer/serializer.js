@@ -39,7 +39,9 @@ EG.Serializer = Em.Object.extend({
 	 * no matter how many records the server sent back.
 	 *
 	 * Current options:
-	 * isQuery: true to preserver the top-level `ids` key, defaults to false
+	 * isQuery: true to include a top-level `ids` key, defaults to false.
+	 *
+	 * Note: For now, it is assumed that a query can only query over one type of object.
 	 *
 	 * @param {Object} payload
 	 * @param {Object} options Any options that were passed by the adapter

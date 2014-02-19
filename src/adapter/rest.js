@@ -56,11 +56,10 @@ EG.RESTAdapter = EG.Adapter.extend({
 	 * The promise can return any type of enumerable containing the records.
 	 *
 	 * @param {String} typeKey
-	 * @param {String[]} ids The IDs of records of this type that the store already has
 	 * @returns {Promise} A promise that resolves to normalized JSON
 	 */
-	findAll: function(typeKey, ids) {
-		var url = this._buildUrl(typeKey, null, { ids: ids.join() });
+	findAll: function(typeKey) {
+		var url = this._buildUrl(typeKey, null);
 
 		return this._ajax(url, 'GET').then(function(payload) {
 			return this.deserialize(payload);
@@ -76,11 +75,10 @@ EG.RESTAdapter = EG.Adapter.extend({
 	 *
 	 * @param {String} typeKey
 	 * @param {Object} query The query parameters that were passed into `find` earlier
-	 * @param {String[]} ids The IDs of records of this type that the store already has
 	 * @returns {Promise} A promise that resolves to normalized JSON
 	 */
-	findQuery: function(typeKey, query, ids) {
-		var options = { ids: ids.join() };
+	findQuery: function(typeKey, query) {
+		var options = {};
 
 		Em.keys(query).forEach(function(key) {
 			options[key] = '' + query[key];

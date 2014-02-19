@@ -260,4 +260,17 @@
 
 		deepEqual(serializer.deserialize(payload), expected);
 	});
+
+	test('Deserialization includes the `ids` array on a query', function() {
+		expect(1);
+
+		var payload = {
+			tags: [{ id: 1, name: '' }, { id: 8, name: '' }, { id: 7, name: '' }, { id: 3, name: '' }],
+			linked: {}
+		};
+
+		var ids = ['1', '3', '7', '8'];
+
+		deepEqual(serializer.deserialize(payload, { isQuery: true }).ids.sort(), ids);
+	});
 })();

@@ -58,7 +58,9 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * the JSON API (http://jsonapi.org/format/) format for IDs.
 	 *
 	 * Current options:
-	 * isQuery: true to preserve the top-level `ids` key, defaults to false
+	 * isQuery: true to include a top-level `ids` key, defaults to false
+	 *
+	 * Note: For now, it is assumed that a query can only query over one type of object.
 	 *
 	 * @param {Object} payload
 	 * @param {Object} options Any options that were passed by the adapter
@@ -70,9 +72,14 @@ EG.JSONSerializer = EG.Serializer.extend({
 		}
 
 		var json = this._extract(payload);
+		var ids = null;
 
 		if (options && options.isQuery) {
-			json.ids = payload.ids;
+			var keys = new Em.Set(Em.keys(payload)).withoutAll(['meta', 'linked']);
+			// Going to take the first one (which should be the only one)
+			ids = payload[Em.get(keys, 'firstObject')].map(function(json) {
+				return '' + json.id;
+			});
 		}
 
 		Em.keys(json).forEach(function(typeKey) {
@@ -80,6 +87,10 @@ EG.JSONSerializer = EG.Serializer.extend({
 				return this._deserializeSingle(typeKey, record);
 			}, this).filter(function(item) { return !!item; });
 		}, this);
+
+		if (Em.isArray(ids)) {
+			json.ids = ids;
+		}
 
 		return json;
 	},

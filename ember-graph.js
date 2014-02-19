@@ -325,7 +325,9 @@ EG.Serializer = Em.Object.extend({
 	 * no matter how many records the server sent back.
 	 *
 	 * Current options:
-	 * isQuery: true to preserver the top-level `ids` key, defaults to false
+	 * isQuery: true to include a top-level `ids` key, defaults to false.
+	 *
+	 * Note: For now, it is assumed that a query can only query over one type of object.
 	 *
 	 * @param {Object} payload
 	 * @param {Object} options Any options that were passed by the adapter
@@ -401,7 +403,9 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * the JSON API (http://jsonapi.org/format/) format for IDs.
 	 *
 	 * Current options:
-	 * isQuery: true to preserve the top-level `ids` key, defaults to false
+	 * isQuery: true to include a top-level `ids` key, defaults to false
+	 *
+	 * Note: For now, it is assumed that a query can only query over one type of object.
 	 *
 	 * @param {Object} payload
 	 * @param {Object} options Any options that were passed by the adapter
@@ -413,9 +417,14 @@ EG.JSONSerializer = EG.Serializer.extend({
 		}
 
 		var json = this._extract(payload);
+		var ids = null;
 
 		if (options && options.isQuery) {
-			json.ids = payload.ids;
+			var keys = new Em.Set(Em.keys(payload)).withoutAll(['meta', 'linked']);
+			// Going to take the first one (which should be the only one)
+			ids = payload[Em.get(keys, 'firstObject')].map(function(json) {
+				return '' + json.id;
+			});
 		}
 
 		Em.keys(json).forEach(function(typeKey) {
@@ -423,6 +432,10 @@ EG.JSONSerializer = EG.Serializer.extend({
 				return this._deserializeSingle(typeKey, record);
 			}, this).filter(function(item) { return !!item; });
 		}, this);
+
+		if (Em.isArray(ids)) {
+			json.ids = ids;
+		}
 
 		return json;
 	},
@@ -640,10 +653,9 @@ EG.Adapter = Em.Object.extend({
 	 * The promise can return any type of enumerable containing the records.
 	 *
 	 * @param {String} typeKey
-	 * @param {String[]} ids The IDs of records of this type that the store already has
 	 * @returns {Promise} A promise that resolves to normalized JSON
 	 */
-	findAll: function(typeKey, ids) {
+	findAll: function(typeKey) {
 		throw missingMethod('findAll');
 	},
 
@@ -656,10 +668,9 @@ EG.Adapter = Em.Object.extend({
 	 *
 	 * @param {String} typeKey
 	 * @param {Object} query The query parameters that were passed into `find` earlier
-	 * @param {String[]} ids The IDs of records of this type that the store already has
 	 * @returns {Promise} A promise that resolves to normalized JSON
 	 */
-	findQuery: function(typeKey, query, ids) {
+	findQuery: function(typeKey, query) {
 		throw missingMethod('findQuery');
 	},
 
@@ -838,10 +849,9 @@ Eg.FixtureAdapter = Eg.Adapter.extend({
 	 * The promise can return any type of enumerable containing the records.
 	 *
 	 * @param {String} typeKey
-	 * @param {String[]} ids The IDs of records of this type that the store already has
 	 * @returns {Promise} A promise that resolves to normalized JSON
 	 */
-	findAll: function(typeKey, ids) {
+	findAll: function(typeKey) {
 		var json = {};
 		json[typeKey] = this._getRecords(typeKey);
 		return Em.RSVP.Promise.resolve(json);
@@ -856,10 +866,9 @@ Eg.FixtureAdapter = Eg.Adapter.extend({
 	 *
 	 * @param {String} typeKey
 	 * @param {Object} query The query parameters that were passed into `find` earlier
-	 * @param {String[]} ids The IDs of records of this type that the store already has
 	 * @returns {Promise} A promise that resolves to normalized JSON
 	 */
-	findQuery: function(typeKey, query, ids) {
+	findQuery: function(typeKey, query) {
 		throw new Error('The fixture adapter doesn\'t implement `findQuery`.');
 	},
 
@@ -972,11 +981,10 @@ EG.RESTAdapter = EG.Adapter.extend({
 	 * The promise can return any type of enumerable containing the records.
 	 *
 	 * @param {String} typeKey
-	 * @param {String[]} ids The IDs of records of this type that the store already has
 	 * @returns {Promise} A promise that resolves to normalized JSON
 	 */
-	findAll: function(typeKey, ids) {
-		var url = this._buildUrl(typeKey, null, { ids: ids.join() });
+	findAll: function(typeKey) {
+		var url = this._buildUrl(typeKey, null);
 
 		return this._ajax(url, 'GET').then(function(payload) {
 			return this.deserialize(payload);
@@ -992,11 +1000,10 @@ EG.RESTAdapter = EG.Adapter.extend({
 	 *
 	 * @param {String} typeKey
 	 * @param {Object} query The query parameters that were passed into `find` earlier
-	 * @param {String[]} ids The IDs of records of this type that the store already has
 	 * @returns {Promise} A promise that resolves to normalized JSON
 	 */
-	findQuery: function(typeKey, query, ids) {
-		var options = { ids: ids.join() };
+	findQuery: function(typeKey, query) {
+		var options = {};
 
 		Em.keys(query).forEach(function(key) {
 			options[key] = '' + query[key];
@@ -1430,8 +1437,7 @@ Eg.Store = Em.Object.extend({
 	 * @private
 	 */
 	_findAll: function(type) {
-		var ids = this._recordsForType(type).mapBy('id');
-		var promise = this.get('adapter').findAll(type, ids).then(function(payload) {
+		var promise = this.get('adapter').findAll(type).then(function(payload) {
 			this.extractPayload(payload);
 			return this._recordsForType(type);
 		}.bind(this));
@@ -1448,8 +1454,7 @@ Eg.Store = Em.Object.extend({
 	 * @private
 	 */
 	_findQuery: function(typeKey, options) {
-		var currentIds = this._recordsForType(typeKey).mapBy('id');
-		var promise = this.get('adapter').findQuery(typeKey, options, currentIds).then(function(payload) {
+		var promise = this.get('adapter').findQuery(typeKey, options).then(function(payload) {
 			var ids = payload.ids;
 			delete payload.ids;
 			this.extractPayload(payload);

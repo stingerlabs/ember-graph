@@ -305,8 +305,7 @@ Eg.Store = Em.Object.extend({
 	 * @private
 	 */
 	_findAll: function(type) {
-		var ids = this._recordsForType(type).mapBy('id');
-		var promise = this.get('adapter').findAll(type, ids).then(function(payload) {
+		var promise = this.get('adapter').findAll(type).then(function(payload) {
 			this.extractPayload(payload);
 			return this._recordsForType(type);
 		}.bind(this));
@@ -323,8 +322,7 @@ Eg.Store = Em.Object.extend({
 	 * @private
 	 */
 	_findQuery: function(typeKey, options) {
-		var currentIds = this._recordsForType(typeKey).mapBy('id');
-		var promise = this.get('adapter').findQuery(typeKey, options, currentIds).then(function(payload) {
+		var promise = this.get('adapter').findQuery(typeKey, options).then(function(payload) {
 			var ids = payload.ids;
 			delete payload.ids;
 			this.extractPayload(payload);
