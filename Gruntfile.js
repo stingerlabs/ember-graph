@@ -33,7 +33,6 @@ module.exports = function(grunt) {
 
 	grunt.registerTask('develop', ['neuter', 'build_test_runner', 'connect:test', 'watch']);
 	grunt.registerTask('test', ['neuter', 'build_test_runner', 'qunit:cli', 'clean:test']);
-	grunt.registerTask('release', ['neuter', 'groundskeeper:compile', 'uglify:release']);
-	grunt.registerTask('test_release', ['neuter', 'groundskeeper:compile',
+	grunt.registerTask('release', ['neuter', 'groundskeeper:compile',
 		'uglify:release', 'build_test_runner', 'qunit:cli']);
 };
