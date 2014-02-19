@@ -37,6 +37,12 @@
 		}
 	});
 
+	test('The serializer is initialized properly', function() {
+		expect(1);
+
+		ok(EG.JSONSerializer.detectInstance(adapter.get('serializer')));
+	});
+
 	asyncTest('Find requests are properly formed', function() {
 		expect(3);
 

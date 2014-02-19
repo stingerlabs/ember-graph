@@ -49,7 +49,7 @@ EG.Adapter = Em.Object.extend({
 		var serializer = container.lookup('serializer:application') ||
 			container.lookup('serializer:' + this.get('defaultSerializer'));
 
-		Em.assert('A valid serializer could not be found.', EG.Adapter.detectInstance(serializer));
+		Em.assert('A valid serializer could not be found.', EG.Serializer.detectInstance(serializer));
 
 		return serializer;
 	}).property().readOnly(),

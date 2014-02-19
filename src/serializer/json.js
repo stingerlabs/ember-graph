@@ -1,7 +1,7 @@
 /**
  * @class {JSONSerializer}
  */
-EG.JSONSerializer = Em.Object.extend({
+EG.JSONSerializer = EG.Serializer.extend({
 
 	/**
 	 * Converts the record given to a JSON representation where the ID
@@ -65,6 +65,10 @@ EG.JSONSerializer = Em.Object.extend({
 	 * @returns {Object} Normalized JSON Payload
 	 */
 	deserialize: function(payload, options) {
+		if (!payload || Em.keys(payload).length === 0) {
+			return {};
+		}
+
 		var json = this._extract(payload);
 
 		if (options && options.isQuery) {

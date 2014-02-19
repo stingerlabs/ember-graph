@@ -343,7 +343,7 @@ EG.Serializer = Em.Object.extend({
 /**
  * @class {JSONSerializer}
  */
-EG.JSONSerializer = Em.Object.extend({
+EG.JSONSerializer = EG.Serializer.extend({
 
 	/**
 	 * Converts the record given to a JSON representation where the ID
@@ -407,6 +407,10 @@ EG.JSONSerializer = Em.Object.extend({
 	 * @returns {Object} Normalized JSON Payload
 	 */
 	deserialize: function(payload, options) {
+		if (!payload || Em.keys(payload).length === 0) {
+			return {};
+		}
+
 		var json = this._extract(payload);
 
 		if (options && options.isQuery) {
@@ -587,7 +591,7 @@ EG.Adapter = Em.Object.extend({
 		var serializer = container.lookup('serializer:application') ||
 			container.lookup('serializer:' + this.get('defaultSerializer'));
 
-		Em.assert('A valid serializer could not be found.', EG.Adapter.detectInstance(serializer));
+		Em.assert('A valid serializer could not be found.', EG.Serializer.detectInstance(serializer));
 
 		return serializer;
 	}).property().readOnly(),
