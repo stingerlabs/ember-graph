@@ -3,30 +3,28 @@ var disallowedAttributeNames = new Em.Set(['id', 'type', 'content']);
 /**
  * Possible options:
  * type: Type of the attribute. Required.
- * isRequired: Whether or not the property can be omitted from the server. Defaults to false. Uses defaultValue.
- * defaultValue: Value if not present when created. If omitted, uses the default value for the property type.
- * isEqual: Function to compare two instances of the property. Defaults to using the type comparison function.
+ * defaultValue: Value if not present when created. If included, property is optional.
  * readOnly: True if the attribute should be immutable. Defaults to false.
+ * isEqual: Function to compare two instances of the property. Defaults to using the type comparison function.
  * isValid: A function that returns whether the value is valid or not. Defaults to using the type validity function.
  *
  * @param options
  * @returns {Em.ComputedProperty}
  */
 Eg.attr = function(options) {
-	var typeTransform = Eg.AttributeType.attributeTypeForName(options.type);
-
 	var meta = {
 		isAttribute: true,
 		type: options.type,
-		typeTransform: typeTransform,
-		isRequired: options.hasOwnProperty('isRequired') ? options.isRequired : !options.hasOwnProperty('defaultValue'),
-		defaultValue: options.defaultValue || typeTransform.get('defaultValue'),
-		isEqual: options.isEqual || typeTransform.isEqual,
+		isRequired: !options.hasOwnProperty('defaultValue'),
+		defaultValue: options.defaultValue,
 		readOnly: options.readOnly === true,
-		isValid: options.isValid || typeTransform.isValid
+
+		// These should really only be used internally by the model class
+		isEqual: options.isEqual,
+		isValid: options.isValid
 	};
 
-	var attribute = function(key, value) {
+	var attribute = Em.computed(function(key, value) {
 		var server = this.get('_serverAttributes.' + key);
 		var client = this.get('_clientAttributes.' + key);
 		var current = (client === undefined ? server : client);
@@ -38,12 +36,14 @@ Eg.attr = function(options) {
 		});
 
 		if (value !== undefined) {
-			if (!meta.isValid(value)) {
+			var isValid = meta.isValid || this.get('store').attributeTypeFor(meta.type).isValid;
+			if (!isValid(value)) {
 				Eg.debug.warn('The value \'' + value + '\' wasn\'t valid for the \'' + key + '\' property.');
 				return current;
 			}
 
-			if (meta.isEqual(server, value)) {
+			var isEqual = meta.isEqual || this.get('store').attributeTypeFor(meta.type).isEqual;
+			if (isEqual(server, value)) {
 				delete this.get('_clientAttributes')[key];
 				this.notifyPropertyChange('_clientAttributes');
 				return server;
@@ -55,7 +55,7 @@ Eg.attr = function(options) {
 		}
 
 		return current;
-	}.property('_clientAttributes', '_serverAttributes').meta(meta);
+	}).property('_clientAttributes', '_serverAttributes').meta(meta);
 
 	return (options.readOnly ? attribute.readOnly() : attribute);
 };
@@ -69,7 +69,7 @@ Eg.Model.reopenClass({
 	 * @static
 	 * @type {Set}
 	 */
-	attributes: function() {
+	attributes: Em.computed(function() {
 		var attributes = new Em.Set();
 
 		this.eachComputedProperty(function(name, meta) {
@@ -82,7 +82,7 @@ Eg.Model.reopenClass({
 		});
 
 		return attributes;
-	}.property(),
+	}).property(),
 
 	/**
 	 * Just a more semantic alias for `metaForProperty`
@@ -140,9 +140,9 @@ Eg.Model.reopen({
 	 * any dirty attributes based on how many client attributes differ from
 	 * the server attributes.
 	 */
-	_areAttributesDirty: function() {
+	_areAttributesDirty: Em.computed(function() {
 		return Em.keys(this.get('_clientAttributes') || {}).length > 0;
-	}.property('_clientAttributes'),
+	}).property('_clientAttributes'),
 
 	/**
 	 * @returns {Object} Keys are attribute names, values are arrays with [oldVal, newVal]
@@ -185,7 +185,8 @@ Eg.Model.reopen({
 			var value = (json.hasOwnProperty(name) ? json[name] : meta.defaultValue);
 
 			// TODO: Do we want a way to accept non-valid value from the server?
-			if (meta.isValid(value)) {
+			var isValid = meta.isValid || this.get('store').attributeTypeFor(meta.type).isValid;
+			if (isValid(value)) {
 				this.set('_serverAttributes.' + name, value);
 			} else {
 				Eg.debug.assert('Your value for the \'' + name + '\' property is inValid.');

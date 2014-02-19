@@ -439,5 +439,15 @@ Eg.Store = Em.Object.extend({
 				}
 			}, this);
 		}, this);
+	},
+
+	/**
+	 * Returns an AttributeType instance for the given type.
+	 * @param type
+	 */
+	attributeTypeFor: function(type) {
+		var attributeType = this.get('container').lookup('type:' + type);
+		Em.assert('Can\'t find an attribute type for the \'' + type + '\' type.', !!attributeType);
+		return attributeType;
 	}
 });

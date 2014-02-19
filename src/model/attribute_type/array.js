@@ -2,7 +2,7 @@
  * Will coerce any value to a JSON array (`null` is a valid value).
  * Ember enumerables are converted to arrays using `toArray()`
  */
-Eg.ArrayType = Eg.AttributeType.extend({
+EG.ArrayType = EG.AttributeType.extend({
 
 	/**
 	 * @param {*} obj Javascript object
@@ -51,5 +51,3 @@ Eg.ArrayType = Eg.AttributeType.extend({
 		return Em.compare(a.toArray(), b.toArray()) === 0;
 	}
 });
-
-Eg.AttributeType.registerAttributeType('array', Eg.ArrayType);

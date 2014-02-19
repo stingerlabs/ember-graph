@@ -28,7 +28,7 @@ var deepCompare = function(a, b) {
  * Will coerce any value to a JSON object (`null` is a valid value).
  * If JSON.stringify fails because the object is circular, it uses null instead.
  */
-Eg.ObjectType = Eg.AttributeType.extend({
+EG.ObjectType = EG.AttributeType.extend({
 
 	/**
 	 * @param {*} obj Javascript object
@@ -85,5 +85,3 @@ Eg.ObjectType = Eg.AttributeType.extend({
 		return deepCompare(a, b);
 	}
 });
-
-Eg.AttributeType.registerAttributeType('object', Eg.ObjectType);

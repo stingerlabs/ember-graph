@@ -27,6 +27,13 @@ if (Em) {
 				App.register('adapter:fixture', EG.FixtureAdapter, { singleton: true });
 				App.register('serializer:json', EG.JSONSerializer, { singleton: true });
 
+				App.register('type:string', EG.StringType, { singleton: true });
+				App.register('type:number', EG.NumberType, { singleton: true });
+				App.register('type:boolean', EG.BooleanType, { singleton: true });
+				App.register('type:date', EG.DateType, { singleton: true });
+				App.register('type:object', EG.ObjectType, { singleton: true });
+				App.register('type:array', EG.ArrayType, { singleton: true });
+
 				container.lookup('store:main');
 			}
 		});
@@ -40,7 +47,6 @@ if (Em) {
 				App.inject('route', 'store', 'store:main');
 				App.inject('adapter', 'store', 'store:main');
 				App.inject('serializer', 'store', 'store:main');
-				// TODO: Use this to inject store into other items (adapters, serializers, models)
 			}
 		});
 	});
@@ -292,11 +298,6 @@ var methodMissing = function(method) {
 EG.Serializer = Em.Object.extend({
 
 	/**
-	 * The application's container.
-	 */
-	container: null,
-
-	/**
 	 * The store that the records will be loaded into.
 	 * This can be used for fetching models and their metadata.
 	 */
@@ -368,7 +369,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 		}
 
 		record.constructor.eachAttribute(function(name, meta) {
-			var type = EG.AttributeType.attributeTypeForName(meta.type);
+			var type = this.get('store').attributeTypeFor(meta.type);
 			json[name] = type.serialize(record.get(name));
 		}, this);
 
@@ -400,7 +401,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * the JSON API (http://jsonapi.org/format/) format for IDs.
 	 *
 	 * Current options:
-	 * isQuery: true to preserver the top-level `ids` key, defaults to false
+	 * isQuery: true to preserve the top-level `ids` key, defaults to false
 	 *
 	 * @param {Object} payload
 	 * @param {Object} options Any options that were passed by the adapter
@@ -496,9 +497,9 @@ EG.JSONSerializer = EG.Serializer.extend({
 				}
 
 				var meta = model.metaForAttribute(attribute);
-				var type = EG.AttributeType.attributeTypeForName(meta.type);
+				var type = this.get('store').attributeTypeFor(meta.type);
 				record[attribute] = type.deserialize(json[attribute]);
-			});
+			}, this);
 
 			EG.debug(function() {
 				var relationships = Em.get(model, 'relationships');
@@ -1563,6 +1564,16 @@ Eg.Store = Em.Object.extend({
 				}
 			}, this);
 		}, this);
+	},
+
+	/**
+	 * Returns an AttributeType instance for the given type.
+	 * @param type
+	 */
+	attributeTypeFor: function(type) {
+		var attributeType = this.get('container').lookup('type:' + type);
+		Em.assert('Can\'t find an attribute type for the \'' + type + '\' type.', !!attributeType);
+		return attributeType;
 	}
 });
 
@@ -2143,7 +2154,7 @@ Eg.Relationship.reopenClass({
  *
  * @class {AttributeType}
  */
-Eg.AttributeType = Em.Object.extend({
+EG.AttributeType = Em.Object.extend({
 
 	/**
 	 * The default value to use if a value of this type is missing.
@@ -2184,25 +2195,6 @@ Eg.AttributeType = Em.Object.extend({
 	}
 });
 
-Eg.AttributeType.reopenClass({
-
-	/**
-	 * @type {Object.<String, AttributeType>}
-	 */
-	_types: {},
-
-	registerAttributeType: function(name, type) {
-		var instance = (type instanceof Eg.AttributeType ? type : type.create());
-		Eg.debug.assert('', instance instanceof Eg.AttributeType);
-		this._types[name] = instance;
-	},
-
-	attributeTypeForName: function(name) {
-		Eg.debug.assert('The attribute type \'' + name + '\' doesn\'t exist.', !!this._types[name]);
-		return this._types[name];
-	}
-});
-
 })();
 
 (function() {
@@ -2210,7 +2202,7 @@ Eg.AttributeType.reopenClass({
 /**
  * Will coerce any type to a boolean (`null` being the default). `null` is not a valid value.
  */
-Eg.BooleanType = Eg.AttributeType.extend({
+EG.BooleanType = EG.AttributeType.extend({
 
 	/**
 	 * The default value to use if a value of this type is missing.
@@ -2242,8 +2234,6 @@ Eg.BooleanType = Eg.AttributeType.extend({
 	}
 });
 
-Eg.AttributeType.registerAttributeType('boolean', Eg.BooleanType);
-
 })();
 
 (function() {
@@ -2254,7 +2244,7 @@ Eg.AttributeType.registerAttributeType('boolean', Eg.BooleanType);
  *
  * When deserializing, numbers and strings are converted to dates, everything is is converted to null.
  */
-Eg.DateType = Eg.AttributeType.extend({
+EG.DateType = EG.AttributeType.extend({
 
 	/**
 	 * @param {*} obj Javascript object
@@ -2311,8 +2301,6 @@ Eg.DateType = Eg.AttributeType.extend({
 	}
 });
 
-Eg.AttributeType.registerAttributeType('date', Eg.DateType);
-
 })();
 
 (function() {
@@ -2320,7 +2308,7 @@ Eg.AttributeType.registerAttributeType('date', Eg.DateType);
 /**
  * Will coerce any type to a number (0 being the default). `null` is not a valid value.
  */
-Eg.NumberType = Eg.AttributeType.extend({
+EG.NumberType = EG.AttributeType.extend({
 
 	/**
 	 * The default value to use if a value of this type is missing.
@@ -2352,13 +2340,11 @@ Eg.NumberType = Eg.AttributeType.extend({
 	}
 });
 
-Eg.AttributeType.registerAttributeType('number', Eg.NumberType);
-
 })();
 
 (function() {
 
-Eg.StringType = Eg.AttributeType.extend({
+EG.StringType = EG.AttributeType.extend({
 
 	/**
 	 * @param {*} obj Javascript object
@@ -2384,8 +2370,6 @@ Eg.StringType = Eg.AttributeType.extend({
 		return (obj === null || typeof obj === 'string');
 	}
 });
-
-Eg.AttributeType.registerAttributeType('string', Eg.StringType);
 
 })();
 
@@ -2421,7 +2405,7 @@ var deepCompare = function(a, b) {
  * Will coerce any value to a JSON object (`null` is a valid value).
  * If JSON.stringify fails because the object is circular, it uses null instead.
  */
-Eg.ObjectType = Eg.AttributeType.extend({
+EG.ObjectType = EG.AttributeType.extend({
 
 	/**
 	 * @param {*} obj Javascript object
@@ -2479,8 +2463,6 @@ Eg.ObjectType = Eg.AttributeType.extend({
 	}
 });
 
-Eg.AttributeType.registerAttributeType('object', Eg.ObjectType);
-
 })();
 
 (function() {
@@ -2489,7 +2471,7 @@ Eg.AttributeType.registerAttributeType('object', Eg.ObjectType);
  * Will coerce any value to a JSON array (`null` is a valid value).
  * Ember enumerables are converted to arrays using `toArray()`
  */
-Eg.ArrayType = Eg.AttributeType.extend({
+EG.ArrayType = EG.AttributeType.extend({
 
 	/**
 	 * @param {*} obj Javascript object
@@ -2538,8 +2520,6 @@ Eg.ArrayType = Eg.AttributeType.extend({
 		return Em.compare(a.toArray(), b.toArray()) === 0;
 	}
 });
-
-Eg.AttributeType.registerAttributeType('array', Eg.ArrayType);
 
 })();
 
@@ -2777,30 +2757,28 @@ var disallowedAttributeNames = new Em.Set(['id', 'type', 'content']);
 /**
  * Possible options:
  * type: Type of the attribute. Required.
- * isRequired: Whether or not the property can be omitted from the server. Defaults to false. Uses defaultValue.
- * defaultValue: Value if not present when created. If omitted, uses the default value for the property type.
- * isEqual: Function to compare two instances of the property. Defaults to using the type comparison function.
+ * defaultValue: Value if not present when created. If included, property is optional.
  * readOnly: True if the attribute should be immutable. Defaults to false.
+ * isEqual: Function to compare two instances of the property. Defaults to using the type comparison function.
  * isValid: A function that returns whether the value is valid or not. Defaults to using the type validity function.
  *
  * @param options
  * @returns {Em.ComputedProperty}
  */
 Eg.attr = function(options) {
-	var typeTransform = Eg.AttributeType.attributeTypeForName(options.type);
-
 	var meta = {
 		isAttribute: true,
 		type: options.type,
-		typeTransform: typeTransform,
-		isRequired: options.hasOwnProperty('isRequired') ? options.isRequired : !options.hasOwnProperty('defaultValue'),
-		defaultValue: options.defaultValue || typeTransform.get('defaultValue'),
-		isEqual: options.isEqual || typeTransform.isEqual,
+		isRequired: !options.hasOwnProperty('defaultValue'),
+		defaultValue: options.defaultValue,
 		readOnly: options.readOnly === true,
-		isValid: options.isValid || typeTransform.isValid
+
+		// These should really only be used internally by the model class
+		isEqual: options.isEqual,
+		isValid: options.isValid
 	};
 
-	var attribute = function(key, value) {
+	var attribute = Em.computed(function(key, value) {
 		var server = this.get('_serverAttributes.' + key);
 		var client = this.get('_clientAttributes.' + key);
 		var current = (client === undefined ? server : client);
@@ -2812,12 +2790,14 @@ Eg.attr = function(options) {
 		});
 
 		if (value !== undefined) {
-			if (!meta.isValid(value)) {
+			var isValid = meta.isValid || this.get('store').attributeTypeFor(meta.type).isValid;
+			if (!isValid(value)) {
 				Eg.debug.warn('The value \'' + value + '\' wasn\'t valid for the \'' + key + '\' property.');
 				return current;
 			}
 
-			if (meta.isEqual(server, value)) {
+			var isEqual = meta.isEqual || this.get('store').attributeTypeFor(meta.type).isEqual;
+			if (isEqual(server, value)) {
 				delete this.get('_clientAttributes')[key];
 				this.notifyPropertyChange('_clientAttributes');
 				return server;
@@ -2829,7 +2809,7 @@ Eg.attr = function(options) {
 		}
 
 		return current;
-	}.property('_clientAttributes', '_serverAttributes').meta(meta);
+	}).property('_clientAttributes', '_serverAttributes').meta(meta);
 
 	return (options.readOnly ? attribute.readOnly() : attribute);
 };
@@ -2843,7 +2823,7 @@ Eg.Model.reopenClass({
 	 * @static
 	 * @type {Set}
 	 */
-	attributes: function() {
+	attributes: Em.computed(function() {
 		var attributes = new Em.Set();
 
 		this.eachComputedProperty(function(name, meta) {
@@ -2856,7 +2836,7 @@ Eg.Model.reopenClass({
 		});
 
 		return attributes;
-	}.property(),
+	}).property(),
 
 	/**
 	 * Just a more semantic alias for `metaForProperty`
@@ -2914,9 +2894,9 @@ Eg.Model.reopen({
 	 * any dirty attributes based on how many client attributes differ from
 	 * the server attributes.
 	 */
-	_areAttributesDirty: function() {
+	_areAttributesDirty: Em.computed(function() {
 		return Em.keys(this.get('_clientAttributes') || {}).length > 0;
-	}.property('_clientAttributes'),
+	}).property('_clientAttributes'),
 
 	/**
 	 * @returns {Object} Keys are attribute names, values are arrays with [oldVal, newVal]
@@ -2959,7 +2939,8 @@ Eg.Model.reopen({
 			var value = (json.hasOwnProperty(name) ? json[name] : meta.defaultValue);
 
 			// TODO: Do we want a way to accept non-valid value from the server?
-			if (meta.isValid(value)) {
+			var isValid = meta.isValid || this.get('store').attributeTypeFor(meta.type).isValid;
+			if (isValid(value)) {
 				this.set('_serverAttributes.' + name, value);
 			} else {
 				Eg.debug.assert('Your value for the \'' + name + '\' property is inValid.');

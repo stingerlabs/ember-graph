@@ -3,7 +3,7 @@
  *
  * @class {AttributeType}
  */
-Eg.AttributeType = Em.Object.extend({
+EG.AttributeType = Em.Object.extend({
 
 	/**
 	 * The default value to use if a value of this type is missing.
@@ -41,24 +41,5 @@ Eg.AttributeType = Em.Object.extend({
 	 */
 	isEqual: function(a, b) {
 		return (a === b);
-	}
-});
-
-Eg.AttributeType.reopenClass({
-
-	/**
-	 * @type {Object.<String, AttributeType>}
-	 */
-	_types: {},
-
-	registerAttributeType: function(name, type) {
-		var instance = (type instanceof Eg.AttributeType ? type : type.create());
-		Eg.debug.assert('', instance instanceof Eg.AttributeType);
-		this._types[name] = instance;
-	},
-
-	attributeTypeForName: function(name) {
-		Eg.debug.assert('The attribute type \'' + name + '\' doesn\'t exist.', !!this._types[name]);
-		return this._types[name];
 	}
 });

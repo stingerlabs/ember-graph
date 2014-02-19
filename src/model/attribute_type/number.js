@@ -1,7 +1,7 @@
 /**
  * Will coerce any type to a number (0 being the default). `null` is not a valid value.
  */
-Eg.NumberType = Eg.AttributeType.extend({
+EG.NumberType = EG.AttributeType.extend({
 
 	/**
 	 * The default value to use if a value of this type is missing.
@@ -32,5 +32,3 @@ Eg.NumberType = Eg.AttributeType.extend({
 		return (typeof obj === 'number');
 	}
 });
-
-Eg.AttributeType.registerAttributeType('number', Eg.NumberType);

@@ -1,7 +1,7 @@
 /**
  * Will coerce any type to a boolean (`null` being the default). `null` is not a valid value.
  */
-Eg.BooleanType = Eg.AttributeType.extend({
+EG.BooleanType = EG.AttributeType.extend({
 
 	/**
 	 * The default value to use if a value of this type is missing.
@@ -32,5 +32,3 @@ Eg.BooleanType = Eg.AttributeType.extend({
 		return (typeof obj === 'boolean');
 	}
 });
-
-Eg.AttributeType.registerAttributeType('boolean', Eg.BooleanType);

@@ -12,11 +12,6 @@ var methodMissing = function(method) {
 EG.Serializer = Em.Object.extend({
 
 	/**
-	 * The application's container.
-	 */
-	container: null,
-
-	/**
 	 * The store that the records will be loaded into.
 	 * This can be used for fetching models and their metadata.
 	 */

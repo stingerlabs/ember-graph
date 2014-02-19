@@ -26,7 +26,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 		}
 
 		record.constructor.eachAttribute(function(name, meta) {
-			var type = EG.AttributeType.attributeTypeForName(meta.type);
+			var type = this.get('store').attributeTypeFor(meta.type);
 			json[name] = type.serialize(record.get(name));
 		}, this);
 
@@ -58,7 +58,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * the JSON API (http://jsonapi.org/format/) format for IDs.
 	 *
 	 * Current options:
-	 * isQuery: true to preserver the top-level `ids` key, defaults to false
+	 * isQuery: true to preserve the top-level `ids` key, defaults to false
 	 *
 	 * @param {Object} payload
 	 * @param {Object} options Any options that were passed by the adapter
@@ -154,9 +154,9 @@ EG.JSONSerializer = EG.Serializer.extend({
 				}
 
 				var meta = model.metaForAttribute(attribute);
-				var type = EG.AttributeType.attributeTypeForName(meta.type);
+				var type = this.get('store').attributeTypeFor(meta.type);
 				record[attribute] = type.deserialize(json[attribute]);
-			});
+			}, this);
 
 			EG.debug(function() {
 				var relationships = Em.get(model, 'relationships');

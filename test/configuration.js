@@ -9,6 +9,13 @@
 		container.register('adapter:fixture', EG.FixtureAdapter, { singleton: true });
 		container.register('serializer:json', EG.JSONSerializer, { singleton: true });
 
+		container.register('type:string', EG.StringType, { singleton: true });
+		container.register('type:number', EG.NumberType, { singleton: true });
+		container.register('type:boolean', EG.BooleanType, { singleton: true });
+		container.register('type:date', EG.DateType, { singleton: true });
+		container.register('type:object', EG.ObjectType, { singleton: true });
+		container.register('type:array', EG.ArrayType, { singleton: true });
+
 		container.register('store:main', store || EG.Store, { singleton: true });
 		store = container.lookup('store:main');
 

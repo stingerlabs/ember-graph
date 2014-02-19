@@ -1,4 +1,4 @@
-Eg.StringType = Eg.AttributeType.extend({
+EG.StringType = EG.AttributeType.extend({
 
 	/**
 	 * @param {*} obj Javascript object
@@ -24,5 +24,3 @@ Eg.StringType = Eg.AttributeType.extend({
 		return (obj === null || typeof obj === 'string');
 	}
 });
-
-Eg.AttributeType.registerAttributeType('string', Eg.StringType);

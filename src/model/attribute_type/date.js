@@ -4,7 +4,7 @@
  *
  * When deserializing, numbers and strings are converted to dates, everything is is converted to null.
  */
-Eg.DateType = Eg.AttributeType.extend({
+EG.DateType = EG.AttributeType.extend({
 
 	/**
 	 * @param {*} obj Javascript object
@@ -60,5 +60,3 @@ Eg.DateType = Eg.AttributeType.extend({
 		}
 	}
 });
-
-Eg.AttributeType.registerAttributeType('date', Eg.DateType);
