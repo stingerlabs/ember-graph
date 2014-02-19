@@ -1014,7 +1014,7 @@ EG.RESTAdapter = EG.Adapter.extend({
 		var url = this._buildUrl(record.typeKey, record.get('id'));
 		var json = this.serialize(record, { includeId: true });
 
-		return this._ajax(url, 'PATCH', json).then(function(payload) {
+		return this._ajax(url, 'PUT', {}, json).then(function(payload) {
 			return this.deserialize(payload);
 		}.bind(this));
 	},
