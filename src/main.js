@@ -19,6 +19,7 @@ require('serializer/serializer');
 require('serializer/json');
 
 require('adapter/adapter');
+require('adapter/synchronous');
 require('adapter/fixture');
 require('adapter/rest');
 
@@ -30,12 +31,7 @@ require('data/promise_object');
 require('relationship/relationship');
 
 require('model/attribute_type/type');
-require('model/attribute_type/boolean');
-require('model/attribute_type/date');
-require('model/attribute_type/number');
-require('model/attribute_type/string');
-require('model/attribute_type/object');
-require('model/attribute_type/array');
+require('model/attribute_type/**/*');
 
 require('model/model');
 require('model/attribute');

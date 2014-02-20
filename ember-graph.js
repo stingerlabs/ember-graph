@@ -25,6 +25,7 @@ if (Em) {
 
 				App.register('adapter:rest', EG.RESTAdapter, { singleton: true });
 				App.register('adapter:fixture', EG.FixtureAdapter, { singleton: true });
+				App.register('adapter:localStorage', EG.FixtureAdapter, { singleton: true });
 				App.register('serializer:json', EG.JSONSerializer, { singleton: true });
 
 				App.register('type:string', EG.StringType, { singleton: true });
@@ -719,83 +720,37 @@ var removeEmpty = function(item) {
 };
 
 /**
- * @class FixtureAdapter
+ * @class SynchronousAdapter
  */
-Eg.FixtureAdapter = Eg.Adapter.extend({
-	// TODO: Refactor this into a base class called 'SynchronousAdapter'
-	// Then make two subclasses, fixture and localStorage
-
+EG.SynchronousAdapter = Eg.Adapter.extend({
 	/**
-	 * Gets a record from the appropriate fixtures array.
-	 *
 	 * @param {String} typeKey
 	 * @param {String} id
 	 * @return {Object}
-	 * @private
+	 * @protected
 	 */
-	_getRecord: function(typeKey, id) {
-		var model = this.get('store').modelForType(typeKey);
-		model.FIXTURES = model.FIXTURES || [];
-
-		for (var i = 0; i < model.FIXTURES.length; i+=1) {
-			if (model.FIXTURES[i].id === id) {
-				return model.FIXTURES[i];
-			}
-		}
-
-		return null;
-	},
+	_getRecord: Em.required(),
 
 	/**
-	 * Gets all fixtures of the specified type.
-	 *
 	 * @param {String} typeKey
 	 * @returns {Array}
-	 * @private
+	 * @protected
 	 */
-	_getRecords: function(typeKey) {
-		return this.get('store').modelForType(typeKey).FIXTURES || [];
-	},
+	_getRecords: Em.required(),
 
 	/**
-	 * Puts a record in the appropriate fixtures array.
-	 *
 	 * @param {String} typeKey
 	 * @param {Object} json
-	 * @private
+	 * @protected
 	 */
-	_setRecord: function(typeKey, json) {
-		var model = this.get('store').modelForType(typeKey);
-		model.FIXTURES = model.FIXTURES || [];
-
-		for (var i = 0; i < model.FIXTURES.length; i+=1) {
-			if (model.FIXTURES[i].id === json.id) {
-				model.FIXTURES[i] = json;
-				return;
-			}
-		}
-
-		model.FIXTURES.push(json);
-	},
+	_setRecord: Em.required(),
 
 	/**
-	 * Deletes a record from the appropriate fixtures array.
-	 *
 	 * @param {String} typeKey
 	 * @param {String} id
-	 * @private
+	 * @protected
 	 */
-	_deleteRecord: function(typeKey, id) {
-		var model = this.get('store').modelForType(typeKey);
-		model.FIXTURES = model.FIXTURES || [];
-
-		for (var i = 0; i < model.FIXTURES.length; i+=1) {
-			if (model.FIXTURES[i].id === id) {
-				model.FIXTURES.splice(i, 1);
-				return;
-			}
-		}
-	},
+	_deleteRecord: Em.required(),
 
 	/**
 	 * Persists a record to the server. This method returns normalized JSON
@@ -869,7 +824,7 @@ Eg.FixtureAdapter = Eg.Adapter.extend({
 	 * @returns {Promise} A promise that resolves to normalized JSON
 	 */
 	findQuery: function(typeKey, query) {
-		throw new Error('The fixture adapter doesn\'t implement `findQuery`.');
+		throw new Error('Your adapter doesn\'t implement `findQuery`.');
 	},
 
 	/**
@@ -916,6 +871,88 @@ Eg.FixtureAdapter = Eg.Adapter.extend({
 		});
 
 		return json;
+	}
+});
+
+})();
+
+(function() {
+
+/**
+ * @class FixtureAdapter
+ */
+EG.FixtureAdapter = EG.SynchronousAdapter.extend({
+
+	/**
+	 * Gets a record from the appropriate fixtures array.
+	 *
+	 * @param {String} typeKey
+	 * @param {String} id
+	 * @return {Object}
+	 * @private
+	 */
+	_getRecord: function(typeKey, id) {
+		var model = this.get('store').modelForType(typeKey);
+		model.FIXTURES = model.FIXTURES || [];
+
+		for (var i = 0; i < model.FIXTURES.length; i+=1) {
+			if (model.FIXTURES[i].id === id) {
+				return model.FIXTURES[i];
+			}
+		}
+
+		return null;
+	},
+
+	/**
+	 * Gets all fixtures of the specified type.
+	 *
+	 * @param {String} typeKey
+	 * @returns {Array}
+	 * @private
+	 */
+	_getRecords: function(typeKey) {
+		return this.get('store').modelForType(typeKey).FIXTURES || [];
+	},
+
+	/**
+	 * Puts a record in the appropriate fixtures array.
+	 *
+	 * @param {String} typeKey
+	 * @param {Object} json
+	 * @private
+	 */
+	_setRecord: function(typeKey, json) {
+		var model = this.get('store').modelForType(typeKey);
+		model.FIXTURES = model.FIXTURES || [];
+
+		for (var i = 0; i < model.FIXTURES.length; i+=1) {
+			if (model.FIXTURES[i].id === json.id) {
+				model.FIXTURES[i] = json;
+				return;
+			}
+		}
+
+		model.FIXTURES.push(json);
+	},
+
+	/**
+	 * Deletes a record from the appropriate fixtures array.
+	 *
+	 * @param {String} typeKey
+	 * @param {String} id
+	 * @private
+	 */
+	_deleteRecord: function(typeKey, id) {
+		var model = this.get('store').modelForType(typeKey);
+		model.FIXTURES = model.FIXTURES || [];
+
+		for (var i = 0; i < model.FIXTURES.length; i+=1) {
+			if (model.FIXTURES[i].id === id) {
+				model.FIXTURES.splice(i, 1);
+				return;
+			}
+		}
 	}
 });
 
@@ -2205,6 +2242,64 @@ EG.AttributeType = Em.Object.extend({
 (function() {
 
 /**
+ * Will coerce any value to a JSON array (`null` is a valid value).
+ * Ember enumerables are converted to arrays using `toArray()`
+ */
+EG.ArrayType = EG.AttributeType.extend({
+
+	/**
+	 * @param {*} obj Javascript object
+	 * @returns {Object} JSON representation
+	 */
+	serialize: function(obj) {
+		if (Em.isNone(obj)) {
+			return null;
+		}
+
+		obj = (obj.toArray ? obj.toArray() : obj);
+		return (Em.isArray(obj) ? obj : null);
+	},
+
+	/**
+	 * @param {Object} json JSON representation of object
+	 * @returns {*} Javascript object
+	 */
+	deserialize: function(json) {
+		return (Em.isArray(json) ? json : null);
+	},
+
+	/**
+	 * @param {*} obj Javascript object
+	 * @returns {Boolean} Whether or not the object is a valid value for this type
+	 */
+	isValid: function(obj) {
+		try {
+			JSON.stringify(obj);
+			return isObject(obj);
+		} catch (e) {
+			return false;
+		}
+	},
+
+	/**
+	 * @param {*} a Javascript Object
+	 * @param {*} b Javascript Object
+	 * @returns {Boolean} Whether or not the objects are equal or not
+	 */
+	isEqual: function(a, b) {
+		if (!Em.isArray(a) || !Em.isArray(b)) {
+			return false;
+		}
+
+		return Em.compare(a.toArray(), b.toArray()) === 0;
+	}
+});
+
+})();
+
+(function() {
+
+/**
  * Will coerce any type to a boolean (`null` being the default). `null` is not a valid value.
  */
 EG.BooleanType = EG.AttributeType.extend({
@@ -2349,37 +2444,6 @@ EG.NumberType = EG.AttributeType.extend({
 
 (function() {
 
-EG.StringType = EG.AttributeType.extend({
-
-	/**
-	 * @param {*} obj Javascript object
-	 * @returns {Object} JSON representation
-	 */
-	serialize: function(obj) {
-		return (obj === null ? null : '' + obj);
-	},
-
-	/**
-	 * @param {Object} json JSON representation of object
-	 * @returns {*} Javascript object
-	 */
-	deserialize: function(json) {
-		return (json === null ? null : '' + json);
-	},
-
-	/**
-	 * @param {*} obj Javascript object
-	 * @returns {Boolean} Whether or not the object is a valid value for this type
-	 */
-	isValid: function(obj) {
-		return (obj === null || typeof obj === 'string');
-	}
-});
-
-})();
-
-(function() {
-
 var isObject = function(obj) {
 	return !Em.isNone(obj) && typeof obj === 'object' && obj.constructor === Object;
 };
@@ -2472,23 +2536,14 @@ EG.ObjectType = EG.AttributeType.extend({
 
 (function() {
 
-/**
- * Will coerce any value to a JSON array (`null` is a valid value).
- * Ember enumerables are converted to arrays using `toArray()`
- */
-EG.ArrayType = EG.AttributeType.extend({
+EG.StringType = EG.AttributeType.extend({
 
 	/**
 	 * @param {*} obj Javascript object
 	 * @returns {Object} JSON representation
 	 */
 	serialize: function(obj) {
-		if (Em.isNone(obj)) {
-			return null;
-		}
-
-		obj = (obj.toArray ? obj.toArray() : obj);
-		return (Em.isArray(obj) ? obj : null);
+		return (obj === null ? null : '' + obj);
 	},
 
 	/**
@@ -2496,7 +2551,7 @@ EG.ArrayType = EG.AttributeType.extend({
 	 * @returns {*} Javascript object
 	 */
 	deserialize: function(json) {
-		return (Em.isArray(json) ? json : null);
+		return (json === null ? null : '' + json);
 	},
 
 	/**
@@ -2504,25 +2559,7 @@ EG.ArrayType = EG.AttributeType.extend({
 	 * @returns {Boolean} Whether or not the object is a valid value for this type
 	 */
 	isValid: function(obj) {
-		try {
-			JSON.stringify(obj);
-			return isObject(obj);
-		} catch (e) {
-			return false;
-		}
-	},
-
-	/**
-	 * @param {*} a Javascript Object
-	 * @param {*} b Javascript Object
-	 * @returns {Boolean} Whether or not the objects are equal or not
-	 */
-	isEqual: function(a, b) {
-		if (!Em.isArray(a) || !Em.isArray(b)) {
-			return false;
-		}
-
-		return Em.compare(a.toArray(), b.toArray()) === 0;
+		return (obj === null || typeof obj === 'string');
 	}
 });
 
