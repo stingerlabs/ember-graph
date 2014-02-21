@@ -1,7 +1,8 @@
 module.exports = {
 	options: {
 		mangle: false,
-		compress: true
+		compress: true,
+		screw_ie8: true
 	},
 
 	release: {

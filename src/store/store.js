@@ -351,7 +351,6 @@ Eg.Store = Em.Object.extend({
 	 * @returns {Promise} The saved record
 	 */
 	saveRecord: function(record) {
-		var _this = this;
 		var type = record.typeKey;
 		var isNew = record.get('isNew');
 		var tempId = record.get('id');

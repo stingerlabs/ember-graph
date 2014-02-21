@@ -1520,7 +1520,6 @@ Eg.Store = Em.Object.extend({
 	 * @returns {Promise} The saved record
 	 */
 	saveRecord: function(record) {
-		var _this = this;
 		var type = record.typeKey;
 		var isNew = record.get('isNew');
 		var tempId = record.get('id');
@@ -2275,7 +2274,7 @@ EG.ArrayType = EG.AttributeType.extend({
 	isValid: function(obj) {
 		try {
 			JSON.stringify(obj);
-			return isObject(obj);
+			return Em.isArray(obj);
 		} catch (e) {
 			return false;
 		}

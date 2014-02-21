@@ -32,7 +32,7 @@ EG.ArrayType = EG.AttributeType.extend({
 	isValid: function(obj) {
 		try {
 			JSON.stringify(obj);
-			return isObject(obj);
+			return Em.isArray(obj);
 		} catch (e) {
 			return false;
 		}
