@@ -59,7 +59,6 @@ Eg.Store.reopen({
 	 * @param {String} typeKey
 	 * @param {String} id
 	 * @returns {Boolean}
-	 * @private
 	 */
 	_hasQueuedRelationships: function(typeKey, id) {
 		var queued = Eg.util.values(this.get('_queuedRelationships'));
@@ -77,19 +76,22 @@ Eg.Store.reopen({
 	 * Will connect all queued relationships to the given record.
 	 *
 	 * @param {Model} record
-	 * @private
+	 * @returns {Object[]} The objects to alert of changes, along with the corresponding properties
 	 */
 	_connectQueuedRelationships: function(record) {
+		var alerts = [];
 		var queued = this.get('_queuedRelationships');
 		var toConnect = this._queuedRelationshipsFor(record.typeKey, record.get('id'));
 
 		toConnect.forEach(function(relationship) {
-			record._connectRelationship(relationship);
+			alerts.push(record._connectRelationship(relationship));
 			relationship.set('object2', record);
 			delete queued[relationship.get('id')];
 		});
 
 		this.notifyPropertyChange('_queuedRelationships');
+
+		return alerts;
 	},
 
 	/**
@@ -118,13 +120,15 @@ Eg.Store.reopen({
 	 * @param {String} relationship2
 	 * @param {String} id2
 	 * @param {String} state The state of the relationship
+	 * @returns {Object[]} The objects to alert of changes, along with the corresponding properties
 	 */
 	_createRelationship: function(type1, relationship1, id1, type2, relationship2, id2, state) { // jshint ignore:line
+		var alerts = [];
 		var record1 = this.getRecord(type1, id1);
 		var record2 = this.getRecord(type2, id2);
 
 		if (record1 === null && record2 === null) {
-			return;
+			return alerts;
 		}
 
 		if (record1 === null) {
@@ -142,12 +146,12 @@ Eg.Store.reopen({
 		}
 
 		if (relationship1 === null) {
-			return;
+			return alerts;
 		}
 
 		if (record1._isLinkedTo(relationship1, id2)) {
 			// TODO: Do we need to check both sides, or can we assume consistency?
-			return;
+			return alerts;
 		}
 
 		var relationship = Eg.Relationship.create({
@@ -158,14 +162,16 @@ Eg.Store.reopen({
 			state: state
 		});
 
-		record1._connectRelationship(relationship);
+		alerts.push(record1._connectRelationship(relationship));
 
 		if (record2 !== null) {
-			record2._connectRelationship(relationship);
+			alerts.push(record2._connectRelationship(relationship));
 		} else {
 			this.set('_queuedRelationships.' + relationship.get('id'), relationship);
 			this.notifyPropertyChange('_queuedRelationships');
 		}
+
+		return alerts;
 	},
 
 	/**
@@ -173,31 +179,44 @@ Eg.Store.reopen({
 	 * then destroys, all references to the relationship.
 	 *
 	 * @param {String} id
+	 * @returns {Object[]} The objects to alert of changes, along with the corresponding properties
 	 */
 	_deleteRelationship: function(id) {
+		var alerts = [];
+
 		var relationship = Eg.Relationship.getRelationship(id);
 		if (Em.isNone(relationship)) {
-			return;
+			return alerts;
 		}
 
 		var object1 = relationship.get('object1');
 		var object2 = relationship.get('object2');
 
-		object1._disconnectRelationship(relationship);
+		alerts.push(object1._disconnectRelationship(relationship));
 		if (object2 instanceof Eg.Model) {
-			object2._disconnectRelationship(relationship);
+			alerts.push(object2._disconnectRelationship(relationship));
 		} else {
 			delete this.get('_queuedRelationships')[id];
 			this.notifyPropertyChange('_queuedRelationships');
 		}
 
 		Eg.Relationship.deleteRelationship(id);
+
+		return alerts;
 	},
 
+	/**
+	 * @param {String} id
+	 * @param {String} state
+	 *
+	 * @returns {Object[]} The objects to alert of changes, along with the corresponding properties
+	 */
 	_changeRelationshipState: function(id, state) {
+		var alerts = [];
+
 		var relationship = Eg.Relationship.getRelationship(id);
 		if (Em.isNone(relationship) || relationship.get('state') === state) {
-			return;
+			return alerts;
 		}
 
 		var object1 = relationship.get('object1');
@@ -210,14 +229,16 @@ Eg.Store.reopen({
 
 		object1.set(newHash + '.' + id, object1.get(oldHash + '.' + id));
 		delete object1.get(oldHash)[id];
-		object1.notifyPropertyChange(oldHash);
-		object1.notifyPropertyChange(newHash);
+		alerts.push({ record: object1, property: oldHash });
+		alerts.push({ record: object1, property: newHash });
 
 		if (object2 instanceof Eg.Model) {
 			object2.set(newHash + '.' + id, object2.get(oldHash + '.' + id));
 			delete object2.get(oldHash)[id];
-			object2.notifyPropertyChange(oldHash);
-			object2.notifyPropertyChange(newHash);
+			alerts.push({ record: object2, property: oldHash });
+			alerts.push({ record: object2, property: newHash });
 		}
+
+		return alerts;
 	}
 });

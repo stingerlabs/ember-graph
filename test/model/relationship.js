@@ -552,4 +552,32 @@
 		ok(!user3.get('_posts').contains('7'));
 		ok(post7.get('_author') === '1');
 	});
+
+	test('Observers aren\'t fired until after the relationship operations are done', function() {
+		expect(3);
+
+		var post = store.getRecord('post', '1');
+		strictEqual(post.get('_author'), '1');
+
+		var observer = function(obj, prop) {
+			if (Em.get(obj, prop) !== '2') {
+				throw null;
+			}
+		};
+		post.addObserver('_author', observer);
+
+		post.setBelongsTo('author', '2');
+		strictEqual(post.get('_author'), '2');
+		post.removeObserver('_author', observer);
+
+		observer = function(obj, prop) {
+			if (Em.get(obj, prop) !== '1') {
+				throw null;
+			}
+		};
+		post.addObserver('_author', observer);
+		post.rollbackRelationships();
+		strictEqual(post.get('_author'), '1');
+		post.removeObserver('_author', observer);
+	});
 })();
