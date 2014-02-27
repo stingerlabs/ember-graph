@@ -7,7 +7,7 @@
 		var container = new Em.Container();
 		container.register('adapter:rest', EG.RESTAdapter, { singleton: true });
 		container.register('adapter:fixture', EG.FixtureAdapter, { singleton: true });
-		container.register('adapter:localStorage', EG.FixtureAdapter, { singleton: true });
+		container.register('adapter:localStorage', EG.LocalStorageAdapter, { singleton: true });
 		container.register('serializer:json', EG.JSONSerializer, { singleton: true });
 
 		container.register('type:string', EG.StringType, { singleton: true });

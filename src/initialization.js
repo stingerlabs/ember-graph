@@ -9,7 +9,7 @@ if (Em) {
 
 				App.register('adapter:rest', EG.RESTAdapter, { singleton: true });
 				App.register('adapter:fixture', EG.FixtureAdapter, { singleton: true });
-				App.register('adapter:localStorage', EG.FixtureAdapter, { singleton: true });
+				App.register('adapter:localStorage', EG.LocalStorageAdapter, { singleton: true });
 				App.register('serializer:json', EG.JSONSerializer, { singleton: true });
 
 				App.register('type:string', EG.StringType, { singleton: true });

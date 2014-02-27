@@ -209,7 +209,7 @@ Eg.Store = Em.Object.extend({
 			return this._findSingle(typeKey, options);
 		} else if (Em.isArray(options)) {
 			return this._findMany(typeKey, options);
-		} else if (typeof options === 'object') {
+		} else if (typeof options === 'object' && !!options) {
 			return this._findQuery(typeKey, options);
 		} else {
 			return this._findAll(typeKey);
