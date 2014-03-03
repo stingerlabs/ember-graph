@@ -965,10 +965,7 @@ EG.LocalStorageAdapter = EG.SynchronousAdapter.extend({
 	init: function() {
 		
 
-		localStorage['ember-graph'] = localStorage['ember-graph'] || {};
-		localStorage['models'] = localStorage['models'] || {};
-
-		if (!Em.get(localStorage, 'ember-graph.models.initialized')) {
+		if (!JSON.parse(localStorage['ember-graph.models.initialized'] || 'false')) {
 			var store = this.get('store');
 			this.get('fixtures').forEach(function(typeKey) {
 				(store.modelForType(typeKey).FIXTURES || []).forEach(function(fixture) {
@@ -977,7 +974,9 @@ EG.LocalStorageAdapter = EG.SynchronousAdapter.extend({
 			}, this);
 		}
 
-		localStorage['ember-graph']['models']['initialized'] = true;
+		localStorage['ember-graph.models.initialized'] = 'true';
+
+		return this._super();
 	},
 
 	/**
@@ -987,7 +986,7 @@ EG.LocalStorageAdapter = EG.SynchronousAdapter.extend({
 	 * @private
 	 */
 	_getRecord: function(typeKey, id) {
-		return JSON.parse(Em.get(localStorage, 'ember-graph.models.' + typeKey + '.id') || 'null');
+		return JSON.parse(localStorage['ember-graph.models.' + typeKey + '.' + id] || 'null');
 	},
 
 	/**
@@ -996,9 +995,10 @@ EG.LocalStorageAdapter = EG.SynchronousAdapter.extend({
 	 * @private
 	 */
 	_getRecords: function(typeKey) {
-		var all = Em.get(localStorage, 'ember-graph.models.' + typeKey) || {};
-		return all.map(function(id) {
-			return JSON.parse(all[id]);
+		return Em.keys(localStorage).filter(function(key) {
+			return EG.String.startsWith(key, 'ember-graph.models.' + typeKey);
+		}).map(function(key) {
+			return JSON.parse(localStorage[key]);
 		});
 	},
 
@@ -1008,7 +1008,6 @@ EG.LocalStorageAdapter = EG.SynchronousAdapter.extend({
 	 * @private
 	 */
 	_setRecord: function(typeKey, json) {
-		localStorage['ember-graph.models.' + typeKey] = localStorage['ember-graph.models.' + typeKey] || {};
 		localStorage['ember-graph.models.' + typeKey + '.' + json.id] = JSON.stringify(json);
 	},
 
@@ -1018,7 +1017,6 @@ EG.LocalStorageAdapter = EG.SynchronousAdapter.extend({
 	 * @private
 	 */
 	_deleteRecord: function(typeKey, id) {
-		localStorage['ember-graph.models.' + typeKey] = localStorage['ember-graph.models.' + typeKey] || {};
 		delete localStorage['ember-graph.models.' + typeKey + '.' + id];
 	}
 });
