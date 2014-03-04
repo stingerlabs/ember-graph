@@ -520,7 +520,11 @@ EG.JSONSerializer = EG.Serializer.extend({
 						return '' + id;
 					});
 				} else {
-					record[relationship] = '' + json.links[relationship];
+					record[relationship] = json.links[relationship];
+
+					if (typeof record[relationship] === 'number') {
+						record[relationship] = '' + record[relationship];
+					}
 				}
 			});
 
@@ -707,21 +711,20 @@ EG.SynchronousAdapter = Eg.Adapter.extend({
 	/**
 	 * @param {String} typeKey
 	 * @param {String} id
-	 * @return {Object}
+	 * @return {Object} Normalized JSON Object
 	 * @protected
 	 */
 	_getRecord: Em.required(),
 
 	/**
 	 * @param {String} typeKey
-	 * @returns {Array}
+	 * @returns {Object[]} Normalized JSON Objects
 	 * @protected
 	 */
 	_getRecords: Em.required(),
 
 	/**
-	 * @param {String} typeKey
-	 * @param {Object} json
+	 * @param {Model} record
 	 * @protected
 	 */
 	_setRecord: Em.required(),
@@ -746,8 +749,7 @@ EG.SynchronousAdapter = Eg.Adapter.extend({
 	 */
 	createRecord: function(record) {
 		record.set('id', Eg.util.generateGUID());
-		var json = this.serialize(record);
-		this._setRecord(record.typeKey, json);
+		this._setRecord(record);
 		return Em.RSVP.Promise.resolve({});
 	},
 
@@ -761,7 +763,7 @@ EG.SynchronousAdapter = Eg.Adapter.extend({
 	findRecord: function(typeKey, id) {
 		var json = {};
 		json[typeKey] = [this._getRecord(typeKey, id)].filter(removeEmpty);
-		return Em.RSVP.Promise.resolve(json);
+		return Em.RSVP.Promise.resolve(this.deserialize(json));
 	},
 
 	/**
@@ -777,7 +779,7 @@ EG.SynchronousAdapter = Eg.Adapter.extend({
 		json[typeKey] = ids.map(function(id) {
 			return this._getRecord(typeKey, id);
 		}, this).filter(removeEmpty);
-		return Em.RSVP.Promise.resolve(json);
+		return Em.RSVP.Promise.resolve(this.deserialize(json));
 	},
 
 	/**
@@ -790,7 +792,7 @@ EG.SynchronousAdapter = Eg.Adapter.extend({
 	findAll: function(typeKey) {
 		var json = {};
 		json[typeKey] = this._getRecords(typeKey);
-		return Em.RSVP.Promise.resolve(json);
+		return Em.RSVP.Promise.resolve(this.deserialize(json));
 	},
 
 	/**
@@ -815,8 +817,7 @@ EG.SynchronousAdapter = Eg.Adapter.extend({
 	 * @returns {Promise} A promise that resolves to normalized JSON
 	 */
 	updateRecord: function(record) {
-		var json = this.serialize(record);
-		this._setRecord(record.typeKey, json);
+		this._setRecord(record);
 		return Em.RSVP.Promise.resolve({});
 	},
 
@@ -829,29 +830,6 @@ EG.SynchronousAdapter = Eg.Adapter.extend({
 	deleteRecord: function(record) {
 		this._deleteRecord(record.typeKey, record.get('id'));
 		return Em.RSVP.Promise.resolve({});
-	},
-
-	/**
-	 * Proxies to the serializer of this class.
-	 */
-	serialize: function(record, options) {
-		var json = {};
-
-		json.id = record.get('id');
-
-		record.constructor.eachAttribute(function(name, meta) {
-			json[name] = record.get(name);
-		});
-
-		record.constructor.eachRelationship(function(name, meta) {
-			json[name] = record.get('_' + name);
-
-			if (meta.kind === Eg.Model.HAS_MANY_KEY) {
-				json[name] = json[name].toArray();
-			}
-		});
-
-		return json;
 	}
 });
 
@@ -869,7 +847,7 @@ EG.FixtureAdapter = EG.SynchronousAdapter.extend({
 	 *
 	 * @param {String} typeKey
 	 * @param {String} id
-	 * @return {Object}
+	 * @return {Object} Serialized JSON Object
 	 * @private
 	 */
 	_getRecord: function(typeKey, id) {
@@ -878,7 +856,7 @@ EG.FixtureAdapter = EG.SynchronousAdapter.extend({
 
 		for (var i = 0; i < model.FIXTURES.length; i+=1) {
 			if (model.FIXTURES[i].id === id) {
-				return model.FIXTURES[i];
+				return this._fixtureToJson(typeKey, model.FIXTURES[i]);
 			}
 		}
 
@@ -889,32 +867,34 @@ EG.FixtureAdapter = EG.SynchronousAdapter.extend({
 	 * Gets all fixtures of the specified type.
 	 *
 	 * @param {String} typeKey
-	 * @returns {Array}
+	 * @returns {Object[]} Serialized JSON Objects
 	 * @private
 	 */
 	_getRecords: function(typeKey) {
-		return this.get('store').modelForType(typeKey).FIXTURES || [];
+		return (this.get('store').modelForType(typeKey).FIXTURES || []).map(function(fixture) {
+			return this._fixtureToJson(typeKey, fixture);
+		}, this);
 	},
 
 	/**
 	 * Puts a record in the appropriate fixtures array.
 	 *
-	 * @param {String} typeKey
-	 * @param {Object} json
+	 * @param {Model} record
 	 * @private
 	 */
-	_setRecord: function(typeKey, json) {
-		var model = this.get('store').modelForType(typeKey);
+	_setRecord: function(record) {
+		var fixture = this._recordToFixture(record);
+		var model = record.constructor;
 		model.FIXTURES = model.FIXTURES || [];
 
 		for (var i = 0; i < model.FIXTURES.length; i+=1) {
-			if (model.FIXTURES[i].id === json.id) {
-				model.FIXTURES[i] = json;
+			if (model.FIXTURES[i].id === fixture.id) {
+				model.FIXTURES[i] = fixture;
 				return;
 			}
 		}
 
-		model.FIXTURES.push(json);
+		model.FIXTURES.push(fixture);
 	},
 
 	/**
@@ -934,6 +914,57 @@ EG.FixtureAdapter = EG.SynchronousAdapter.extend({
 				return;
 			}
 		}
+	},
+
+	_fixtureToJson: function(typeKey, fixture) {
+		var model = this.get('store').modelForType(typeKey);
+		var json = {
+			id: fixture.id,
+			links: {}
+		};
+
+		model.eachAttribute(function(name, meta) {
+			var type = this.get('store').attributeTypeFor(meta.type);
+			json[name] = type.serialize(fixture[name]);
+		}, this);
+
+		model.eachRelationship(function(name, meta) {
+			var val = fixture[name];
+
+			if (meta.kind === EG.Model.HAS_MANY_KEY) {
+				json.links[name] = val.filter(function(id) {
+					return (!EG.Model.isTemporaryId(id));
+				});
+			} else {
+				if (val === null || EG.Model.isTemporaryId(val)) {
+					json.links[name] = null;
+				} else {
+					json.links[name] = val;
+				}
+			}
+		});
+
+		return json;
+	},
+
+	_recordToFixture: function(record) {
+		var fixture = {
+			id: record.get('id')
+		};
+
+		record.constructor.eachAttribute(function(name, meta) {
+			fixture[name] = record.get(name);
+		});
+
+		record.constructor.eachRelationship(function(name, meta) {
+			fixture[name] = record.get('_' + name);
+
+			if (fixture[name] && fixture[name].toArray) {
+				fixture[name] = fixture[name].toArray();
+			}
+		});
+
+		return fixture;
 	}
 });
 
@@ -967,9 +998,12 @@ EG.LocalStorageAdapter = EG.SynchronousAdapter.extend({
 
 		if (!JSON.parse(localStorage['ember-graph.models.initialized'] || 'false')) {
 			var store = this.get('store');
+			var adapter = EG.FixtureAdapter.create({ store: store });
 			this.get('fixtures').forEach(function(typeKey) {
 				(store.modelForType(typeKey).FIXTURES || []).forEach(function(fixture) {
-					this._setRecord(typeKey, fixture);
+					var id = fixture.id;
+					var json = JSON.stringify(adapter._getRecord(typeKey, id));
+					localStorage['ember-graph.models.' + typeKey + '.' + id] = json;
 				}, this);
 			}, this);
 		}
@@ -982,33 +1016,40 @@ EG.LocalStorageAdapter = EG.SynchronousAdapter.extend({
 	/**
 	 * @param {String} typeKey
 	 * @param {String} id
-	 * @return {Object}
+	 * @return {Object} Serialized JSON Object
 	 * @private
 	 */
 	_getRecord: function(typeKey, id) {
-		return JSON.parse(localStorage['ember-graph.models.' + typeKey + '.' + id] || 'null');
+		var recordString = localStorage['ember-graph.models.' + typeKey + '.' + id];
+
+		if (typeof recordString === 'string') {
+			return JSON.parse(recordString);
+		} else {
+			return null;
+		}
 	},
 
 	/**
 	 * @param {String} typeKey
-	 * @returns {Array}
+	 * @returns {Object[]} Serialized JSON Objects
 	 * @private
 	 */
 	_getRecords: function(typeKey) {
 		return Em.keys(localStorage).filter(function(key) {
 			return EG.String.startsWith(key, 'ember-graph.models.' + typeKey);
 		}).map(function(key) {
-			return JSON.parse(localStorage[key]);
-		});
+			var parts = (/ember-graph\.models\.(.+)\.(.+)/g).exec(key);
+			return this._getRecord(parts[1], parts[2]);
+		}, this);
 	},
 
 	/**
-	 * @param {String} typeKey
-	 * @param {Object} json
+	 * @param {Model} record
 	 * @private
 	 */
-	_setRecord: function(typeKey, json) {
-		localStorage['ember-graph.models.' + typeKey + '.' + json.id] = JSON.stringify(json);
+	_setRecord: function(record) {
+		var json = this.serialize(record, { includeId: true });
+		localStorage['ember-graph.models.' + record.typeKey + '.' + json.id] = JSON.stringify(json);
 	},
 
 	/**

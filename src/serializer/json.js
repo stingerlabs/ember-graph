@@ -193,7 +193,11 @@ EG.JSONSerializer = EG.Serializer.extend({
 						return '' + id;
 					});
 				} else {
-					record[relationship] = '' + json.links[relationship];
+					record[relationship] = json.links[relationship];
+
+					if (typeof record[relationship] === 'number') {
+						record[relationship] = '' + record[relationship];
+					}
 				}
 			});
 

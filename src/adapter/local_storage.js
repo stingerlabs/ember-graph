@@ -24,9 +24,12 @@ EG.LocalStorageAdapter = EG.SynchronousAdapter.extend({
 
 		if (!JSON.parse(localStorage['ember-graph.models.initialized'] || 'false')) {
 			var store = this.get('store');
+			var adapter = EG.FixtureAdapter.create({ store: store });
 			this.get('fixtures').forEach(function(typeKey) {
 				(store.modelForType(typeKey).FIXTURES || []).forEach(function(fixture) {
-					this._setRecord(typeKey, fixture);
+					var id = fixture.id;
+					var json = JSON.stringify(adapter._getRecord(typeKey, id));
+					localStorage['ember-graph.models.' + typeKey + '.' + id] = json;
 				}, this);
 			}, this);
 		}
@@ -39,33 +42,40 @@ EG.LocalStorageAdapter = EG.SynchronousAdapter.extend({
 	/**
 	 * @param {String} typeKey
 	 * @param {String} id
-	 * @return {Object}
+	 * @return {Object} Serialized JSON Object
 	 * @private
 	 */
 	_getRecord: function(typeKey, id) {
-		return JSON.parse(localStorage['ember-graph.models.' + typeKey + '.' + id] || 'null');
+		var recordString = localStorage['ember-graph.models.' + typeKey + '.' + id];
+
+		if (typeof recordString === 'string') {
+			return JSON.parse(recordString);
+		} else {
+			return null;
+		}
 	},
 
 	/**
 	 * @param {String} typeKey
-	 * @returns {Array}
+	 * @returns {Object[]} Serialized JSON Objects
 	 * @private
 	 */
 	_getRecords: function(typeKey) {
 		return Em.keys(localStorage).filter(function(key) {
 			return EG.String.startsWith(key, 'ember-graph.models.' + typeKey);
 		}).map(function(key) {
-			return JSON.parse(localStorage[key]);
-		});
+			var parts = (/ember-graph\.models\.(.+)\.(.+)/g).exec(key);
+			return this._getRecord(parts[1], parts[2]);
+		}, this);
 	},
 
 	/**
-	 * @param {String} typeKey
-	 * @param {Object} json
+	 * @param {Model} record
 	 * @private
 	 */
-	_setRecord: function(typeKey, json) {
-		localStorage['ember-graph.models.' + typeKey + '.' + json.id] = JSON.stringify(json);
+	_setRecord: function(record) {
+		var json = this.serialize(record, { includeId: true });
+		localStorage['ember-graph.models.' + record.typeKey + '.' + json.id] = JSON.stringify(json);
 	},
 
 	/**

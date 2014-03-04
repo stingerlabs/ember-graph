@@ -9,21 +9,20 @@ EG.SynchronousAdapter = Eg.Adapter.extend({
 	/**
 	 * @param {String} typeKey
 	 * @param {String} id
-	 * @return {Object}
+	 * @return {Object} Serialized JSON Object
 	 * @protected
 	 */
 	_getRecord: Em.required(),
 
 	/**
 	 * @param {String} typeKey
-	 * @returns {Array}
+	 * @returns {Object[]} Serialized JSON Objects
 	 * @protected
 	 */
 	_getRecords: Em.required(),
 
 	/**
-	 * @param {String} typeKey
-	 * @param {Object} json
+	 * @param {Model} record
 	 * @protected
 	 */
 	_setRecord: Em.required(),
@@ -48,8 +47,7 @@ EG.SynchronousAdapter = Eg.Adapter.extend({
 	 */
 	createRecord: function(record) {
 		record.set('id', Eg.util.generateGUID());
-		var json = this.serialize(record);
-		this._setRecord(record.typeKey, json);
+		this._setRecord(record);
 		return Em.RSVP.Promise.resolve({});
 	},
 
@@ -63,7 +61,7 @@ EG.SynchronousAdapter = Eg.Adapter.extend({
 	findRecord: function(typeKey, id) {
 		var json = {};
 		json[typeKey] = [this._getRecord(typeKey, id)].filter(removeEmpty);
-		return Em.RSVP.Promise.resolve(json);
+		return Em.RSVP.Promise.resolve(this.deserialize(json));
 	},
 
 	/**
@@ -79,7 +77,7 @@ EG.SynchronousAdapter = Eg.Adapter.extend({
 		json[typeKey] = ids.map(function(id) {
 			return this._getRecord(typeKey, id);
 		}, this).filter(removeEmpty);
-		return Em.RSVP.Promise.resolve(json);
+		return Em.RSVP.Promise.resolve(this.deserialize(json));
 	},
 
 	/**
@@ -92,7 +90,7 @@ EG.SynchronousAdapter = Eg.Adapter.extend({
 	findAll: function(typeKey) {
 		var json = {};
 		json[typeKey] = this._getRecords(typeKey);
-		return Em.RSVP.Promise.resolve(json);
+		return Em.RSVP.Promise.resolve(this.deserialize(json));
 	},
 
 	/**
@@ -117,8 +115,7 @@ EG.SynchronousAdapter = Eg.Adapter.extend({
 	 * @returns {Promise} A promise that resolves to normalized JSON
 	 */
 	updateRecord: function(record) {
-		var json = this.serialize(record);
-		this._setRecord(record.typeKey, json);
+		this._setRecord(record);
 		return Em.RSVP.Promise.resolve({});
 	},
 
@@ -131,28 +128,5 @@ EG.SynchronousAdapter = Eg.Adapter.extend({
 	deleteRecord: function(record) {
 		this._deleteRecord(record.typeKey, record.get('id'));
 		return Em.RSVP.Promise.resolve({});
-	},
-
-	/**
-	 * Proxies to the serializer of this class.
-	 */
-	serialize: function(record, options) {
-		var json = {};
-
-		json.id = record.get('id');
-
-		record.constructor.eachAttribute(function(name, meta) {
-			json[name] = record.get(name);
-		});
-
-		record.constructor.eachRelationship(function(name, meta) {
-			json[name] = record.get('_' + name);
-
-			if (meta.kind === Eg.Model.HAS_MANY_KEY) {
-				json[name] = json[name].toArray();
-			}
-		});
-
-		return json;
 	}
 });
