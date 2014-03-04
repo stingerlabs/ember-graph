@@ -3641,7 +3641,7 @@ EG.Model.reopen({
 
 			// It's a hasOne, so relationships can only have one NEW or SAVED relationship
 			relationships = relationships.filter(function(relationship) {
-				 var state = relationship.get('state');
+				var state = relationship.get('state');
 				return (state === SAVED_STATE || state === NEW_STATE);
 			});
 
