@@ -12,8 +12,8 @@
 					string: Eg.attr({ type: 'string' }),
 					number: Eg.attr({ type: 'number', defaultValue: 0 }),
 
-					belongsTo1: Eg.belongsTo({ relatedType: 'foo', inverse: null }),
-					belongsTo2: Eg.belongsTo({
+					hasONe1: EG.hasOne({ relatedType: 'foo', inverse: null }),
+					hasONe2: EG.hasOne({
 						relatedType: 'foo', inverse: null, isRequired: false, defaultValue: '123' }),
 					hasMany: Eg.hasMany({ relatedType: 'foo', inverse: null, isRequired: false })
 				})
@@ -30,8 +30,8 @@
 				string: 'foo',
 				number: 42,
 
-				belongsTo1: '1',
-				belongsTo2: '2',
+				hasONe1: '1',
+				hasONe2: '2',
 				hasMany: ['1', '2', '4', '8']
 			});
 		}
@@ -120,8 +120,8 @@
 				string: '',
 				number: 0,
 				links: {
-					belongsTo1: null,
-					belongsTo2: '123',
+					hasONe1: null,
+					hasONe2: '123',
 					hasMany: []
 				}
 			});
@@ -130,7 +130,7 @@
 			return Em.RSVP.resolve();
 		};
 
-		adapter.createRecord(store.createRecord('test', { string: '', belongsTo1: null }));
+		adapter.createRecord(store.createRecord('test', { string: '', hasONe1: null }));
 	});
 
 	asyncTest('Update requests are properly formed', function() {
@@ -153,8 +153,8 @@
 				string: 'foo',
 				number: 42,
 				links: {
-					belongsTo1: '1',
-					belongsTo2: '2',
+					hasONe1: '1',
+					hasONe2: '2',
 					hasMany: ['1', '2', '4', '8']
 				}
 			});

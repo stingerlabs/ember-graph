@@ -3143,7 +3143,7 @@ Eg.Model.reopen({
 
 (function() {
 
-var BELONGS_TO_KEY = Eg.Model.BELONGS_TO_KEY = 'belongsTo';
+var HAS_ONE_KEY = Eg.Model.HAS_ONE_KEY = 'hasOne';
 var HAS_MANY_KEY = Eg.Model.HAS_MANY_KEY = 'hasMany';
 
 var NEW_STATE = Eg.Relationship.NEW_STATE;
@@ -3160,10 +3160,10 @@ Eg.hasMany = function(options) {
 	};
 };
 
-Eg.belongsTo = function(options) {
+Eg.hasOne = function(options) {
 	return {
 		isRelationship: true,
-		kind: BELONGS_TO_KEY,
+		kind: HAS_ONE_KEY,
 		options: options
 	};
 };
@@ -3183,10 +3183,10 @@ var createRelationship = function(kind, options) {
 		readOnly: options.readOnly === true
 	};
 
-	Em.assert('The default value for a belongsToRelationship must be a string or null, and the default value' +
+	Em.assert('The default value for a hasOne relationship must be a string or null, and the default value' +
 			'for a hasMany relationship must be an array.',
 			(kind === HAS_MANY_KEY && Em.isArray(meta.defaultValue)) ||
-			(kind === BELONGS_TO_KEY && (meta.defaultValue === null || typeof meta.defaultValue === 'string')));
+			(kind === HAS_ONE_KEY && (meta.defaultValue === null || typeof meta.defaultValue === 'string')));
 
 	var relationship;
 
@@ -3196,7 +3196,7 @@ var createRelationship = function(kind, options) {
 		};
 	} else {
 		relationship = function(key) {
-			return this._belongsToValue(key.substring(1));
+			return this._hasOneValue(key.substring(1));
 		};
 	}
 
@@ -3281,7 +3281,7 @@ Eg.Model.reopenClass({
 
 	/**
 	 * @param name The name of the relationships
-	 * @returns {String} HAS_MANY_KEY or BELONGS_TO_KEY
+	 * @returns {String} HAS_MANY_KEY or HAS_ONE_KEY
 	 * @static
 	 */
 	relationshipKind: function(name) {
@@ -3355,7 +3355,7 @@ Eg.Model.reopen({
 	_clientRelationships: null,
 
 	/**
-	 * Determines the value of a belongsTo relationship, either the
+	 * Determines the value of a hasOne relationship, either the
 	 * original value sent from the server, or the current client value.
 	 *
 	 * @param {String} relationship
@@ -3363,7 +3363,7 @@ Eg.Model.reopen({
 	 * @returns {String}
 	 * @private
 	 */
-	_belongsToValue: function(relationship, server) {
+	_hasOneValue: function(relationship, server) {
 		var serverRelationships = Eg.util.values(this.get('_serverRelationships'));
 		var otherRelationships = Eg.util.values(this.get((server ? '_deleted' : '_client') + 'Relationships'));
 		var current = serverRelationships.concat(otherRelationships);
@@ -3504,7 +3504,7 @@ Eg.Model.reopen({
 				var serverNotInClient = given.without(current);
 				serverNotInClient.forEach(function(id) {
 					var addState = SAVED_STATE;
-					var conflict = this._belongsToConflict(name, id);
+					var conflict = this._hasOneConflict(name, id);
 					if (conflict !== null) {
 						switch (conflict.get('state')) {
 							case DELETED_STATE:
@@ -3532,7 +3532,7 @@ Eg.Model.reopen({
 				// There should only be one relationship in there
 				Eg.debug.assert('An unknown relationship error occurred.', client.length <= 1);
 
-				var conflict = this._belongsToConflict(name, value);
+				var conflict = this._hasOneConflict(name, value);
 
 				// Update client side relationships that have been saved
 				if (client.length === 1) {
@@ -3599,7 +3599,7 @@ Eg.Model.reopen({
 
 	/**
 	 * This method is used to determine if adding a relationship will create
-	 * a conflict on the other side of the relationship with a belongsTo
+	 * a conflict on the other side of the relationship with a hasOne
 	 * relationship. If there is a conflict on the other record, this will
 	 * return the relationship that is in conflict.
 	 *
@@ -3608,7 +3608,7 @@ Eg.Model.reopen({
 	 * @returns {Relationship}
 	 * @private
 	 */
-	_belongsToConflict: function(relationship, id) {
+	_hasOneConflict: function(relationship, id) {
 		if (id === null) {
 			return null;
 		}
@@ -3620,14 +3620,14 @@ Eg.Model.reopen({
 
 		var model = this.get('store').modelForType(meta.relatedType);
 		var otherMeta = model.metaForRelationship(meta.inverse);
-		if (otherMeta.kind !== BELONGS_TO_KEY) {
+		if (otherMeta.kind !== HAS_ONE_KEY) {
 			return null;
 		}
 
 		// We need to detect unloaded records too
 		var record = this.get('store').getRecord(meta.relatedType, id);
 		if (record) {
-			var current = record._belongsToValue(meta.inverse);
+			var current = record._hasOneValue(meta.inverse);
 			if (current === null || current === this.get('id')) {
 				return null;
 			}
@@ -3639,7 +3639,7 @@ Eg.Model.reopen({
 				return null;
 			}
 
-			// It's a belongsTo, so relationships can only have one NEW or SAVED relationship
+			// It's a hasOne, so relationships can only have one NEW or SAVED relationship
 			relationships = relationships.filter(function(relationship) {
 				 var state = relationship.get('state');
 				return (state === SAVED_STATE || state === NEW_STATE);
@@ -3668,8 +3668,8 @@ Eg.Model.reopen({
 					changed[name] = [oldVal, newVal];
 				}
 			} else {
-				oldVal = this._belongsToValue(name, true);
-				newVal = this._belongsToValue(name, false);
+				oldVal = this._hasOneValue(name, true);
+				newVal = this._hasOneValue(name, false);
 
 				if (oldVal !== newVal) {
 					changed[name] = [oldVal, newVal];
@@ -3731,7 +3731,7 @@ Eg.Model.reopen({
 			return;
 		}
 
-		var conflict = this._belongsToConflict(relationship, id);
+		var conflict = this._hasOneConflict(relationship, id);
 		if (conflict !== null) {
 			switch (conflict.get('state')) {
 				case DELETED_STATE:
@@ -3785,12 +3785,12 @@ Eg.Model.reopen({
 	},
 
 	/**
-	 * Sets the value of a belongsTo relationship to the given ID.
+	 * Sets the value of a hasOne relationship to the given ID.
 	 *
 	 * @param {String} relationship
 	 * @param {String} id
 	 */
-	setBelongsTo: function(relationship, id) {
+	setHasOneRelationship: function(relationship, id) {
 		var alerts = [];
 		var meta = this.constructor.metaForRelationship(relationship);
 		Eg.debug.assert('Cannot modify a read-only relationship', meta.readOnly === false);
@@ -3814,14 +3814,14 @@ Eg.Model.reopen({
 		}
 
 		if (id === null) {
-			this.clearBelongsTo(relationship);
+			this.clearHasOneRelationship(relationship);
 			return;
 		}
 
-		alerts = alerts.concat(this.clearBelongsTo(relationship, true));
+		alerts = alerts.concat(this.clearHasOneRelationship(relationship, true));
 
 		var store = this.get('store');
-		var conflict = this._belongsToConflict(relationship, id);
+		var conflict = this._hasOneConflict(relationship, id);
 		if (conflict !== null) {
 			switch (conflict.get('state')) {
 				case DELETED_STATE:
@@ -3843,13 +3843,13 @@ Eg.Model.reopen({
 	},
 
 	/**
-	 * Sets the value of a belongsTo relationship to `null`.
+	 * Sets the value of a hasOne relationship to `null`.
 	 *
 	 * @param {String} relationship
 	 * @param {Boolean} [suppressNotifications]
 	 * @return {Object[]} Objects and properties to notify
 	 */
-	clearBelongsTo: function(relationship, suppressNotifications) {
+	clearHasOneRelationship: function(relationship, suppressNotifications) {
 		var alerts = [];
 		var meta = this.constructor.metaForRelationship(relationship);
 		Eg.debug.assert('Cannot modify a read-only relationship', meta.readOnly === false);
@@ -3857,7 +3857,7 @@ Eg.Model.reopen({
 			return [];
 		}
 
-		var current = this._belongsToValue(relationship);
+		var current = this._hasOneValue(relationship);
 
 		if (current !== null) {
 			var r = this._findLinkTo(relationship, current);

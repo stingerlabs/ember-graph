@@ -16,7 +16,7 @@
 				}),
 
 				vertex: EG.Model.extend({
-					owner: Eg.belongsTo({
+					owner: EG.hasOne({
 						relatedType: 'user',
 						isRequired: true,
 						inverse: 'vertices',
@@ -90,7 +90,7 @@
 		var vertex = store.getRecord('vertex', '4');
 
 		throws(function() {
-			vertex.clearBelongsTo('owner');
+			vertex.clearHasOneRelationship('owner');
 		});
 	});
 })();

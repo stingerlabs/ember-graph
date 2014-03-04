@@ -1,7 +1,7 @@
 (function() {
 	'use strict';
 
-	var BELONGS_TO_KEY = Eg.Model.BELONGS_TO_KEY;
+	var HAS_ONE_KEY = Eg.Model.HAS_ONE_KEY;
 	var HAS_MANY_KEY = Eg.Model.HAS_MANY_KEY;
 
 	var store;
@@ -18,7 +18,7 @@
 				}),
 
 				post: EG.Model.extend({
-					author: Eg.belongsTo({
+					author: EG.hasOne({
 						relatedType: 'user',
 						inverse: 'posts',
 						isRequired: false
@@ -142,7 +142,7 @@
 		ok(user1.get('_posts').isEqual(current));
 	});
 
-	test('Disconnecting a belongsTo saved to the server works', function() {
+	test('Disconnecting a hasOne saved to the server works', function() {
 		expect(4);
 
 		var user1 = store.getRecord('user', '1');
@@ -151,22 +151,22 @@
 		ok(user1.get('_posts').contains('1'));
 		ok(post1.get('_author') === '1');
 
-		post1.clearBelongsTo('author');
+		post1.clearHasOneRelationship('author');
 
 		ok(post1.get('_author') === null);
 		ok(!user1.get('_posts').contains('1'));
 	});
 
-	test('Disconnecting a null belongsTo has no effect', function() {
+	test('Disconnecting a null hasOne has no effect', function() {
 		expect(2);
 
 		var post6 = store.getRecord('post', '6');
 		ok(post6.get('_author') === null);
-		post6.clearBelongsTo('author');
+		post6.clearHasOneRelationship('author');
 		ok(post6.get('_author') === null);
 	});
 
-	test('Changing a belongsTo from one record to another works', function() {
+	test('Changing a hasOne from one record to another works', function() {
 		expect(6);
 
 		var user1 = store.getRecord('user', '1');
@@ -177,7 +177,7 @@
 		ok(!user2.get('_posts').contains('1'));
 		ok(post1.get('_author') === '1');
 
-		post1.setBelongsTo('author', '2');
+		post1.setHasOneRelationship('author', '2');
 
 		ok(!user1.get('_posts').contains('1'));
 		ok(user2.get('_posts').contains('1'));
@@ -206,7 +206,7 @@
 		ok(post2.get('_tags').contains('1'));
 	});
 
-	test('Setting a belongsTo works properly', function() {
+	test('Setting a hasOne works properly', function() {
 		expect(4);
 
 		var user1 = store.getRecord('user', '1');
@@ -215,7 +215,7 @@
 		ok(!user1.get('_posts').contains('6'));
 		ok(post6.get('_author') === null);
 
-		post6.setBelongsTo('author', '1');
+		post6.setHasOneRelationship('author', '1');
 
 		ok(user1.get('_posts').contains('6'));
 		ok(post6.get('_author') === '1');
@@ -251,7 +251,7 @@
 		ok(post6.get('isDirty'));
 	});
 
-	test('Clearing a belongsTo dirties both records', function() {
+	test('Clearing a hasOne dirties both records', function() {
 		expect(4);
 
 		var user1 = store.getRecord('user', '1');
@@ -260,13 +260,13 @@
 		ok(!user1.get('isDirty'));
 		ok(!post1.get('isDirty'));
 
-		post1.clearBelongsTo('author');
+		post1.clearHasOneRelationship('author');
 
 		ok(user1.get('isDirty'));
 		ok(post1.get('isDirty'));
 	});
 
-	test('Settings a belongsTo dirties all three records (if applicable)', function() {
+	test('Settings a hasOne dirties all three records (if applicable)', function() {
 		expect(6);
 
 		var user1 = store.getRecord('user', '1');
@@ -277,7 +277,7 @@
 		ok(!user2.get('isDirty'));
 		ok(!post1.get('isDirty'));
 
-		post1.setBelongsTo('author', '2');
+		post1.setHasOneRelationship('author', '2');
 
 		ok(user1.get('isDirty'));
 		ok(user2.get('isDirty'));
@@ -308,27 +308,27 @@
 		ok(!user1.get('isDirty'));
 	});
 
-	test('Setting a cleared belongsTo to the old value cleans the record', function() {
+	test('Setting a cleared hasOne to the old value cleans the record', function() {
 		expect(3);
 
 		var post1 = store.getRecord('post', '1');
 
 		ok(!post1.get('isDirty'));
-		post1.clearBelongsTo('author');
+		post1.clearHasOneRelationship('author');
 		ok(post1.get('isDirty'));
-		post1.setBelongsTo('author', '1');
+		post1.setHasOneRelationship('author', '1');
 		ok(!post1.get('isDirty'));
 	});
 
-	test('Clearing a set belongsTo cleans the record', function() {
+	test('Clearing a set hasOne cleans the record', function() {
 		expect(3);
 
 		var post6 = store.getRecord('post', '6');
 
 		ok(!post6.get('isDirty'));
-		post6.setBelongsTo('author', '1');
+		post6.setHasOneRelationship('author', '1');
 		ok(post6.get('isDirty'));
-		post6.clearBelongsTo('author');
+		post6.clearHasOneRelationship('author');
 		ok(!post6.get('isDirty'));
 	});
 
@@ -341,7 +341,7 @@
 
 		ok(!post1.get('isDirty'));
 
-		post1.clearBelongsTo('author');
+		post1.clearHasOneRelationship('author');
 		post1.removeFromRelationship('tags', '1');
 		post1.addToRelationship('tags', '5');
 
@@ -361,7 +361,7 @@
 		var author = post.get('_author');
 		var tags = post.get('_tags').toArray();
 
-		post.setBelongsTo('author', '1');
+		post.setHasOneRelationship('author', '1');
 		post.addToRelationship('tags', '1');
 		post.addToRelationship('tags', '2');
 		post.removeFromRelationship('tags', '4');
@@ -374,7 +374,7 @@
 		ok(new Em.Set(changed.tags[1]).isEqual(['1', '2']));
 	});
 
-	test('Reloading a changed belongsTo from the server works correctly (clean record)', function() {
+	test('Reloading a changed hasOne from the server works correctly (clean record)', function() {
 		expect(2);
 
 		var post = store.getRecord('post', '1');
@@ -388,7 +388,7 @@
 		ok(!user.get('_posts').contains('1'));
 	});
 
-	test('Reloading a cleared belongsTo from the server works correctly (clean record)', function() {
+	test('Reloading a cleared hasOne from the server works correctly (clean record)', function() {
 		expect(2);
 
 		var post = store.getRecord('post', '1');
@@ -456,7 +456,7 @@
 		ok(user.get('_posts').contains('50'));
 	});
 
-	asyncTest('Loading a belongsTo relationship fully returns the correct record', function() {
+	asyncTest('Loading a hasOne relationship fully returns the correct record', function() {
 		expect(2);
 
 		var post = store.getRecord('post', '1');
@@ -513,7 +513,7 @@
 
 		var user = store.getRecord('user', '1');
 		var post = store.getRecord('post', '1');
-		post.clearBelongsTo('author');
+		post.clearHasOneRelationship('author');
 
 		ok(!user.get('_posts').contains('1'));
 		ok(post.get('_author') === null);
@@ -566,7 +566,7 @@
 		};
 		post.addObserver('_author', observer);
 
-		post.setBelongsTo('author', '2');
+		post.setHasOneRelationship('author', '2');
 		strictEqual(post.get('_author'), '2');
 		post.removeObserver('_author', observer);
 

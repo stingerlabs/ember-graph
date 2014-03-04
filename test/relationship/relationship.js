@@ -13,7 +13,7 @@
 						isRequired: false
 					}),
 
-					link: Eg.belongsTo({
+					link: EG.hasOne({
 						relatedType: 'test2',
 						inverse: null,
 						isRequired: false
@@ -21,7 +21,7 @@
 				}),
 
 				test2: EG.Model.extend({
-					parent: Eg.belongsTo({
+					parent: EG.hasOne({
 						relatedType: 'test1',
 						inverse: 'children',
 						isRequired: false

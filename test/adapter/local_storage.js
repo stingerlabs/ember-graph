@@ -13,7 +13,7 @@
 
 			var User = EG.Model.extend({
 				name: EG.attr({ type: 'string' }),
-				spam: EG.belongsTo({ relatedType: 'spam', inverse: null }),
+				spam: EG.hasOne({ relatedType: 'spam', inverse: null }),
 				eggs: EG.hasMany({ relatedType: 'egg', inverse: null })
 			});
 
@@ -129,7 +129,7 @@
 		expect(1);
 
 		store.find('user', '1').then(function(record) {
-			record.clearBelongsTo('spam');
+			record.clearHasOneRelationship('spam');
 			record.removeFromRelationship('eggs', '2');
 			record.removeFromRelationship('eggs', '4');
 

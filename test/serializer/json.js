@@ -34,7 +34,7 @@
 						defaultValue: ''
 					}),
 
-					author: EG.belongsTo({
+					author: EG.hasOne({
 						relatedType: 'user',
 						inverse: 'posts',
 						isRequired: true

@@ -7,27 +7,27 @@
 		setup: function() {
 			store = setupStore({
 				test1: EG.Model.extend({
-					belongsToNull: Eg.belongsTo({ relatedType: 'test3', inverse: null }),
-					belongsToBelongsTo: Eg.belongsTo({ relatedType: 'test2', inverse: 'belongsTo' }),
-					belongsToHasMany: Eg.belongsTo({ relatedType: 'test2', inverse: 'hasManyBelongsTo' }),
+					hasOneNull: EG.hasOne({ relatedType: 'test3', inverse: null }),
+					hasOneHasOne: EG.hasOne({ relatedType: 'test2', inverse: 'hasOne' }),
+					hasOneHasMany: EG.hasOne({ relatedType: 'test2', inverse: 'hasManyHasOne' }),
 					hasMany: Eg.hasMany({ relatedType: 'test2', inverse: 'hasManyHasMany' })
 				}),
 
 				test2: EG.Model.extend({
 					hasManyNull: Eg.hasMany({ relatedType: 'test3', inverse: null }),
-					hasManyBelongsTo: Eg.hasMany({ relatedType: 'test1', inverse: 'belongsToHasMany' }),
+					hasManyHasOne: Eg.hasMany({ relatedType: 'test1', inverse: 'hasOneHasMany' }),
 					hasManyHasMany: Eg.hasMany({ relatedType: 'test1', inverse: 'hasMany' }),
-					belongsTo: Eg.belongsTo({ relatedType: 'test1', inverse: 'belongsToBelongsTo' })
+					hasOne: EG.hasOne({ relatedType: 'test1', inverse: 'hasOneHasOne' })
 				}),
 
 				test3: EG.Model.extend()
 			});
 
 			store._loadRecord('test2', { id: '1', hasManyNull: [],
-				hasManyBelongsTo: [], hasManyHasMany: [], belongsTo: null });
+				hasManyHasOne: [], hasManyHasMany: [], hasOne: null });
 
-			store._loadRecord('test1',  { id: '1', belongsToNull: null,
-				belongsToBelongsTo: null, belongsToHasMany: null, hasMany: [] });
+			store._loadRecord('test1',  { id: '1', hasOneNull: null,
+				hasOneHasOne: null, hasOneHasMany: null, hasMany: [] });
 		}
 	});
 
@@ -40,19 +40,19 @@
 		ok(test2.get('_hasManyNull').contains('-1'));
 	});
 
-	test('Adding to a hasMany(->belongsTo) works properly', function() {
+	test('Adding to a hasMany(->hasOne) works properly', function() {
 		expect(4);
 
 		var test1 = store.getRecord('test1', '1');
 		var test2 = store.getRecord('test2', '1');
 
-		strictEqual(test1.get('_belongsToHasMany'), null);
-		ok(!test2.get('_hasManyBelongsTo').contains('1'));
+		strictEqual(test1.get('_hasOneHasMany'), null);
+		ok(!test2.get('_hasManyHasOne').contains('1'));
 
-		test2.addToRelationship('hasManyBelongsTo', '1');
+		test2.addToRelationship('hasManyHasOne', '1');
 
-		strictEqual(test1.get('_belongsToHasMany'), '1');
-		ok(test2.get('_hasManyBelongsTo').contains('1'));
+		strictEqual(test1.get('_hasOneHasMany'), '1');
+		ok(test2.get('_hasManyHasOne').contains('1'));
 	});
 
 	test('Adding to a hasMany(->hasMany) works properly', function() {
