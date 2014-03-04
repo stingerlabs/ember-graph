@@ -24,19 +24,24 @@ Eg.belongsTo = function(options) {
 };
 
 var createRelationship = function(kind, options) {
-	Eg.debug.assert('Your relationship must specify a relatedType.', typeof options.relatedType === 'string');
-	Eg.debug.assert('Your relationship must specify an inverse relationship.',
+	Em.assert('Your relationship must specify a relatedType.', typeof options.relatedType === 'string');
+	Em.assert('Your relationship must specify an inverse relationship.',
 		options.inverse === null || typeof options.inverse === 'string');
 
 	var meta = {
 		isRelationship: false,
 		kind: kind,
-		isRequired: options.isRequired !== false,
+		isRequired: (options.hasOwnProperty('defaultValue') ? false : options.isRequired !== false),
 		defaultValue: options.defaultValue || (kind === HAS_MANY_KEY ? [] : null),
 		relatedType: options.relatedType,
 		inverse: options.inverse,
 		readOnly: options.readOnly === true
 	};
+
+	Em.assert('The default value for a belongsToRelationship must be a string or null, and the default value' +
+			'for a hasMany relationship must be an array.',
+			(kind === HAS_MANY_KEY && Em.isArray(meta.defaultValue)) ||
+			(kind === BELONGS_TO_KEY && (meta.defaultValue === null || typeof meta.defaultValue === 'string')));
 
 	var relationship;
 
@@ -50,8 +55,7 @@ var createRelationship = function(kind, options) {
 		};
 	}
 
-	// TODO: We can't rely on prototype extension, so no .property
-	return relationship.property('_serverRelationships', '_clientRelationships').meta(meta).readOnly();
+	return Em.computed(relationship).property('_serverRelationships', '_clientRelationships').meta(meta).readOnly();
 };
 
 Eg.Model.reopenClass({
@@ -98,7 +102,7 @@ Eg.Model.reopenClass({
 	 * @static
 	 * @type {Set}
 	 */
-	relationships: function() {
+	relationships: Em.computed(function() {
 		var relationships = new Em.Set();
 
 		this.eachComputedProperty(function(name, meta) {
@@ -112,7 +116,7 @@ Eg.Model.reopenClass({
 		});
 
 		return relationships;
-	}.property(),
+	}).property(),
 
 	/**
 	 * @param {String} name
@@ -257,12 +261,12 @@ Eg.Model.reopen({
 	 * any dirty attributes based on how many client attributes differ from
 	 * the server attributes.
 	 */
-	_areRelationshipsDirty: function() {
+	_areRelationshipsDirty: Em.computed(function() {
 		var client = Em.keys(this.get('_clientRelationships')).length > 0;
 		var deleted = Em.keys(this.get('_deletedRelationships')).length > 0;
 
 		return client || deleted;
-	}.property('_clientRelationships', '_deletedRelationships'),
+	}).property('_clientRelationships', '_deletedRelationships'),
 
 	/**
 	 * Gets all relationships currently linked to this record.

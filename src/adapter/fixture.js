@@ -77,6 +77,19 @@ EG.FixtureAdapter = EG.SynchronousAdapter.extend({
 		}
 	},
 
+	/**
+	 * We want users to be able to store their fixture data in a deserialized form,
+	 * in our case, the format that the store expects from the adapter. This means
+	 * that when we serialize a fixture to JSON, we have to replicate the work that
+	 * the serializer would normally do with a record.
+	 *
+	 * TODO: Fix issues with missing attributes and relationships.
+	 *
+	 * @param typeKey
+	 * @param fixture
+	 * @returns {{id: (*|fixture.id), links: {}}}
+	 * @private
+	 */
 	_fixtureToJson: function(typeKey, fixture) {
 		var model = this.get('store').modelForType(typeKey);
 		var json = {
@@ -86,19 +99,23 @@ EG.FixtureAdapter = EG.SynchronousAdapter.extend({
 
 		model.eachAttribute(function(name, meta) {
 			var type = this.get('store').attributeTypeFor(meta.type);
-			json[name] = type.serialize(fixture[name]);
+			json[name] = (fixture[name] === undefined ? meta.defaultValue: type.serialize(fixture[name]));
 		}, this);
 
 		model.eachRelationship(function(name, meta) {
 			var val = fixture[name];
 
 			if (meta.kind === EG.Model.HAS_MANY_KEY) {
-				json.links[name] = (val || []).filter(function(id) {
-					return (!EG.Model.isTemporaryId(id));
-				});
+				if (val === undefined) {
+					json.links[name] = meta.defaultValue;
+				} else {
+					json.links[name] = val.filter(function(id) {
+						return (!EG.Model.isTemporaryId(id));
+					});
+				}
 			} else {
-				if (Em.isNone(val) || EG.Model.isTemporaryId(val)) {
-					json.links[name] = null;
+				if (val === undefined) {
+					json.links[name] = meta.defaultValue;
 				} else {
 					json.links[name] = val;
 				}

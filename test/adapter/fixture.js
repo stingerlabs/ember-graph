@@ -7,8 +7,10 @@
 		setup: function() {
 			var User = EG.Model.extend({
 				name: EG.attr({ type: 'string' }),
+				missing: EG.attr({ type: 'string', defaultValue: 'foobar' }),
 				spam: EG.belongsTo({ relatedType: 'spam', inverse: null }),
-				eggs: EG.hasMany({ relatedType: 'egg', inverse: null })
+				eggs: EG.hasMany({ relatedType: 'egg', inverse: null }),
+				none: EG.belongsTo({ relatedType: 'egg', inverse: null, defaultValue: '5' })
 			});
 
 			User.FIXTURES = [
@@ -41,8 +43,19 @@
 			start();
 
 			deepEqual(json, {
-				user: [{ id: '1', name: 'Alice', spam: '1', eggs: ['2', '4'] }]
+				user: [{ id: '1', missing: 'foobar', name: 'Alice', spam: '1', eggs: ['2', '4'], none: '5' }]
 			});
+		});
+	});
+
+	asyncTest('Fixture data has default values correctly loaded', function() {
+		expect(2);
+
+		adapter.findRecord('user', '1').then(function(json) {
+			start();
+
+			deepEqual(json.user[0].missing, 'foobar');
+			deepEqual(json.user[0].none, '5');
 		});
 	});
 
@@ -56,8 +69,8 @@
 
 			deepEqual(json, {
 				user: [
-					{ id: '1', name: 'Alice', spam: '1', eggs: ['2', '4'] },
-					{ id: '3', name: 'Carol', spam: '9', eggs: ['1', '2', '3', '4'] }
+					{ id: '1', missing: 'foobar', name: 'Alice', spam: '1', eggs: ['2', '4'], none: '5' },
+					{ id: '3', missing: 'foobar', name: 'Carol', spam: '9', eggs: ['1', '2', '3', '4'], none: '5' }
 				]
 			});
 		});
@@ -73,9 +86,9 @@
 
 			deepEqual(json, {
 				user: [
-					{ id: '1', name: 'Alice', spam: '1', eggs: ['2', '4'] },
-					{ id: '2', name: 'Bob', spam: '8', eggs: ['1', '3'] },
-					{ id: '3', name: 'Carol', spam: '9', eggs: ['1', '2', '3', '4'] }
+					{ id: '1', missing: 'foobar', name: 'Alice', spam: '1', eggs: ['2', '4'], none: '5' },
+					{ id: '2', missing: 'foobar', name: 'Bob', spam: '8', eggs: ['1', '3'], none: '5' },
+					{ id: '3', missing: 'foobar', name: 'Carol', spam: '9', eggs: ['1', '2', '3', '4'], none: '5' }
 				]
 			});
 		});
@@ -99,7 +112,7 @@
 			start();
 
 			deepEqual(json, {
-				user: [{ id: record.get('id'), name: 'Dave', spam: '100', eggs: [] }]
+				user: [{ id: record.get('id'), missing: 'foobar', name: 'Dave', spam: '100', eggs: [], none: '5' }]
 			});
 		});
 	});
@@ -119,7 +132,7 @@
 			start();
 
 			deepEqual(json, {
-				user: [{ id: '1', name: 'Alice', spam: null, eggs: [] }]
+				user: [{ id: '1', missing: 'foobar', name: 'Alice', spam: null, eggs: [], none: '5' }]
 			});
 		});
 	});
