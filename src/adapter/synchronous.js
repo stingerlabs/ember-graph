@@ -48,6 +48,7 @@ EG.SynchronousAdapter = Eg.Adapter.extend({
 	createRecord: function(record) {
 		record.set('id', Eg.util.generateGUID());
 		this._setRecord(record);
+		// TODO: Must return a payload
 		return Em.RSVP.Promise.resolve({});
 	},
 

@@ -57,10 +57,8 @@ Eg.Store = Em.Object.extend({
 	init: function() {
 		this.set('_records', {});
 		this.set('_types', {});
+		this.set('_relationships', {});
 		this.set('_queuedRelationships', {});
-
-		// TODO: This is bad. We need to fix it.
-		EG.Relationship.deleteAllRelationships();
 	},
 
 	/**

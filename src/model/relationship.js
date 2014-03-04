@@ -489,7 +489,7 @@ Eg.Model.reopen({
 
 			return record._findLinkTo(meta.inverse, current);
 		} else {
-			var relationships = Eg.Relationship.relationshipsForRecord(meta.relatedType, meta.inverse, id);
+			var relationships = this.get('store')._relationshipsForRecord(meta.relatedType, meta.inverse, id);
 			if (relationships.length === 0) {
 				return null;
 			}

@@ -48,6 +48,13 @@ Eg.Store.reopen({
 	overwriteClientAttributes: false,
 
 	/**
+	 * Stores all of the relationships created so far.
+	 *
+	 * @type {Object.<String, Relationship>}
+	 */
+	_relationships: {},
+
+	/**
 	 * Holds all of the relationships that are waiting to be connected to a record
 	 * when it gets loaded into the store. (relationship ID -> relationship)
 	 *
@@ -162,6 +169,8 @@ Eg.Store.reopen({
 			state: state
 		});
 
+		this.get('_relationships')[relationship.get('id')] = relationship;
+
 		alerts.push(record1._connectRelationship(relationship));
 
 		if (record2 !== null) {
@@ -184,7 +193,7 @@ Eg.Store.reopen({
 	_deleteRelationship: function(id) {
 		var alerts = [];
 
-		var relationship = Eg.Relationship.getRelationship(id);
+		var relationship = this.get('_relationships')[id];
 		if (Em.isNone(relationship)) {
 			return alerts;
 		}
@@ -200,7 +209,7 @@ Eg.Store.reopen({
 			this.notifyPropertyChange('_queuedRelationships');
 		}
 
-		Eg.Relationship.deleteRelationship(id);
+		delete this.get('_relationships')[id];
 
 		return alerts;
 	},
@@ -214,7 +223,7 @@ Eg.Store.reopen({
 	_changeRelationshipState: function(id, state) {
 		var alerts = [];
 
-		var relationship = Eg.Relationship.getRelationship(id);
+		var relationship = this.get('_relationships')[id];
 		if (Em.isNone(relationship) || relationship.get('state') === state) {
 			return alerts;
 		}
@@ -240,5 +249,36 @@ Eg.Store.reopen({
 		}
 
 		return alerts;
+	},
+
+	/**
+	 * Gets all relationships related to the given record.
+	 *
+	 * @param {String} typeKey
+	 * @param {String} name
+	 * @param {String} id
+	 * @returns {Boolean}
+	 */
+	_relationshipsForRecord: function(typeKey, name, id) {
+		return Eg.util.values(this.get('_relationships')).filter(function(relationship) {
+			if (relationship.get('type1') === typeKey && relationship.get('id') === id &&
+				relationship.get('relationship1') === name) {
+				return true;
+			}
+
+			if (relationship.get('type2') === typeKey && relationship.get('relationship2') === name) {
+				var object2 = relationship.get('object2');
+
+				if (typeof object2 === 'string') {
+					if (object2 === id) {
+						return true;
+					}
+				} else if (object2.get('id') === id) {
+					return true;
+				}
+			}
+
+			return false;
+		});
 	}
 });

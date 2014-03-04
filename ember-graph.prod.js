@@ -750,6 +750,7 @@ EG.SynchronousAdapter = Eg.Adapter.extend({
 	createRecord: function(record) {
 		record.set('id', Eg.util.generateGUID());
 		this._setRecord(record);
+		// TODO: Must return a payload
 		return Em.RSVP.Promise.resolve({});
 	},
 
@@ -1349,10 +1350,8 @@ Eg.Store = Em.Object.extend({
 	init: function() {
 		this.set('_records', {});
 		this.set('_types', {});
+		this.set('_relationships', {});
 		this.set('_queuedRelationships', {});
-
-		// TODO: This is bad. We need to fix it.
-		EG.Relationship.deleteAllRelationships();
 	},
 
 	/**
@@ -1795,6 +1794,13 @@ Eg.Store.reopen({
 	overwriteClientAttributes: false,
 
 	/**
+	 * Stores all of the relationships created so far.
+	 *
+	 * @type {Object.<String, Relationship>}
+	 */
+	_relationships: {},
+
+	/**
 	 * Holds all of the relationships that are waiting to be connected to a record
 	 * when it gets loaded into the store. (relationship ID -> relationship)
 	 *
@@ -1909,6 +1915,8 @@ Eg.Store.reopen({
 			state: state
 		});
 
+		this.get('_relationships')[relationship.get('id')] = relationship;
+
 		alerts.push(record1._connectRelationship(relationship));
 
 		if (record2 !== null) {
@@ -1931,7 +1939,7 @@ Eg.Store.reopen({
 	_deleteRelationship: function(id) {
 		var alerts = [];
 
-		var relationship = Eg.Relationship.getRelationship(id);
+		var relationship = this.get('_relationships')[id];
 		if (Em.isNone(relationship)) {
 			return alerts;
 		}
@@ -1947,7 +1955,7 @@ Eg.Store.reopen({
 			this.notifyPropertyChange('_queuedRelationships');
 		}
 
-		Eg.Relationship.deleteRelationship(id);
+		delete this.get('_relationships')[id];
 
 		return alerts;
 	},
@@ -1961,7 +1969,7 @@ Eg.Store.reopen({
 	_changeRelationshipState: function(id, state) {
 		var alerts = [];
 
-		var relationship = Eg.Relationship.getRelationship(id);
+		var relationship = this.get('_relationships')[id];
 		if (Em.isNone(relationship) || relationship.get('state') === state) {
 			return alerts;
 		}
@@ -1987,6 +1995,37 @@ Eg.Store.reopen({
 		}
 
 		return alerts;
+	},
+
+	/**
+	 * Gets all relationships related to the given record.
+	 *
+	 * @param {String} typeKey
+	 * @param {String} name
+	 * @param {String} id
+	 * @returns {Boolean}
+	 */
+	_relationshipsForRecord: function(typeKey, name, id) {
+		return Eg.util.values(this.get('_relationships')).filter(function(relationship) {
+			if (relationship.get('type1') === typeKey && relationship.get('id') === id &&
+				relationship.get('relationship1') === name) {
+				return true;
+			}
+
+			if (relationship.get('type2') === typeKey && relationship.get('relationship2') === name) {
+				var object2 = relationship.get('object2');
+
+				if (typeof object2 === 'string') {
+					if (object2 === id) {
+						return true;
+					}
+				} else if (object2.get('id') === id) {
+					return true;
+				}
+			}
+
+			return false;
+		});
 	}
 });
 
@@ -2012,9 +2051,6 @@ Eg.PromiseArray = Em.ArrayProxy.extend(Em.PromiseProxyMixin);
 var NEW_STATE = 'new';
 var SAVED_STATE = 'saved';
 var DELETED_STATE = 'deleted';
-
-var nextRelationshipId = 0;
-var allRelationships = {};
 
 /**
  * A class used internally by Ember-Graph to keep the object-graph up-to-date.
@@ -2116,10 +2152,14 @@ Eg.Relationship = Em.Object.extend({
 	/**
 	 * Initializes the relationship with a unique ID.
 	 */
-	init: function() {
-		this.set('id', nextRelationshipId + '');
-		nextRelationshipId = nextRelationshipId + 1;
-	},
+	init: (function() {
+		var nextId = 0;
+
+		return function() {
+			this.set('id', nextId + '');
+			nextId = nextId + 1;
+		};
+	})(),
 
 	/**
 	 * Signals that this relationship has been created on the client,
@@ -2243,33 +2283,7 @@ Eg.Relationship.reopenClass({
 				properties.object1.constructor.metaForRelationship(properties.relationship1).relatedType);
 		}
 
-		allRelationships[relationship.get('id')] = relationship;
-
 		return relationship;
-	},
-
-	/**
-	 * @param {String} id
-	 * @returns {Relationship|undefined}
-	 */
-	getRelationship: function(id) {
-		return allRelationships[id];
-	},
-
-	/**
-	 * Removes the relationship from the list of tracked relationships.
-	 * Doesn't disconnect it from anything. Just removes the reference
-	 * from this class so `getRelationship` will no longer find it.
-	 *
-	 * @param {String} id
-	 */
-	deleteRelationship: function(id) {
-		delete allRelationships[id];
-	},
-
-	// TODO: These can't be static. This has to move to the store
-	deleteAllRelationships: function() {
-		allRelationships = {};
 	},
 
 	/**
@@ -2290,37 +2304,6 @@ Eg.Relationship.reopenClass({
 				
 				return '';
 		}
-	},
-
-	/**
-	 * Gets all relationships related to the given record.
-	 *
-	 * @param {String} typeKey
-	 * @param {String} name
-	 * @param {String} id
-	 * @returns {Boolean}
-	 */
-	relationshipsForRecord: function(typeKey, name, id) {
-		return Eg.util.values(allRelationships).filter(function(relationship) {
-			if (relationship.get('type1') === typeKey && relationship.get('id') === id &&
-				relationship.get('relationship1') === name) {
-				return true;
-			}
-
-			if (relationship.get('type2') === typeKey && relationship.get('relationship2') === name) {
-				var object2 = relationship.get('object2');
-
-				if (typeof object2 === 'string') {
-					if (object2 === id) {
-						return true;
-					}
-				} else if (object2.get('id') === id) {
-					return true;
-				}
-			}
-
-			return false;
-		});
 	}
 });
 
@@ -3614,7 +3597,7 @@ Eg.Model.reopen({
 
 			return record._findLinkTo(meta.inverse, current);
 		} else {
-			var relationships = Eg.Relationship.relationshipsForRecord(meta.relatedType, meta.inverse, id);
+			var relationships = this.get('store')._relationshipsForRecord(meta.relatedType, meta.inverse, id);
 			if (relationships.length === 0) {
 				return null;
 			}

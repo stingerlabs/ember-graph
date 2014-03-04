@@ -2,9 +2,6 @@ var NEW_STATE = 'new';
 var SAVED_STATE = 'saved';
 var DELETED_STATE = 'deleted';
 
-var nextRelationshipId = 0;
-var allRelationships = {};
-
 /**
  * A class used internally by Ember-Graph to keep the object-graph up-to-date.
  *
@@ -105,10 +102,14 @@ Eg.Relationship = Em.Object.extend({
 	/**
 	 * Initializes the relationship with a unique ID.
 	 */
-	init: function() {
-		this.set('id', nextRelationshipId + '');
-		nextRelationshipId = nextRelationshipId + 1;
-	},
+	init: (function() {
+		var nextId = 0;
+
+		return function() {
+			this.set('id', nextId + '');
+			nextId = nextId + 1;
+		};
+	})(),
 
 	/**
 	 * Signals that this relationship has been created on the client,
@@ -237,33 +238,7 @@ Eg.Relationship.reopenClass({
 				properties.object1.constructor.metaForRelationship(properties.relationship1).relatedType);
 		}
 
-		allRelationships[relationship.get('id')] = relationship;
-
 		return relationship;
-	},
-
-	/**
-	 * @param {String} id
-	 * @returns {Relationship|undefined}
-	 */
-	getRelationship: function(id) {
-		return allRelationships[id];
-	},
-
-	/**
-	 * Removes the relationship from the list of tracked relationships.
-	 * Doesn't disconnect it from anything. Just removes the reference
-	 * from this class so `getRelationship` will no longer find it.
-	 *
-	 * @param {String} id
-	 */
-	deleteRelationship: function(id) {
-		delete allRelationships[id];
-	},
-
-	// TODO: These can't be static. This has to move to the store
-	deleteAllRelationships: function() {
-		allRelationships = {};
 	},
 
 	/**
@@ -284,36 +259,5 @@ Eg.Relationship.reopenClass({
 				Eg.debug.assert('The given state was invalid.');
 				return '';
 		}
-	},
-
-	/**
-	 * Gets all relationships related to the given record.
-	 *
-	 * @param {String} typeKey
-	 * @param {String} name
-	 * @param {String} id
-	 * @returns {Boolean}
-	 */
-	relationshipsForRecord: function(typeKey, name, id) {
-		return Eg.util.values(allRelationships).filter(function(relationship) {
-			if (relationship.get('type1') === typeKey && relationship.get('id') === id &&
-				relationship.get('relationship1') === name) {
-				return true;
-			}
-
-			if (relationship.get('type2') === typeKey && relationship.get('relationship2') === name) {
-				var object2 = relationship.get('object2');
-
-				if (typeof object2 === 'string') {
-					if (object2 === id) {
-						return true;
-					}
-				} else if (object2.get('id') === id) {
-					return true;
-				}
-			}
-
-			return false;
-		});
 	}
 });
