@@ -711,14 +711,14 @@ EG.SynchronousAdapter = Eg.Adapter.extend({
 	/**
 	 * @param {String} typeKey
 	 * @param {String} id
-	 * @return {Object} Normalized JSON Object
+	 * @return {Object} Serialized JSON Object
 	 * @protected
 	 */
 	_getRecord: Em.required(),
 
 	/**
 	 * @param {String} typeKey
-	 * @returns {Object[]} Normalized JSON Objects
+	 * @returns {Object[]} Serialized JSON Objects
 	 * @protected
 	 */
 	_getRecords: Em.required(),
@@ -932,11 +932,11 @@ EG.FixtureAdapter = EG.SynchronousAdapter.extend({
 			var val = fixture[name];
 
 			if (meta.kind === EG.Model.HAS_MANY_KEY) {
-				json.links[name] = val.filter(function(id) {
+				json.links[name] = (val || []).filter(function(id) {
 					return (!EG.Model.isTemporaryId(id));
 				});
 			} else {
-				if (val === null || EG.Model.isTemporaryId(val)) {
+				if (Em.isNone(val) || EG.Model.isTemporaryId(val)) {
 					json.links[name] = null;
 				} else {
 					json.links[name] = val;

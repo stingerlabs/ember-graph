@@ -93,11 +93,11 @@ EG.FixtureAdapter = EG.SynchronousAdapter.extend({
 			var val = fixture[name];
 
 			if (meta.kind === EG.Model.HAS_MANY_KEY) {
-				json.links[name] = val.filter(function(id) {
+				json.links[name] = (val || []).filter(function(id) {
 					return (!EG.Model.isTemporaryId(id));
 				});
 			} else {
-				if (val === null || EG.Model.isTemporaryId(val)) {
+				if (Em.isNone(val) || EG.Model.isTemporaryId(val)) {
 					json.links[name] = null;
 				} else {
 					json.links[name] = val;
