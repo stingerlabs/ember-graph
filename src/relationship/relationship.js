@@ -7,7 +7,7 @@ var DELETED_STATE = 'deleted';
  *
  * @class {Relationship}
  */
-Eg.Relationship = Em.Object.extend({
+EG.Relationship = Em.Object.extend({
 
 	/**
 	 * The ID of this relationship. Has no significance and isn't used
@@ -148,7 +148,7 @@ Eg.Relationship = Em.Object.extend({
 	 * @returns {String|undefined}
 	 */
 	otherId: function(record) {
-		Eg.debug.assert(record instanceof Eg.Model);
+		EG.debug.assert(record instanceof EG.Model);
 
 		if (this.get('object1') === record) {
 			var object2 = this.get('object2');
@@ -167,7 +167,7 @@ Eg.Relationship = Em.Object.extend({
 	 * @returns {Model|null}
 	 */
 	otherRecord: function(record) {
-		Eg.debug.assert(record instanceof Eg.Model);
+		EG.debug.assert(record instanceof EG.Model);
 
 		var object1 = this.get('object1');
 		if (object1 === record) {
@@ -201,7 +201,7 @@ Eg.Relationship = Em.Object.extend({
 	}
 });
 
-Eg.Relationship.reopenClass({
+EG.Relationship.reopenClass({
 
 	NEW_STATE: NEW_STATE,
 	SAVED_STATE: SAVED_STATE,
@@ -217,21 +217,21 @@ Eg.Relationship.reopenClass({
 	create: function(properties) {
 		var relationship = this._super();
 
-		Eg.debug.assert('Possible state values are new, deleted or saved.',
+		EG.debug.assert('Possible state values are new, deleted or saved.',
 			properties.state === NEW_STATE || properties.state === DELETED_STATE || properties.state === SAVED_STATE);
-		Eg.debug.assert('The first object must always be a record.', properties.object1 instanceof Eg.Model);
-		Eg.debug.assert('You must include a relationship name for the first object.',
+		EG.debug.assert('The first object must always be a record.', properties.object1 instanceof EG.Model);
+		EG.debug.assert('You must include a relationship name for the first object.',
 			typeof properties.relationship1 === 'string');
-		Eg.debug.assert('The second object must either be a record, or a permanent ID.',
-			properties.object2 instanceof Eg.Model || (typeof properties.object2 === 'string' &&
-			!Eg.String.startsWith(properties.object2, Eg.Model.temporaryIdPrefix)));
-		Eg.debug.assert('You must include a relationship name for the second object.',
+		EG.debug.assert('The second object must either be a record, or a permanent ID.',
+			properties.object2 instanceof EG.Model || (typeof properties.object2 === 'string' &&
+			!EG.String.startsWith(properties.object2, EG.Model.temporaryIdPrefix)));
+		EG.debug.assert('You must include a relationship name for the second object.',
 			typeof properties.relationship1 === 'string' || properties.relationship1 === null);
 		relationship.setProperties(properties);
 
 		relationship.set('type1', properties.object1.typeKey);
 
-		if (properties.object2 instanceof Eg.Model) {
+		if (properties.object2 instanceof EG.Model) {
 			relationship.set('type2', properties.object2.typeKey);
 		} else {
 			relationship.set('type2',
@@ -256,7 +256,7 @@ Eg.Relationship.reopenClass({
 			case DELETED_STATE:
 				return '_deletedRelationships';
 			default:
-				Eg.debug.assert('The given state was invalid.');
+				EG.debug.assert('The given state was invalid.');
 				return '';
 		}
 	}

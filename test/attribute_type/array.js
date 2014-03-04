@@ -1,7 +1,7 @@
 (function() {
 	'use strict';
 
-	var type = Eg.ArrayType.create();
+	var type = EG.ArrayType.create();
 
 	module('Array Attribute Type Test');
 

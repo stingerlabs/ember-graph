@@ -7,7 +7,7 @@
 		setup: function() {
 			store = setupStore({
 				test1: EG.Model.extend({
-					children: Eg.hasMany({
+					children: EG.hasMany({
 						relatedType: 'test2',
 						inverse: 'parent',
 						isRequired: false
@@ -27,7 +27,7 @@
 						isRequired: false
 					}),
 
-					links: Eg.hasMany({
+					links: EG.hasMany({
 						relatedType: 'test1',
 						inverse: null,
 						isRequired: false
@@ -43,7 +43,7 @@
 		var temp1 = store.createRecord('test1');
 		var temp2 = store.createRecord('test2');
 
-		var relationship = Eg.Relationship.create({
+		var relationship = EG.Relationship.create({
 			object1: temp1,
 			relationship1: 'children',
 			object2: temp2,
@@ -66,7 +66,7 @@
 
 		var temp = store.createRecord('test1');
 
-		var relationship = Eg.Relationship.create({
+		var relationship = EG.Relationship.create({
 			object1: temp,
 			relationship1: 'children',
 			object2: 'permanent-id',
@@ -81,7 +81,7 @@
 		expect(1);
 
 		throws(function() {
-			Eg.Relationship.create({
+			EG.Relationship.create({
 				object1: 'foo',
 				relationship1: 'children',
 				object2: 'bar',
@@ -98,10 +98,10 @@
 			var temp = store.createRecord('test1');
 
 			throws(function() {
-				Eg.Relationship.create({
+				EG.Relationship.create({
 					object1: temp,
 					relationship1: 'children',
-					object2: Eg.Model.temporaryIdPrefix + 'foo',
+					object2: EG.Model.temporaryIdPrefix + 'foo',
 					relationship2: 'parent',
 					state: 'new'
 				});
@@ -114,7 +114,7 @@
 
 		var temp = store.createRecord('test1');
 
-		var relationship = Eg.Relationship.create({
+		var relationship = EG.Relationship.create({
 			object1: temp,
 			relationship1: 'children',
 			object2: 'permanent-id',
@@ -131,7 +131,7 @@
 		var temp1 = store._loadRecord('test1', { id: 'temp1_id' });
 		var temp2 = store._loadRecord('test2', { id: 'temp2_id' });
 
-		var relationship = Eg.Relationship.create({
+		var relationship = EG.Relationship.create({
 			object1: temp1,
 			relationship1: 'children',
 			object2: temp2.get('id'),
@@ -148,7 +148,7 @@
 
 		var temp1 = store.createRecord('test1', { id: 'temp1_id' });
 
-		var relationship = Eg.Relationship.create({
+		var relationship = EG.Relationship.create({
 			object1: temp1,
 			relationship1: 'children',
 			object2: 'foo_id',
@@ -165,7 +165,7 @@
 
 		var temp1 = store.createRecord('test1', { id: 'temp1_id' });
 
-		var relationship = Eg.Relationship.create({
+		var relationship = EG.Relationship.create({
 			object1: temp1,
 			relationship1: 'link',
 			object2: 'foo_id',

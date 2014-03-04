@@ -5,7 +5,7 @@ var removeEmpty = function(item) {
 /**
  * @class SynchronousAdapter
  */
-EG.SynchronousAdapter = Eg.Adapter.extend({
+EG.SynchronousAdapter = EG.Adapter.extend({
 	/**
 	 * @param {String} typeKey
 	 * @param {String} id
@@ -46,7 +46,7 @@ EG.SynchronousAdapter = Eg.Adapter.extend({
 	 * @returns {Promise} A promise that resolves to normalized JSON
 	 */
 	createRecord: function(record) {
-		record.set('id', Eg.util.generateGUID());
+		record.set('id', EG.util.generateGUID());
 		this._setRecord(record);
 		// TODO: Must return a payload
 		return Em.RSVP.Promise.resolve({});

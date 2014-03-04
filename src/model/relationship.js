@@ -1,13 +1,13 @@
-var HAS_ONE_KEY = Eg.Model.HAS_ONE_KEY = 'hasOne';
-var HAS_MANY_KEY = Eg.Model.HAS_MANY_KEY = 'hasMany';
+var HAS_ONE_KEY = EG.Model.HAS_ONE_KEY = 'hasOne';
+var HAS_MANY_KEY = EG.Model.HAS_MANY_KEY = 'hasMany';
 
-var NEW_STATE = Eg.Relationship.NEW_STATE;
-var SAVED_STATE = Eg.Relationship.SAVED_STATE;
-var DELETED_STATE = Eg.Relationship.DELETED_STATE;
+var NEW_STATE = EG.Relationship.NEW_STATE;
+var SAVED_STATE = EG.Relationship.SAVED_STATE;
+var DELETED_STATE = EG.Relationship.DELETED_STATE;
 
 var disallowedRelationshipNames = new Em.Set(['id', 'type', 'content']);
 
-Eg.hasMany = function(options) {
+EG.hasMany = function(options) {
 	return {
 		isRelationship: true,
 		kind: HAS_MANY_KEY,
@@ -15,7 +15,7 @@ Eg.hasMany = function(options) {
 	};
 };
 
-Eg.hasOne = function(options) {
+EG.hasOne = function(options) {
 	return {
 		isRelationship: true,
 		kind: HAS_ONE_KEY,
@@ -58,7 +58,7 @@ var createRelationship = function(kind, options) {
 	return Em.computed(relationship).property('_serverRelationships', '_clientRelationships').meta(meta).readOnly();
 };
 
-Eg.Model.reopenClass({
+EG.Model.reopenClass({
 
 	/**
 	 * Goes through the subclass and declares an additional property for
@@ -107,9 +107,9 @@ Eg.Model.reopenClass({
 
 		this.eachComputedProperty(function(name, meta) {
 			if (meta.isRelationship) {
-				Eg.debug.assert('The ' + name + ' cannot be used as a relationship name.',
+				EG.debug.assert('The ' + name + ' cannot be used as a relationship name.',
 					!disallowedRelationshipNames.contains(name));
-				Eg.debug.assert('Relationship names must start with a lowercase letter.', name[0].match(/[a-z]/g));
+				EG.debug.assert('Relationship names must start with a lowercase letter.', name[0].match(/[a-z]/g));
 
 				relationships.addObject(name);
 			}
@@ -182,7 +182,7 @@ Eg.Model.reopenClass({
 	}
 });
 
-Eg.Model.reopen({
+EG.Model.reopen({
 
 	/**
 	 * Relationships that have been saved to the server
@@ -219,8 +219,8 @@ Eg.Model.reopen({
 	 * @private
 	 */
 	_hasOneValue: function(relationship, server) {
-		var serverRelationships = Eg.util.values(this.get('_serverRelationships'));
-		var otherRelationships = Eg.util.values(this.get((server ? '_deleted' : '_client') + 'Relationships'));
+		var serverRelationships = EG.util.values(this.get('_serverRelationships'));
+		var otherRelationships = EG.util.values(this.get((server ? '_deleted' : '_client') + 'Relationships'));
 		var current = serverRelationships.concat(otherRelationships);
 
 		for (var i = 0; i < current.length; i = i + 1) {
@@ -242,8 +242,8 @@ Eg.Model.reopen({
 	 * @private
 	 */
 	_hasManyValue: function(relationship, server) {
-		var serverRelationships = Eg.util.values(this.get('_serverRelationships'));
-		var otherRelationships = Eg.util.values(this.get((server ? '_deleted' : '_client') + 'Relationships'));
+		var serverRelationships = EG.util.values(this.get('_serverRelationships'));
+		var otherRelationships = EG.util.values(this.get((server ? '_deleted' : '_client') + 'Relationships'));
 		var current = serverRelationships.concat(otherRelationships);
 
 		var found = [];
@@ -275,9 +275,9 @@ Eg.Model.reopen({
 	 * @private
 	 */
 	_getAllRelationships: function() {
-		var server = Eg.util.values(this.get('_serverRelationships'));
-		var client = Eg.util.values(this.get('_clientRelationships'));
-		var deleted = Eg.util.values(this.get('_deletedRelationships'));
+		var server = EG.util.values(this.get('_serverRelationships'));
+		var client = EG.util.values(this.get('_clientRelationships'));
+		var deleted = EG.util.values(this.get('_deletedRelationships'));
 
 		return server.concat(client.concat(deleted));
 	},
@@ -385,7 +385,7 @@ Eg.Model.reopen({
 				}, this);
 			} else {
 				// There should only be one relationship in there
-				Eg.debug.assert('An unknown relationship error occurred.', client.length <= 1);
+				EG.debug.assert('An unknown relationship error occurred.', client.length <= 1);
 
 				var conflict = this._hasOneConflict(name, value);
 
@@ -500,7 +500,7 @@ Eg.Model.reopen({
 				return (state === SAVED_STATE || state === NEW_STATE);
 			});
 
-			Eg.debug.assert('An unknown relationship error occurred', relationships.length <= 1);
+			EG.debug.assert('An unknown relationship error occurred', relationships.length <= 1);
 
 			return (relationships.length > 0 ? relationships[0] : null);
 		}
@@ -570,7 +570,7 @@ Eg.Model.reopen({
 		var alerts = [];
 		var store = this.get('store');
 		var meta = this.constructor.metaForRelationship(relationship);
-		Eg.debug.assert('Cannot modify a read-only relationship', meta.readOnly === false);
+		EG.debug.assert('Cannot modify a read-only relationship', meta.readOnly === false);
 		if (meta.readOnly) {
 			return;
 		}
@@ -616,7 +616,7 @@ Eg.Model.reopen({
 	 */
 	removeFromRelationship: function(relationship, id) {
 		var meta = this.constructor.metaForRelationship(relationship);
-		Eg.debug.assert('Cannot modify a read-only relationship', meta.readOnly === false);
+		EG.debug.assert('Cannot modify a read-only relationship', meta.readOnly === false);
 		if (meta.readOnly) {
 			return;
 		}
@@ -648,7 +648,7 @@ Eg.Model.reopen({
 	setHasOneRelationship: function(relationship, id) {
 		var alerts = [];
 		var meta = this.constructor.metaForRelationship(relationship);
-		Eg.debug.assert('Cannot modify a read-only relationship', meta.readOnly === false);
+		EG.debug.assert('Cannot modify a read-only relationship', meta.readOnly === false);
 		if (meta.readOnly) {
 			return;
 		}
@@ -707,7 +707,7 @@ Eg.Model.reopen({
 	clearHasOneRelationship: function(relationship, suppressNotifications) {
 		var alerts = [];
 		var meta = this.constructor.metaForRelationship(relationship);
-		Eg.debug.assert('Cannot modify a read-only relationship', meta.readOnly === false);
+		EG.debug.assert('Cannot modify a read-only relationship', meta.readOnly === false);
 		if (meta.readOnly) {
 			return [];
 		}
@@ -796,7 +796,7 @@ Eg.Model.reopen({
 	 * @returns {Object} The objects to alert of changes, along with the corresponding property
 	 */
 	_connectRelationship: function(relationship) {
-		var hash = Eg.Relationship.stateToHash(relationship.get('state'));
+		var hash = EG.Relationship.stateToHash(relationship.get('state'));
 		this.set(hash + '.' + relationship.get('id'), relationship);
 		return { record: this, property: hash };
 	},
@@ -809,7 +809,7 @@ Eg.Model.reopen({
 	 * @returns {Object} The object to alert of changes, along with the corresponding property
 	 */
 	_disconnectRelationship: function(relationship) {
-		var hash = Eg.Relationship.stateToHash(relationship.get('state'));
+		var hash = EG.Relationship.stateToHash(relationship.get('state'));
 		delete this.get(hash)[relationship.get('id')];
 		return { record: this, property: hash };
 	}

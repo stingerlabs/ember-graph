@@ -1,4 +1,4 @@
-Eg.Store.reopen({
+EG.Store.reopen({
 
 	/**
 	 * A boolean for whether or not to reload dirty records. If this is
@@ -68,7 +68,7 @@ Eg.Store.reopen({
 	 * @returns {Boolean}
 	 */
 	_hasQueuedRelationships: function(typeKey, id) {
-		var queued = Eg.util.values(this.get('_queuedRelationships'));
+		var queued = EG.util.values(this.get('_queuedRelationships'));
 
 		for (var i = 0; i < queued.length; i = i + 1) {
 			if (queued[i].get('type2') === typeKey && queued[i].get('object2') === id) {
@@ -111,7 +111,7 @@ Eg.Store.reopen({
 	 * @private
 	 */
 	_queuedRelationshipsFor: function(typeKey, id) {
-		return Eg.util.values(this.get('_queuedRelationships')).filter(function(relationship) {
+		return EG.util.values(this.get('_queuedRelationships')).filter(function(relationship) {
 			return (relationship.get('type2') === typeKey && relationship.get('object2') === id);
 		});
 	},
@@ -161,7 +161,7 @@ Eg.Store.reopen({
 			return alerts;
 		}
 
-		var relationship = Eg.Relationship.create({
+		var relationship = EG.Relationship.create({
 			object1: record1,
 			relationship1: relationship1,
 			object2: (record2 === null ? id2 : record2),
@@ -202,7 +202,7 @@ Eg.Store.reopen({
 		var object2 = relationship.get('object2');
 
 		alerts.push(object1._disconnectRelationship(relationship));
-		if (object2 instanceof Eg.Model) {
+		if (object2 instanceof EG.Model) {
 			alerts.push(object2._disconnectRelationship(relationship));
 		} else {
 			delete this.get('_queuedRelationships')[id];
@@ -231,8 +231,8 @@ Eg.Store.reopen({
 		var object1 = relationship.get('object1');
 		var object2 = relationship.get('object2');
 
-		var oldHash = Eg.Relationship.stateToHash(relationship.get('state'));
-		var newHash = Eg.Relationship.stateToHash(state);
+		var oldHash = EG.Relationship.stateToHash(relationship.get('state'));
+		var newHash = EG.Relationship.stateToHash(state);
 
 		relationship.set('state', state);
 
@@ -241,7 +241,7 @@ Eg.Store.reopen({
 		alerts.push({ record: object1, property: oldHash });
 		alerts.push({ record: object1, property: newHash });
 
-		if (object2 instanceof Eg.Model) {
+		if (object2 instanceof EG.Model) {
 			object2.set(newHash + '.' + id, object2.get(oldHash + '.' + id));
 			delete object2.get(oldHash)[id];
 			alerts.push({ record: object2, property: oldHash });
@@ -260,7 +260,7 @@ Eg.Store.reopen({
 	 * @returns {Boolean}
 	 */
 	_relationshipsForRecord: function(typeKey, name, id) {
-		return Eg.util.values(this.get('_relationships')).filter(function(relationship) {
+		return EG.util.values(this.get('_relationships')).filter(function(relationship) {
 			if (relationship.get('type1') === typeKey && relationship.get('id') === id &&
 				relationship.get('relationship1') === name) {
 				return true;

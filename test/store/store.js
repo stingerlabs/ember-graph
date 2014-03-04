@@ -5,10 +5,10 @@
 
 	var store, records;
 
-	var Adapter = Eg.Adapter.extend({
+	var Adapter = EG.Adapter.extend({
 
 		createRecord: function(record) {
-			var id = Eg.util.generateGUID();
+			var id = EG.util.generateGUID();
 			return Em.RSVP.Promise.resolve({ id: id, storeTest: [{ id: id }] });
 		},
 

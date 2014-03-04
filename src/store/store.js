@@ -4,7 +4,7 @@
  *
  * @type {Store}
  */
-Eg.Store = Em.Object.extend({
+EG.Store = Em.Object.extend({
 
 	/**
 	 * The adapter to use if an application adapter is not found.
@@ -135,7 +135,7 @@ Eg.Store = Em.Object.extend({
 
 		var record = this.modelForType(typeKey)._create();
 		record.set('store', this);
-		record.set('id', Eg.Model.temporaryIdPrefix + Eg.util.generateGUID());
+		record.set('id', EG.Model.temporaryIdPrefix + EG.util.generateGUID());
 
 		this._setRecord(typeKey, record);
 
@@ -255,7 +255,7 @@ Eg.Store = Em.Object.extend({
 			}.bind(this));
 		}
 
-		return Eg.PromiseObject.create({ promise: promise });
+		return EG.PromiseObject.create({ promise: promise });
 	},
 
 	/**
@@ -292,7 +292,7 @@ Eg.Store = Em.Object.extend({
 			}.bind(this));
 		}
 
-		return Eg.PromiseArray.create({ promise: promise });
+		return EG.PromiseArray.create({ promise: promise });
 	},
 
 	/**
@@ -308,7 +308,7 @@ Eg.Store = Em.Object.extend({
 			return this._recordsForType(type);
 		}.bind(this));
 
-		return Eg.PromiseArray.create({ promise: promise });
+		return EG.PromiseArray.create({ promise: promise });
 	},
 
 	/**
@@ -330,7 +330,7 @@ Eg.Store = Em.Object.extend({
 			}, this);
 		}.bind(this));
 
-		return Eg.PromiseArray.create({ promise: promise });
+		return EG.PromiseArray.create({ promise: promise });
 	},
 
 	/**
@@ -400,7 +400,7 @@ Eg.Store = Em.Object.extend({
 	 * @returns {Promise} The reloaded record
 	 */
 	reloadRecord: function(record) {
-		Eg.debug.assert('You can\'t reload record `' + record.typeKey + ':' +
+		EG.debug.assert('You can\'t reload record `' + record.typeKey + ':' +
 			record.get('id') + '` while it\'s dirty.', !record.get('isDirty'));
 		record.set('isReloading', true);
 

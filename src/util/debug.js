@@ -1,12 +1,12 @@
-Eg.debug = function(fn) {
+EG.debug = function(fn) {
 	fn();
 };
 
-Eg.debug(function() {
+EG.debug(function() {
 	window.DEBUG_MODE = true;
 });
 
-Eg.debug.assert = function(message, test) {
+EG.debug.assert = function(message, test) {
 	if (typeof message !== 'string') {
 		test = message;
 		message = 'Assertion failed.';
@@ -21,6 +21,6 @@ Eg.debug.assert = function(message, test) {
 	}
 };
 
-Eg.debug.warn = function(message) {
+EG.debug.warn = function(message) {
 	console.warn(message);
 };

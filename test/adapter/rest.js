@@ -9,13 +9,13 @@
 			store = setupStore({
 				foo: EG.Model.extend(),
 				test: EG.Model.extend({
-					string: Eg.attr({ type: 'string' }),
-					number: Eg.attr({ type: 'number', defaultValue: 0 }),
+					string: EG.attr({ type: 'string' }),
+					number: EG.attr({ type: 'number', defaultValue: 0 }),
 
 					hasONe1: EG.hasOne({ relatedType: 'foo', inverse: null }),
 					hasONe2: EG.hasOne({
 						relatedType: 'foo', inverse: null, isRequired: false, defaultValue: '123' }),
-					hasMany: Eg.hasMany({ relatedType: 'foo', inverse: null, isRequired: false })
+					hasMany: EG.hasMany({ relatedType: 'foo', inverse: null, isRequired: false })
 				})
 			});
 

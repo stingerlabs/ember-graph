@@ -10,13 +10,13 @@
 					hasOneNull: EG.hasOne({ relatedType: 'test3', inverse: null }),
 					hasOneHasOne: EG.hasOne({ relatedType: 'test2', inverse: 'hasOne' }),
 					hasOneHasMany: EG.hasOne({ relatedType: 'test2', inverse: 'hasManyHasOne' }),
-					hasMany: Eg.hasMany({ relatedType: 'test2', inverse: 'hasManyHasMany' })
+					hasMany: EG.hasMany({ relatedType: 'test2', inverse: 'hasManyHasMany' })
 				}),
 
 				test2: EG.Model.extend({
-					hasManyNull: Eg.hasMany({ relatedType: 'test3', inverse: null }),
-					hasManyHasOne: Eg.hasMany({ relatedType: 'test1', inverse: 'hasOneHasMany' }),
-					hasManyHasMany: Eg.hasMany({ relatedType: 'test1', inverse: 'hasMany' }),
+					hasManyNull: EG.hasMany({ relatedType: 'test3', inverse: null }),
+					hasManyHasOne: EG.hasMany({ relatedType: 'test1', inverse: 'hasOneHasMany' }),
+					hasManyHasMany: EG.hasMany({ relatedType: 'test1', inverse: 'hasMany' }),
 					hasOne: EG.hasOne({ relatedType: 'test1', inverse: 'hasOneHasOne' })
 				}),
 

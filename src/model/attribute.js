@@ -11,7 +11,7 @@ var disallowedAttributeNames = new Em.Set(['id', 'type', 'content']);
  * @param options
  * @returns {Em.ComputedProperty}
  */
-Eg.attr = function(options) {
+EG.attr = function(options) {
 	var meta = {
 		isAttribute: true,
 		type: options.type,
@@ -29,16 +29,16 @@ Eg.attr = function(options) {
 		var client = this.get('_clientAttributes.' + key);
 		var current = (client === undefined ? server : client);
 
-		Eg.debug(function() {
+		EG.debug(function() {
 			if (arguments.length > 1 && value === undefined) {
-				Eg.debug.warn('`undefined` is not a valid property value.');
+				EG.debug.warn('`undefined` is not a valid property value.');
 			}
 		});
 
 		if (value !== undefined) {
 			var isValid = meta.isValid || this.get('store').attributeTypeFor(meta.type).isValid;
 			if (!isValid(value)) {
-				Eg.debug.warn('The value \'' + value + '\' wasn\'t valid for the \'' + key + '\' property.');
+				EG.debug.warn('The value \'' + value + '\' wasn\'t valid for the \'' + key + '\' property.');
 				return current;
 			}
 
@@ -63,7 +63,7 @@ Eg.attr = function(options) {
 /**
  * @class Model
  */
-Eg.Model.reopenClass({
+EG.Model.reopenClass({
 
 	/**
 	 * @static
@@ -74,7 +74,7 @@ Eg.Model.reopenClass({
 
 		this.eachComputedProperty(function(name, meta) {
 			if (meta.isAttribute) {
-				Eg.debug.assert('The ' + name + ' cannot be used as an attribute name.',
+				EG.debug.assert('The ' + name + ' cannot be used as an attribute name.',
 					!disallowedAttributeNames.contains(name));
 
 				attributes.addObject(name);
@@ -115,7 +115,7 @@ Eg.Model.reopenClass({
 	}
 });
 
-Eg.Model.reopen({
+EG.Model.reopen({
 
 	/**
 	 * Represents the latest set of properties from the server. The only way these
@@ -179,7 +179,7 @@ Eg.Model.reopen({
 	 */
 	_loadAttributes: function(json) {
 		this.constructor.eachAttribute(function(name, meta) {
-			Eg.debug.assert('Your JSON is missing the \'' + name + '\' property.',
+			EG.debug.assert('Your JSON is missing the \'' + name + '\' property.',
 				!meta.isRequired || json.hasOwnProperty(name));
 
 			var value = (json.hasOwnProperty(name) ? json[name] : meta.defaultValue);
@@ -189,7 +189,7 @@ Eg.Model.reopen({
 			if (isValid(value)) {
 				this.set('_serverAttributes.' + name, value);
 			} else {
-				Eg.debug.assert('Your value for the \'' + name + '\' property is inValid.');
+				EG.debug.assert('Your value for the \'' + name + '\' property is inValid.');
 				this.set('_serverAttributes.' + name, meta.defaultValue);
 			}
 		}, this);

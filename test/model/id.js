@@ -19,7 +19,7 @@
 
 		var model = store.createRecord('test', {});
 
-		ok(Eg.String.startsWith(model.get('id'), Eg.Model.temporaryIdPrefix));
+		ok(EG.String.startsWith(model.get('id'), EG.Model.temporaryIdPrefix));
 	});
 
 	test('A permanent ID cannot be changed', function() {

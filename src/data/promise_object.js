@@ -1,9 +1,9 @@
 /**
  * @class {PromiseObject}
  */
-Eg.PromiseObject = Em.ObjectProxy.extend(Em.PromiseProxyMixin);
+EG.PromiseObject = Em.ObjectProxy.extend(Em.PromiseProxyMixin);
 
 /**
  * @class {PromiseArray}
  */
-Eg.PromiseArray = Em.ArrayProxy.extend(Em.PromiseProxyMixin);
+EG.PromiseArray = Em.ArrayProxy.extend(Em.PromiseProxyMixin);

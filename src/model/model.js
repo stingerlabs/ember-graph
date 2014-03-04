@@ -5,7 +5,7 @@
  *
  * @class {Model}
  */
-Eg.Model = Em.Object.extend(Em.Evented, {
+EG.Model = Em.Object.extend(Em.Evented, {
 
 	/**
 	 * Should be overridden in all subclasses with a name for this
@@ -38,7 +38,7 @@ Eg.Model = Em.Object.extend(Em.Evented, {
 			if (id === null) {
 				this.set('_id', value);
 				return value;
-			} else if (Eg.String.startsWith(id, prefix) && !Eg.String.startsWith(value, prefix)) {
+			} else if (EG.String.startsWith(id, prefix) && !EG.String.startsWith(value, prefix)) {
 				this.set('_id', value);
 				return value;
 			} else {
@@ -111,7 +111,7 @@ Eg.Model = Em.Object.extend(Em.Evented, {
 	 * @type {Boolean}
 	 */
 	isNew: Em.computed(function() {
-		return Eg.String.startsWith(this.get('_id'), this.constructor.temporaryIdPrefix);
+		return EG.String.startsWith(this.get('_id'), this.constructor.temporaryIdPrefix);
 	}).property('_id'),
 
 	/**
@@ -141,7 +141,7 @@ Eg.Model = Em.Object.extend(Em.Evented, {
 	 */
 	_loadData: function(json) {
 		json = json || {};
-		Eg.debug.assert('The record `' + this.typeKey + ':' + this.get('id') + '` was attempted to be reloaded ' +
+		EG.debug.assert('The record `' + this.typeKey + ':' + this.get('id') + '` was attempted to be reloaded ' +
 			'while dirty with `reloadDirty` disabled.', !this.get('isDirty') || this.get('store.reloadDirty'));
 
 		this._loadAttributes(json);
@@ -170,7 +170,7 @@ Eg.Model = Em.Object.extend(Em.Evented, {
 	}
 });
 
-Eg.Model.reopenClass({
+EG.Model.reopenClass({
 
 	/**
 	 * The prefix added to generated IDs to show that the prefix wasn't given
@@ -186,14 +186,14 @@ Eg.Model.reopenClass({
 	 * @returns {Boolean}
 	 */
 	isTemporaryId: function(id) {
-		return Eg.String.startsWith(id, this.temporaryIdPrefix);
+		return EG.String.startsWith(id, this.temporaryIdPrefix);
 	},
 
 	create: function() {
-		Eg.debug.assert('You can\'t create a record directly. Use the store.');
+		EG.debug.assert('You can\'t create a record directly. Use the store.');
 	},
 
-	_create: Eg.Model.create,
+	_create: EG.Model.create,
 
 	extend: function() {
 		var args = Array.prototype.slice.call(arguments, 0);

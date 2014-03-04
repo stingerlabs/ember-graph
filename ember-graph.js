@@ -1,6 +1,6 @@
 (function() {
 
-window.EmberGraph = window.Eg = window.EG = Em.Namespace.create({
+window.EmberGraph = window.EG = Em.Namespace.create({
 	// Neuter will take care of inserting the version number from bower.json
 	VERSION: '0.1.0'
 });
@@ -57,7 +57,7 @@ if (Em) {
 
 (function() {
 
-Eg.util = {
+EG.util = {
 	generateGUID: function() {
 		return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
 			var r = Math.random()*16|0; // jshint ignore:line
@@ -96,7 +96,7 @@ Em.Set.reopen({
 
 (function() {
 
-Eg.String = {
+EG.String = {
 	startsWith: function(string, prefix) {
 		return string.indexOf(prefix) === 0;
 	},
@@ -116,19 +116,19 @@ Eg.String = {
 
 if (Em.EXTEND_PROTOTYPES === true || Em.EXTEND_PROTOTYPES.String) {
 	String.prototype.startsWith = String.prototype.startsWith || function(prefix) {
-		return Eg.String.startsWith(this, prefix);
+		return EG.String.startsWith(this, prefix);
 	};
 
 	String.prototype.endsWith = String.prototype.endsWith || function(suffix) {
-		return Eg.String.endsWith(this, suffix);
+		return EG.String.endsWith(this, suffix);
 	};
 
 	String.prototype.capitalize = String.prototype.capitalize || function() {
-		return Eg.String.capitalize(this);
+		return EG.String.capitalize(this);
 	};
 
 	String.prototype.decapitalize = String.prototype.decapitalize || function() {
-		return Eg.String.decapitalize(this);
+		return EG.String.decapitalize(this);
 	};
 }
 
@@ -232,21 +232,21 @@ var apply = function(str, rules) {
 	return str;
 };
 
-Eg.String.pluralize = function(str) {
+EG.String.pluralize = function(str) {
 	return apply(str, pluralRules);
 };
 
-Eg.String.singularize = function(str) {
+EG.String.singularize = function(str) {
 	return apply(str, singularRules);
 };
 
 if (Em.EXTEND_PROTOTYPES === true || Em.EXTEND_PROTOTYPES.String) {
 	String.prototype.pluralize = String.prototype.pluralize || function() {
-		return Eg.String.pluralize(this);
+		return EG.String.pluralize(this);
 	};
 
 	String.prototype.singularize = String.prototype.singularize || function() {
-		return Eg.String.singularize(this);
+		return EG.String.singularize(this);
 	};
 }
 
@@ -254,15 +254,15 @@ if (Em.EXTEND_PROTOTYPES === true || Em.EXTEND_PROTOTYPES.String) {
 
 (function() {
 
-Eg.debug = function(fn) {
+EG.debug = function(fn) {
 	fn();
 };
 
-Eg.debug(function() {
+EG.debug(function() {
 	window.DEBUG_MODE = true;
 });
 
-Eg.debug.assert = function(message, test) {
+EG.debug.assert = function(message, test) {
 	if (typeof message !== 'string') {
 		test = message;
 		message = 'Assertion failed.';
@@ -277,7 +277,7 @@ Eg.debug.assert = function(message, test) {
 	}
 };
 
-Eg.debug.warn = function(message) {
+EG.debug.warn = function(message) {
 	console.warn(message);
 };
 
@@ -726,7 +726,7 @@ var removeEmpty = function(item) {
 /**
  * @class SynchronousAdapter
  */
-EG.SynchronousAdapter = Eg.Adapter.extend({
+EG.SynchronousAdapter = EG.Adapter.extend({
 	/**
 	 * @param {String} typeKey
 	 * @param {String} id
@@ -767,7 +767,7 @@ EG.SynchronousAdapter = Eg.Adapter.extend({
 	 * @returns {Promise} A promise that resolves to normalized JSON
 	 */
 	createRecord: function(record) {
-		record.set('id', Eg.util.generateGUID());
+		record.set('id', EG.util.generateGUID());
 		this._setRecord(record);
 		// TODO: Must return a payload
 		return Em.RSVP.Promise.resolve({});
@@ -1316,7 +1316,7 @@ EG.RESTAdapter = EG.Adapter.extend({
  *
  * @type {Store}
  */
-Eg.Store = Em.Object.extend({
+EG.Store = Em.Object.extend({
 
 	/**
 	 * The adapter to use if an application adapter is not found.
@@ -1447,7 +1447,7 @@ Eg.Store = Em.Object.extend({
 
 		var record = this.modelForType(typeKey)._create();
 		record.set('store', this);
-		record.set('id', Eg.Model.temporaryIdPrefix + Eg.util.generateGUID());
+		record.set('id', EG.Model.temporaryIdPrefix + EG.util.generateGUID());
 
 		this._setRecord(typeKey, record);
 
@@ -1567,7 +1567,7 @@ Eg.Store = Em.Object.extend({
 			}.bind(this));
 		}
 
-		return Eg.PromiseObject.create({ promise: promise });
+		return EG.PromiseObject.create({ promise: promise });
 	},
 
 	/**
@@ -1604,7 +1604,7 @@ Eg.Store = Em.Object.extend({
 			}.bind(this));
 		}
 
-		return Eg.PromiseArray.create({ promise: promise });
+		return EG.PromiseArray.create({ promise: promise });
 	},
 
 	/**
@@ -1620,7 +1620,7 @@ Eg.Store = Em.Object.extend({
 			return this._recordsForType(type);
 		}.bind(this));
 
-		return Eg.PromiseArray.create({ promise: promise });
+		return EG.PromiseArray.create({ promise: promise });
 	},
 
 	/**
@@ -1642,7 +1642,7 @@ Eg.Store = Em.Object.extend({
 			}, this);
 		}.bind(this));
 
-		return Eg.PromiseArray.create({ promise: promise });
+		return EG.PromiseArray.create({ promise: promise });
 	},
 
 	/**
@@ -1712,7 +1712,7 @@ Eg.Store = Em.Object.extend({
 	 * @returns {Promise} The reloaded record
 	 */
 	reloadRecord: function(record) {
-		Eg.debug.assert('You can\'t reload record `' + record.typeKey + ':' +
+		EG.debug.assert('You can\'t reload record `' + record.typeKey + ':' +
 			record.get('id') + '` while it\'s dirty.', !record.get('isDirty'));
 		record.set('isReloading', true);
 
@@ -1764,7 +1764,7 @@ Eg.Store = Em.Object.extend({
 
 (function() {
 
-Eg.Store.reopen({
+EG.Store.reopen({
 
 	/**
 	 * A boolean for whether or not to reload dirty records. If this is
@@ -1834,7 +1834,7 @@ Eg.Store.reopen({
 	 * @returns {Boolean}
 	 */
 	_hasQueuedRelationships: function(typeKey, id) {
-		var queued = Eg.util.values(this.get('_queuedRelationships'));
+		var queued = EG.util.values(this.get('_queuedRelationships'));
 
 		for (var i = 0; i < queued.length; i = i + 1) {
 			if (queued[i].get('type2') === typeKey && queued[i].get('object2') === id) {
@@ -1877,7 +1877,7 @@ Eg.Store.reopen({
 	 * @private
 	 */
 	_queuedRelationshipsFor: function(typeKey, id) {
-		return Eg.util.values(this.get('_queuedRelationships')).filter(function(relationship) {
+		return EG.util.values(this.get('_queuedRelationships')).filter(function(relationship) {
 			return (relationship.get('type2') === typeKey && relationship.get('object2') === id);
 		});
 	},
@@ -1927,7 +1927,7 @@ Eg.Store.reopen({
 			return alerts;
 		}
 
-		var relationship = Eg.Relationship.create({
+		var relationship = EG.Relationship.create({
 			object1: record1,
 			relationship1: relationship1,
 			object2: (record2 === null ? id2 : record2),
@@ -1968,7 +1968,7 @@ Eg.Store.reopen({
 		var object2 = relationship.get('object2');
 
 		alerts.push(object1._disconnectRelationship(relationship));
-		if (object2 instanceof Eg.Model) {
+		if (object2 instanceof EG.Model) {
 			alerts.push(object2._disconnectRelationship(relationship));
 		} else {
 			delete this.get('_queuedRelationships')[id];
@@ -1997,8 +1997,8 @@ Eg.Store.reopen({
 		var object1 = relationship.get('object1');
 		var object2 = relationship.get('object2');
 
-		var oldHash = Eg.Relationship.stateToHash(relationship.get('state'));
-		var newHash = Eg.Relationship.stateToHash(state);
+		var oldHash = EG.Relationship.stateToHash(relationship.get('state'));
+		var newHash = EG.Relationship.stateToHash(state);
 
 		relationship.set('state', state);
 
@@ -2007,7 +2007,7 @@ Eg.Store.reopen({
 		alerts.push({ record: object1, property: oldHash });
 		alerts.push({ record: object1, property: newHash });
 
-		if (object2 instanceof Eg.Model) {
+		if (object2 instanceof EG.Model) {
 			object2.set(newHash + '.' + id, object2.get(oldHash + '.' + id));
 			delete object2.get(oldHash)[id];
 			alerts.push({ record: object2, property: oldHash });
@@ -2026,7 +2026,7 @@ Eg.Store.reopen({
 	 * @returns {Boolean}
 	 */
 	_relationshipsForRecord: function(typeKey, name, id) {
-		return Eg.util.values(this.get('_relationships')).filter(function(relationship) {
+		return EG.util.values(this.get('_relationships')).filter(function(relationship) {
 			if (relationship.get('type1') === typeKey && relationship.get('id') === id &&
 				relationship.get('relationship1') === name) {
 				return true;
@@ -2057,12 +2057,12 @@ Eg.Store.reopen({
 /**
  * @class {PromiseObject}
  */
-Eg.PromiseObject = Em.ObjectProxy.extend(Em.PromiseProxyMixin);
+EG.PromiseObject = Em.ObjectProxy.extend(Em.PromiseProxyMixin);
 
 /**
  * @class {PromiseArray}
  */
-Eg.PromiseArray = Em.ArrayProxy.extend(Em.PromiseProxyMixin);
+EG.PromiseArray = Em.ArrayProxy.extend(Em.PromiseProxyMixin);
 
 })();
 
@@ -2077,7 +2077,7 @@ var DELETED_STATE = 'deleted';
  *
  * @class {Relationship}
  */
-Eg.Relationship = Em.Object.extend({
+EG.Relationship = Em.Object.extend({
 
 	/**
 	 * The ID of this relationship. Has no significance and isn't used
@@ -2218,7 +2218,7 @@ Eg.Relationship = Em.Object.extend({
 	 * @returns {String|undefined}
 	 */
 	otherId: function(record) {
-		Eg.debug.assert(record instanceof Eg.Model);
+		EG.debug.assert(record instanceof EG.Model);
 
 		if (this.get('object1') === record) {
 			var object2 = this.get('object2');
@@ -2237,7 +2237,7 @@ Eg.Relationship = Em.Object.extend({
 	 * @returns {Model|null}
 	 */
 	otherRecord: function(record) {
-		Eg.debug.assert(record instanceof Eg.Model);
+		EG.debug.assert(record instanceof EG.Model);
 
 		var object1 = this.get('object1');
 		if (object1 === record) {
@@ -2271,7 +2271,7 @@ Eg.Relationship = Em.Object.extend({
 	}
 });
 
-Eg.Relationship.reopenClass({
+EG.Relationship.reopenClass({
 
 	NEW_STATE: NEW_STATE,
 	SAVED_STATE: SAVED_STATE,
@@ -2287,21 +2287,21 @@ Eg.Relationship.reopenClass({
 	create: function(properties) {
 		var relationship = this._super();
 
-		Eg.debug.assert('Possible state values are new, deleted or saved.',
+		EG.debug.assert('Possible state values are new, deleted or saved.',
 			properties.state === NEW_STATE || properties.state === DELETED_STATE || properties.state === SAVED_STATE);
-		Eg.debug.assert('The first object must always be a record.', properties.object1 instanceof Eg.Model);
-		Eg.debug.assert('You must include a relationship name for the first object.',
+		EG.debug.assert('The first object must always be a record.', properties.object1 instanceof EG.Model);
+		EG.debug.assert('You must include a relationship name for the first object.',
 			typeof properties.relationship1 === 'string');
-		Eg.debug.assert('The second object must either be a record, or a permanent ID.',
-			properties.object2 instanceof Eg.Model || (typeof properties.object2 === 'string' &&
-			!Eg.String.startsWith(properties.object2, Eg.Model.temporaryIdPrefix)));
-		Eg.debug.assert('You must include a relationship name for the second object.',
+		EG.debug.assert('The second object must either be a record, or a permanent ID.',
+			properties.object2 instanceof EG.Model || (typeof properties.object2 === 'string' &&
+			!EG.String.startsWith(properties.object2, EG.Model.temporaryIdPrefix)));
+		EG.debug.assert('You must include a relationship name for the second object.',
 			typeof properties.relationship1 === 'string' || properties.relationship1 === null);
 		relationship.setProperties(properties);
 
 		relationship.set('type1', properties.object1.typeKey);
 
-		if (properties.object2 instanceof Eg.Model) {
+		if (properties.object2 instanceof EG.Model) {
 			relationship.set('type2', properties.object2.typeKey);
 		} else {
 			relationship.set('type2',
@@ -2326,7 +2326,7 @@ Eg.Relationship.reopenClass({
 			case DELETED_STATE:
 				return '_deletedRelationships';
 			default:
-				Eg.debug.assert('The given state was invalid.');
+				EG.debug.assert('The given state was invalid.');
 				return '';
 		}
 	}
@@ -2719,7 +2719,7 @@ EG.StringType = EG.AttributeType.extend({
  *
  * @class {Model}
  */
-Eg.Model = Em.Object.extend(Em.Evented, {
+EG.Model = Em.Object.extend(Em.Evented, {
 
 	/**
 	 * Should be overridden in all subclasses with a name for this
@@ -2752,7 +2752,7 @@ Eg.Model = Em.Object.extend(Em.Evented, {
 			if (id === null) {
 				this.set('_id', value);
 				return value;
-			} else if (Eg.String.startsWith(id, prefix) && !Eg.String.startsWith(value, prefix)) {
+			} else if (EG.String.startsWith(id, prefix) && !EG.String.startsWith(value, prefix)) {
 				this.set('_id', value);
 				return value;
 			} else {
@@ -2825,7 +2825,7 @@ Eg.Model = Em.Object.extend(Em.Evented, {
 	 * @type {Boolean}
 	 */
 	isNew: Em.computed(function() {
-		return Eg.String.startsWith(this.get('_id'), this.constructor.temporaryIdPrefix);
+		return EG.String.startsWith(this.get('_id'), this.constructor.temporaryIdPrefix);
 	}).property('_id'),
 
 	/**
@@ -2855,7 +2855,7 @@ Eg.Model = Em.Object.extend(Em.Evented, {
 	 */
 	_loadData: function(json) {
 		json = json || {};
-		Eg.debug.assert('The record `' + this.typeKey + ':' + this.get('id') + '` was attempted to be reloaded ' +
+		EG.debug.assert('The record `' + this.typeKey + ':' + this.get('id') + '` was attempted to be reloaded ' +
 			'while dirty with `reloadDirty` disabled.', !this.get('isDirty') || this.get('store.reloadDirty'));
 
 		this._loadAttributes(json);
@@ -2884,7 +2884,7 @@ Eg.Model = Em.Object.extend(Em.Evented, {
 	}
 });
 
-Eg.Model.reopenClass({
+EG.Model.reopenClass({
 
 	/**
 	 * The prefix added to generated IDs to show that the prefix wasn't given
@@ -2900,14 +2900,14 @@ Eg.Model.reopenClass({
 	 * @returns {Boolean}
 	 */
 	isTemporaryId: function(id) {
-		return Eg.String.startsWith(id, this.temporaryIdPrefix);
+		return EG.String.startsWith(id, this.temporaryIdPrefix);
 	},
 
 	create: function() {
-		Eg.debug.assert('You can\'t create a record directly. Use the store.');
+		EG.debug.assert('You can\'t create a record directly. Use the store.');
 	},
 
-	_create: Eg.Model.create,
+	_create: EG.Model.create,
 
 	extend: function() {
 		var args = Array.prototype.slice.call(arguments, 0);
@@ -2952,7 +2952,7 @@ var disallowedAttributeNames = new Em.Set(['id', 'type', 'content']);
  * @param options
  * @returns {Em.ComputedProperty}
  */
-Eg.attr = function(options) {
+EG.attr = function(options) {
 	var meta = {
 		isAttribute: true,
 		type: options.type,
@@ -2970,16 +2970,16 @@ Eg.attr = function(options) {
 		var client = this.get('_clientAttributes.' + key);
 		var current = (client === undefined ? server : client);
 
-		Eg.debug(function() {
+		EG.debug(function() {
 			if (arguments.length > 1 && value === undefined) {
-				Eg.debug.warn('`undefined` is not a valid property value.');
+				EG.debug.warn('`undefined` is not a valid property value.');
 			}
 		});
 
 		if (value !== undefined) {
 			var isValid = meta.isValid || this.get('store').attributeTypeFor(meta.type).isValid;
 			if (!isValid(value)) {
-				Eg.debug.warn('The value \'' + value + '\' wasn\'t valid for the \'' + key + '\' property.');
+				EG.debug.warn('The value \'' + value + '\' wasn\'t valid for the \'' + key + '\' property.');
 				return current;
 			}
 
@@ -3004,7 +3004,7 @@ Eg.attr = function(options) {
 /**
  * @class Model
  */
-Eg.Model.reopenClass({
+EG.Model.reopenClass({
 
 	/**
 	 * @static
@@ -3015,7 +3015,7 @@ Eg.Model.reopenClass({
 
 		this.eachComputedProperty(function(name, meta) {
 			if (meta.isAttribute) {
-				Eg.debug.assert('The ' + name + ' cannot be used as an attribute name.',
+				EG.debug.assert('The ' + name + ' cannot be used as an attribute name.',
 					!disallowedAttributeNames.contains(name));
 
 				attributes.addObject(name);
@@ -3056,7 +3056,7 @@ Eg.Model.reopenClass({
 	}
 });
 
-Eg.Model.reopen({
+EG.Model.reopen({
 
 	/**
 	 * Represents the latest set of properties from the server. The only way these
@@ -3120,7 +3120,7 @@ Eg.Model.reopen({
 	 */
 	_loadAttributes: function(json) {
 		this.constructor.eachAttribute(function(name, meta) {
-			Eg.debug.assert('Your JSON is missing the \'' + name + '\' property.',
+			EG.debug.assert('Your JSON is missing the \'' + name + '\' property.',
 				!meta.isRequired || json.hasOwnProperty(name));
 
 			var value = (json.hasOwnProperty(name) ? json[name] : meta.defaultValue);
@@ -3130,7 +3130,7 @@ Eg.Model.reopen({
 			if (isValid(value)) {
 				this.set('_serverAttributes.' + name, value);
 			} else {
-				Eg.debug.assert('Your value for the \'' + name + '\' property is inValid.');
+				EG.debug.assert('Your value for the \'' + name + '\' property is inValid.');
 				this.set('_serverAttributes.' + name, meta.defaultValue);
 			}
 		}, this);
@@ -3143,16 +3143,16 @@ Eg.Model.reopen({
 
 (function() {
 
-var HAS_ONE_KEY = Eg.Model.HAS_ONE_KEY = 'hasOne';
-var HAS_MANY_KEY = Eg.Model.HAS_MANY_KEY = 'hasMany';
+var HAS_ONE_KEY = EG.Model.HAS_ONE_KEY = 'hasOne';
+var HAS_MANY_KEY = EG.Model.HAS_MANY_KEY = 'hasMany';
 
-var NEW_STATE = Eg.Relationship.NEW_STATE;
-var SAVED_STATE = Eg.Relationship.SAVED_STATE;
-var DELETED_STATE = Eg.Relationship.DELETED_STATE;
+var NEW_STATE = EG.Relationship.NEW_STATE;
+var SAVED_STATE = EG.Relationship.SAVED_STATE;
+var DELETED_STATE = EG.Relationship.DELETED_STATE;
 
 var disallowedRelationshipNames = new Em.Set(['id', 'type', 'content']);
 
-Eg.hasMany = function(options) {
+EG.hasMany = function(options) {
 	return {
 		isRelationship: true,
 		kind: HAS_MANY_KEY,
@@ -3160,7 +3160,7 @@ Eg.hasMany = function(options) {
 	};
 };
 
-Eg.hasOne = function(options) {
+EG.hasOne = function(options) {
 	return {
 		isRelationship: true,
 		kind: HAS_ONE_KEY,
@@ -3203,7 +3203,7 @@ var createRelationship = function(kind, options) {
 	return Em.computed(relationship).property('_serverRelationships', '_clientRelationships').meta(meta).readOnly();
 };
 
-Eg.Model.reopenClass({
+EG.Model.reopenClass({
 
 	/**
 	 * Goes through the subclass and declares an additional property for
@@ -3252,9 +3252,9 @@ Eg.Model.reopenClass({
 
 		this.eachComputedProperty(function(name, meta) {
 			if (meta.isRelationship) {
-				Eg.debug.assert('The ' + name + ' cannot be used as a relationship name.',
+				EG.debug.assert('The ' + name + ' cannot be used as a relationship name.',
 					!disallowedRelationshipNames.contains(name));
-				Eg.debug.assert('Relationship names must start with a lowercase letter.', name[0].match(/[a-z]/g));
+				EG.debug.assert('Relationship names must start with a lowercase letter.', name[0].match(/[a-z]/g));
 
 				relationships.addObject(name);
 			}
@@ -3327,7 +3327,7 @@ Eg.Model.reopenClass({
 	}
 });
 
-Eg.Model.reopen({
+EG.Model.reopen({
 
 	/**
 	 * Relationships that have been saved to the server
@@ -3364,8 +3364,8 @@ Eg.Model.reopen({
 	 * @private
 	 */
 	_hasOneValue: function(relationship, server) {
-		var serverRelationships = Eg.util.values(this.get('_serverRelationships'));
-		var otherRelationships = Eg.util.values(this.get((server ? '_deleted' : '_client') + 'Relationships'));
+		var serverRelationships = EG.util.values(this.get('_serverRelationships'));
+		var otherRelationships = EG.util.values(this.get((server ? '_deleted' : '_client') + 'Relationships'));
 		var current = serverRelationships.concat(otherRelationships);
 
 		for (var i = 0; i < current.length; i = i + 1) {
@@ -3387,8 +3387,8 @@ Eg.Model.reopen({
 	 * @private
 	 */
 	_hasManyValue: function(relationship, server) {
-		var serverRelationships = Eg.util.values(this.get('_serverRelationships'));
-		var otherRelationships = Eg.util.values(this.get((server ? '_deleted' : '_client') + 'Relationships'));
+		var serverRelationships = EG.util.values(this.get('_serverRelationships'));
+		var otherRelationships = EG.util.values(this.get((server ? '_deleted' : '_client') + 'Relationships'));
 		var current = serverRelationships.concat(otherRelationships);
 
 		var found = [];
@@ -3420,9 +3420,9 @@ Eg.Model.reopen({
 	 * @private
 	 */
 	_getAllRelationships: function() {
-		var server = Eg.util.values(this.get('_serverRelationships'));
-		var client = Eg.util.values(this.get('_clientRelationships'));
-		var deleted = Eg.util.values(this.get('_deletedRelationships'));
+		var server = EG.util.values(this.get('_serverRelationships'));
+		var client = EG.util.values(this.get('_clientRelationships'));
+		var deleted = EG.util.values(this.get('_deletedRelationships'));
 
 		return server.concat(client.concat(deleted));
 	},
@@ -3530,7 +3530,7 @@ Eg.Model.reopen({
 				}, this);
 			} else {
 				// There should only be one relationship in there
-				Eg.debug.assert('An unknown relationship error occurred.', client.length <= 1);
+				EG.debug.assert('An unknown relationship error occurred.', client.length <= 1);
 
 				var conflict = this._hasOneConflict(name, value);
 
@@ -3645,7 +3645,7 @@ Eg.Model.reopen({
 				return (state === SAVED_STATE || state === NEW_STATE);
 			});
 
-			Eg.debug.assert('An unknown relationship error occurred', relationships.length <= 1);
+			EG.debug.assert('An unknown relationship error occurred', relationships.length <= 1);
 
 			return (relationships.length > 0 ? relationships[0] : null);
 		}
@@ -3715,7 +3715,7 @@ Eg.Model.reopen({
 		var alerts = [];
 		var store = this.get('store');
 		var meta = this.constructor.metaForRelationship(relationship);
-		Eg.debug.assert('Cannot modify a read-only relationship', meta.readOnly === false);
+		EG.debug.assert('Cannot modify a read-only relationship', meta.readOnly === false);
 		if (meta.readOnly) {
 			return;
 		}
@@ -3761,7 +3761,7 @@ Eg.Model.reopen({
 	 */
 	removeFromRelationship: function(relationship, id) {
 		var meta = this.constructor.metaForRelationship(relationship);
-		Eg.debug.assert('Cannot modify a read-only relationship', meta.readOnly === false);
+		EG.debug.assert('Cannot modify a read-only relationship', meta.readOnly === false);
 		if (meta.readOnly) {
 			return;
 		}
@@ -3793,7 +3793,7 @@ Eg.Model.reopen({
 	setHasOneRelationship: function(relationship, id) {
 		var alerts = [];
 		var meta = this.constructor.metaForRelationship(relationship);
-		Eg.debug.assert('Cannot modify a read-only relationship', meta.readOnly === false);
+		EG.debug.assert('Cannot modify a read-only relationship', meta.readOnly === false);
 		if (meta.readOnly) {
 			return;
 		}
@@ -3852,7 +3852,7 @@ Eg.Model.reopen({
 	clearHasOneRelationship: function(relationship, suppressNotifications) {
 		var alerts = [];
 		var meta = this.constructor.metaForRelationship(relationship);
-		Eg.debug.assert('Cannot modify a read-only relationship', meta.readOnly === false);
+		EG.debug.assert('Cannot modify a read-only relationship', meta.readOnly === false);
 		if (meta.readOnly) {
 			return [];
 		}
@@ -3941,7 +3941,7 @@ Eg.Model.reopen({
 	 * @returns {Object} The objects to alert of changes, along with the corresponding property
 	 */
 	_connectRelationship: function(relationship) {
-		var hash = Eg.Relationship.stateToHash(relationship.get('state'));
+		var hash = EG.Relationship.stateToHash(relationship.get('state'));
 		this.set(hash + '.' + relationship.get('id'), relationship);
 		return { record: this, property: hash };
 	},
@@ -3954,7 +3954,7 @@ Eg.Model.reopen({
 	 * @returns {Object} The object to alert of changes, along with the corresponding property
 	 */
 	_disconnectRelationship: function(relationship) {
-		var hash = Eg.Relationship.stateToHash(relationship.get('state'));
+		var hash = EG.Relationship.stateToHash(relationship.get('state'));
 		delete this.get(hash)[relationship.get('id')];
 		return { record: this, property: hash };
 	}

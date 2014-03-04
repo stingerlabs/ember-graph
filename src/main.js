@@ -1,4 +1,4 @@
-window.EmberGraph = window.Eg = window.EG = Em.Namespace.create({
+window.EmberGraph = window.EG = Em.Namespace.create({
 	// Neuter will take care of inserting the version number from bower.json
 	VERSION: '<%= version %>'
 });

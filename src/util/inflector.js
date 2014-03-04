@@ -94,20 +94,20 @@ var apply = function(str, rules) {
 	return str;
 };
 
-Eg.String.pluralize = function(str) {
+EG.String.pluralize = function(str) {
 	return apply(str, pluralRules);
 };
 
-Eg.String.singularize = function(str) {
+EG.String.singularize = function(str) {
 	return apply(str, singularRules);
 };
 
 if (Em.EXTEND_PROTOTYPES === true || Em.EXTEND_PROTOTYPES.String) {
 	String.prototype.pluralize = String.prototype.pluralize || function() {
-		return Eg.String.pluralize(this);
+		return EG.String.pluralize(this);
 	};
 
 	String.prototype.singularize = String.prototype.singularize || function() {
-		return Eg.String.singularize(this);
+		return EG.String.singularize(this);
 	};
 }

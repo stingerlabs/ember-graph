@@ -1,7 +1,7 @@
 (function() {
 	'use strict';
 
-	var type = Eg.ObjectType.create();
+	var type = EG.ObjectType.create();
 
 	module('Object Attribute Type Test');
 

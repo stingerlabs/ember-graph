@@ -7,7 +7,7 @@
 		setup: function() {
 			store = setupStore({
 				user: EG.Model.extend({
-					vertices: Eg.hasMany({
+					vertices: EG.hasMany({
 						relatedType: 'vertex',
 						isRequired: false,
 						inverse: 'owner',
@@ -23,7 +23,7 @@
 						readOnly: true
 					}),
 
-					tags: Eg.hasMany({
+					tags: EG.hasMany({
 						relatedType: 'tag',
 						isRequired: false,
 						inverse: null

@@ -1,4 +1,4 @@
-Eg.String = {
+EG.String = {
 	startsWith: function(string, prefix) {
 		return string.indexOf(prefix) === 0;
 	},
@@ -18,18 +18,18 @@ Eg.String = {
 
 if (Em.EXTEND_PROTOTYPES === true || Em.EXTEND_PROTOTYPES.String) {
 	String.prototype.startsWith = String.prototype.startsWith || function(prefix) {
-		return Eg.String.startsWith(this, prefix);
+		return EG.String.startsWith(this, prefix);
 	};
 
 	String.prototype.endsWith = String.prototype.endsWith || function(suffix) {
-		return Eg.String.endsWith(this, suffix);
+		return EG.String.endsWith(this, suffix);
 	};
 
 	String.prototype.capitalize = String.prototype.capitalize || function() {
-		return Eg.String.capitalize(this);
+		return EG.String.capitalize(this);
 	};
 
 	String.prototype.decapitalize = String.prototype.decapitalize || function() {
-		return Eg.String.decapitalize(this);
+		return EG.String.decapitalize(this);
 	};
 }

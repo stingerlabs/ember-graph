@@ -1,8 +1,8 @@
 (function() {
 	'use strict';
 
-	var HAS_ONE_KEY = Eg.Model.HAS_ONE_KEY;
-	var HAS_MANY_KEY = Eg.Model.HAS_MANY_KEY;
+	var HAS_ONE_KEY = EG.Model.HAS_ONE_KEY;
+	var HAS_MANY_KEY = EG.Model.HAS_MANY_KEY;
 
 	var store;
 
@@ -10,7 +10,7 @@
 		setup: function() {
 			store = setupStore({
 				user: EG.Model.extend({
-					posts: Eg.hasMany({
+					posts: EG.hasMany({
 						relatedType: 'post',
 						inverse: 'author',
 						isRequired: false
@@ -24,7 +24,7 @@
 						isRequired: false
 					}),
 
-					tags: Eg.hasMany({
+					tags: EG.hasMany({
 						relatedType: 'tag',
 						inverse: null,
 						isRequired: false,
@@ -98,7 +98,7 @@
 
 		var queued = store.get('_queuedRelationships');
 		var rid = null;
-		Eg.util.values(queued).forEach(function(r) {
+		EG.util.values(queued).forEach(function(r) {
 			if (r.get('type2') === 'post' && r.get('object2') === '7') {
 				rid = r.get('id');
 			}
@@ -464,7 +464,7 @@
 		var promise = post.get('author');
 
 		start();
-		ok(promise instanceof Eg.PromiseObject);
+		ok(promise instanceof EG.PromiseObject);
 		stop();
 
 		promise.then(function(author) {
@@ -483,7 +483,7 @@
 		var promise = user.get('posts');
 
 		start();
-		ok(promise instanceof Eg.PromiseArray);
+		ok(promise instanceof EG.PromiseArray);
 		stop();
 
 		promise.then(function(posts) {
