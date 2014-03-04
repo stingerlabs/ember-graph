@@ -41,15 +41,15 @@ Eg.Store = Em.Object.extend({
 	 * @type {Adapter}
 	 * @private
 	 */
-	adapter: function() {
+	adapter: Em.computed(function() {
 		var container = this.get('container');
 		var adapter = container.lookup('adapter:application') ||
-			 container.lookup('adapter:' + this.get('defaultAdapter'));
+			container.lookup('adapter:' + this.get('defaultAdapter'));
 
 		Em.assert('A valid adapter could not be found.', EG.Adapter.detectInstance(adapter));
 
 		return adapter;
-	}.property(),
+	}).property(),
 
 	/**
 	 * Initializes all of the variables properly

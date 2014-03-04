@@ -1334,15 +1334,15 @@ Eg.Store = Em.Object.extend({
 	 * @type {Adapter}
 	 * @private
 	 */
-	adapter: function() {
+	adapter: Em.computed(function() {
 		var container = this.get('container');
 		var adapter = container.lookup('adapter:application') ||
-			 container.lookup('adapter:' + this.get('defaultAdapter'));
+			container.lookup('adapter:' + this.get('defaultAdapter'));
 
 		
 
 		return adapter;
-	}.property(),
+	}).property(),
 
 	/**
 	 * Initializes all of the variables properly
@@ -2145,9 +2145,9 @@ Eg.Relationship = Em.Object.extend({
 	 *
 	 * @type {Boolean}
 	 */
-	oneWay: function() {
+	oneWay: Em.computed(function() {
 		return this.get('relationship2') === null;
-	}.property('relationship2'),
+	}).property('relationship2'),
 
 	/**
 	 * Initializes the relationship with a unique ID.
@@ -2718,7 +2718,7 @@ Eg.Model = Em.Object.extend(Em.Evented, {
 	 *
 	 * @type {String}
 	 */
-	id: function(key, value) {
+	id: Em.computed(function(key, value) {
 		var id = this.get('_id');
 
 		if (arguments.length > 1) {
@@ -2736,7 +2736,7 @@ Eg.Model = Em.Object.extend(Em.Evented, {
 		}
 
 		return id;
-	}.property('_id'),
+	}).property('_id'),
 
 	/**
 	 * @type {Object}
@@ -2772,16 +2772,16 @@ Eg.Model = Em.Object.extend(Em.Evented, {
 	 *
 	 * @type {Boolean}
 	 */
-	isLoaded: function() {
+	isLoaded: Em.computed(function() {
 		return this.get('store') !== null;
-	}.property('store'),
+	}).property('store'),
 
 	/**
 	 * Denotes that the record has changes that have not been saved to the server yet.
 	 *
 	 * @type {Boolean}
 	 */
-	isDirty: function() {
+	isDirty: Em.computed(function() {
 		var isDeleted = this.get('isDeleted');
 		var isSaving = this.get('isSaving');
 
@@ -2791,7 +2791,7 @@ Eg.Model = Em.Object.extend(Em.Evented, {
 
 		var deleting = isDeleted && isSaving;
 		return this.get('_areAttributesDirty') || this.get('_areRelationshipsDirty') || deleting;
-	}.property('_areAttributesDirty', '_areRelationshipsDirty', 'isDeleted', 'isSaving'),
+	}).property('_areAttributesDirty', '_areRelationshipsDirty', 'isDeleted', 'isSaving'),
 
 	/**
 	 * Denotes that a record has just been created and has not been saved to
@@ -2799,9 +2799,9 @@ Eg.Model = Em.Object.extend(Em.Evented, {
 	 *
 	 * @type {Boolean}
 	 */
-	isNew: function() {
+	isNew: Em.computed(function() {
 		return Eg.String.startsWith(this.get('_id'), this.constructor.temporaryIdPrefix);
-	}.property('_id'),
+	}).property('_id'),
 
 	/**
 	 * Sets up the instance variables of this class.

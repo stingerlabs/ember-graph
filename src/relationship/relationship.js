@@ -95,9 +95,9 @@ Eg.Relationship = Em.Object.extend({
 	 *
 	 * @type {Boolean}
 	 */
-	oneWay: function() {
+	oneWay: Em.computed(function() {
 		return this.get('relationship2') === null;
-	}.property('relationship2'),
+	}).property('relationship2'),
 
 	/**
 	 * Initializes the relationship with a unique ID.
