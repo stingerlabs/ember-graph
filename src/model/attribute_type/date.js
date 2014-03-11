@@ -11,14 +11,15 @@ EG.DateType = EG.AttributeType.extend({
 	 * @returns {Object} JSON representation
 	 */
 	serialize: function(obj) {
-		if (obj instanceof Date) {
-			return obj.getTime();
-		} else if (typeof obj === 'number') {
-			return obj;
-		} else if (typeof obj === 'string') {
-			return new Date(obj).getTime();
-		} else {
-			return null;
+		switch (Em.typeOf(obj)) {
+			case 'date':
+				return obj.getTime();
+			case 'number':
+				return obj;
+			case 'string':
+				return new Date(obj).getTime();
+			default:
+				return null;
 		}
 	},
 
@@ -27,10 +28,12 @@ EG.DateType = EG.AttributeType.extend({
 	 * @returns {*} Javascript object
 	 */
 	deserialize: function(json) {
-		if (typeof obj === 'number' || typeof obj === 'string') {
-			return new Date(obj);
-		} else {
-			return null;
+		switch (Em.typeOf(json)) {
+			case 'number':
+			case 'string':
+				return new Date(json);
+			default:
+				return null;
 		}
 	},
 
