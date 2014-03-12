@@ -1,7 +1,7 @@
 {
 	"name": "ember-graph",
 	"version": "0.1.0",
-	"main": ["ember-graph.js", "ember-graph.prod.js", "ember-graph.min.js"],
+	"main": ["ember-graph.js"],
 	"ignore": [
 		"**/*."
 	],
