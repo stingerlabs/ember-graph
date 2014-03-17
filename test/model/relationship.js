@@ -580,4 +580,26 @@
 		strictEqual(post.get('_author'), '1');
 		post.removeObserver('_author', observer);
 	});
+
+	test('Modifying relationships works with records and not just IDs', function() {
+		expect(6);
+
+		var user = store.getRecord('user', '1');
+		var post1 = store.getRecord('post', '1');
+		var post6 = store.getRecord('post', '6');
+		var tag1 = store.getRecord('tag', '1');
+		var tag3 = store.getRecord('tag', '3');
+
+		strictEqual(post6.get('_author'), null);
+		post6.setHasOneRelationship('author', user);
+		strictEqual(post6.get('_author'), '1');
+
+		ok(post1.get('_tags').contains('1'));
+		post1.removeFromRelationship('tags', tag1);
+		ok(!post1.get('_tags').contains('1'));
+
+		ok(!post6.get('_tags').contains('3'));
+		post6.addToRelationship('tags', '3');
+		ok(post6.get('_tags').contains('3'));
+	});
 })();

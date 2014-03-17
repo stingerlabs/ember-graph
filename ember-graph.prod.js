@@ -3708,9 +3708,13 @@ EG.Model.reopen({
 	 * ensure that all of the proper observers are notified of the change.
 	 *
 	 * @param {String} relationship The relationship to modify
-	 * @param {String} id The ID to add to the relationship
+	 * @param {String|Record} id The ID to add to the relationship
 	 */
 	addToRelationship: function(relationship, id) {
+		if (EG.Model.detectInstance(id)) {
+			id = id.get('id');
+		}
+
 		var alerts = [];
 		var store = this.get('store');
 		var meta = this.constructor.metaForRelationship(relationship);
@@ -3756,9 +3760,13 @@ EG.Model.reopen({
 	 * ensure that all of the proper observers are notified of the change.
 	 *
 	 * @param {String} relationship The relationship to modify
-	 * @param {String} id The ID to add to the relationship
+	 * @param {String|Record} id The ID to add to the relationship
 	 */
 	removeFromRelationship: function(relationship, id) {
+		if (EG.Model.detectInstance(id)) {
+			id = id.get('id');
+		}
+
 		var meta = this.constructor.metaForRelationship(relationship);
 		EG.debug.assert('Cannot modify a read-only relationship', meta.readOnly === false);
 		if (meta.readOnly) {
@@ -3787,9 +3795,13 @@ EG.Model.reopen({
 	 * Sets the value of a hasOne relationship to the given ID.
 	 *
 	 * @param {String} relationship
-	 * @param {String} id
+	 * @param {String|Record} id
 	 */
 	setHasOneRelationship: function(relationship, id) {
+		if (EG.Model.detectInstance(id)) {
+			id = id.get('id');
+		}
+
 		var alerts = [];
 		var meta = this.constructor.metaForRelationship(relationship);
 		EG.debug.assert('Cannot modify a read-only relationship', meta.readOnly === false);
