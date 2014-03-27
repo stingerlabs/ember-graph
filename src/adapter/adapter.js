@@ -9,7 +9,7 @@ var missingMethod = function(method) {
  *
  * The adapter should return normalized JSON from its operations. Normalized JSON
  * is a single object whose keys are the type names of the records being returned.
- * The JSON cannot contain any other keys. The value of each key will be the
+ * The JSON may also contain a `meta` key. The value of each key will be the
  * records of that type that were returned by the server. The records must be
  * in normalized JSON form which means that they must contain an `id` field,
  * and they must contain the required attributes and relationships to
@@ -17,6 +17,7 @@ var missingMethod = function(method) {
  *
  * Example:
  * {
+ *     meta: {},
  *     user: [{ id: 3, posts: [1,2] }],
  *     post: [{ id: 1 }, { id: 2 }]
  * }

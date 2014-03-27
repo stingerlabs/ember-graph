@@ -43,6 +43,7 @@
 			start();
 
 			deepEqual(json, {
+				meta: {},
 				user: [{ id: '1', missing: 'foobar', name: 'Alice', spam: '1', eggs: ['2', '4'], none: '5' }]
 			});
 		});
@@ -68,6 +69,7 @@
 			json.user = json.user.sortBy('id');
 
 			deepEqual(json, {
+				meta: {},
 				user: [
 					{ id: '1', missing: 'foobar', name: 'Alice', spam: '1', eggs: ['2', '4'], none: '5' },
 					{ id: '3', missing: 'foobar', name: 'Carol', spam: '9', eggs: ['1', '2', '3', '4'], none: '5' }
@@ -85,6 +87,7 @@
 			json.user = json.user.sortBy('id');
 
 			deepEqual(json, {
+				meta: {},
 				user: [
 					{ id: '1', missing: 'foobar', name: 'Alice', spam: '1', eggs: ['2', '4'], none: '5' },
 					{ id: '2', missing: 'foobar', name: 'Bob', spam: '8', eggs: ['1', '3'], none: '5' },
@@ -112,6 +115,7 @@
 			start();
 
 			deepEqual(json, {
+				meta: {},
 				user: [{ id: record.get('id'), missing: 'foobar', name: 'Dave', spam: '100', eggs: [], none: '5' }]
 			});
 		});
@@ -132,6 +136,7 @@
 			start();
 
 			deepEqual(json, {
+				meta: {},
 				user: [{ id: '1', missing: 'foobar', name: 'Alice', spam: null, eggs: [], none: '5' }]
 			});
 		});
@@ -147,7 +152,7 @@
 		}).then(function(json) {
 			start();
 
-			deepEqual(json, { user: [] });
+			deepEqual(json, {  meta: {}, user: [] });
 		});
 	});
 

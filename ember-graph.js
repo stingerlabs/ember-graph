@@ -326,7 +326,8 @@ EG.Serializer = Em.Object.extend({
 	 * no matter how many records the server sent back.
 	 *
 	 * Current options:
-	 * isQuery: true to include a top-level `ids` key, defaults to false.
+	 * isQuery: true to include a `queryIds` meta key
+	 * isCreatedRecord: true to include a 'newId' meta key
 	 *
 	 * Note: For now, it is assumed that a query can only query over one type of object.
 	 *
@@ -404,7 +405,8 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * the JSON API (http://jsonapi.org/format/) format for IDs.
 	 *
 	 * Current options:
-	 * isQuery: true to include a top-level `ids` key, defaults to false
+	 * isQuery: true to include a `queryIds` meta key
+	 * isCreatedRecord: true to include a 'newId' meta key
 	 *
 	 * Note: For now, it is assumed that a query can only query over one type of object.
 	 *
@@ -417,26 +419,29 @@ EG.JSONSerializer = EG.Serializer.extend({
 			return {};
 		}
 
+		var payloadKeys = new Em.Set(Em.keys(payload));
 		var json = this._extract(payload);
-		var ids = null;
+		json.meta = json.meta || {};
 
 		if (options && options.isQuery) {
-			var keys = new Em.Set(Em.keys(payload)).withoutAll(['meta', 'linked']);
-			// Going to take the first one (which should be the only one)
-			ids = payload[Em.get(keys, 'firstObject')].map(function(json) {
-				return '' + json.id;
+			json.meta.queryIds = payload[payloadKeys.withoutAll(['meta', 'linked']).toArray()[0]].map(function(r) {
+				return '' + r.id;
 			});
 		}
 
+		if (options && options.isCreatedRecord) {
+			json.meta.newId = payload[payloadKeys.withoutAll(['meta', 'linked']).toArray()[0]][0].id + '';
+		}
+
 		Em.keys(json).forEach(function(typeKey) {
+			if (typeKey === 'meta') {
+				return;
+			}
+
 			json[typeKey] = json[typeKey].map(function(record) {
 				return this._deserializeSingle(typeKey, record);
 			}, this).filter(function(item) { return !!item; });
 		}, this);
-
-		if (Em.isArray(ids)) {
-			json.ids = ids;
-		}
 
 		return json;
 	},
@@ -570,7 +575,7 @@ var missingMethod = function(method) {
  *
  * The adapter should return normalized JSON from its operations. Normalized JSON
  * is a single object whose keys are the type names of the records being returned.
- * The JSON cannot contain any other keys. The value of each key will be the
+ * The JSON may also contain a `meta` key. The value of each key will be the
  * records of that type that were returned by the server. The records must be
  * in normalized JSON form which means that they must contain an `id` field,
  * and they must contain the required attributes and relationships to
@@ -578,6 +583,7 @@ var missingMethod = function(method) {
  *
  * Example:
  * {
+ *     meta: {},
  *     user: [{ id: 3, posts: [1,2] }],
  *     post: [{ id: 1 }, { id: 2 }]
  * }
@@ -1121,7 +1127,7 @@ EG.RESTAdapter = EG.Adapter.extend({
 		var json = this.serialize(record, { includeId: false });
 
 		return this._ajax(url, 'POST', {}, json).then(function(payload) {
-			return this.deserialize(payload);
+			return this.deserialize(payload, { isCreatedRecord: true });
 		}.bind(this));
 	},
 
@@ -1633,8 +1639,7 @@ EG.Store = Em.Object.extend({
 	 */
 	_findQuery: function(typeKey, options) {
 		var promise = this.get('adapter').findQuery(typeKey, options).then(function(payload) {
-			var ids = payload.ids;
-			delete payload.ids;
+			var ids = payload.meta.ids;
 			this.extractPayload(payload);
 
 			return ids.map(function(id) {
@@ -1669,9 +1674,8 @@ EG.Store = Em.Object.extend({
 
 		if (isNew) {
 			return this.get('adapter').createRecord(record).then(function(payload) {
-				record.set('id', payload.id);
+				record.set('id', payload.meta.newId);
 				record.set('isSaving', false);
-				delete payload.id;
 
 				this._deleteRecord(type, tempId);
 				this._setRecord(type, record);
@@ -1733,6 +1737,10 @@ EG.Store = Em.Object.extend({
 		var reloadDirty = this.get('reloadDirty');
 
 		Em.keys(payload).forEach(function(typeKey) {
+			if (typeKey === 'meta') {
+				return;
+			}
+
 			var type = this.modelForType(typeKey);
 
 			payload[typeKey].forEach(function(json) {

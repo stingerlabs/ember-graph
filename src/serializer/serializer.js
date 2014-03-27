@@ -39,7 +39,8 @@ EG.Serializer = Em.Object.extend({
 	 * no matter how many records the server sent back.
 	 *
 	 * Current options:
-	 * isQuery: true to include a top-level `ids` key, defaults to false.
+	 * isQuery: true to include a `queryIds` meta key
+	 * isCreatedRecord: true to include a 'newId' meta key
 	 *
 	 * Note: For now, it is assumed that a query can only query over one type of object.
 	 *

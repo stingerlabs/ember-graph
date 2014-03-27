@@ -104,6 +104,7 @@
 		};
 
 		var expected = {
+			meta: {},
 			post: [{
 				id: '100',
 				title: '52',
@@ -124,6 +125,7 @@
 		};
 
 		var expected = {
+			meta: {},
 			post: [{
 				id: '100',
 				title: '52',
@@ -148,6 +150,7 @@
 		};
 
 		var expected = {
+			meta: {},
 			user: [{ id: '100', email: '', posts: ['100', '101'] }],
 			post: [
 				{ id: '100', title: '', body: '', author: '100', tags: [] },
@@ -170,6 +173,7 @@
 		};
 
 		var expected = {
+			meta: {},
 			post: [{ id: '100', title: '', body: '', author: '100', tags: ['100', '101'] }],
 			user: [{ id: '100', email: '', posts: ['100'] }],
 			tag: [{ id: '100', name: '' }, { id: '101', name: '' }]
@@ -186,6 +190,7 @@
 		};
 
 		var expected = {
+			meta: {},
 			user: [{ id: '100', email: '', posts: ['1', '2', '3', '4'] }]
 		};
 
@@ -255,13 +260,14 @@
 		};
 
 		var expected = {
+			meta: {},
 			tag: [{ id: '100', name: '' }, { id: '101', name: '' }]
 		};
 
 		deepEqual(serializer.deserialize(payload), expected);
 	});
 
-	test('Deserialization includes the `ids` array on a query', function() {
+	test('Deserialization includes the `queryIds` array on a query', function() {
 		expect(1);
 
 		var payload = {
@@ -271,6 +277,18 @@
 
 		var ids = ['1', '3', '7', '8'];
 
-		deepEqual(serializer.deserialize(payload, { isQuery: true }).ids.sort(), ids);
+		deepEqual(serializer.deserialize(payload, { isQuery: true }).meta.queryIds.sort(), ids);
+	});
+
+	test('Deserialization includes the `newId` property when creating records', function() {
+		expect(1);
+
+		var payload = {
+			posts: [{ id: 54 }],
+			linked: {},
+			meta: {}
+		};
+
+		deepEqual(serializer.deserialize(payload, { isCreatedRecord: true }).meta.newId, '54');
 	});
 })();

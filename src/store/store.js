@@ -321,8 +321,7 @@ EG.Store = Em.Object.extend({
 	 */
 	_findQuery: function(typeKey, options) {
 		var promise = this.get('adapter').findQuery(typeKey, options).then(function(payload) {
-			var ids = payload.ids;
-			delete payload.ids;
+			var ids = payload.meta.ids;
 			this.extractPayload(payload);
 
 			return ids.map(function(id) {
@@ -357,9 +356,8 @@ EG.Store = Em.Object.extend({
 
 		if (isNew) {
 			return this.get('adapter').createRecord(record).then(function(payload) {
-				record.set('id', payload.id);
+				record.set('id', payload.meta.newId);
 				record.set('isSaving', false);
-				delete payload.id;
 
 				this._deleteRecord(type, tempId);
 				this._setRecord(type, record);
@@ -421,6 +419,10 @@ EG.Store = Em.Object.extend({
 		var reloadDirty = this.get('reloadDirty');
 
 		Em.keys(payload).forEach(function(typeKey) {
+			if (typeKey === 'meta') {
+				return;
+			}
+
 			var type = this.modelForType(typeKey);
 
 			payload[typeKey].forEach(function(json) {

@@ -62,6 +62,7 @@
 			start();
 
 			deepEqual(json, {
+				meta: {},
 				user: [{ id: '1', name: 'Alice', spam: '1', eggs: ['2', '4'] }]
 			});
 		});
@@ -76,6 +77,7 @@
 			json.user = json.user.sortBy('id');
 
 			deepEqual(json, {
+				meta: {},
 				user: [
 					{ id: '1', name: 'Alice', spam: '1', eggs: ['2', '4'] },
 					{ id: '3', name: 'Carol', spam: '9', eggs: ['1', '2', '3', '4'] }
@@ -93,6 +95,7 @@
 			json.user = json.user.sortBy('id');
 
 			deepEqual(json, {
+				meta: {},
 				user: [
 					{ id: '1', name: 'Alice', spam: '1', eggs: ['2', '4'] },
 					{ id: '2', name: 'Bob', spam: '8', eggs: ['1', '3'] },
@@ -120,6 +123,7 @@
 			start();
 
 			deepEqual(json, {
+				meta: {},
 				user: [{ id: record.get('id'), name: 'Dave', spam: '100', eggs: [] }]
 			});
 		});
@@ -140,6 +144,7 @@
 			start();
 
 			deepEqual(json, {
+				meta: {},
 				user: [{ id: '1', name: 'Alice', spam: null, eggs: [] }]
 			});
 		});
@@ -155,7 +160,7 @@
 		}).then(function(json) {
 			start();
 
-			deepEqual(json, { user: [] });
+			deepEqual(json, {  meta: {}, user: [] });
 		});
 	});
 

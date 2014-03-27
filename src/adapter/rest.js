@@ -16,7 +16,7 @@ EG.RESTAdapter = EG.Adapter.extend({
 		var json = this.serialize(record, { includeId: false });
 
 		return this._ajax(url, 'POST', {}, json).then(function(payload) {
-			return this.deserialize(payload);
+			return this.deserialize(payload, { isCreatedRecord: true });
 		}.bind(this));
 	},
 

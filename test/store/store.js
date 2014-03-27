@@ -9,7 +9,7 @@
 
 		createRecord: function(record) {
 			var id = EG.util.generateGUID();
-			return Em.RSVP.Promise.resolve({ id: id, storeTest: [{ id: id }] });
+			return Em.RSVP.Promise.resolve({ meta: { newId: id }, storeTest: [{ id: id }] });
 		},
 
 		findRecord: function(type, id) {
