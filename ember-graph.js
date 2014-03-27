@@ -1701,9 +1701,10 @@ EG.Store = Em.Object.extend({
 		record.set('isDeleted', true);
 
 		return this.get('adapter').deleteRecord(record).then(function(payload) {
+			this._deleteRelationshipsForRecord(type, id);
 			this.extractPayload(payload);
 			record.set('isSaving', false);
-			delete this.get('_records.' + type)[id];
+			this._deleteRecord(type, id);
 		}.bind(this));
 	},
 
@@ -2046,6 +2047,21 @@ EG.Store.reopen({
 
 			return false;
 		});
+	},
+
+	_deleteRelationshipsForRecord: function(typeKey, id) {
+		var alerts = [];
+		var relationships = EG.util.values(this.get('_relationships'));
+
+		relationships.forEach(function(relationship) {
+			if (relationship.isConnectedTo(typeKey, id)) {
+				alerts = alerts.concat(this._deleteRelationship(Em.get(relationship, 'id')));
+			}
+		}, this);
+
+		alerts.forEach(function(alert) {
+			Em.tryInvoke(alert.record, 'notifyPropertyChange', [alert.property]);
+		});
 	}
 });
 
@@ -2268,6 +2284,31 @@ EG.Relationship = Em.Object.extend({
 		} else {
 			return undefined;
 		}
+	},
+
+	/**
+	 * Determines if this relationship is connected to the given record on either side.
+	 *
+	 * @param {String} typeKey
+	 * @param {String} id
+	 * @returns {Boolean}
+	 */
+	isConnectedTo: function(typeKey, id) {
+		if (this.get('type1') === typeKey && this.get('object1.id') === id) {
+			return true;
+		}
+
+		if (this.get('type2') === typeKey) {
+			var object2 = this.get('object2');
+
+			if (Em.typeOf(object2) === 'string') {
+				return (object2 === id);
+			} else {
+				return (Em.get(object2, 'id') === id);
+			}
+		}
+
+		return false;
 	}
 });
 

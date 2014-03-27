@@ -198,6 +198,31 @@ EG.Relationship = Em.Object.extend({
 		} else {
 			return undefined;
 		}
+	},
+
+	/**
+	 * Determines if this relationship is connected to the given record on either side.
+	 *
+	 * @param {String} typeKey
+	 * @param {String} id
+	 * @returns {Boolean}
+	 */
+	isConnectedTo: function(typeKey, id) {
+		if (this.get('type1') === typeKey && this.get('object1.id') === id) {
+			return true;
+		}
+
+		if (this.get('type2') === typeKey) {
+			var object2 = this.get('object2');
+
+			if (Em.typeOf(object2) === 'string') {
+				return (object2 === id);
+			} else {
+				return (Em.get(object2, 'id') === id);
+			}
+		}
+
+		return false;
 	}
 });
 

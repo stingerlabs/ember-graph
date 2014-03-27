@@ -280,5 +280,20 @@ EG.Store.reopen({
 
 			return false;
 		});
+	},
+
+	_deleteRelationshipsForRecord: function(typeKey, id) {
+		var alerts = [];
+		var relationships = EG.util.values(this.get('_relationships'));
+
+		relationships.forEach(function(relationship) {
+			if (relationship.isConnectedTo(typeKey, id)) {
+				alerts = alerts.concat(this._deleteRelationship(Em.get(relationship, 'id')));
+			}
+		}, this);
+
+		alerts.forEach(function(alert) {
+			Em.tryInvoke(alert.record, 'notifyPropertyChange', [alert.property]);
+		});
 	}
 });

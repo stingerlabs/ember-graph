@@ -389,9 +389,10 @@ EG.Store = Em.Object.extend({
 		record.set('isDeleted', true);
 
 		return this.get('adapter').deleteRecord(record).then(function(payload) {
+			this._deleteRelationshipsForRecord(type, id);
 			this.extractPayload(payload);
 			record.set('isSaving', false);
-			delete this.get('_records.' + type)[id];
+			this._deleteRecord(type, id);
 		}.bind(this));
 	},
 
