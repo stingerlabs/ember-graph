@@ -167,6 +167,17 @@ EG.Model = Em.Object.extend(Em.Evented, {
 	 */
 	destroy: function() {
 		return this.get('store').deleteRecord(this);
+	},
+
+	/**
+	 * Determines if the other object is a model that represents the same record.
+	 */
+	isEqual: function(other) {
+		if (!other) {
+			return;
+		}
+
+		return (this.typeKey === Em.get(other, 'typeKey') && this.get('id') === Em.get(other, 'id'));
 	}
 });
 
@@ -216,6 +227,30 @@ EG.Model.reopenClass({
 		var subclass = this._super.apply(this, args);
 		subclass._declareRelationships(relationships);
 		return subclass;
+	},
+
+	isEqual: function(one, two) {
+		if (one === undefined || two === undefined) {
+			return false;
+		}
+
+		if (this.detectInstance(one)) {
+			return one.isEqual(two);
+		}
+
+		if (this.detectInstance(two)) {
+			return two.isEqual(one);
+		}
+
+		if (this.detectInstance(Em.get(one, 'content'))) {
+			return Em.get(one, 'content').isEqual(two);
+		}
+
+		if (this.detectInstance(Em.get(two, 'content'))) {
+			return Em.get(two, 'content').isEqual(one);
+		}
+
+		return false;
 	}
 });
 

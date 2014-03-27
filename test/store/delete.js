@@ -6,7 +6,7 @@
 
 	var store;
 
-	module('Relationship Functionality Test', {
+	module('Store Delete Test', {
 		setup: function() {
 			store = setupStore({
 				user: EG.Model.extend({
