@@ -3270,7 +3270,8 @@ EG.Model.reopenClass({
 				};
 			} else {
 				relationship = function() {
-					return this.get('store').find(relatedType, this.get('_' + name));
+					var id = this.get('_' + name);
+					return (id === null ? null : this.get('store').find(relatedType, id));
 				};
 			}
 
