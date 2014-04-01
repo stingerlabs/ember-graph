@@ -9,11 +9,13 @@ EG.NumberType = EG.AttributeType.extend({
 	defaultValue: 0,
 
 	/**
+	 * Will
+	 *
 	 * @param {*} obj Javascript object
 	 * @returns {Object} JSON representation
 	 */
 	serialize: function(obj) {
-		return Number(obj) || 0;
+		return this._coerceToNumber(obj);
 	},
 
 	/**
@@ -21,7 +23,32 @@ EG.NumberType = EG.AttributeType.extend({
 	 * @returns {*} Javascript object
 	 */
 	deserialize: function(json) {
-		return Number(json) || 0;
+		return this._coerceToNumber(json);
+	},
+
+	/**
+	 * If the object passed is a number (and not NaN), it returns
+	 * the object coerced to a number primitive. If the object is
+	 * a string, it attempts to parse it (again, no NaN allowed).
+	 * Otherwise, the default value (0) is returned.
+	 *
+	 * @param obj
+	 * @returns {*}
+	 * @private
+	 */
+	_coerceToNumber: function(obj) {
+		if (this.isValid(obj)) {
+			return Number(obj);
+		}
+
+		if (Em.typeOf(obj) === 'string') {
+			var parsed = Number(obj);
+			if (this.isValid(parsed)) {
+				return parsed;
+			}
+		}
+
+		return 0;
 	},
 
 	/**
@@ -29,6 +56,6 @@ EG.NumberType = EG.AttributeType.extend({
 	 * @returns {Boolean} Whether or not the object is a valid value for this type
 	 */
 	isValid: function(obj) {
-		return (typeof obj === 'number');
+		return (Em.typeOf(obj) === 'number' && !isNaN(obj) && isFinite(obj));
 	}
 });

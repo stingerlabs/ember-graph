@@ -13,7 +13,7 @@ EG.BooleanType = EG.AttributeType.extend({
 	 * @returns {Object} JSON representation
 	 */
 	serialize: function(obj) {
-		return !!obj;
+		return this._coerceToBoolean(obj);
 	},
 
 	/**
@@ -21,7 +21,26 @@ EG.BooleanType = EG.AttributeType.extend({
 	 * @returns {*} Javascript object
 	 */
 	deserialize: function(json) {
-		return !!json;
+		return this._coerceToBoolean(json);
+	},
+
+	/**
+	 * The only things that equal true are: true (primitive or object) and 'true' (string).
+	 * Everything else is false.
+	 *
+	 * @param obj
+	 * @private
+	 */
+	_coerceToBoolean: function(obj) {
+		if (Em.typeOf(obj) === 'boolean' && obj == true) { // jshint ignore:line
+			return true;
+		}
+
+		if (Em.typeOf(obj) === 'string' && obj == 'true') {  // jshint ignore:line
+			return true;
+		}
+
+		return false;
 	},
 
 	/**
@@ -29,6 +48,6 @@ EG.BooleanType = EG.AttributeType.extend({
 	 * @returns {Boolean} Whether or not the object is a valid value for this type
 	 */
 	isValid: function(obj) {
-		return (typeof obj === 'boolean');
+		return (Em.typeOf(obj) === 'boolean');
 	}
 });

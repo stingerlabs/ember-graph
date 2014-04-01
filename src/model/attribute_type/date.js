@@ -42,7 +42,7 @@ EG.DateType = EG.AttributeType.extend({
 	 * @returns {Boolean} Whether or not the object is a valid value for this type
 	 */
 	isValid: function(obj) {
-		return (obj === null || obj instanceof Date);
+		return (obj === null || Em.typeOf(obj) === 'date');
 	},
 
 	/**
