@@ -141,7 +141,7 @@ EG.Model = Em.Object.extend(Em.Evented, {
 	 */
 	_loadData: function(json) {
 		json = json || {};
-		EG.debug.assert('The record `' + this.typeKey + ':' + this.get('id') + '` was attempted to be reloaded ' +
+		Em.assert('The record `' + this.typeKey + ':' + this.get('id') + '` was attempted to be reloaded ' +
 			'while dirty with `reloadDirty` disabled.', !this.get('isDirty') || this.get('store.reloadDirty'));
 
 		this._loadAttributes(json);
@@ -206,7 +206,7 @@ EG.Model.reopenClass({
 	},
 
 	create: function() {
-		EG.debug.assert('You can\'t create a record directly. Use the store.');
+		Em.assert('You can\'t create a record directly. Use the store.');
 	},
 
 	_create: EG.Model.create,

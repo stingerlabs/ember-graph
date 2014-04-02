@@ -31,14 +31,14 @@ EG.attr = function(options) {
 
 		EG.debug(function() {
 			if (arguments.length > 1 && value === undefined) {
-				EG.debug.warn('`undefined` is not a valid property value.');
+				Em.warn('`undefined` is not a valid property value.');
 			}
 		});
 
 		if (value !== undefined) {
 			var isValid = meta.isValid || this.get('store').attributeTypeFor(meta.type).isValid;
 			if (!isValid(value)) {
-				EG.debug.warn('The value \'' + value + '\' wasn\'t valid for the \'' + key + '\' property.');
+				Em.warn('The value \'' + value + '\' wasn\'t valid for the \'' + key + '\' property.');
 				return current;
 			}
 
@@ -74,7 +74,7 @@ EG.Model.reopenClass({
 
 		this.eachComputedProperty(function(name, meta) {
 			if (meta.isAttribute) {
-				EG.debug.assert('The ' + name + ' cannot be used as an attribute name.',
+				Em.assert('The ' + name + ' cannot be used as an attribute name.',
 					!disallowedAttributeNames.contains(name));
 
 				attributes.addObject(name);
@@ -179,7 +179,7 @@ EG.Model.reopen({
 	 */
 	_loadAttributes: function(json) {
 		this.constructor.eachAttribute(function(name, meta) {
-			EG.debug.assert('Your JSON is missing the \'' + name + '\' property.',
+			Em.assert('Your JSON is missing the \'' + name + '\' property.',
 				!meta.isRequired || json.hasOwnProperty(name));
 
 			var value = (json.hasOwnProperty(name) ? json[name] : meta.defaultValue);
@@ -189,7 +189,7 @@ EG.Model.reopen({
 			if (isValid(value)) {
 				this.set('_serverAttributes.' + name, value);
 			} else {
-				EG.debug.assert('Your value for the \'' + name + '\' property is inValid.');
+				Em.assert('Your value for the \'' + name + '\' property is inValid.');
 				this.set('_serverAttributes.' + name, meta.defaultValue);
 			}
 		}, this);

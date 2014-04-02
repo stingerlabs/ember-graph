@@ -258,29 +258,6 @@ EG.debug = function(fn) {
 	fn();
 };
 
-EG.debug(function() {
-	window.DEBUG_MODE = true;
-});
-
-EG.debug.assert = function(message, test) {
-	if (typeof message !== 'string') {
-		test = message;
-		message = 'Assertion failed.';
-	}
-
-	if (typeof test === 'function') {
-		test = test();
-	}
-
-	if (!test) {
-		throw new Error(message);
-	}
-};
-
-EG.debug.warn = function(message) {
-	console.warn(message);
-};
-
 })();
 
 (function() {
@@ -1717,7 +1694,7 @@ EG.Store = Em.Object.extend({
 	 * @returns {Promise} The reloaded record
 	 */
 	reloadRecord: function(record) {
-		EG.debug.assert('You can\'t reload record `' + record.typeKey + ':' +
+		Em.assert('You can\'t reload record `' + record.typeKey + ':' +
 			record.get('id') + '` while it\'s dirty.', !record.get('isDirty'));
 		record.set('isReloading', true);
 
@@ -2242,7 +2219,7 @@ EG.Relationship = Em.Object.extend({
 	 * @returns {String|undefined}
 	 */
 	otherId: function(record) {
-		EG.debug.assert(record instanceof EG.Model);
+		Em.assert('Record must be an instance of `EG.Model`.', EG.Model.detectInstance(record));
 
 		if (this.get('object1') === record) {
 			var object2 = this.get('object2');
@@ -2261,7 +2238,7 @@ EG.Relationship = Em.Object.extend({
 	 * @returns {Model|null}
 	 */
 	otherRecord: function(record) {
-		EG.debug.assert(record instanceof EG.Model);
+		Em.assert('Record must be an instance of `EG.Model`.', EG.Model.detectInstance(record));
 
 		var object1 = this.get('object1');
 		if (object1 === record) {
@@ -2336,15 +2313,15 @@ EG.Relationship.reopenClass({
 	create: function(properties) {
 		var relationship = this._super();
 
-		EG.debug.assert('Possible state values are new, deleted or saved.',
+		Em.assert('Possible state values are new, deleted or saved.',
 			properties.state === NEW_STATE || properties.state === DELETED_STATE || properties.state === SAVED_STATE);
-		EG.debug.assert('The first object must always be a record.', properties.object1 instanceof EG.Model);
-		EG.debug.assert('You must include a relationship name for the first object.',
+		Em.assert('The first object must always be a record.', properties.object1 instanceof EG.Model);
+		Em.assert('You must include a relationship name for the first object.',
 			typeof properties.relationship1 === 'string');
-		EG.debug.assert('The second object must either be a record, or a permanent ID.',
+		Em.assert('The second object must either be a record, or a permanent ID.',
 			properties.object2 instanceof EG.Model || (typeof properties.object2 === 'string' &&
 			!EG.String.startsWith(properties.object2, EG.Model.temporaryIdPrefix)));
-		EG.debug.assert('You must include a relationship name for the second object.',
+		Em.assert('You must include a relationship name for the second object.',
 			typeof properties.relationship1 === 'string' || properties.relationship1 === null);
 		relationship.setProperties(properties);
 
@@ -2375,7 +2352,7 @@ EG.Relationship.reopenClass({
 			case DELETED_STATE:
 				return '_deletedRelationships';
 			default:
-				EG.debug.assert('The given state was invalid.');
+				Em.assert('The given state was invalid.');
 				return '';
 		}
 	}
@@ -2953,7 +2930,7 @@ EG.Model = Em.Object.extend(Em.Evented, {
 	 */
 	_loadData: function(json) {
 		json = json || {};
-		EG.debug.assert('The record `' + this.typeKey + ':' + this.get('id') + '` was attempted to be reloaded ' +
+		Em.assert('The record `' + this.typeKey + ':' + this.get('id') + '` was attempted to be reloaded ' +
 			'while dirty with `reloadDirty` disabled.', !this.get('isDirty') || this.get('store.reloadDirty'));
 
 		this._loadAttributes(json);
@@ -3018,7 +2995,7 @@ EG.Model.reopenClass({
 	},
 
 	create: function() {
-		EG.debug.assert('You can\'t create a record directly. Use the store.');
+		Em.assert('You can\'t create a record directly. Use the store.');
 	},
 
 	_create: EG.Model.create,
@@ -3110,14 +3087,14 @@ EG.attr = function(options) {
 
 		EG.debug(function() {
 			if (arguments.length > 1 && value === undefined) {
-				EG.debug.warn('`undefined` is not a valid property value.');
+				Em.warn('`undefined` is not a valid property value.');
 			}
 		});
 
 		if (value !== undefined) {
 			var isValid = meta.isValid || this.get('store').attributeTypeFor(meta.type).isValid;
 			if (!isValid(value)) {
-				EG.debug.warn('The value \'' + value + '\' wasn\'t valid for the \'' + key + '\' property.');
+				Em.warn('The value \'' + value + '\' wasn\'t valid for the \'' + key + '\' property.');
 				return current;
 			}
 
@@ -3153,7 +3130,7 @@ EG.Model.reopenClass({
 
 		this.eachComputedProperty(function(name, meta) {
 			if (meta.isAttribute) {
-				EG.debug.assert('The ' + name + ' cannot be used as an attribute name.',
+				Em.assert('The ' + name + ' cannot be used as an attribute name.',
 					!disallowedAttributeNames.contains(name));
 
 				attributes.addObject(name);
@@ -3258,7 +3235,7 @@ EG.Model.reopen({
 	 */
 	_loadAttributes: function(json) {
 		this.constructor.eachAttribute(function(name, meta) {
-			EG.debug.assert('Your JSON is missing the \'' + name + '\' property.',
+			Em.assert('Your JSON is missing the \'' + name + '\' property.',
 				!meta.isRequired || json.hasOwnProperty(name));
 
 			var value = (json.hasOwnProperty(name) ? json[name] : meta.defaultValue);
@@ -3268,7 +3245,7 @@ EG.Model.reopen({
 			if (isValid(value)) {
 				this.set('_serverAttributes.' + name, value);
 			} else {
-				EG.debug.assert('Your value for the \'' + name + '\' property is inValid.');
+				Em.assert('Your value for the \'' + name + '\' property is inValid.');
 				this.set('_serverAttributes.' + name, meta.defaultValue);
 			}
 		}, this);
@@ -3391,9 +3368,9 @@ EG.Model.reopenClass({
 
 		this.eachComputedProperty(function(name, meta) {
 			if (meta.isRelationship) {
-				EG.debug.assert('The ' + name + ' cannot be used as a relationship name.',
+				Em.assert('The ' + name + ' cannot be used as a relationship name.',
 					!disallowedRelationshipNames.contains(name));
-				EG.debug.assert('Relationship names must start with a lowercase letter.', name[0].match(/[a-z]/g));
+				Em.assert('Relationship names must start with a lowercase letter.', name[0].match(/[a-z]/g));
 
 				relationships.addObject(name);
 			}
@@ -3669,7 +3646,7 @@ EG.Model.reopen({
 				}, this);
 			} else {
 				// There should only be one relationship in there
-				EG.debug.assert('An unknown relationship error occurred.', client.length <= 1);
+				Em.assert('An unknown relationship error occurred.', client.length <= 1);
 
 				var conflict = this._hasOneConflict(name, value);
 
@@ -3784,7 +3761,7 @@ EG.Model.reopen({
 				return (state === SAVED_STATE || state === NEW_STATE);
 			});
 
-			EG.debug.assert('An unknown relationship error occurred', relationships.length <= 1);
+			Em.assert('An unknown relationship error occurred', relationships.length <= 1);
 
 			return (relationships.length > 0 ? relationships[0] : null);
 		}
@@ -3858,7 +3835,7 @@ EG.Model.reopen({
 		var alerts = [];
 		var store = this.get('store');
 		var meta = this.constructor.metaForRelationship(relationship);
-		EG.debug.assert('Cannot modify a read-only relationship', meta.readOnly === false);
+		Em.assert('Cannot modify a read-only relationship', meta.readOnly === false);
 		if (meta.readOnly) {
 			return;
 		}
@@ -3908,7 +3885,7 @@ EG.Model.reopen({
 		}
 
 		var meta = this.constructor.metaForRelationship(relationship);
-		EG.debug.assert('Cannot modify a read-only relationship', meta.readOnly === false);
+		Em.assert('Cannot modify a read-only relationship', meta.readOnly === false);
 		if (meta.readOnly) {
 			return;
 		}
@@ -3944,7 +3921,7 @@ EG.Model.reopen({
 
 		var alerts = [];
 		var meta = this.constructor.metaForRelationship(relationship);
-		EG.debug.assert('Cannot modify a read-only relationship', meta.readOnly === false);
+		Em.assert('Cannot modify a read-only relationship', meta.readOnly === false);
 		if (meta.readOnly) {
 			return;
 		}
@@ -4003,7 +3980,7 @@ EG.Model.reopen({
 	clearHasOneRelationship: function(relationship, suppressNotifications) {
 		var alerts = [];
 		var meta = this.constructor.metaForRelationship(relationship);
-		EG.debug.assert('Cannot modify a read-only relationship', meta.readOnly === false);
+		Em.assert('Cannot modify a read-only relationship', meta.readOnly === false);
 		if (meta.readOnly) {
 			return [];
 		}

@@ -399,7 +399,7 @@ EG.Store = Em.Object.extend({
 	 * @returns {Promise} The reloaded record
 	 */
 	reloadRecord: function(record) {
-		EG.debug.assert('You can\'t reload record `' + record.typeKey + ':' +
+		Em.assert('You can\'t reload record `' + record.typeKey + ':' +
 			record.get('id') + '` while it\'s dirty.', !record.get('isDirty'));
 		record.set('isReloading', true);
 

@@ -148,7 +148,7 @@ EG.Relationship = Em.Object.extend({
 	 * @returns {String|undefined}
 	 */
 	otherId: function(record) {
-		EG.debug.assert(record instanceof EG.Model);
+		Em.assert('Record must be an instance of `EG.Model`.', EG.Model.detectInstance(record));
 
 		if (this.get('object1') === record) {
 			var object2 = this.get('object2');
@@ -167,7 +167,7 @@ EG.Relationship = Em.Object.extend({
 	 * @returns {Model|null}
 	 */
 	otherRecord: function(record) {
-		EG.debug.assert(record instanceof EG.Model);
+		Em.assert('Record must be an instance of `EG.Model`.', EG.Model.detectInstance(record));
 
 		var object1 = this.get('object1');
 		if (object1 === record) {
@@ -242,15 +242,15 @@ EG.Relationship.reopenClass({
 	create: function(properties) {
 		var relationship = this._super();
 
-		EG.debug.assert('Possible state values are new, deleted or saved.',
+		Em.assert('Possible state values are new, deleted or saved.',
 			properties.state === NEW_STATE || properties.state === DELETED_STATE || properties.state === SAVED_STATE);
-		EG.debug.assert('The first object must always be a record.', properties.object1 instanceof EG.Model);
-		EG.debug.assert('You must include a relationship name for the first object.',
+		Em.assert('The first object must always be a record.', properties.object1 instanceof EG.Model);
+		Em.assert('You must include a relationship name for the first object.',
 			typeof properties.relationship1 === 'string');
-		EG.debug.assert('The second object must either be a record, or a permanent ID.',
+		Em.assert('The second object must either be a record, or a permanent ID.',
 			properties.object2 instanceof EG.Model || (typeof properties.object2 === 'string' &&
 			!EG.String.startsWith(properties.object2, EG.Model.temporaryIdPrefix)));
-		EG.debug.assert('You must include a relationship name for the second object.',
+		Em.assert('You must include a relationship name for the second object.',
 			typeof properties.relationship1 === 'string' || properties.relationship1 === null);
 		relationship.setProperties(properties);
 
@@ -281,7 +281,7 @@ EG.Relationship.reopenClass({
 			case DELETED_STATE:
 				return '_deletedRelationships';
 			default:
-				EG.debug.assert('The given state was invalid.');
+				Em.assert('The given state was invalid.');
 				return '';
 		}
 	}

@@ -108,9 +108,9 @@ EG.Model.reopenClass({
 
 		this.eachComputedProperty(function(name, meta) {
 			if (meta.isRelationship) {
-				EG.debug.assert('The ' + name + ' cannot be used as a relationship name.',
+				Em.assert('The ' + name + ' cannot be used as a relationship name.',
 					!disallowedRelationshipNames.contains(name));
-				EG.debug.assert('Relationship names must start with a lowercase letter.', name[0].match(/[a-z]/g));
+				Em.assert('Relationship names must start with a lowercase letter.', name[0].match(/[a-z]/g));
 
 				relationships.addObject(name);
 			}
@@ -386,7 +386,7 @@ EG.Model.reopen({
 				}, this);
 			} else {
 				// There should only be one relationship in there
-				EG.debug.assert('An unknown relationship error occurred.', client.length <= 1);
+				Em.assert('An unknown relationship error occurred.', client.length <= 1);
 
 				var conflict = this._hasOneConflict(name, value);
 
@@ -501,7 +501,7 @@ EG.Model.reopen({
 				return (state === SAVED_STATE || state === NEW_STATE);
 			});
 
-			EG.debug.assert('An unknown relationship error occurred', relationships.length <= 1);
+			Em.assert('An unknown relationship error occurred', relationships.length <= 1);
 
 			return (relationships.length > 0 ? relationships[0] : null);
 		}
@@ -575,7 +575,7 @@ EG.Model.reopen({
 		var alerts = [];
 		var store = this.get('store');
 		var meta = this.constructor.metaForRelationship(relationship);
-		EG.debug.assert('Cannot modify a read-only relationship', meta.readOnly === false);
+		Em.assert('Cannot modify a read-only relationship', meta.readOnly === false);
 		if (meta.readOnly) {
 			return;
 		}
@@ -625,7 +625,7 @@ EG.Model.reopen({
 		}
 
 		var meta = this.constructor.metaForRelationship(relationship);
-		EG.debug.assert('Cannot modify a read-only relationship', meta.readOnly === false);
+		Em.assert('Cannot modify a read-only relationship', meta.readOnly === false);
 		if (meta.readOnly) {
 			return;
 		}
@@ -661,7 +661,7 @@ EG.Model.reopen({
 
 		var alerts = [];
 		var meta = this.constructor.metaForRelationship(relationship);
-		EG.debug.assert('Cannot modify a read-only relationship', meta.readOnly === false);
+		Em.assert('Cannot modify a read-only relationship', meta.readOnly === false);
 		if (meta.readOnly) {
 			return;
 		}
@@ -720,7 +720,7 @@ EG.Model.reopen({
 	clearHasOneRelationship: function(relationship, suppressNotifications) {
 		var alerts = [];
 		var meta = this.constructor.metaForRelationship(relationship);
-		EG.debug.assert('Cannot modify a read-only relationship', meta.readOnly === false);
+		Em.assert('Cannot modify a read-only relationship', meta.readOnly === false);
 		if (meta.readOnly) {
 			return [];
 		}
