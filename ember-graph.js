@@ -2990,6 +2990,11 @@ EG.Model = Em.Object.extend(Em.Evented, {
 		}
 
 		return (this.typeKey === Em.get(other, 'typeKey') && this.get('id') === Em.get(other, 'id'));
+	},
+
+	rollback: function() {
+		this.rollbackAttributes();
+		this.rollbackRelationships();
 	}
 });
 
