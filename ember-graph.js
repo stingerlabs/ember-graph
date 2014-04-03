@@ -1223,7 +1223,7 @@ EG.RESTAdapter = EG.Adapter.extend({
 	 * @private
 	 */
 	_buildUrl: function(typeKey, id, options) {
-		var url = this._prefix() + '/';
+		var url = this.get('prefix') + '/';
 
 		if (id) {
 			url += (typeKey + '/' + id);
@@ -1251,9 +1251,9 @@ EG.RESTAdapter = EG.Adapter.extend({
 	 *
 	 * @private
 	 */
-	_prefix: function() {
+	prefix: Em.computed(function() {
 		return '';
-	},
+	}).property(),
 
 	/**
 	 * This method sends the request to the server.

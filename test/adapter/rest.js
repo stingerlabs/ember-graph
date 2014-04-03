@@ -17,13 +17,15 @@
 						relatedType: 'foo', inverse: null, isRequired: false, defaultValue: '123' }),
 					hasMany: EG.hasMany({ relatedType: 'foo', inverse: null, isRequired: false })
 				})
+			}, {
+				adapter: EG.RESTAdapter.extend({
+					prefix: Em.computed(function() {
+						return prefix;
+					}).property()
+				})
 			});
 
 			adapter = store.get('adapter');
-
-			adapter._prefix = function() {
-				return prefix;
-			};
 
 			store._loadRecord('test', {
 				id: '1',
