@@ -2,6 +2,18 @@ if (Em) {
 	// Remember, these are run AFTER the application becomes ready
 	Em.onLoad('Ember.Application', function(Application) {
 		Application.initializer({
+			name: 'injectStore',
+			before: 'store',
+
+			initialize: function(container, App) {
+				App.inject('controller', 'store', 'store:main');
+				App.inject('route', 'store', 'store:main');
+				App.inject('adapter', 'store', 'store:main');
+				App.inject('serializer', 'store', 'store:main');
+			}
+		});
+
+		Application.initializer({
 			name: 'store',
 
 			initialize: function(container, App) {
@@ -19,19 +31,8 @@ if (Em) {
 				App.register('type:object', EG.ObjectType, { singleton: true });
 				App.register('type:array', EG.ArrayType, { singleton: true });
 
-				container.lookup('store:main');
-			}
-		});
-
-		Application.initializer({
-			name: 'injectStore',
-			before: 'store',
-
-			initialize: function(container, App) {
-				App.inject('controller', 'store', 'store:main');
-				App.inject('route', 'store', 'store:main');
-				App.inject('adapter', 'store', 'store:main');
-				App.inject('serializer', 'store', 'store:main');
+				var store = container.lookup('store:main');
+				App.set('store', store);
 			}
 		});
 	});
