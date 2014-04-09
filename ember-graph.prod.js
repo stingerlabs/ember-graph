@@ -1503,10 +1503,12 @@ EG.Store = Em.Object.extend({
 			return this._findSingle(typeKey, options);
 		} else if (Em.isArray(options)) {
 			return this._findMany(typeKey, options);
-		} else if (typeof options === 'object' && !!options) {
+		} else if (Em.typeOf(options) === 'object') {
 			return this._findQuery(typeKey, options);
-		} else {
+		} else if (options === undefined && arguments.length === 1) {
 			return this._findAll(typeKey);
+		} else {
+			throw new Ember.Error('A bad `find` call was made to the store.');
 		}
 	},
 
