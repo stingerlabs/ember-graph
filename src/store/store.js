@@ -209,7 +209,8 @@ EG.Store = Em.Object.extend({
 
 		switch (Em.typeOf(options)) {
 			case 'string':
-				return this._findSingle(typeKey, options);
+			case 'number':
+				return this._findSingle(typeKey, options + '');
 			case 'array':
 				return this._findMany(typeKey, options);
 			case 'object':
