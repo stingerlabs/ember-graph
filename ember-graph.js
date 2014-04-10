@@ -441,7 +441,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 				return;
 			}
 
-			var typeKey = key.singularize();
+			var typeKey = EG.String.singularize(key);
 			json[typeKey] = payload[key].concat(json[typeKey] || []);
 		}, this);
 
@@ -798,7 +798,7 @@ EG.SynchronousAdapter = EG.Adapter.extend({
 	 */
 	findRecord: function(typeKey, id) {
 		var json = {};
-		json[typeKey] = [this._getRecord(typeKey, id)].filter(removeEmpty);
+		json[EG.String.pluralize(typeKey)] = [this._getRecord(typeKey, id)].filter(removeEmpty);
 		return Em.RSVP.Promise.resolve(this.deserialize(json));
 	},
 
@@ -812,7 +812,7 @@ EG.SynchronousAdapter = EG.Adapter.extend({
 	 */
 	findMany: function(typeKey, ids) {
 		var json = {};
-		json[typeKey] = ids.map(function(id) {
+		json[EG.String.pluralize(typeKey)] = ids.map(function(id) {
 			return this._getRecord(typeKey, id);
 		}, this).filter(removeEmpty);
 		return Em.RSVP.Promise.resolve(this.deserialize(json));
@@ -827,7 +827,7 @@ EG.SynchronousAdapter = EG.Adapter.extend({
 	 */
 	findAll: function(typeKey) {
 		var json = {};
-		json[typeKey] = this._getRecords(typeKey);
+		json[EG.String.pluralize(typeKey)] = this._getRecords(typeKey);
 		return Em.RSVP.Promise.resolve(this.deserialize(json));
 	},
 

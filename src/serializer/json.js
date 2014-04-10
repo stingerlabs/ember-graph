@@ -116,7 +116,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 				return;
 			}
 
-			var typeKey = key.singularize();
+			var typeKey = EG.String.singularize(key);
 			json[typeKey] = payload[key].concat(json[typeKey] || []);
 		}, this);
 
