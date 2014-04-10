@@ -465,28 +465,15 @@ EG.JSONSerializer = EG.Serializer.extend({
 			json.links = json.links || {};
 
 			if (typeof json.id !== 'string' && typeof json.id !== 'number') {
-				throw new Error('Your JSON was missing an ID.');
+				
+				
+				return null;
 			}
 
 			var model = this.get('store').modelForType(typeKey);
 			var record = { id: json.id + '' };
 
-			EG.debug(function() {
-				var attributes = Em.get(model, 'attributes');
-				var givenAttributes = new Em.Set(Em.keys(json));
-				givenAttributes.removeObjects(['id', 'links']);
-				var extra = givenAttributes.withoutAll(attributes);
-
-				if (extra.length > 0) {
-					throw new Error('Your JSON contained extra attributes: ' + extra.toArray().join(','));
-				}
-
-				model.eachAttribute(function(name, meta) {
-					if (!json.hasOwnProperty(name) && meta.isRequired) {
-						throw new Error('Your JSON is missing the required `' + name + '` attribute.');
-					}
-				});
-			});
+			this._validateAttributes(model, json);
 
 			Em.keys(json).forEach(function(attribute) {
 				if (attribute === 'id' || attribute === 'links') {
@@ -498,21 +485,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 				record[attribute] = type.deserialize(json[attribute]);
 			}, this);
 
-			EG.debug(function() {
-				var relationships = Em.get(model, 'relationships');
-				var givenRelationships = new Em.Set(Em.keys(json.links));
-				var extra = givenRelationships.withoutAll(relationships);
-
-				if (extra.length > 0) {
-					throw new Error('Your JSON contained extra relationships: ' + extra.toArray().join(','));
-				}
-
-				model.eachRelationship(function(name, meta) {
-					if (!json.links.hasOwnProperty(name) && meta.isRequired) {
-						throw new Error('Your JSON is missing the required `' + name + '` relationship.');
-					}
-				});
-			});
+			this._validateRelationships(model, json);
 
 			Em.keys(json.links).forEach(function(relationship) {
 				var meta = model.metaForRelationship(relationship);
@@ -524,7 +497,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 				} else {
 					record[relationship] = json.links[relationship];
 
-					if (typeof record[relationship] === 'number') {
+					if (record[relationship] !== null) {
 						record[relationship] = '' + record[relationship];
 					}
 				}
@@ -535,6 +508,65 @@ EG.JSONSerializer = EG.Serializer.extend({
 			
 			return null;
 		}
+	},
+
+	/**
+	 * Checks the validity of the attributes in the given JSON. It will throw exceptions
+	 * for unrecoverable errors (missing required attributes) and will make assertions
+	 * for errors than can be ignored (extra attributes).
+	 *
+	 * @param {Model} model
+	 * @param {JSON} json
+	 * @private
+	 */
+	_validateAttributes: function(model, json) {
+		var attributes = Em.get(model, 'attributes');
+		var givenAttributes = new Em.Set(Em.keys(json));
+		givenAttributes.removeObjects(['id', 'links']);
+		var extra = givenAttributes.withoutAll(attributes);
+
+		
+
+		model.eachAttribute(function(name, meta) {
+			if (!json.hasOwnProperty(name) && meta.isRequired) {
+				throw new Error('Your JSON is missing the required `' + name + '` attribute.');
+			}
+		});
+	},
+
+	/**
+	 * Checks the validity of the relationships in the given JSON. It will throw exceptions
+	 * for unrecoverable errors (missing required relationships or incorrect types) and will
+	 * make assertions for errors than can be ignored (extra relationships).
+	 *
+	 * @param {Model} model
+	 * @param {JSON} json
+	 * @private
+	 */
+	_validateRelationships: function(model, json) {
+		var relationships = Em.get(model, 'relationships');
+		var givenRelationships = new Em.Set(Em.keys(json.links));
+		var extra = givenRelationships.withoutAll(relationships);
+
+		
+
+		model.eachRelationship(function(name, meta) {
+			if (!json.links.hasOwnProperty(name) && meta.isRequired) {
+				throw new Error('Your JSON is missing the required `' + name + '` relationship.');
+			}
+
+			var jsonType = Em.typeOf(json.links[name]);
+			if (meta.kind === EG.Model.HAS_MANY_KEY) {
+				if (jsonType !== 'array') {
+					throw new Error('The `' + name + '` has many relationship in your JSON was not an array.');
+				}
+			} else {
+				if (jsonType !== 'string' && jsonType !== 'number' && jsonType !== 'null') {
+					throw new Error('The `' + name + '` has one relationship in your ' +
+						'JSON was not a valid value (string, number or null).');
+				}
+			}
+		});
 	}
 });
 
