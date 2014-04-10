@@ -230,15 +230,17 @@ EG.JSONSerializer = EG.Serializer.extend({
 				throw new Error('Your JSON is missing the required `' + name + '` relationship.');
 			}
 
-			var jsonType = Em.typeOf(json.links[name]);
-			if (meta.kind === EG.Model.HAS_MANY_KEY) {
-				if (jsonType !== 'array') {
-					throw new Error('The `' + name + '` has many relationship in your JSON was not an array.');
-				}
-			} else {
-				if (jsonType !== 'string' && jsonType !== 'number' && jsonType !== 'null') {
-					throw new Error('The `' + name + '` has one relationship in your ' +
-						'JSON was not a valid value (string, number or null).');
+			if (json.links.hasOwnProperty(name)) {
+				var jsonType = Em.typeOf(json.links[name]);
+				if (meta.kind === EG.Model.HAS_MANY_KEY) {
+					if (jsonType !== 'array') {
+						throw new Error('The `' + name + '` has many relationship in your JSON was not an array.');
+					}
+				} else {
+					if (jsonType !== 'string' && jsonType !== 'number' && jsonType !== 'null') {
+						throw new Error('The `' + name + '` has one relationship in your ' +
+							'JSON was not a valid value (string, number or null).');
+					}
 				}
 			}
 		});
