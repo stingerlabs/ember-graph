@@ -7,6 +7,9 @@ EG.util = {
 		});
 	},
 
+	/**
+	 * @deprecated
+	 */
 	values: function(obj) {
 		return Em.keys(obj).map(function(key) {
 			return obj[key];

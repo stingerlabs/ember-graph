@@ -111,9 +111,19 @@ EG.Store.reopen({
 	 * @private
 	 */
 	_queuedRelationshipsFor: function(typeKey, id) {
-		return EG.util.values(this.get('_queuedRelationships')).filter(function(relationship) {
-			return (relationship.get('type2') === typeKey && relationship.get('object2') === id);
-		});
+		var current, relationships = [];
+		var queued = this.get('_queuedRelationships');
+
+		for (var relationshipId in queued) {
+			if (queued.hasOwnProperty(relationshipId)) {
+				current = queued[relationshipId];
+				if (current.get('type2') === typeKey && current.get('object2') === id) {
+					relationships.push(current);
+				}
+			}
+		}
+
+		return relationships;
 	},
 
 	/**
