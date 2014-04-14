@@ -27,3 +27,89 @@ It must be noted that Ember-Graph is not for everybody. Ember-Data is a great li
 - Complex data modifications. Because of the nature of live data updates, it was very important that Ember-Graph be able to handle the refreshing of data, even if that data might by dirty. Ember-Graph has several features (with many more to come) that help resolve conflicts between different versions of records.
 
 If any of the above apply to you, Ember-Graph is likely a good fit.
+
+## The Code
+
+The easiest way to understand something is to see it, so let's get into some code. Declaring models is very similar to Ember-Data.
+
+```js
+App.User = EmberGraph.Model.extend({
+	name: EmberGraph.attr({
+		type: 'string',
+		readOnly: true
+	}),
+
+	posts: EmberGraph.hasMany({
+		relatedType: 'post',
+		inverse: 'author',
+		isRequired: false
+	})
+});
+
+App.Post = EmberGraph.Model.extend({
+	title: EmberGraph.attr({
+		type: 'string',
+		defaultValue: '(No Subject)',
+		isValid: function(value) {
+			return value && value.length > 0;
+		}
+	}),
+
+	postedOn: EmberGraph.attr({
+		type: 'date',
+		readOnly: true
+	}),
+
+	author: hasOne({
+		relatedType: 'user',
+		inverse: 'posts'
+	}),
+
+	tags: hasMany({
+		relatedType: 'tag',
+		inverse: null,
+		defaultValue: ['1', '2']
+	})
+});
+
+App.Tag = EmberGraph.Model.extend({
+	title: EmberGraph.attr({
+		type: 'string'
+	})
+});
+
+```
+
+We declared three related models, and most of this should be pretty familiar if you're coming from Ember-Data. And even if you're not, the naming is pretty semantic. But to understand how the `attr`, `hasMany` and `hasOne` functions work, look at their documentation for an in-depth description of all of their options.
+
+Now, to see the real power of Ember-Graph, let's see it in action. The most powerful feature of Ember-Graph is the single source of truth, so let's start with that. Assume that on your server, user #5 owns 3 posts: #1, #3 and #7.
+
+```js
+App.get('store').find('post', '1').then(function(post1) {
+	// Get the  ID of the relationship without loading it
+	console.log(post1.get('_author')); // '5'
+	// Change the author to #7
+	post1.setHasOneRelationship('author', '7');
+	// Now load user #7 in the form of a promise
+	return post1.get('author');
+}).then(function(user7) {
+	// Ember-Graph is smart enough to know that we connect post #1 to user #7
+	console.log(user7.get('_posts')); // ['1']
+	// Let's save our user, which also returns a promise
+	return user7.save();
+}).then(function(user7) {
+	// This is cached, so get it directly
+	var post1 = App.get('store').getRecord('user', '1');
+	// Ember-Graph knows that the relationship was persisted
+	console.log(post1.get('_author')); // '7'
+	console.log(post1.get('isDirty')); // false
+
+	return App.get('store').find('user', '5');
+}).then(function(user5) {
+	// Ember-Graph knows, even if the server doesn't yet,
+	// that user5 and post1 were disconnected
+	console.log(user5.get('_posts')); // ['1', '3']
+});
+```
+
+As you can see, it doesn't matter what order you change or load the data, Ember-Graph knows that when relationships are broken and created, and it applies those changes to _all_ models, even if they haven't been loaded yet. It also maintains state for the relationships. So at any point in time, a relationship could be: brand new and not persisted, persisted but scheduled for deletion, or persisted and unchanged. And the best part is that these relationships can be updated at _any_ time, even if the record is dirty. Ember-Graph provides options for refreshing dirty records so that you can _always_ have the most up-to-date information.
