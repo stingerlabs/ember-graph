@@ -1,15 +1,31 @@
 var disallowedAttributeNames = new Em.Set(['id', 'type', 'content']);
 
 /**
- * Possible options:
- * type: Type of the attribute. Required.
- * defaultValue: Value if not present when created. If included, property is optional.
- * readOnly: True if the attribute should be immutable. Defaults to false.
- * isEqual: Function to compare two instances of the property. Defaults to using the type comparison function.
- * isValid: A function that returns whether the value is valid or not. Defaults to using the type validity function.
+ * Declares an attribute on a model. The options determine the type and behavior
+ * of the attributes. Bold options are required:
  *
- * @param options
- * @returns {Em.ComputedProperty}
+ * - **`type`**: The type of the attribute. `string`, `boolean`, `number`, `date`, `array`
+ *               and `object` are the built in types. New types can be declared by extending
+ *               `AttributeType`.
+ * - `defaultValue`: The value that gets used if the attribute is missing from the loaded data.
+ *                   If omitted, the attribute is required and will error if missing.
+ * - `readOnly`: Set to `true` to make the attribute read-only. Defaults to `false`.
+ * - `isEqual`: Function that will compare two different instances of the attribute. Should take
+ *              two arguments and return `true` if the given attributes are equal. Defaults to
+ *              the function declared in the `AttributeType` subclass.
+ * - `isValid`: Function that determines if a value is valid or not. It's used during serialization
+ *              and deserialization, as well as when changing the value. The function should take
+ *              a single argument and return `true` or `false` depending on validity of the value.
+ *
+ * The option values are all available as property metadata, as well the `isAttribute` property
+ * which is always `true`, and the `isRequired` property.
+ *
+ * Like other Ember properties, `undefined` is _not_ a valid attribute value.
+ *
+ * @namespace EmberGraph
+ * @method attr
+ * @param {Object} options
+ * @return {Ember.ComputedProperty}
  */
 EG.attr = function(options) {
 	var meta = {
@@ -62,12 +78,17 @@ EG.attr = function(options) {
 
 /**
  * @class Model
+ * @namespace EmberGraph
  */
 EG.Model.reopenClass({
 
 	/**
+	 * A set of all of the attribute names for this model.
+	 *
+	 * @property attributes
+	 * @type Set
 	 * @static
-	 * @type {Set}
+	 * @readOnly
 	 */
 	attributes: Em.computed(function() {
 		var attributes = new Em.Set();
@@ -86,24 +107,30 @@ EG.Model.reopenClass({
 
 	/**
 	 * Just a more semantic alias for `metaForProperty`
-	 * @alias metaForProperty
+	 *
+	 * @method metaForAttribute
+	 * @param {String} attributeName
+	 * @return {Object}
+	 * @static
 	 */
 	metaForAttribute: Em.aliasMethod('metaForProperty'),
 
 	/**
-	 * @param name Name of property
-	 * @returns {Boolean} True if attribute, false otherwise
+	 * @method isAttribute
+	 * @param {String} propertyName
+	 * @return {Boolean}
 	 * @static
 	 */
-	isAttribute: function(name) {
-		return Em.get(this, 'attributes').contains(name);
+	isAttribute: function(propertyName) {
+		return Em.get(this, 'attributes').contains(propertyName);
 	},
 
 	/**
 	 * Calls the callback for each attribute defined on the model.
 	 *
+	 * @method eachAttribute
 	 * @param {Function} callback Function that takes `name` and `meta` parameters
-	 * @param {*} [binding] Object to use as `this`
+	 * @param [binding] Object to use as `this`
 	 * @static
 	 */
 	eachAttribute: function(callback, binding) {
@@ -115,6 +142,10 @@ EG.Model.reopenClass({
 	}
 });
 
+/**
+ * @class Model
+ * @namespace EmberGraph
+ */
 EG.Model.reopen({
 
 	/**
@@ -122,16 +153,12 @@ EG.Model.reopen({
 	 * can be updated is if the server sends over new JSON through an operation,
 	 * or a save operation successfully completes, in which case `_clientAttributes`
 	 * will be copied into this.
-	 *
-	 * @private
 	 */
 	_serverAttributes: null,
 
 	/**
 	 * Represents the state of the object on the client. These are likely different
 	 * from what the server has and are completely temporary until saved.
-	 *
-	 * @private
 	 */
 	_clientAttributes: null,
 
@@ -145,7 +172,11 @@ EG.Model.reopen({
 	}).property('_clientAttributes'),
 
 	/**
-	 * @returns {Object} Keys are attribute names, values are arrays with [oldVal, newVal]
+	 * Returns an object that contains every attribute
+	 * that has been changed since the last save.
+	 *
+	 * @method changedAttributes
+	 * @return {Object} Keys are attribute names, values are arrays with [oldVal, newVal]
 	 */
 	changedAttributes: function() {
 		var diff = {};
@@ -166,6 +197,8 @@ EG.Model.reopen({
 
 	/**
 	 * Resets all attribute changes to last known server attributes.
+	 *
+	 * @method rollbackAttributes
 	 */
 	rollbackAttributes: function() {
 		this.set('_clientAttributes', {});
@@ -173,9 +206,6 @@ EG.Model.reopen({
 
 	/**
 	 * Loads attributes from the server.
-	 *
-	 * @param {Object} json The JSON with properties to load
-	 * @private
 	 */
 	_loadAttributes: function(json) {
 		this.constructor.eachAttribute(function(name, meta) {

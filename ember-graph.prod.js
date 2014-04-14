@@ -2842,7 +2842,10 @@ EG.StringType = EG.AttributeType.extend({
  * extended for each type of object that your object model
  * contains.
  *
- * @class {Model}
+ * @class Model
+ * @constructor
+ * @namespace EmberGraph
+ * @extends Ember.Object
  */
 EG.Model = Em.Object.extend(Em.Evented, {
 
@@ -2852,13 +2855,12 @@ EG.Model = Em.Object.extend(Em.Evented, {
 	 * will be referenced throughout the application. Refrain from
 	 * special characters. Stick with lowercase letters.
 	 *
-	 * @type {String}
+	 * @property typeKey
+	 * @type String
+	 * @final
 	 */
 	typeKey: null,
 
-	/**
-	 * @type {String}
-	 */
 	_id: null,
 
 	/**
@@ -2866,7 +2868,9 @@ EG.Model = Em.Object.extend(Em.Evented, {
 	 * it's being changed from a temporary ID to a permanent one. Only the
 	 * store should change the ID from a temporary one to a permanent one.
 	 *
-	 * @type {String}
+	 * @property id
+	 * @type String
+	 * @final
 	 */
 	id: Em.computed(function(key, value) {
 		var id = this.get('_id');
@@ -2889,7 +2893,9 @@ EG.Model = Em.Object.extend(Em.Evented, {
 	}).property('_id'),
 
 	/**
-	 * @type {Object}
+	 * @property store
+	 * @type EmberGraph.Store
+	 * @final
 	 */
 	store: null,
 
@@ -2897,7 +2903,9 @@ EG.Model = Em.Object.extend(Em.Evented, {
 	 * Denotes that a record has been deleted. If `isDirty` is also true,
 	 * the change hasn't been persisted to the server yet.
 	 *
-	 * @type {Boolean}
+	 * @property isDeleted
+	 * @type Boolean
+	 * @final
 	 */
 	isDeleted: null,
 
@@ -2905,7 +2913,9 @@ EG.Model = Em.Object.extend(Em.Evented, {
 	 * Denotes that the record is currently saving its changes
 	 * to the server, but the server hasn't responded yet.
 	 *
-	 * @type {Boolean}
+	 * @property isSaving
+	 * @type Boolean
+	 * @final
 	 */
 	isSaving: null,
 
@@ -2913,14 +2923,18 @@ EG.Model = Em.Object.extend(Em.Evented, {
 	 * Denotes that the record is being reloaded from the server,
 	 * and will likely change when the server responds.
 	 *
-	 * @type {Boolean}
+	 * @property isReloading
+	 * @type Boolean
+	 * @final
 	 */
 	isReloading: null,
 
 	/**
 	 * Denotes that a record has been loaded into a store and isn't freestanding.
 	 *
-	 * @type {Boolean}
+	 * @property isLoaded
+	 * @type Boolean
+	 * @final
 	 */
 	isLoaded: Em.computed(function() {
 		return this.get('store') !== null;
@@ -2929,7 +2943,9 @@ EG.Model = Em.Object.extend(Em.Evented, {
 	/**
 	 * Denotes that the record has changes that have not been saved to the server yet.
 	 *
-	 * @type {Boolean}
+	 * @property isDirty
+	 * @type Boolean
+	 * @final
 	 */
 	isDirty: Em.computed(function() {
 		var isDeleted = this.get('isDeleted');
@@ -2947,7 +2963,9 @@ EG.Model = Em.Object.extend(Em.Evented, {
 	 * Denotes that a record has just been created and has not been saved to
 	 * the server yet. Most likely has a temporary ID if this is true.
 	 *
-	 * @type {Boolean}
+	 * @property isNew
+	 * @type Boolean
+	 * @final
 	 */
 	isNew: Em.computed(function() {
 		return EG.String.startsWith(this.get('_id'), this.constructor.temporaryIdPrefix);
@@ -2955,8 +2973,12 @@ EG.Model = Em.Object.extend(Em.Evented, {
 
 	/**
 	 * Sets up the instance variables of this class.
+	 *
+	 * @method init
 	 */
 	init: function() {
+		this._super();
+
 		this.set('_id', null);
 		this.set('store', null);
 
@@ -2988,6 +3010,9 @@ EG.Model = Em.Object.extend(Em.Evented, {
 
 	/**
 	 * Proxies the store's save method for convenience.
+	 *
+	 * @method save
+	 * @return Promise
 	 */
 	save: function() {
 		return this.get('store').saveRecord(this);
@@ -2995,6 +3020,9 @@ EG.Model = Em.Object.extend(Em.Evented, {
 
 	/**
 	 * Proxies the store's reload method for convenience.
+	 *
+	 * @method reload
+	 * @return Promise
 	 */
 	reload: function() {
 		return this.get('store').reloadRecord(this);
@@ -3002,6 +3030,9 @@ EG.Model = Em.Object.extend(Em.Evented, {
 
 	/**
 	 * Proxies the store's delete method for convenience.
+	 *
+	 * @method destroy
+	 * @return Promise
 	 */
 	destroy: function() {
 		return this.get('store').deleteRecord(this);
@@ -3009,6 +3040,9 @@ EG.Model = Em.Object.extend(Em.Evented, {
 
 	/**
 	 * Determines if the other object is a model that represents the same record.
+	 *
+	 * @method isEqual
+	 * @return Boolean
 	 */
 	isEqual: function(other) {
 		if (!other) {
@@ -3018,26 +3052,38 @@ EG.Model = Em.Object.extend(Em.Evented, {
 		return (this.typeKey === Em.get(other, 'typeKey') && this.get('id') === Em.get(other, 'id'));
 	},
 
+	/**
+	 * Rolls back changes to both attributes and relationships.
+	 *
+	 * @method rollback
+	 */
 	rollback: function() {
 		this.rollbackAttributes();
 		this.rollbackRelationships();
 	}
 });
 
+/**
+ * @class Model
+ * @namespace EmberGraph
+ */
 EG.Model.reopenClass({
 
 	/**
 	 * The prefix added to generated IDs to show that the prefix wasn't given
 	 * by the server and is only temporary until the real one comes in.
 	 *
-	 * @type {String}
-	 * @constant
+	 * @property temporaryIdPrefix
+	 * @type String
 	 * @static
 	 */
 	temporaryIdPrefix: 'EG_TEMP_ID_',
 
 	/**
-	 * @returns {Boolean}
+	 * @method isTemporaryId
+	 * @param {String} id
+	 * @return Boolean
+	 * @static
 	 */
 	isTemporaryId: function(id) {
 		return EG.String.startsWith(id, this.temporaryIdPrefix);
@@ -3049,6 +3095,10 @@ EG.Model.reopenClass({
 
 	_create: EG.Model.create,
 
+	/**
+	 * @method extend
+	 * @static
+	 */
 	extend: function() {
 		var args = Array.prototype.slice.call(arguments, 0);
 		var options = args.pop() || {};
@@ -3072,25 +3122,33 @@ EG.Model.reopenClass({
 		return subclass;
 	},
 
-	isEqual: function(one, two) {
-		if (one === undefined || two === undefined) {
+	/**
+	 * Determines if the two objects passed in are equal models (or model proxies).
+	 *
+	 * @param {Model} a
+	 * @param {Model} b
+	 * @return Boolean
+	 * @static
+	 */
+	isEqual: function(a, b) {
+		if (Em.isNone(a) || Em.isNone(b)) {
 			return false;
 		}
 
-		if (this.detectInstance(one)) {
-			return one.isEqual(two);
+		if (this.detectInstance(a)) {
+			return a.isEqual(b);
 		}
 
-		if (this.detectInstance(two)) {
-			return two.isEqual(one);
+		if (this.detectInstance(b)) {
+			return b.isEqual(a);
 		}
 
-		if (this.detectInstance(Em.get(one, 'content'))) {
-			return Em.get(one, 'content').isEqual(two);
+		if (this.detectInstance(Em.get(a, 'content'))) {
+			return Em.get(a, 'content').isEqual(b);
 		}
 
-		if (this.detectInstance(Em.get(two, 'content'))) {
-			return Em.get(two, 'content').isEqual(one);
+		if (this.detectInstance(Em.get(b, 'content'))) {
+			return Em.get(b, 'content').isEqual(a);
 		}
 
 		return false;
@@ -3106,15 +3164,31 @@ EG.Model.reopenClass({
 var disallowedAttributeNames = new Em.Set(['id', 'type', 'content']);
 
 /**
- * Possible options:
- * type: Type of the attribute. Required.
- * defaultValue: Value if not present when created. If included, property is optional.
- * readOnly: True if the attribute should be immutable. Defaults to false.
- * isEqual: Function to compare two instances of the property. Defaults to using the type comparison function.
- * isValid: A function that returns whether the value is valid or not. Defaults to using the type validity function.
+ * Declares an attribute on a model. The options determine the type and behavior
+ * of the attributes. Bold options are required:
  *
- * @param options
- * @returns {Em.ComputedProperty}
+ * - **`type`**: The type of the attribute. `string`, `boolean`, `number`, `date`, `array`
+ *               and `object` are the built in types. New types can be declared by extending
+ *               `AttributeType`.
+ * - `defaultValue`: The value that gets used if the attribute is missing from the loaded data.
+ *                   If omitted, the attribute is required and will error if missing.
+ * - `readOnly`: Set to `true` to make the attribute read-only. Defaults to `false`.
+ * - `isEqual`: Function that will compare two different instances of the attribute. Should take
+ *              two arguments and return `true` if the given attributes are equal. Defaults to
+ *              the function declared in the `AttributeType` subclass.
+ * - `isValid`: Function that determines if a value is valid or not. It's used during serialization
+ *              and deserialization, as well as when changing the value. The function should take
+ *              a single argument and return `true` or `false` depending on validity of the value.
+ *
+ * The option values are all available as property metadata, as well the `isAttribute` property
+ * which is always `true`, and the `isRequired` property.
+ *
+ * Like other Ember properties, `undefined` is _not_ a valid attribute value.
+ *
+ * @namespace EmberGraph
+ * @method attr
+ * @param {Object} options
+ * @return {Ember.ComputedProperty}
  */
 EG.attr = function(options) {
 	var meta = {
@@ -3167,12 +3241,17 @@ EG.attr = function(options) {
 
 /**
  * @class Model
+ * @namespace EmberGraph
  */
 EG.Model.reopenClass({
 
 	/**
+	 * A set of all of the attribute names for this model.
+	 *
+	 * @property attributes
+	 * @type Set
 	 * @static
-	 * @type {Set}
+	 * @readOnly
 	 */
 	attributes: Em.computed(function() {
 		var attributes = new Em.Set();
@@ -3190,24 +3269,30 @@ EG.Model.reopenClass({
 
 	/**
 	 * Just a more semantic alias for `metaForProperty`
-	 * @alias metaForProperty
+	 *
+	 * @method metaForAttribute
+	 * @param {String} attributeName
+	 * @return {Object}
+	 * @static
 	 */
 	metaForAttribute: Em.aliasMethod('metaForProperty'),
 
 	/**
-	 * @param name Name of property
-	 * @returns {Boolean} True if attribute, false otherwise
+	 * @method isAttribute
+	 * @param {String} propertyName
+	 * @return {Boolean}
 	 * @static
 	 */
-	isAttribute: function(name) {
-		return Em.get(this, 'attributes').contains(name);
+	isAttribute: function(propertyName) {
+		return Em.get(this, 'attributes').contains(propertyName);
 	},
 
 	/**
 	 * Calls the callback for each attribute defined on the model.
 	 *
+	 * @method eachAttribute
 	 * @param {Function} callback Function that takes `name` and `meta` parameters
-	 * @param {*} [binding] Object to use as `this`
+	 * @param [binding] Object to use as `this`
 	 * @static
 	 */
 	eachAttribute: function(callback, binding) {
@@ -3219,6 +3304,10 @@ EG.Model.reopenClass({
 	}
 });
 
+/**
+ * @class Model
+ * @namespace EmberGraph
+ */
 EG.Model.reopen({
 
 	/**
@@ -3226,16 +3315,12 @@ EG.Model.reopen({
 	 * can be updated is if the server sends over new JSON through an operation,
 	 * or a save operation successfully completes, in which case `_clientAttributes`
 	 * will be copied into this.
-	 *
-	 * @private
 	 */
 	_serverAttributes: null,
 
 	/**
 	 * Represents the state of the object on the client. These are likely different
 	 * from what the server has and are completely temporary until saved.
-	 *
-	 * @private
 	 */
 	_clientAttributes: null,
 
@@ -3249,7 +3334,11 @@ EG.Model.reopen({
 	}).property('_clientAttributes'),
 
 	/**
-	 * @returns {Object} Keys are attribute names, values are arrays with [oldVal, newVal]
+	 * Returns an object that contains every attribute
+	 * that has been changed since the last save.
+	 *
+	 * @method changedAttributes
+	 * @return {Object} Keys are attribute names, values are arrays with [oldVal, newVal]
 	 */
 	changedAttributes: function() {
 		var diff = {};
@@ -3270,6 +3359,8 @@ EG.Model.reopen({
 
 	/**
 	 * Resets all attribute changes to last known server attributes.
+	 *
+	 * @method rollbackAttributes
 	 */
 	rollbackAttributes: function() {
 		this.set('_clientAttributes', {});
@@ -3277,9 +3368,6 @@ EG.Model.reopen({
 
 	/**
 	 * Loads attributes from the server.
-	 *
-	 * @param {Object} json The JSON with properties to load
-	 * @private
 	 */
 	_loadAttributes: function(json) {
 		this.constructor.eachAttribute(function(name, meta) {
@@ -3314,6 +3402,25 @@ var DELETED_STATE = EG.Relationship.DELETED_STATE;
 
 var disallowedRelationshipNames = new Em.Set(['id', 'type', 'content']);
 
+/**
+ * Declares a *-to-many relationship on a model. The options determine
+ * the type and behavior of the relationship. Bold options are required:
+ *
+ * - **`relatedType`**: The type of the related models.
+ * - **`inverse`**: The relationship on the related models that reciprocates this relationship.
+ * - `isRequired`: `true` if the relationship can be left out of the JSON. Defaults to `false`.
+ * - `defaultValue`: The value that gets used if the relationship is missing from the loaded data.
+ *                   The default is an empty array.
+ * - `readOnly`: Set to `true` to make the relationship read-only. Defaults to `false`.
+ *
+ * The option values are all available as property metadata, as well the `isRelationship` property
+ * which is always `true`, and the `kind` property which is always `hasMany`.
+ *
+ * @namespace EmberGraph
+ * @method hasMany
+ * @param {Object} options
+ * @return {Ember.ComputedProperty}
+ */
 EG.hasMany = function(options) {
 	return {
 		isRelationship: true,
@@ -3322,6 +3429,25 @@ EG.hasMany = function(options) {
 	};
 };
 
+/**
+ * Declares a *-to-one relationship on a model. The options determine
+ * the type and behavior of the relationship. Bold options are required:
+ *
+ * - **`relatedType`**: The type of the related models.
+ * - **`inverse`**: The relationship on the related model that reciprocates this relationship.
+ * - `isRequired`: `true` if the relationship can be left out of the JSON. Defaults to `false`.
+ * - `defaultValue`: The value that gets used if the relationship is missing from the loaded data.
+ *                   The default is `null`.
+ * - `readOnly`: Set to `true` to make the relationship read-only. Defaults to `false`.
+ *
+ * The option values are all available as property metadata, as well the `isRelationship` property
+ * which is always `true`, and the `kind` property which is always `hasOne`.
+ *
+ * @namespace EmberGraph
+ * @method hasMany
+ * @param {Object} options
+ * @return {Ember.ComputedProperty}
+ */
 EG.hasOne = function(options) {
 	return {
 		isRelationship: true,
@@ -3361,6 +3487,10 @@ var createRelationship = function(kind, options) {
 	return Em.computed(relationship).property('_serverRelationships', '_clientRelationships').meta(meta).readOnly();
 };
 
+/**
+ * @class Model
+ * @namespace EmberGraph
+ */
 EG.Model.reopenClass({
 
 	/**
@@ -3368,9 +3498,6 @@ EG.Model.reopenClass({
 	 * each relationship. The properties will be capitalized and then prefixed
 	 * with 'loaded'. So rather than 'projects', use 'loadedProjects'.
 	 * This will return the relationship as a promise rather than in ID form.
-	 *
-	 * @static
-	 * @private
 	 */
 	_declareRelationships: function(relationships) {
 		var obj = {};
@@ -3403,8 +3530,12 @@ EG.Model.reopenClass({
 	},
 
 	/**
+	 * A set of all of the relationship names for this model.
+	 *
+	 * @property relationships
+	 * @type Set
 	 * @static
-	 * @type {Set}
+	 * @readOnly
 	 */
 	relationships: Em.computed(function() {
 		var relationships = new Em.Set();
@@ -3422,24 +3553,31 @@ EG.Model.reopenClass({
 	}).property(),
 
 	/**
-	 * @param {String} name
-	 * @returns {Boolean}
+	 * @method isRelationship
+	 * @param {String} propertyName
+	 * @return {Boolean}
 	 * @static
 	 */
-	isRelationship: function(name) {
-		return Em.get(this, 'relationships').contains(name);
+	isRelationship: function(propertyName) {
+		return Em.get(this, 'relationships').contains(propertyName);
 	},
 
 	/**
 	 * Just a more semantic alias for `metaForProperty`
-	 * @alias metaForProperty
+	 *
+	 * @method metaForRelationship
+	 * @param {String} relationshipName
+	 * @return {Object}
 	 * @static
 	 */
 	metaForRelationship: Em.aliasMethod('metaForProperty'),
 
 	/**
-	 * @param name The name of the relationships
-	 * @returns {String} HAS_MANY_KEY or HAS_ONE_KEY
+	 * Determines the kind (multiplicity) of the given relationship.
+	 *
+	 * @method relationshipKind
+	 * @param {String} name
+	 * @returns {String} `hasMany` or `hasOne`
 	 * @static
 	 */
 	relationshipKind: function(name) {
@@ -3449,8 +3587,9 @@ EG.Model.reopenClass({
 	/**
 	 * Calls the callback for each relationship defined on the model.
 	 *
+	 * @method eachRelationship
 	 * @param {Function} callback Function that takes `name` and `meta` parameters
-	 * @param {*} [binding] Object to use as `this`
+	 * @param [binding] Object to use as `this`
 	 * @static
 	 */
 	eachRelationship: function(callback, binding) {
@@ -3463,9 +3602,6 @@ EG.Model.reopenClass({
 
 	/**
 	 * Alerts the records and properties in the given array.
-	 *
-	 * @param {Object[]} properties Objects of the type returned by relationship functions
-	 * @private
 	 */
 	_notifyProperties: function(properties) {
 		properties.forEach(function(property) {
@@ -3485,6 +3621,10 @@ EG.Model.reopenClass({
 	}
 });
 
+/**
+ * @class Model
+ * @namespace EmberGraph
+ */
 EG.Model.reopen({
 
 	/**
@@ -3810,7 +3950,11 @@ EG.Model.reopen({
 	},
 
 	/**
-	 * @returns {Object} Keys are relationship names, values are arrays with [oldVal, newVal]
+	 * Returns an object that contains every relationship
+	 * that has been changed since the last save.
+	 *
+	 * @method changedRelationships
+	 * @return {Object} Keys are relationship names, values are arrays with [oldVal, newVal]
 	 */
 	changedRelationships: function() {
 		var changed = {};
@@ -3839,7 +3983,9 @@ EG.Model.reopen({
 	},
 
 	/**
-	 * Resets all relationship changes to last known server relationships.
+	 * Resets all attribute changes to last known server attributes.
+	 *
+	 * @method rollbackRelationships
 	 */
 	rollbackRelationships: function() {
 		var alerts = [];
@@ -3866,23 +4012,24 @@ EG.Model.reopen({
 	 * A convenience method to add an item to a hasMany relationship. This will
 	 * ensure that all of the proper observers are notified of the change.
 	 *
-	 * @param {String} relationship The relationship to modify
-	 * @param {String|Record} id The ID to add to the relationship
+	 * @method addToRelationship
+	 * @param {String} relationshipName
+	 * @param {String|Record} id
 	 */
-	addToRelationship: function(relationship, id) {
+	addToRelationship: function(relationshipName, id) {
 		if (EG.Model.detectInstance(id)) {
 			id = id.get('id');
 		}
 
 		var alerts = [];
 		var store = this.get('store');
-		var meta = this.constructor.metaForRelationship(relationship);
+		var meta = this.constructor.metaForRelationship(relationshipName);
 		
 		if (meta.readOnly) {
 			return;
 		}
 
-		var link = this._findLinkTo(relationship, id);
+		var link = this._findLinkTo(relationshipName, id);
 		if (link && (link.get('state') === NEW_STATE || link.get('state') === SAVED_STATE)) {
 			return;
 		}
@@ -3893,7 +4040,7 @@ EG.Model.reopen({
 			return;
 		}
 
-		var conflict = this._hasOneConflict(relationship, id);
+		var conflict = this._hasOneConflict(relationshipName, id);
 		if (conflict !== null) {
 			switch (conflict.get('state')) {
 				case DELETED_STATE:
@@ -3908,7 +4055,7 @@ EG.Model.reopen({
 			}
 		}
 
-		alerts = alerts.concat(store._createRelationship(this.typeKey, relationship,
+		alerts = alerts.concat(store._createRelationship(this.typeKey, relationshipName,
 			this.get('id'), meta.relatedType, meta.inverse, id, NEW_STATE));
 
 		this.constructor._notifyProperties(alerts);
@@ -3918,21 +4065,22 @@ EG.Model.reopen({
 	 * A convenience method to remove an item from a hasMany relationship. This will
 	 * ensure that all of the proper observers are notified of the change.
 	 *
-	 * @param {String} relationship The relationship to modify
-	 * @param {String|Record} id The ID to add to the relationship
+	 * @method removeFromRelationship
+	 * @param {String} relationshipName
+	 * @param {String|Record} id
 	 */
-	removeFromRelationship: function(relationship, id) {
+	removeFromRelationship: function(relationshipName, id) {
 		if (EG.Model.detectInstance(id)) {
 			id = id.get('id');
 		}
 
-		var meta = this.constructor.metaForRelationship(relationship);
+		var meta = this.constructor.metaForRelationship(relationshipName);
 		
 		if (meta.readOnly) {
 			return;
 		}
 
-		var r = this._findLinkTo(relationship, id);
+		var r = this._findLinkTo(relationshipName, id);
 
 		if (r !== null) {
 			switch (r.get('state')) {
@@ -3953,22 +4101,23 @@ EG.Model.reopen({
 	/**
 	 * Sets the value of a hasOne relationship to the given ID.
 	 *
-	 * @param {String} relationship
+	 * @method setHasOneRelationship
+	 * @param {String} relationshipName
 	 * @param {String|Record} id
 	 */
-	setHasOneRelationship: function(relationship, id) {
+	setHasOneRelationship: function(relationshipName, id) {
 		if (EG.Model.detectInstance(id)) {
 			id = id.get('id');
 		}
 
 		var alerts = [];
-		var meta = this.constructor.metaForRelationship(relationship);
+		var meta = this.constructor.metaForRelationship(relationshipName);
 		
 		if (meta.readOnly) {
 			return;
 		}
 
-		var link = this._findLinkTo(relationship, id);
+		var link = this._findLinkTo(relationshipName, id);
 		if (link && (link.get('state') === NEW_STATE || link.get('state') === SAVED_STATE)) {
 			return;
 		}
@@ -3984,14 +4133,14 @@ EG.Model.reopen({
 		}
 
 		if (id === null) {
-			this.clearHasOneRelationship(relationship);
+			this.clearHasOneRelationship(relationshipName);
 			return;
 		}
 
-		alerts = alerts.concat(this.clearHasOneRelationship(relationship, true));
+		alerts = alerts.concat(this.clearHasOneRelationship(relationshipName, true));
 
 		var store = this.get('store');
-		var conflict = this._hasOneConflict(relationship, id);
+		var conflict = this._hasOneConflict(relationshipName, id);
 		if (conflict !== null) {
 			switch (conflict.get('state')) {
 				case DELETED_STATE:
@@ -4006,7 +4155,7 @@ EG.Model.reopen({
 			}
 		}
 
-		alerts = alerts.concat(store._createRelationship(this.typeKey, relationship,
+		alerts = alerts.concat(store._createRelationship(this.typeKey, relationshipName,
 			this.get('id'), meta.relatedType, meta.inverse, id, NEW_STATE));
 
 		this.constructor._notifyProperties(alerts);
@@ -4015,22 +4164,21 @@ EG.Model.reopen({
 	/**
 	 * Sets the value of a hasOne relationship to `null`.
 	 *
-	 * @param {String} relationship
-	 * @param {Boolean} [suppressNotifications]
-	 * @return {Object[]} Objects and properties to notify
+	 * @method clearHasOneRelationship
+	 * @param {String} relationshipName
 	 */
-	clearHasOneRelationship: function(relationship, suppressNotifications) {
+	clearHasOneRelationship: function(relationshipName, suppressNotifications) {
 		var alerts = [];
-		var meta = this.constructor.metaForRelationship(relationship);
+		var meta = this.constructor.metaForRelationship(relationshipName);
 		
 		if (meta.readOnly) {
 			return [];
 		}
 
-		var current = this._hasOneValue(relationship);
+		var current = this._hasOneValue(relationshipName);
 
 		if (current !== null) {
-			var r = this._findLinkTo(relationship, current);
+			var r = this._findLinkTo(relationshipName, current);
 
 			if (r !== null) {
 				switch (r.get('state')) {

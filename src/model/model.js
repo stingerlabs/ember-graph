@@ -3,7 +3,10 @@
  * extended for each type of object that your object model
  * contains.
  *
- * @class {Model}
+ * @class Model
+ * @constructor
+ * @namespace EmberGraph
+ * @extends Ember.Object
  */
 EG.Model = Em.Object.extend(Em.Evented, {
 
@@ -13,13 +16,12 @@ EG.Model = Em.Object.extend(Em.Evented, {
 	 * will be referenced throughout the application. Refrain from
 	 * special characters. Stick with lowercase letters.
 	 *
-	 * @type {String}
+	 * @property typeKey
+	 * @type String
+	 * @final
 	 */
 	typeKey: null,
 
-	/**
-	 * @type {String}
-	 */
 	_id: null,
 
 	/**
@@ -27,7 +29,9 @@ EG.Model = Em.Object.extend(Em.Evented, {
 	 * it's being changed from a temporary ID to a permanent one. Only the
 	 * store should change the ID from a temporary one to a permanent one.
 	 *
-	 * @type {String}
+	 * @property id
+	 * @type String
+	 * @final
 	 */
 	id: Em.computed(function(key, value) {
 		var id = this.get('_id');
@@ -50,7 +54,9 @@ EG.Model = Em.Object.extend(Em.Evented, {
 	}).property('_id'),
 
 	/**
-	 * @type {Object}
+	 * @property store
+	 * @type EmberGraph.Store
+	 * @final
 	 */
 	store: null,
 
@@ -58,7 +64,9 @@ EG.Model = Em.Object.extend(Em.Evented, {
 	 * Denotes that a record has been deleted. If `isDirty` is also true,
 	 * the change hasn't been persisted to the server yet.
 	 *
-	 * @type {Boolean}
+	 * @property isDeleted
+	 * @type Boolean
+	 * @final
 	 */
 	isDeleted: null,
 
@@ -66,7 +74,9 @@ EG.Model = Em.Object.extend(Em.Evented, {
 	 * Denotes that the record is currently saving its changes
 	 * to the server, but the server hasn't responded yet.
 	 *
-	 * @type {Boolean}
+	 * @property isSaving
+	 * @type Boolean
+	 * @final
 	 */
 	isSaving: null,
 
@@ -74,14 +84,18 @@ EG.Model = Em.Object.extend(Em.Evented, {
 	 * Denotes that the record is being reloaded from the server,
 	 * and will likely change when the server responds.
 	 *
-	 * @type {Boolean}
+	 * @property isReloading
+	 * @type Boolean
+	 * @final
 	 */
 	isReloading: null,
 
 	/**
 	 * Denotes that a record has been loaded into a store and isn't freestanding.
 	 *
-	 * @type {Boolean}
+	 * @property isLoaded
+	 * @type Boolean
+	 * @final
 	 */
 	isLoaded: Em.computed(function() {
 		return this.get('store') !== null;
@@ -90,7 +104,9 @@ EG.Model = Em.Object.extend(Em.Evented, {
 	/**
 	 * Denotes that the record has changes that have not been saved to the server yet.
 	 *
-	 * @type {Boolean}
+	 * @property isDirty
+	 * @type Boolean
+	 * @final
 	 */
 	isDirty: Em.computed(function() {
 		var isDeleted = this.get('isDeleted');
@@ -108,7 +124,9 @@ EG.Model = Em.Object.extend(Em.Evented, {
 	 * Denotes that a record has just been created and has not been saved to
 	 * the server yet. Most likely has a temporary ID if this is true.
 	 *
-	 * @type {Boolean}
+	 * @property isNew
+	 * @type Boolean
+	 * @final
 	 */
 	isNew: Em.computed(function() {
 		return EG.String.startsWith(this.get('_id'), this.constructor.temporaryIdPrefix);
@@ -116,8 +134,12 @@ EG.Model = Em.Object.extend(Em.Evented, {
 
 	/**
 	 * Sets up the instance variables of this class.
+	 *
+	 * @method init
 	 */
 	init: function() {
+		this._super();
+
 		this.set('_id', null);
 		this.set('store', null);
 
@@ -150,6 +172,9 @@ EG.Model = Em.Object.extend(Em.Evented, {
 
 	/**
 	 * Proxies the store's save method for convenience.
+	 *
+	 * @method save
+	 * @return Promise
 	 */
 	save: function() {
 		return this.get('store').saveRecord(this);
@@ -157,6 +182,9 @@ EG.Model = Em.Object.extend(Em.Evented, {
 
 	/**
 	 * Proxies the store's reload method for convenience.
+	 *
+	 * @method reload
+	 * @return Promise
 	 */
 	reload: function() {
 		return this.get('store').reloadRecord(this);
@@ -164,6 +192,9 @@ EG.Model = Em.Object.extend(Em.Evented, {
 
 	/**
 	 * Proxies the store's delete method for convenience.
+	 *
+	 * @method destroy
+	 * @return Promise
 	 */
 	destroy: function() {
 		return this.get('store').deleteRecord(this);
@@ -171,6 +202,9 @@ EG.Model = Em.Object.extend(Em.Evented, {
 
 	/**
 	 * Determines if the other object is a model that represents the same record.
+	 *
+	 * @method isEqual
+	 * @return Boolean
 	 */
 	isEqual: function(other) {
 		if (!other) {
@@ -180,26 +214,38 @@ EG.Model = Em.Object.extend(Em.Evented, {
 		return (this.typeKey === Em.get(other, 'typeKey') && this.get('id') === Em.get(other, 'id'));
 	},
 
+	/**
+	 * Rolls back changes to both attributes and relationships.
+	 *
+	 * @method rollback
+	 */
 	rollback: function() {
 		this.rollbackAttributes();
 		this.rollbackRelationships();
 	}
 });
 
+/**
+ * @class Model
+ * @namespace EmberGraph
+ */
 EG.Model.reopenClass({
 
 	/**
 	 * The prefix added to generated IDs to show that the prefix wasn't given
 	 * by the server and is only temporary until the real one comes in.
 	 *
-	 * @type {String}
-	 * @constant
+	 * @property temporaryIdPrefix
+	 * @type String
 	 * @static
 	 */
 	temporaryIdPrefix: 'EG_TEMP_ID_',
 
 	/**
-	 * @returns {Boolean}
+	 * @method isTemporaryId
+	 * @param {String} id
+	 * @return Boolean
+	 * @static
 	 */
 	isTemporaryId: function(id) {
 		return EG.String.startsWith(id, this.temporaryIdPrefix);
@@ -211,6 +257,10 @@ EG.Model.reopenClass({
 
 	_create: EG.Model.create,
 
+	/**
+	 * @method extend
+	 * @static
+	 */
 	extend: function() {
 		var args = Array.prototype.slice.call(arguments, 0);
 		var options = args.pop() || {};
@@ -234,25 +284,33 @@ EG.Model.reopenClass({
 		return subclass;
 	},
 
-	isEqual: function(one, two) {
-		if (one === undefined || two === undefined) {
+	/**
+	 * Determines if the two objects passed in are equal models (or model proxies).
+	 *
+	 * @param {Model} a
+	 * @param {Model} b
+	 * @return Boolean
+	 * @static
+	 */
+	isEqual: function(a, b) {
+		if (Em.isNone(a) || Em.isNone(b)) {
 			return false;
 		}
 
-		if (this.detectInstance(one)) {
-			return one.isEqual(two);
+		if (this.detectInstance(a)) {
+			return a.isEqual(b);
 		}
 
-		if (this.detectInstance(two)) {
-			return two.isEqual(one);
+		if (this.detectInstance(b)) {
+			return b.isEqual(a);
 		}
 
-		if (this.detectInstance(Em.get(one, 'content'))) {
-			return Em.get(one, 'content').isEqual(two);
+		if (this.detectInstance(Em.get(a, 'content'))) {
+			return Em.get(a, 'content').isEqual(b);
 		}
 
-		if (this.detectInstance(Em.get(two, 'content'))) {
-			return Em.get(two, 'content').isEqual(one);
+		if (this.detectInstance(Em.get(b, 'content'))) {
+			return Em.get(b, 'content').isEqual(a);
 		}
 
 		return false;

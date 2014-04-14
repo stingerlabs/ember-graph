@@ -7,6 +7,25 @@ var DELETED_STATE = EG.Relationship.DELETED_STATE;
 
 var disallowedRelationshipNames = new Em.Set(['id', 'type', 'content']);
 
+/**
+ * Declares a *-to-many relationship on a model. The options determine
+ * the type and behavior of the relationship. Bold options are required:
+ *
+ * - **`relatedType`**: The type of the related models.
+ * - **`inverse`**: The relationship on the related models that reciprocates this relationship.
+ * - `isRequired`: `true` if the relationship can be left out of the JSON. Defaults to `false`.
+ * - `defaultValue`: The value that gets used if the relationship is missing from the loaded data.
+ *                   The default is an empty array.
+ * - `readOnly`: Set to `true` to make the relationship read-only. Defaults to `false`.
+ *
+ * The option values are all available as property metadata, as well the `isRelationship` property
+ * which is always `true`, and the `kind` property which is always `hasMany`.
+ *
+ * @namespace EmberGraph
+ * @method hasMany
+ * @param {Object} options
+ * @return {Ember.ComputedProperty}
+ */
 EG.hasMany = function(options) {
 	return {
 		isRelationship: true,
@@ -15,6 +34,25 @@ EG.hasMany = function(options) {
 	};
 };
 
+/**
+ * Declares a *-to-one relationship on a model. The options determine
+ * the type and behavior of the relationship. Bold options are required:
+ *
+ * - **`relatedType`**: The type of the related models.
+ * - **`inverse`**: The relationship on the related model that reciprocates this relationship.
+ * - `isRequired`: `true` if the relationship can be left out of the JSON. Defaults to `false`.
+ * - `defaultValue`: The value that gets used if the relationship is missing from the loaded data.
+ *                   The default is `null`.
+ * - `readOnly`: Set to `true` to make the relationship read-only. Defaults to `false`.
+ *
+ * The option values are all available as property metadata, as well the `isRelationship` property
+ * which is always `true`, and the `kind` property which is always `hasOne`.
+ *
+ * @namespace EmberGraph
+ * @method hasMany
+ * @param {Object} options
+ * @return {Ember.ComputedProperty}
+ */
 EG.hasOne = function(options) {
 	return {
 		isRelationship: true,
@@ -58,6 +96,10 @@ var createRelationship = function(kind, options) {
 	return Em.computed(relationship).property('_serverRelationships', '_clientRelationships').meta(meta).readOnly();
 };
 
+/**
+ * @class Model
+ * @namespace EmberGraph
+ */
 EG.Model.reopenClass({
 
 	/**
@@ -65,9 +107,6 @@ EG.Model.reopenClass({
 	 * each relationship. The properties will be capitalized and then prefixed
 	 * with 'loaded'. So rather than 'projects', use 'loadedProjects'.
 	 * This will return the relationship as a promise rather than in ID form.
-	 *
-	 * @static
-	 * @private
 	 */
 	_declareRelationships: function(relationships) {
 		var obj = {};
@@ -100,8 +139,12 @@ EG.Model.reopenClass({
 	},
 
 	/**
+	 * A set of all of the relationship names for this model.
+	 *
+	 * @property relationships
+	 * @type Set
 	 * @static
-	 * @type {Set}
+	 * @readOnly
 	 */
 	relationships: Em.computed(function() {
 		var relationships = new Em.Set();
@@ -120,24 +163,31 @@ EG.Model.reopenClass({
 	}).property(),
 
 	/**
-	 * @param {String} name
-	 * @returns {Boolean}
+	 * @method isRelationship
+	 * @param {String} propertyName
+	 * @return {Boolean}
 	 * @static
 	 */
-	isRelationship: function(name) {
-		return Em.get(this, 'relationships').contains(name);
+	isRelationship: function(propertyName) {
+		return Em.get(this, 'relationships').contains(propertyName);
 	},
 
 	/**
 	 * Just a more semantic alias for `metaForProperty`
-	 * @alias metaForProperty
+	 *
+	 * @method metaForRelationship
+	 * @param {String} relationshipName
+	 * @return {Object}
 	 * @static
 	 */
 	metaForRelationship: Em.aliasMethod('metaForProperty'),
 
 	/**
-	 * @param name The name of the relationships
-	 * @returns {String} HAS_MANY_KEY or HAS_ONE_KEY
+	 * Determines the kind (multiplicity) of the given relationship.
+	 *
+	 * @method relationshipKind
+	 * @param {String} name
+	 * @returns {String} `hasMany` or `hasOne`
 	 * @static
 	 */
 	relationshipKind: function(name) {
@@ -147,8 +197,9 @@ EG.Model.reopenClass({
 	/**
 	 * Calls the callback for each relationship defined on the model.
 	 *
+	 * @method eachRelationship
 	 * @param {Function} callback Function that takes `name` and `meta` parameters
-	 * @param {*} [binding] Object to use as `this`
+	 * @param [binding] Object to use as `this`
 	 * @static
 	 */
 	eachRelationship: function(callback, binding) {
@@ -161,9 +212,6 @@ EG.Model.reopenClass({
 
 	/**
 	 * Alerts the records and properties in the given array.
-	 *
-	 * @param {Object[]} properties Objects of the type returned by relationship functions
-	 * @private
 	 */
 	_notifyProperties: function(properties) {
 		properties.forEach(function(property) {
@@ -183,6 +231,10 @@ EG.Model.reopenClass({
 	}
 });
 
+/**
+ * @class Model
+ * @namespace EmberGraph
+ */
 EG.Model.reopen({
 
 	/**
@@ -508,7 +560,11 @@ EG.Model.reopen({
 	},
 
 	/**
-	 * @returns {Object} Keys are relationship names, values are arrays with [oldVal, newVal]
+	 * Returns an object that contains every relationship
+	 * that has been changed since the last save.
+	 *
+	 * @method changedRelationships
+	 * @return {Object} Keys are relationship names, values are arrays with [oldVal, newVal]
 	 */
 	changedRelationships: function() {
 		var changed = {};
@@ -537,7 +593,9 @@ EG.Model.reopen({
 	},
 
 	/**
-	 * Resets all relationship changes to last known server relationships.
+	 * Resets all attribute changes to last known server attributes.
+	 *
+	 * @method rollbackRelationships
 	 */
 	rollbackRelationships: function() {
 		var alerts = [];
@@ -564,23 +622,24 @@ EG.Model.reopen({
 	 * A convenience method to add an item to a hasMany relationship. This will
 	 * ensure that all of the proper observers are notified of the change.
 	 *
-	 * @param {String} relationship The relationship to modify
-	 * @param {String|Record} id The ID to add to the relationship
+	 * @method addToRelationship
+	 * @param {String} relationshipName
+	 * @param {String|Record} id
 	 */
-	addToRelationship: function(relationship, id) {
+	addToRelationship: function(relationshipName, id) {
 		if (EG.Model.detectInstance(id)) {
 			id = id.get('id');
 		}
 
 		var alerts = [];
 		var store = this.get('store');
-		var meta = this.constructor.metaForRelationship(relationship);
+		var meta = this.constructor.metaForRelationship(relationshipName);
 		Em.assert('Cannot modify a read-only relationship', meta.readOnly === false);
 		if (meta.readOnly) {
 			return;
 		}
 
-		var link = this._findLinkTo(relationship, id);
+		var link = this._findLinkTo(relationshipName, id);
 		if (link && (link.get('state') === NEW_STATE || link.get('state') === SAVED_STATE)) {
 			return;
 		}
@@ -591,7 +650,7 @@ EG.Model.reopen({
 			return;
 		}
 
-		var conflict = this._hasOneConflict(relationship, id);
+		var conflict = this._hasOneConflict(relationshipName, id);
 		if (conflict !== null) {
 			switch (conflict.get('state')) {
 				case DELETED_STATE:
@@ -606,7 +665,7 @@ EG.Model.reopen({
 			}
 		}
 
-		alerts = alerts.concat(store._createRelationship(this.typeKey, relationship,
+		alerts = alerts.concat(store._createRelationship(this.typeKey, relationshipName,
 			this.get('id'), meta.relatedType, meta.inverse, id, NEW_STATE));
 
 		this.constructor._notifyProperties(alerts);
@@ -616,21 +675,22 @@ EG.Model.reopen({
 	 * A convenience method to remove an item from a hasMany relationship. This will
 	 * ensure that all of the proper observers are notified of the change.
 	 *
-	 * @param {String} relationship The relationship to modify
-	 * @param {String|Record} id The ID to add to the relationship
+	 * @method removeFromRelationship
+	 * @param {String} relationshipName
+	 * @param {String|Record} id
 	 */
-	removeFromRelationship: function(relationship, id) {
+	removeFromRelationship: function(relationshipName, id) {
 		if (EG.Model.detectInstance(id)) {
 			id = id.get('id');
 		}
 
-		var meta = this.constructor.metaForRelationship(relationship);
+		var meta = this.constructor.metaForRelationship(relationshipName);
 		Em.assert('Cannot modify a read-only relationship', meta.readOnly === false);
 		if (meta.readOnly) {
 			return;
 		}
 
-		var r = this._findLinkTo(relationship, id);
+		var r = this._findLinkTo(relationshipName, id);
 
 		if (r !== null) {
 			switch (r.get('state')) {
@@ -651,22 +711,23 @@ EG.Model.reopen({
 	/**
 	 * Sets the value of a hasOne relationship to the given ID.
 	 *
-	 * @param {String} relationship
+	 * @method setHasOneRelationship
+	 * @param {String} relationshipName
 	 * @param {String|Record} id
 	 */
-	setHasOneRelationship: function(relationship, id) {
+	setHasOneRelationship: function(relationshipName, id) {
 		if (EG.Model.detectInstance(id)) {
 			id = id.get('id');
 		}
 
 		var alerts = [];
-		var meta = this.constructor.metaForRelationship(relationship);
+		var meta = this.constructor.metaForRelationship(relationshipName);
 		Em.assert('Cannot modify a read-only relationship', meta.readOnly === false);
 		if (meta.readOnly) {
 			return;
 		}
 
-		var link = this._findLinkTo(relationship, id);
+		var link = this._findLinkTo(relationshipName, id);
 		if (link && (link.get('state') === NEW_STATE || link.get('state') === SAVED_STATE)) {
 			return;
 		}
@@ -682,14 +743,14 @@ EG.Model.reopen({
 		}
 
 		if (id === null) {
-			this.clearHasOneRelationship(relationship);
+			this.clearHasOneRelationship(relationshipName);
 			return;
 		}
 
-		alerts = alerts.concat(this.clearHasOneRelationship(relationship, true));
+		alerts = alerts.concat(this.clearHasOneRelationship(relationshipName, true));
 
 		var store = this.get('store');
-		var conflict = this._hasOneConflict(relationship, id);
+		var conflict = this._hasOneConflict(relationshipName, id);
 		if (conflict !== null) {
 			switch (conflict.get('state')) {
 				case DELETED_STATE:
@@ -704,7 +765,7 @@ EG.Model.reopen({
 			}
 		}
 
-		alerts = alerts.concat(store._createRelationship(this.typeKey, relationship,
+		alerts = alerts.concat(store._createRelationship(this.typeKey, relationshipName,
 			this.get('id'), meta.relatedType, meta.inverse, id, NEW_STATE));
 
 		this.constructor._notifyProperties(alerts);
@@ -713,22 +774,21 @@ EG.Model.reopen({
 	/**
 	 * Sets the value of a hasOne relationship to `null`.
 	 *
-	 * @param {String} relationship
-	 * @param {Boolean} [suppressNotifications]
-	 * @return {Object[]} Objects and properties to notify
+	 * @method clearHasOneRelationship
+	 * @param {String} relationshipName
 	 */
-	clearHasOneRelationship: function(relationship, suppressNotifications) {
+	clearHasOneRelationship: function(relationshipName, suppressNotifications) {
 		var alerts = [];
-		var meta = this.constructor.metaForRelationship(relationship);
+		var meta = this.constructor.metaForRelationship(relationshipName);
 		Em.assert('Cannot modify a read-only relationship', meta.readOnly === false);
 		if (meta.readOnly) {
 			return [];
 		}
 
-		var current = this._hasOneValue(relationship);
+		var current = this._hasOneValue(relationshipName);
 
 		if (current !== null) {
-			var r = this._findLinkTo(relationship, current);
+			var r = this._findLinkTo(relationshipName, current);
 
 			if (r !== null) {
 				switch (r.get('state')) {
