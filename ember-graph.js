@@ -2988,8 +2988,8 @@ EG.Model = Em.Object.extend(Em.Evented, {
 		this.set('_id', null);
 		this.set('store', null);
 
-		this.set('_serverAttributes', {});
-		this.set('_clientAttributes', {});
+		this.set('_serverAttributes', Em.Object.create());
+		this.set('_clientAttributes', Em.Object.create());
 
 		this.set('_serverRelationships', {});
 		this.set('_clientRelationships', {});
@@ -3109,15 +3109,21 @@ EG.Model.reopenClass({
 	extend: function() {
 		var args = Array.prototype.slice.call(arguments, 0);
 		var options = args.pop() || {};
+		var attributes = {};
 		var relationships = {};
 
 		if (!(options instanceof Em.Mixin)) {
 			Em.keys(options).forEach(function(key) {
 				var value = options[key];
 
-				if (options[key] && options[key].isRelationship) {
-					relationships[key] = value;
-					delete options[key];
+				if (options[key]) {
+					if (options[key].isRelationship) {
+						relationships[key] = value;
+						delete options[key];
+					} else if (options[key].isAttribute) {
+						attributes[key] = value;
+						delete options[key];
+					}
 				}
 			});
 		}
@@ -3125,6 +3131,7 @@ EG.Model.reopenClass({
 		args.push(options);
 
 		var subclass = this._super.apply(this, args);
+		subclass._declareAttributes(attributes);
 		subclass._declareRelationships(relationships);
 		return subclass;
 	},
@@ -3198,6 +3205,13 @@ var disallowedAttributeNames = new Em.Set(['id', 'type', 'content']);
  * @return {Ember.ComputedProperty}
  */
 EG.attr = function(options) {
+	return {
+		isAttribute: true,
+		options: options
+	};
+};
+
+var createAttribute = function(attributeName, options) {
 	var meta = {
 		isAttribute: true,
 		type: options.type,
@@ -3230,18 +3244,19 @@ EG.attr = function(options) {
 
 			var isEqual = meta.isEqual || this.get('store').attributeTypeFor(meta.type).isEqual;
 			if (isEqual(server, value)) {
-				delete this.get('_clientAttributes')[key];
-				this.notifyPropertyChange('_clientAttributes');
-				return server;
+				this.set('_clientAttributes.' + key, undefined);
 			} else {
 				this.set('_clientAttributes.' + key, value);
-				this.notifyPropertyChange('_clientAttributes');
-				return value;
 			}
+
+			// This only notifies observers of the object itself, not the properties.
+			// At this point in time, that's only the `_areAttributesDirty` property.
+			this.notifyPropertyChange('_clientAttributes');
+			return value;
 		}
 
 		return current;
-	}).property('_clientAttributes', '_serverAttributes').meta(meta);
+	}).property('_clientAttributes.' + attributeName, '_serverAttributes.' + attributeName).meta(meta);
 
 	return (options.readOnly ? attribute.readOnly() : attribute);
 };
@@ -3251,6 +3266,19 @@ EG.attr = function(options) {
  * @namespace EmberGraph
  */
 EG.Model.reopenClass({
+
+	/**
+	 * Goes through the subclass and declares an additional property for each attribute.
+	 */
+	_declareAttributes: function(attributes) {
+		var obj = {};
+
+		Em.keys(attributes).forEach(function(attributeName) {
+			obj[attributeName] = createAttribute(attributeName, attributes[attributeName].options);
+		});
+
+		this.reopen(obj);
+	},
 
 	/**
 	 * A set of all of the attribute names for this model.
@@ -3371,30 +3399,28 @@ EG.Model.reopen({
 	 * @method rollbackAttributes
 	 */
 	rollbackAttributes: function() {
-		this.set('_clientAttributes', {});
+		this.set('_clientAttributes', Em.Object.create());
 	},
 
 	/**
 	 * Loads attributes from the server.
 	 */
 	_loadAttributes: function(json) {
-		this.constructor.eachAttribute(function(name, meta) {
-			Em.assert('Your JSON is missing the \'' + name + '\' property.',
-				!meta.isRequired || json.hasOwnProperty(name));
+		this.constructor.eachAttribute(function(attributeName, meta) {
+			Em.assert('Your JSON is missing the \'' + attributeName + '\' property.',
+				!meta.isRequired || json.hasOwnProperty(attributeName));
 
-			var value = (json.hasOwnProperty(name) ? json[name] : meta.defaultValue);
+			var value = (json.hasOwnProperty(attributeName) ? json[attributeName] : meta.defaultValue);
 
 			// TODO: Do we want a way to accept non-valid value from the server?
 			var isValid = meta.isValid || this.get('store').attributeTypeFor(meta.type).isValid;
 			if (isValid(value)) {
-				this.set('_serverAttributes.' + name, value);
+				this.set('_serverAttributes.' + attributeName, value);
 			} else {
-				Em.assert('Your value for the \'' + name + '\' property is inValid.');
-				this.set('_serverAttributes.' + name, meta.defaultValue);
+				Em.assert('Your value for the \'' + attributeName + '\' property is inValid.');
+				this.set('_serverAttributes.' + attributeName, meta.defaultValue);
 			}
 		}, this);
-
-		this.notifyPropertyChange('_serverAttributes');
 	}
 });
 

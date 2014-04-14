@@ -143,8 +143,8 @@ EG.Model = Em.Object.extend(Em.Evented, {
 		this.set('_id', null);
 		this.set('store', null);
 
-		this.set('_serverAttributes', {});
-		this.set('_clientAttributes', {});
+		this.set('_serverAttributes', Em.Object.create());
+		this.set('_clientAttributes', Em.Object.create());
 
 		this.set('_serverRelationships', {});
 		this.set('_clientRelationships', {});
@@ -264,15 +264,21 @@ EG.Model.reopenClass({
 	extend: function() {
 		var args = Array.prototype.slice.call(arguments, 0);
 		var options = args.pop() || {};
+		var attributes = {};
 		var relationships = {};
 
 		if (!(options instanceof Em.Mixin)) {
 			Em.keys(options).forEach(function(key) {
 				var value = options[key];
 
-				if (options[key] && options[key].isRelationship) {
-					relationships[key] = value;
-					delete options[key];
+				if (options[key]) {
+					if (options[key].isRelationship) {
+						relationships[key] = value;
+						delete options[key];
+					} else if (options[key].isAttribute) {
+						attributes[key] = value;
+						delete options[key];
+					}
 				}
 			});
 		}
@@ -280,6 +286,7 @@ EG.Model.reopenClass({
 		args.push(options);
 
 		var subclass = this._super.apply(this, args);
+		subclass._declareAttributes(attributes);
 		subclass._declareRelationships(relationships);
 		return subclass;
 	},
