@@ -602,4 +602,20 @@
 		post6.addToRelationship('tags', '3');
 		ok(post6.get('_tags').contains('3'));
 	});
+
+	test('Creating records with relationships works with records and not just IDs', function() {
+		expect(2);
+
+		var user = store.getRecord('user', '1');
+		var tag1 = store.getRecord('tag', '1');
+		var tag3 = store.getRecord('tag', '3');
+
+		var post = store.createRecord('post', {
+			author: user,
+			tags: [tag1, tag3]
+		});
+
+		strictEqual(post.get('_author'), '1');
+		deepEqual(post.get('_tags').toArray().sort(), ['1', '3'].sort());
+	});
 })();

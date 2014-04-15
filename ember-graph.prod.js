@@ -3772,6 +3772,24 @@ EG.Model.reopen({
 
 			var value = json[name] || meta.defaultValue;
 
+			if (meta.kind === HAS_MANY_KEY) {
+				value = value.map(function(id) {
+					if (Em.typeOf(id) === 'string') {
+						return id;
+					} else if (EG.Model.detectInstance(id)) {
+						return id.get('id');
+					} else {
+						throw new Error('When creating records, relationships must be either records or IDs.');
+					}
+				});
+			} else {
+				if (EG.Model.detectInstance(value)) {
+					value = value.get('id');
+				} else if (Em.typeOf(value) !== 'string' && value !== null) {
+					throw new Error('When creating records, relationships must be either records or IDs.');
+				}
+			}
+
 			// Delete ALL server relationships with this name
 			var client = this._relationshipsForName(name).filter(function(relationship) {
 				// If a DELETED relationship is the same as one given by the server
