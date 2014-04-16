@@ -158,4 +158,20 @@
 			ok(record.get('isDeleted') === true);
 		});
 	});
+
+	test('The `cacheFor` method functions properly', function() {
+		expect(4);
+
+		store._loadRecord(typeKey, records[1]);
+		deepEqual(store.cachedRecordsFor(typeKey).mapBy('id').sort(), ['1'].sort());
+
+		store._loadRecord(typeKey, records[2]);
+		deepEqual(store.cachedRecordsFor(typeKey).mapBy('id').sort(), ['1', '2'].sort());
+
+		store._loadRecord(typeKey, records[3]);
+		deepEqual(store.cachedRecordsFor(typeKey).mapBy('id').sort(), ['1', '2', '3'].sort());
+
+		store._loadRecord(typeKey, records[4]);
+		deepEqual(store.cachedRecordsFor(typeKey).mapBy('id').sort(), ['1', '2', '3', '4'].sort());
+	});
 })();

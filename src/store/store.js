@@ -174,7 +174,7 @@ EG.Store = Em.Object.extend({
 	 * @returns {Array} Array of records of the given type
 	 * @private
 	 */
-	_recordsForType: function(typeKey) {
+	cachedRecordsFor: function(typeKey) {
 		var records = this.get('_records.' + typeKey) || {};
 		var timeout = new Date().getTime() - this.get('cacheTimeout');
 
@@ -313,7 +313,7 @@ EG.Store = Em.Object.extend({
 	_findAll: function(type) {
 		var promise = this.get('adapter').findAll(type).then(function(payload) {
 			this.extractPayload(payload);
-			return this._recordsForType(type);
+			return this.cachedRecordsFor(type);
 		}.bind(this));
 
 		return EG.PromiseArray.create({ promise: promise });
