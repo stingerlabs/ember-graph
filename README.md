@@ -118,7 +118,7 @@ App.get('store').find('post', '1').then(function(post1) {
 	// Now load user #7 in the form of a promise
 	return post1.get('author');
 }).then(function(user7) {
-	// Ember-Graph is smart enough to know that we connect post #1 to user #7
+	// Ember-Graph is smart enough to know that we connected post #1 to user #7
 	console.log(user7.get('_posts')); // ['1']
 	// Let's save our user, which also returns a promise
 	return user7.save();
