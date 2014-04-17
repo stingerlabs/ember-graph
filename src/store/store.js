@@ -426,25 +426,31 @@ EG.Store = Em.Object.extend({
 	extractPayload: function(payload) {
 		var reloadDirty = this.get('reloadDirty');
 
-		Em.keys(payload).forEach(function(typeKey) {
-			if (typeKey === 'meta') {
-				return;
-			}
+		try {
+			this.beginPropertyChanges();
 
-			var type = this.modelForType(typeKey);
-
-			payload[typeKey].forEach(function(json) {
-				var record = this.getRecord(typeKey, json.id);
-
-				if (record) {
-					if (!record.get('isDirty') || reloadDirty) {
-						record._loadData(json);
-					}
-				} else {
-					this._loadRecord(typeKey, json);
+			Em.keys(payload).forEach(function(typeKey) {
+				if (typeKey === 'meta') {
+					return;
 				}
+
+				var type = this.modelForType(typeKey);
+
+				payload[typeKey].forEach(function(json) {
+					var record = this.getRecord(typeKey, json.id);
+
+					if (record) {
+						if (!record.get('isDirty') || reloadDirty) {
+							record._loadData(json);
+						}
+					} else {
+						this._loadRecord(typeKey, json);
+					}
+				}, this);
 			}, this);
-		}, this);
+		} finally {
+			this.endPropertyChanges();
+		}
 	},
 
 	/**
