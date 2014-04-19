@@ -1,20 +1,35 @@
 /**
- * Models act as classes for data. The model class should be
- * extended for each type of object that your object model
- * contains.
+ * Models are the classes that represent your domain data.
+ * Each type of object in your domain should have its own
+ * model, with attributes and relationships declared using the
+ * [attr](EG.html#method_attr), [hasOne](EG.html#method_hasOne)
+ * and [hasMany](EG.html#method_hasMany) functions.
+ *
+ * To create a model, subclass this class (or any other Model
+ * subclass) and place it your app's namespace. The name
+ * that you give it is important, since that's how it will be
+ * looked up by the container. The usual convention is to use
+ * a camel-cased name like `App.PostComment` or `App.ForumAdmin`.
+ * For more information on resolving, read the Ember.js entry
+ * on the [DefaultResolver](http://emberjs.com/api/classes/Ember.DefaultResolver.html).
  *
  * @class Model
  * @constructor
- * @namespace EmberGraph
  * @extends Ember.Object
+ * @uses Ember.Evented
  */
 EG.Model = Em.Object.extend(Em.Evented, {
 
 	/**
-	 * Should be overridden in all subclasses with a name for this
-	 * particular class. The name should be a unique string that
-	 * will be referenced throughout the application. Refrain from
-	 * special characters. Stick with lowercase letters.
+	 * This property is available on every model instance and every
+	 * model subclass (after being looked up at least once by the
+	 * container). This is the key that you use to refer to the model
+	 * in relationships and store methods. Examples:
+	 *
+	 * ```
+	 * App.User => user
+	 * App.PostComment => postComment
+	 * ```
 	 *
 	 * @property typeKey
 	 * @type String
@@ -225,10 +240,6 @@ EG.Model = Em.Object.extend(Em.Evented, {
 	}
 });
 
-/**
- * @class Model
- * @namespace EmberGraph
- */
 EG.Model.reopenClass({
 
 	/**

@@ -1,5 +1,20 @@
+/**
+ * @module ember-graph
+ * @main ember-graph
+ */
+
+/**
+ * @class EmberGraph
+ * @static
+ */
 window.EmberGraph = window.EG = Em.Namespace.create({
-	// Neuter will take care of inserting the version number from bower.json
+	/**
+	 * Neuter will take care of inserting the version number from bower.json
+	 *
+	 * @property VERSION
+	 * @type String
+	 * @static
+	 */
 	VERSION: '<%= version %>'
 });
 

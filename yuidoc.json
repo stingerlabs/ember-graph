@@ -1,0 +1,9 @@
+{
+	"name": "Ember-Graph",
+	"options": {
+		"linkNatives": true,
+		"paths": ["./src"],
+		"outdir": "./doc",
+		"tabtospace": 4
+	}
+}

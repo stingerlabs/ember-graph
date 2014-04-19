@@ -1,39 +1,5 @@
 var disallowedAttributeNames = new Em.Set(['id', 'type', 'content']);
 
-/**
- * Declares an attribute on a model. The options determine the type and behavior
- * of the attributes. Bold options are required:
- *
- * - **`type`**: The type of the attribute. `string`, `boolean`, `number`, `date`, `array`
- *               and `object` are the built in types. New types can be declared by extending
- *               `AttributeType`.
- * - `defaultValue`: The value that gets used if the attribute is missing from the loaded data.
- *                   If omitted, the attribute is required and will error if missing.
- * - `readOnly`: Set to `true` to make the attribute read-only. Defaults to `false`.
- * - `isEqual`: Function that will compare two different instances of the attribute. Should take
- *              two arguments and return `true` if the given attributes are equal. Defaults to
- *              the function declared in the `AttributeType` subclass.
- * - `isValid`: Function that determines if a value is valid or not. It's used during serialization
- *              and deserialization, as well as when changing the value. The function should take
- *              a single argument and return `true` or `false` depending on validity of the value.
- *
- * The option values are all available as property metadata, as well the `isAttribute` property
- * which is always `true`, and the `isRequired` property.
- *
- * Like other Ember properties, `undefined` is _not_ a valid attribute value.
- *
- * @namespace EmberGraph
- * @method attr
- * @param {Object} options
- * @return {Ember.ComputedProperty}
- */
-EG.attr = function(options) {
-	return {
-		isAttribute: true,
-		options: options
-	};
-};
-
 var createAttribute = function(attributeName, options) {
 	var meta = {
 		isAttribute: true,
@@ -84,10 +50,6 @@ var createAttribute = function(attributeName, options) {
 	return (options.readOnly ? attribute.readOnly() : attribute);
 };
 
-/**
- * @class Model
- * @namespace EmberGraph
- */
 EG.Model.reopenClass({
 
 	/**
@@ -107,6 +69,7 @@ EG.Model.reopenClass({
 	 * A set of all of the attribute names for this model.
 	 *
 	 * @property attributes
+	 * @for Model
 	 * @type Set
 	 * @static
 	 * @readOnly
@@ -130,6 +93,7 @@ EG.Model.reopenClass({
 	 * Just a more semantic alias for `metaForProperty`
 	 *
 	 * @method metaForAttribute
+	 * @for Model
 	 * @param {String} attributeName
 	 * @return {Object}
 	 * @static
@@ -138,6 +102,7 @@ EG.Model.reopenClass({
 
 	/**
 	 * @method isAttribute
+	 * @for Model
 	 * @param {String} propertyName
 	 * @return {Boolean}
 	 * @static
@@ -150,6 +115,7 @@ EG.Model.reopenClass({
 	 * Calls the callback for each attribute defined on the model.
 	 *
 	 * @method eachAttribute
+	 * @for Model
 	 * @param {Function} callback Function that takes `name` and `meta` parameters
 	 * @param [binding] Object to use as `this`
 	 * @static
@@ -163,10 +129,6 @@ EG.Model.reopenClass({
 	}
 });
 
-/**
- * @class Model
- * @namespace EmberGraph
- */
 EG.Model.reopen({
 
 	/**
@@ -197,6 +159,7 @@ EG.Model.reopen({
 	 * that has been changed since the last save.
 	 *
 	 * @method changedAttributes
+	 * @for Model
 	 * @return {Object} Keys are attribute names, values are arrays with [oldVal, newVal]
 	 */
 	changedAttributes: function() {
@@ -220,6 +183,7 @@ EG.Model.reopen({
 	 * Resets all attribute changes to last known server attributes.
 	 *
 	 * @method rollbackAttributes
+	 * @for Model
 	 */
 	rollbackAttributes: function() {
 		this.set('_clientAttributes', Em.Object.create());

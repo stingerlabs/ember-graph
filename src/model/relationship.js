@@ -7,60 +7,6 @@ var DELETED_STATE = EG.Relationship.DELETED_STATE;
 
 var disallowedRelationshipNames = new Em.Set(['id', 'type', 'content']);
 
-/**
- * Declares a *-to-many relationship on a model. The options determine
- * the type and behavior of the relationship. Bold options are required:
- *
- * - **`relatedType`**: The type of the related models.
- * - **`inverse`**: The relationship on the related models that reciprocates this relationship.
- * - `isRequired`: `true` if the relationship can be left out of the JSON. Defaults to `false`.
- * - `defaultValue`: The value that gets used if the relationship is missing from the loaded data.
- *                   The default is an empty array.
- * - `readOnly`: Set to `true` to make the relationship read-only. Defaults to `false`.
- *
- * The option values are all available as property metadata, as well the `isRelationship` property
- * which is always `true`, and the `kind` property which is always `hasMany`.
- *
- * @namespace EmberGraph
- * @method hasMany
- * @param {Object} options
- * @return {Ember.ComputedProperty}
- */
-EG.hasMany = function(options) {
-	return {
-		isRelationship: true,
-		kind: HAS_MANY_KEY,
-		options: options
-	};
-};
-
-/**
- * Declares a *-to-one relationship on a model. The options determine
- * the type and behavior of the relationship. Bold options are required:
- *
- * - **`relatedType`**: The type of the related models.
- * - **`inverse`**: The relationship on the related model that reciprocates this relationship.
- * - `isRequired`: `true` if the relationship can be left out of the JSON. Defaults to `false`.
- * - `defaultValue`: The value that gets used if the relationship is missing from the loaded data.
- *                   The default is `null`.
- * - `readOnly`: Set to `true` to make the relationship read-only. Defaults to `false`.
- *
- * The option values are all available as property metadata, as well the `isRelationship` property
- * which is always `true`, and the `kind` property which is always `hasOne`.
- *
- * @namespace EmberGraph
- * @method hasMany
- * @param {Object} options
- * @return {Ember.ComputedProperty}
- */
-EG.hasOne = function(options) {
-	return {
-		isRelationship: true,
-		kind: HAS_ONE_KEY,
-		options: options
-	};
-};
-
 var createRelationship = function(kind, options) {
 	Em.assert('Your relationship must specify a relatedType.', typeof options.relatedType === 'string');
 	Em.assert('Your relationship must specify an inverse relationship.',
@@ -96,10 +42,6 @@ var createRelationship = function(kind, options) {
 	return Em.computed(relationship).property('_serverRelationships', '_clientRelationships').meta(meta).readOnly();
 };
 
-/**
- * @class Model
- * @namespace EmberGraph
- */
 EG.Model.reopenClass({
 
 	/**
@@ -142,6 +84,7 @@ EG.Model.reopenClass({
 	 * A set of all of the relationship names for this model.
 	 *
 	 * @property relationships
+	 * @for Model
 	 * @type Set
 	 * @static
 	 * @readOnly
@@ -164,6 +107,7 @@ EG.Model.reopenClass({
 
 	/**
 	 * @method isRelationship
+	 * @for Model
 	 * @param {String} propertyName
 	 * @return {Boolean}
 	 * @static
@@ -176,6 +120,7 @@ EG.Model.reopenClass({
 	 * Just a more semantic alias for `metaForProperty`
 	 *
 	 * @method metaForRelationship
+	 * @for Model
 	 * @param {String} relationshipName
 	 * @return {Object}
 	 * @static
@@ -186,6 +131,7 @@ EG.Model.reopenClass({
 	 * Determines the kind (multiplicity) of the given relationship.
 	 *
 	 * @method relationshipKind
+	 * @for Model
 	 * @param {String} name
 	 * @returns {String} `hasMany` or `hasOne`
 	 * @static
@@ -198,6 +144,7 @@ EG.Model.reopenClass({
 	 * Calls the callback for each relationship defined on the model.
 	 *
 	 * @method eachRelationship
+	 * @for Model
 	 * @param {Function} callback Function that takes `name` and `meta` parameters
 	 * @param [binding] Object to use as `this`
 	 * @static
@@ -231,10 +178,6 @@ EG.Model.reopenClass({
 	}
 });
 
-/**
- * @class Model
- * @namespace EmberGraph
- */
 EG.Model.reopen({
 
 	/**
@@ -582,6 +525,7 @@ EG.Model.reopen({
 	 * that has been changed since the last save.
 	 *
 	 * @method changedRelationships
+	 * @for Model
 	 * @return {Object} Keys are relationship names, values are arrays with [oldVal, newVal]
 	 */
 	changedRelationships: function() {
@@ -614,6 +558,7 @@ EG.Model.reopen({
 	 * Resets all attribute changes to last known server attributes.
 	 *
 	 * @method rollbackRelationships
+	 * @for Model
 	 */
 	rollbackRelationships: function() {
 		var alerts = [];
@@ -641,6 +586,7 @@ EG.Model.reopen({
 	 * ensure that all of the proper observers are notified of the change.
 	 *
 	 * @method addToRelationship
+	 * @for Model
 	 * @param {String} relationshipName
 	 * @param {String|Record} id
 	 */
@@ -694,6 +640,7 @@ EG.Model.reopen({
 	 * ensure that all of the proper observers are notified of the change.
 	 *
 	 * @method removeFromRelationship
+	 * @for Model
 	 * @param {String} relationshipName
 	 * @param {String|Record} id
 	 */
@@ -730,6 +677,7 @@ EG.Model.reopen({
 	 * Sets the value of a hasOne relationship to the given ID.
 	 *
 	 * @method setHasOneRelationship
+	 * @for Model
 	 * @param {String} relationshipName
 	 * @param {String|Record} id
 	 */
@@ -793,6 +741,7 @@ EG.Model.reopen({
 	 * Sets the value of a hasOne relationship to `null`.
 	 *
 	 * @method clearHasOneRelationship
+	 * @for Model
 	 * @param {String} relationshipName
 	 */
 	clearHasOneRelationship: function(relationshipName, suppressNotifications) {

@@ -2,3 +2,4 @@ node_modules/*
 test/index.html
 .idea/*
 lib/*
+doc/*
