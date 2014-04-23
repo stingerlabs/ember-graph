@@ -6,7 +6,7 @@
 		"**/*."
 	],
 	"dependencies": {
-		"ember": "1.4.0"
+		"ember": "1.5.1"
 	},
 	"devDependencies": {
 		"qunit": "1.14",
