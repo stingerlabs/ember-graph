@@ -17,6 +17,8 @@ EG.Store.reopen({
 	 * 'action'. (Don't let users perform different modifications at
 	 * the same time.)
 	 *
+	 * @property reloadDirty
+	 * @for Store
 	 * @type {Boolean}
 	 */
 	reloadDirty: true,
@@ -32,6 +34,8 @@ EG.Store.reopen({
 	 * so the server data can be loaded without affecting the client data.
 	 * To have the server overwrite client data, use the option below.
 	 *
+	 * @property sideWithClientOnConflict
+	 * @for Store
 	 * @type {Boolean}
 	 */
 	sideWithClientOnConflict: true,
@@ -43,6 +47,8 @@ EG.Store.reopen({
 	 * into the record and can be activated at any time by rolling back
 	 * attribute changes on the record.
 	 *
+	 * @property overwriteClientAttributes
+	 * @for Store
 	 * @type {Boolean}
 	 */
 	overwriteClientAttributes: false,
