@@ -2,21 +2,19 @@
  * The store is used to manage all records in the application.
  * Ideally, there should only be one store for an application.
  *
- * @type {Store}
+ * @class Store
+ * @constructor
  */
 EG.Store = Em.Object.extend({
 
 	/**
 	 * The adapter to use if an application adapter is not found.
 	 *
-	 * @type {String}
+	 * @property defaultAdapter
+	 * @type String
+	 * @default `'rest'`
 	 */
 	defaultAdapter: 'rest',
-
-	/**
-	 * The application's container.
-	 */
-	container: null,
 
 	/**
 	 * The number of milliseconds after a record in the cache expires
@@ -37,9 +35,6 @@ EG.Store = Em.Object.extend({
 	 * The adapter used by the store to communicate with the server.
 	 * The adapter is found by looking for App.ApplicationAdapter.
 	 * If not found, defaults to the REST adapter.
-	 *
-	 * @type {Adapter}
-	 * @private
 	 */
 	adapter: Em.computed(function() {
 		var container = this.get('container');
@@ -105,6 +100,11 @@ EG.Store = Em.Object.extend({
 	},
 
 	/**
+	 * Looks up the model for the specified typeKey. The `typeKey` property
+	 * isn't available on the class or its instances until the type is
+	 * looked up with this method for the first time.
+	 *
+	 * @method modelForType
 	 * @param {String} typeKey
 	 * @returns {Model}
 	 */
@@ -124,8 +124,9 @@ EG.Store = Em.Object.extend({
 	/**
 	 * Creates a record of the specified type. If the JSON has an ID,
 	 * then the record 'created' is a permanent record from the server.
-	 * If it contains no ID, the store assumes that it's new.
+	 * If it doesn't contain an ID, the store assumes that it's new.
 	 *
+	 * @method createRecord
 	 * @param {String} typeKey
 	 * @param {Object} json
 	 * @returns {Model}
@@ -170,9 +171,9 @@ EG.Store = Em.Object.extend({
 	/**
 	 * Returns all records of the given type that are in the cache.
 	 *
+	 * @method cachedRecordsFor
 	 * @param {String} typeKey
 	 * @returns {Array} Array of records of the given type
-	 * @private
 	 */
 	cachedRecordsFor: function(typeKey) {
 		var records = this.get('_records.' + typeKey) || {};
@@ -198,6 +199,7 @@ EG.Store = Em.Object.extend({
 	 * Object - A query that is passed to the adapter
 	 * undefined - Fetches all records of a type
 	 *
+	 * @method find
 	 * @param {String} typeKey
 	 * @param {String|String[]|Object} options
 	 * @returns {PromiseObject|PromiseArray}
@@ -226,10 +228,10 @@ EG.Store = Em.Object.extend({
 	 * Returns the record directly if the record is cached in the store.
 	 * Otherwise returns null.
 	 *
+	 * @method getRecord
 	 * @param {String} typeKey
 	 * @param {String} id
 	 * @returns {Model}
-	 * @private
 	 */
 	getRecord: function(typeKey, id) {
 		var record = this._getRecord(typeKey, id);
@@ -343,17 +345,19 @@ EG.Store = Em.Object.extend({
 	/**
 	 * Returns true if the record is cached in the store, false otherwise.
 	 *
-	 * @param {String|Model} type
+	 * @method hasRecord
+	 * @param {String|Model} typeKey
 	 * @param {String} id
 	 * @returns {Boolean}
 	 */
-	hasRecord: function(type, id) {
-		return this.getRecord(type, id) !== null;
+	hasRecord: function(typeKey, id) {
+		return this.getRecord(typeKey, id) !== null;
 	},
 
 	/**
+	 * @method saveRecord
 	 * @param {Model} record
-	 * @returns {Promise} The saved record
+	 * @returns {Promise} Resolves to the saved record
 	 */
 	saveRecord: function(record) {
 		var type = record.typeKey;
@@ -383,8 +387,9 @@ EG.Store = Em.Object.extend({
 	},
 
 	/**
+	 * @method deleteRecord
 	 * @param {Model} record
-	 * @returns {Promise} Nothing on success, catch for error
+	 * @returns {Promise}
 	 */
 	deleteRecord: function(record) {
 		var type = record.typeKey;
@@ -403,8 +408,9 @@ EG.Store = Em.Object.extend({
 	},
 
 	/**
+	 * @method reloadRecord
 	 * @param {Model} record
-	 * @returns {Promise} The reloaded record
+	 * @returns {Promise} Resolves to the reloaded record
 	 */
 	reloadRecord: function(record) {
 		Em.assert('You can\'t reload record `' + record.typeKey + ':' +
@@ -421,7 +427,8 @@ EG.Store = Em.Object.extend({
 	/**
 	 * Takes a normalized JSON payload and loads it into the store.
 	 *
-	 * @param {Object} payload Normalized JSON
+	 * @method extractPayload
+	 * @param {Object} payload
 	 */
 	extractPayload: function(payload) {
 		var reloadDirty = this.get('reloadDirty');
@@ -455,11 +462,14 @@ EG.Store = Em.Object.extend({
 
 	/**
 	 * Returns an AttributeType instance for the given type.
-	 * @param type
+	 *
+	 * @method attributeTypeFor
+	 * @param {String} typeName
+	 * @returns {AttributeType}
 	 */
-	attributeTypeFor: function(type) {
-		var attributeType = this.get('container').lookup('type:' + type);
-		Em.assert('Can\'t find an attribute type for the \'' + type + '\' type.', !!attributeType);
+	attributeTypeFor: function(typeName) {
+		var attributeType = this.get('container').lookup('type:' + typeName);
+		Em.assert('Can\'t find an attribute type for the \'' + typeName + '\' type.', !!attributeType);
 		return attributeType;
 	}
 });

@@ -1,7 +1,18 @@
 (function() {
 
+/**
+ * @module ember-graph
+ * @main ember-graph
+ */
 window.EmberGraph = window.EG = Em.Namespace.create({
-	// Neuter will take care of inserting the version number from bower.json
+	/**
+	 * Neuter will take care of inserting the version number from bower.json
+	 *
+	 * @property VERSION
+	 * @category top-level
+	 * @type String
+	 * @static
+	 */
 	VERSION: '0.1.0'
 });
 
@@ -1335,21 +1346,19 @@ EG.RESTAdapter = EG.Adapter.extend({
  * The store is used to manage all records in the application.
  * Ideally, there should only be one store for an application.
  *
- * @type {Store}
+ * @class Store
+ * @constructor
  */
 EG.Store = Em.Object.extend({
 
 	/**
 	 * The adapter to use if an application adapter is not found.
 	 *
-	 * @type {String}
+	 * @property defaultAdapter
+	 * @type String
+	 * @default `'rest'`
 	 */
 	defaultAdapter: 'rest',
-
-	/**
-	 * The application's container.
-	 */
-	container: null,
 
 	/**
 	 * The number of milliseconds after a record in the cache expires
@@ -1370,9 +1379,6 @@ EG.Store = Em.Object.extend({
 	 * The adapter used by the store to communicate with the server.
 	 * The adapter is found by looking for App.ApplicationAdapter.
 	 * If not found, defaults to the REST adapter.
-	 *
-	 * @type {Adapter}
-	 * @private
 	 */
 	adapter: Em.computed(function() {
 		var container = this.get('container');
@@ -1438,6 +1444,11 @@ EG.Store = Em.Object.extend({
 	},
 
 	/**
+	 * Looks up the model for the specified typeKey. The `typeKey` property
+	 * isn't available on the class or its instances until the type is
+	 * looked up with this method for the first time.
+	 *
+	 * @method modelForType
 	 * @param {String} typeKey
 	 * @returns {Model}
 	 */
@@ -1457,8 +1468,9 @@ EG.Store = Em.Object.extend({
 	/**
 	 * Creates a record of the specified type. If the JSON has an ID,
 	 * then the record 'created' is a permanent record from the server.
-	 * If it contains no ID, the store assumes that it's new.
+	 * If it doesn't contain an ID, the store assumes that it's new.
 	 *
+	 * @method createRecord
 	 * @param {String} typeKey
 	 * @param {Object} json
 	 * @returns {Model}
@@ -1503,9 +1515,9 @@ EG.Store = Em.Object.extend({
 	/**
 	 * Returns all records of the given type that are in the cache.
 	 *
+	 * @method cachedRecordsFor
 	 * @param {String} typeKey
 	 * @returns {Array} Array of records of the given type
-	 * @private
 	 */
 	cachedRecordsFor: function(typeKey) {
 		var records = this.get('_records.' + typeKey) || {};
@@ -1531,6 +1543,7 @@ EG.Store = Em.Object.extend({
 	 * Object - A query that is passed to the adapter
 	 * undefined - Fetches all records of a type
 	 *
+	 * @method find
 	 * @param {String} typeKey
 	 * @param {String|String[]|Object} options
 	 * @returns {PromiseObject|PromiseArray}
@@ -1559,10 +1572,10 @@ EG.Store = Em.Object.extend({
 	 * Returns the record directly if the record is cached in the store.
 	 * Otherwise returns null.
 	 *
+	 * @method getRecord
 	 * @param {String} typeKey
 	 * @param {String} id
 	 * @returns {Model}
-	 * @private
 	 */
 	getRecord: function(typeKey, id) {
 		var record = this._getRecord(typeKey, id);
@@ -1676,17 +1689,19 @@ EG.Store = Em.Object.extend({
 	/**
 	 * Returns true if the record is cached in the store, false otherwise.
 	 *
-	 * @param {String|Model} type
+	 * @method hasRecord
+	 * @param {String|Model} typeKey
 	 * @param {String} id
 	 * @returns {Boolean}
 	 */
-	hasRecord: function(type, id) {
-		return this.getRecord(type, id) !== null;
+	hasRecord: function(typeKey, id) {
+		return this.getRecord(typeKey, id) !== null;
 	},
 
 	/**
+	 * @method saveRecord
 	 * @param {Model} record
-	 * @returns {Promise} The saved record
+	 * @returns {Promise} Resolves to the saved record
 	 */
 	saveRecord: function(record) {
 		var type = record.typeKey;
@@ -1716,8 +1731,9 @@ EG.Store = Em.Object.extend({
 	},
 
 	/**
+	 * @method deleteRecord
 	 * @param {Model} record
-	 * @returns {Promise} Nothing on success, catch for error
+	 * @returns {Promise}
 	 */
 	deleteRecord: function(record) {
 		var type = record.typeKey;
@@ -1736,8 +1752,9 @@ EG.Store = Em.Object.extend({
 	},
 
 	/**
+	 * @method reloadRecord
 	 * @param {Model} record
-	 * @returns {Promise} The reloaded record
+	 * @returns {Promise} Resolves to the reloaded record
 	 */
 	reloadRecord: function(record) {
 		Em.assert('You can\'t reload record `' + record.typeKey + ':' +
@@ -1754,7 +1771,8 @@ EG.Store = Em.Object.extend({
 	/**
 	 * Takes a normalized JSON payload and loads it into the store.
 	 *
-	 * @param {Object} payload Normalized JSON
+	 * @method extractPayload
+	 * @param {Object} payload
 	 */
 	extractPayload: function(payload) {
 		var reloadDirty = this.get('reloadDirty');
@@ -1788,11 +1806,14 @@ EG.Store = Em.Object.extend({
 
 	/**
 	 * Returns an AttributeType instance for the given type.
-	 * @param type
+	 *
+	 * @method attributeTypeFor
+	 * @param {String} typeName
+	 * @returns {AttributeType}
 	 */
-	attributeTypeFor: function(type) {
-		var attributeType = this.get('container').lookup('type:' + type);
-		Em.assert('Can\'t find an attribute type for the \'' + type + '\' type.', !!attributeType);
+	attributeTypeFor: function(typeName) {
+		var attributeType = this.get('container').lookup('type:' + typeName);
+		Em.assert('Can\'t find an attribute type for the \'' + typeName + '\' type.', !!attributeType);
 		return attributeType;
 	}
 });
@@ -2850,22 +2871,37 @@ EG.StringType = EG.AttributeType.extend({
 (function() {
 
 /**
- * Models act as classes for data. The model class should be
- * extended for each type of object that your object model
- * contains.
+ * Models are the classes that represent your domain data.
+ * Each type of object in your domain should have its own
+ * model, with attributes and relationships declared using the
+ * [attr](EG.html#method_attr), [hasOne](EG.html#method_hasOne)
+ * and [hasMany](EG.html#method_hasMany) functions.
+ *
+ * To create a model, subclass this class (or any other Model
+ * subclass) and place it your app's namespace. The name
+ * that you give it is important, since that's how it will be
+ * looked up by the container. The usual convention is to use
+ * a camel-cased name like `App.PostComment` or `App.ForumAdmin`.
+ * For more information on resolving, read the Ember.js entry
+ * on the [DefaultResolver](http://emberjs.com/api/classes/Ember.DefaultResolver.html).
  *
  * @class Model
  * @constructor
- * @namespace EmberGraph
  * @extends Ember.Object
+ * @uses Ember.Evented
  */
 EG.Model = Em.Object.extend(Em.Evented, {
 
 	/**
-	 * Should be overridden in all subclasses with a name for this
-	 * particular class. The name should be a unique string that
-	 * will be referenced throughout the application. Refrain from
-	 * special characters. Stick with lowercase letters.
+	 * This property is available on every model instance and every
+	 * model subclass (after being looked up at least once by the
+	 * container). This is the key that you use to refer to the model
+	 * in relationships and store methods. Examples:
+	 *
+	 * ```
+	 * App.User => user
+	 * App.PostComment => postComment
+	 * ```
 	 *
 	 * @property typeKey
 	 * @type String
@@ -3076,10 +3112,6 @@ EG.Model = Em.Object.extend(Em.Evented, {
 	}
 });
 
-/**
- * @class Model
- * @namespace EmberGraph
- */
 EG.Model.reopenClass({
 
 	/**
@@ -3183,40 +3215,6 @@ EG.Model.reopenClass({
 
 var disallowedAttributeNames = new Em.Set(['id', 'type', 'content']);
 
-/**
- * Declares an attribute on a model. The options determine the type and behavior
- * of the attributes. Bold options are required:
- *
- * - **`type`**: The type of the attribute. `string`, `boolean`, `number`, `date`, `array`
- *               and `object` are the built in types. New types can be declared by extending
- *               `AttributeType`.
- * - `defaultValue`: The value that gets used if the attribute is missing from the loaded data.
- *                   If omitted, the attribute is required and will error if missing.
- * - `readOnly`: Set to `true` to make the attribute read-only. Defaults to `false`.
- * - `isEqual`: Function that will compare two different instances of the attribute. Should take
- *              two arguments and return `true` if the given attributes are equal. Defaults to
- *              the function declared in the `AttributeType` subclass.
- * - `isValid`: Function that determines if a value is valid or not. It's used during serialization
- *              and deserialization, as well as when changing the value. The function should take
- *              a single argument and return `true` or `false` depending on validity of the value.
- *
- * The option values are all available as property metadata, as well the `isAttribute` property
- * which is always `true`, and the `isRequired` property.
- *
- * Like other Ember properties, `undefined` is _not_ a valid attribute value.
- *
- * @namespace EmberGraph
- * @method attr
- * @param {Object} options
- * @return {Ember.ComputedProperty}
- */
-EG.attr = function(options) {
-	return {
-		isAttribute: true,
-		options: options
-	};
-};
-
 var createAttribute = function(attributeName, options) {
 	var meta = {
 		isAttribute: true,
@@ -3267,10 +3265,6 @@ var createAttribute = function(attributeName, options) {
 	return (options.readOnly ? attribute.readOnly() : attribute);
 };
 
-/**
- * @class Model
- * @namespace EmberGraph
- */
 EG.Model.reopenClass({
 
 	/**
@@ -3290,6 +3284,7 @@ EG.Model.reopenClass({
 	 * A set of all of the attribute names for this model.
 	 *
 	 * @property attributes
+	 * @for Model
 	 * @type Set
 	 * @static
 	 * @readOnly
@@ -3313,6 +3308,7 @@ EG.Model.reopenClass({
 	 * Just a more semantic alias for `metaForProperty`
 	 *
 	 * @method metaForAttribute
+	 * @for Model
 	 * @param {String} attributeName
 	 * @return {Object}
 	 * @static
@@ -3321,6 +3317,7 @@ EG.Model.reopenClass({
 
 	/**
 	 * @method isAttribute
+	 * @for Model
 	 * @param {String} propertyName
 	 * @return {Boolean}
 	 * @static
@@ -3333,6 +3330,7 @@ EG.Model.reopenClass({
 	 * Calls the callback for each attribute defined on the model.
 	 *
 	 * @method eachAttribute
+	 * @for Model
 	 * @param {Function} callback Function that takes `name` and `meta` parameters
 	 * @param [binding] Object to use as `this`
 	 * @static
@@ -3346,10 +3344,6 @@ EG.Model.reopenClass({
 	}
 });
 
-/**
- * @class Model
- * @namespace EmberGraph
- */
 EG.Model.reopen({
 
 	/**
@@ -3380,6 +3374,7 @@ EG.Model.reopen({
 	 * that has been changed since the last save.
 	 *
 	 * @method changedAttributes
+	 * @for Model
 	 * @return {Object} Keys are attribute names, values are arrays with [oldVal, newVal]
 	 */
 	changedAttributes: function() {
@@ -3403,6 +3398,7 @@ EG.Model.reopen({
 	 * Resets all attribute changes to last known server attributes.
 	 *
 	 * @method rollbackAttributes
+	 * @for Model
 	 */
 	rollbackAttributes: function() {
 		this.set('_clientAttributes', Em.Object.create());
@@ -3443,60 +3439,6 @@ var DELETED_STATE = EG.Relationship.DELETED_STATE;
 
 var disallowedRelationshipNames = new Em.Set(['id', 'type', 'content']);
 
-/**
- * Declares a *-to-many relationship on a model. The options determine
- * the type and behavior of the relationship. Bold options are required:
- *
- * - **`relatedType`**: The type of the related models.
- * - **`inverse`**: The relationship on the related models that reciprocates this relationship.
- * - `isRequired`: `true` if the relationship can be left out of the JSON. Defaults to `false`.
- * - `defaultValue`: The value that gets used if the relationship is missing from the loaded data.
- *                   The default is an empty array.
- * - `readOnly`: Set to `true` to make the relationship read-only. Defaults to `false`.
- *
- * The option values are all available as property metadata, as well the `isRelationship` property
- * which is always `true`, and the `kind` property which is always `hasMany`.
- *
- * @namespace EmberGraph
- * @method hasMany
- * @param {Object} options
- * @return {Ember.ComputedProperty}
- */
-EG.hasMany = function(options) {
-	return {
-		isRelationship: true,
-		kind: HAS_MANY_KEY,
-		options: options
-	};
-};
-
-/**
- * Declares a *-to-one relationship on a model. The options determine
- * the type and behavior of the relationship. Bold options are required:
- *
- * - **`relatedType`**: The type of the related models.
- * - **`inverse`**: The relationship on the related model that reciprocates this relationship.
- * - `isRequired`: `true` if the relationship can be left out of the JSON. Defaults to `false`.
- * - `defaultValue`: The value that gets used if the relationship is missing from the loaded data.
- *                   The default is `null`.
- * - `readOnly`: Set to `true` to make the relationship read-only. Defaults to `false`.
- *
- * The option values are all available as property metadata, as well the `isRelationship` property
- * which is always `true`, and the `kind` property which is always `hasOne`.
- *
- * @namespace EmberGraph
- * @method hasMany
- * @param {Object} options
- * @return {Ember.ComputedProperty}
- */
-EG.hasOne = function(options) {
-	return {
-		isRelationship: true,
-		kind: HAS_ONE_KEY,
-		options: options
-	};
-};
-
 var createRelationship = function(kind, options) {
 	Em.assert('Your relationship must specify a relatedType.', typeof options.relatedType === 'string');
 	Em.assert('Your relationship must specify an inverse relationship.',
@@ -3532,10 +3474,6 @@ var createRelationship = function(kind, options) {
 	return Em.computed(relationship).property('_serverRelationships', '_clientRelationships').meta(meta).readOnly();
 };
 
-/**
- * @class Model
- * @namespace EmberGraph
- */
 EG.Model.reopenClass({
 
 	/**
@@ -3578,6 +3516,7 @@ EG.Model.reopenClass({
 	 * A set of all of the relationship names for this model.
 	 *
 	 * @property relationships
+	 * @for Model
 	 * @type Set
 	 * @static
 	 * @readOnly
@@ -3600,6 +3539,7 @@ EG.Model.reopenClass({
 
 	/**
 	 * @method isRelationship
+	 * @for Model
 	 * @param {String} propertyName
 	 * @return {Boolean}
 	 * @static
@@ -3612,6 +3552,7 @@ EG.Model.reopenClass({
 	 * Just a more semantic alias for `metaForProperty`
 	 *
 	 * @method metaForRelationship
+	 * @for Model
 	 * @param {String} relationshipName
 	 * @return {Object}
 	 * @static
@@ -3622,6 +3563,7 @@ EG.Model.reopenClass({
 	 * Determines the kind (multiplicity) of the given relationship.
 	 *
 	 * @method relationshipKind
+	 * @for Model
 	 * @param {String} name
 	 * @returns {String} `hasMany` or `hasOne`
 	 * @static
@@ -3634,6 +3576,7 @@ EG.Model.reopenClass({
 	 * Calls the callback for each relationship defined on the model.
 	 *
 	 * @method eachRelationship
+	 * @for Model
 	 * @param {Function} callback Function that takes `name` and `meta` parameters
 	 * @param [binding] Object to use as `this`
 	 * @static
@@ -3667,10 +3610,6 @@ EG.Model.reopenClass({
 	}
 });
 
-/**
- * @class Model
- * @namespace EmberGraph
- */
 EG.Model.reopen({
 
 	/**
@@ -4018,6 +3957,7 @@ EG.Model.reopen({
 	 * that has been changed since the last save.
 	 *
 	 * @method changedRelationships
+	 * @for Model
 	 * @return {Object} Keys are relationship names, values are arrays with [oldVal, newVal]
 	 */
 	changedRelationships: function() {
@@ -4050,6 +3990,7 @@ EG.Model.reopen({
 	 * Resets all attribute changes to last known server attributes.
 	 *
 	 * @method rollbackRelationships
+	 * @for Model
 	 */
 	rollbackRelationships: function() {
 		var alerts = [];
@@ -4077,6 +4018,7 @@ EG.Model.reopen({
 	 * ensure that all of the proper observers are notified of the change.
 	 *
 	 * @method addToRelationship
+	 * @for Model
 	 * @param {String} relationshipName
 	 * @param {String|Record} id
 	 */
@@ -4130,6 +4072,7 @@ EG.Model.reopen({
 	 * ensure that all of the proper observers are notified of the change.
 	 *
 	 * @method removeFromRelationship
+	 * @for Model
 	 * @param {String} relationshipName
 	 * @param {String|Record} id
 	 */
@@ -4166,6 +4109,7 @@ EG.Model.reopen({
 	 * Sets the value of a hasOne relationship to the given ID.
 	 *
 	 * @method setHasOneRelationship
+	 * @for Model
 	 * @param {String} relationshipName
 	 * @param {String|Record} id
 	 */
@@ -4229,6 +4173,7 @@ EG.Model.reopen({
 	 * Sets the value of a hasOne relationship to `null`.
 	 *
 	 * @method clearHasOneRelationship
+	 * @for Model
 	 * @param {String} relationshipName
 	 */
 	clearHasOneRelationship: function(relationshipName, suppressNotifications) {
@@ -4341,5 +4286,100 @@ EG.Model.reopen({
 		return { record: this, property: hash };
 	}
 });
+
+})();
+
+(function() {
+
+/**
+ * Declares an attribute on a model. The options determine the type and behavior
+ * of the attributes. Bold options are required:
+ *
+ * - **`type`**: The type of the attribute. `string`, `boolean`, `number`, `date`, `array`
+ * and `object` are the built in types. New types can be declared by extending `AttributeType`.
+ * - `defaultValue`: The value that gets used if the attribute is missing from the loaded data.
+ * If omitted, the attribute is required and will error if missing.
+ * - `readOnly`: Set to `true` to make the attribute read-only. Defaults to `false`.
+ * - `isEqual`: Function that will compare two different instances of the attribute. Should take
+ * two arguments and return `true` if the given attributes are equal. Defaults to the function
+ * declared in the `AttributeType` subclass.
+ * - `isValid`: Function that determines if a value is valid or not. It's used during serialization
+ * and deserialization, as well as when changing the value. The function should take a single
+ * argument and return `true` or `false` depending on validity of the value.
+ *
+ * The option values are all available as property metadata, as well the `isAttribute` property
+ * which is always `true`, and the `isRequired` property.
+ *
+ * Like other Ember properties, `undefined` is _not_ a valid attribute value.
+ *
+ * @method attr
+ * @for EG
+ * @category top-level
+ * @param {Object} options
+ * @return {Ember.ComputedProperty}
+ */
+EG.attr = function(options) {
+	return {
+		isAttribute: true,
+		options: options
+	};
+};
+
+/**
+ * Declares a *-to-many relationship on a model. The options determine
+ * the type and behavior of the relationship. Bold options are required:
+ *
+ * - **`relatedType`**: The type of the related models.
+ * - **`inverse`**: The relationship on the related models that reciprocates this relationship.
+ * - `isRequired`: `true` if the relationship can be left out of the JSON. Defaults to `false`.
+ * - `defaultValue`: The value that gets used if the relationship is missing from the loaded data.
+ * The default is an empty array.
+ * - `readOnly`: Set to `true` to make the relationship read-only. Defaults to `false`.
+ *
+ * The option values are all available as property metadata, as well the `isRelationship` property
+ * which is always `true`, and the `kind` property which is always `hasMany`.
+ *
+ * @method hasMany
+ * @for EG
+ * @category top-level
+ * @param {Object} options
+ * @return {Ember.ComputedProperty}
+ */
+EG.hasMany = function(options) {
+	return {
+		isRelationship: true,
+		kind: EG.Model.HAS_MANY_KEY,
+		options: options
+	};
+};
+
+/**
+ * Declares a *-to-one relationship on a model. The options determine
+ * the type and behavior of the relationship. Bold options are required:
+ *
+ * - **`relatedType`**: The type of the related models.
+ * - **`inverse`**: The relationship on the related model that reciprocates this relationship.
+ * - `isRequired`: `true` if the relationship can be left out of the JSON. Defaults to `false`.
+ * - `defaultValue`: The value that gets used if the relationship is missing from the loaded data.
+ * The default is `null`.
+ * - `readOnly`: Set to `true` to make the relationship read-only. Defaults to `false`.
+ *
+ * The option values are all available as property metadata, as well the `isRelationship` property
+ * which is always `true`, and the `kind` property which is always `hasOne`.
+ *
+ * @method hasOne
+ * @for EG
+ * @category top-level
+ * @param {Object} options
+ * @return {Ember.ComputedProperty}
+ */
+EG.hasOne = function(options) {
+	return {
+		isRelationship: true,
+		kind: EG.Model.HAS_ONE_KEY,
+		options: options
+	};
+};
+
 
 })();

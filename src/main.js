@@ -2,16 +2,12 @@
  * @module ember-graph
  * @main ember-graph
  */
-
-/**
- * @class EmberGraph
- * @static
- */
 window.EmberGraph = window.EG = Em.Namespace.create({
 	/**
 	 * Neuter will take care of inserting the version number from bower.json
 	 *
 	 * @property VERSION
+	 * @category top-level
 	 * @type String
 	 * @static
 	 */
@@ -50,3 +46,4 @@ require('model/attribute_type/**/*');
 require('model/model');
 require('model/attribute');
 require('model/relationship');
+require('model/schema');

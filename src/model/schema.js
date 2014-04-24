@@ -21,6 +21,7 @@
  *
  * @method attr
  * @for EG
+ * @category top-level
  * @param {Object} options
  * @return {Ember.ComputedProperty}
  */
@@ -47,13 +48,14 @@ EG.attr = function(options) {
  *
  * @method hasMany
  * @for EG
+ * @category top-level
  * @param {Object} options
  * @return {Ember.ComputedProperty}
  */
 EG.hasMany = function(options) {
 	return {
 		isRelationship: true,
-		kind: HAS_MANY_KEY,
+		kind: EG.Model.HAS_MANY_KEY,
 		options: options
 	};
 };
@@ -74,13 +76,14 @@ EG.hasMany = function(options) {
  *
  * @method hasOne
  * @for EG
+ * @category top-level
  * @param {Object} options
  * @return {Ember.ComputedProperty}
  */
 EG.hasOne = function(options) {
 	return {
 		isRelationship: true,
-		kind: HAS_ONE_KEY,
+		kind: EG.Model.HAS_ONE_KEY,
 		options: options
 	};
 };
