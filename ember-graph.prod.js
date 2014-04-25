@@ -3393,8 +3393,9 @@ EG.Model.reopen({
 			var client = this.get('_clientAttributes.' + name);
 
 			var type = store.attributeTypeFor(meta.type);
+			var isEqual = meta.isEqual || type.isEqual;
 
-			if (client === undefined || type.isEqual(server, client)) {
+			if (client === undefined || isEqual(server, client)) {
 				return;
 			}
 
