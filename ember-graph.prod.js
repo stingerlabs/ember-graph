@@ -3386,12 +3386,15 @@ EG.Model.reopen({
 	 */
 	changedAttributes: function() {
 		var diff = {};
+		var store = this.get('store');
 
 		this.constructor.eachAttribute(function(name, meta) {
 			var server = this.get('_serverAttributes.' + name);
 			var client = this.get('_clientAttributes.' + name);
 
-			if (client === undefined) {
+			var type = store.attributeTypeFor(meta.type);
+
+			if (client === undefined || type.isEqual(server, client)) {
 				return;
 			}
 
