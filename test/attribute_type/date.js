@@ -31,7 +31,7 @@
 		strictEqual(type.serialize(now), now.getTime());
 		strictEqual(type.serialize(), null);
 		strictEqual(type.serialize(null), null);
-		strictEqual(type.serialize(''), new Date('').getTime());
+		ok(Math.abs(type.serialize('') - new Date('').getTime()) < 5);
 		strictEqual(type.serialize(832748734), 832748734);
 	});
 
