@@ -102,14 +102,9 @@ EG.Relationship = Em.Object.extend({
 	/**
 	 * Initializes the relationship with a unique ID.
 	 */
-	init: (function() {
-		var nextId = 0;
-
-		return function() {
-			this.set('id', nextId + '');
-			nextId = nextId + 1;
-		};
-	})(),
+	init: function() {
+		this.set('id', Em.generateGuid(null, 'relationship'));
+	},
 
 	/**
 	 * Signals that this relationship has been created on the client,
