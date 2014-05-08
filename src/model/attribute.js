@@ -18,7 +18,7 @@ var createAttribute = function(attributeName, options) {
 		var client = this.get('_clientAttributes.' + key);
 		var current = (client === undefined ? server : client);
 
-		EG.debug(function() {
+		Em.runInDebug(function() {
 			if (arguments.length > 1 && value === undefined) {
 				Em.warn('`undefined` is not a valid property value.');
 			}

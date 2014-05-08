@@ -270,14 +270,6 @@ if (Em.EXTEND_PROTOTYPES === true || Em.EXTEND_PROTOTYPES.String) {
 
 (function() {
 
-EG.debug = function(fn) {
-	fn();
-};
-
-})();
-
-(function() {
-
 var methodMissing = function(method) {
 	return new Error('Your serializer failed to implement the \'' + method + '\' method.');
 };
@@ -3229,7 +3221,7 @@ var createAttribute = function(attributeName, options) {
 		var client = this.get('_clientAttributes.' + key);
 		var current = (client === undefined ? server : client);
 
-		EG.debug(function() {
+		Em.runInDebug(function() {
 			if (arguments.length > 1 && value === undefined) {
 				Em.warn('`undefined` is not a valid property value.');
 			}

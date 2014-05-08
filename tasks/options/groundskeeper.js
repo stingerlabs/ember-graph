@@ -7,7 +7,11 @@ module.exports = {
 		options: {
 			console: false,
 			debugger: false,
-			namespace: ['Eg.debug', 'Em.assert', 'Ember.assert', 'Em.warn', 'Ember.warn']
+			namespace: [
+				'Em.assert', 'Ember.assert',
+				'Em.warn', 'Ember.warn',
+				'Em.runInDebug', 'Ember.runInDebug'
+			]
 		}
 	}
 };
