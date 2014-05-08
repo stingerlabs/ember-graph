@@ -3023,28 +3023,14 @@ EG.Model = Em.Object.extend(Em.Evented, {
 		return EG.String.startsWith(this.get('_id'), this.constructor.temporaryIdPrefix);
 	}).property('_id'),
 
-	/**
-	 * Sets up the instance variables of this class.
-	 *
-	 * @method init
-	 */
-	init: function() {
-		this._super();
-
+	_initializeProperties: function() {
 		this.set('_id', null);
 		this.set('store', null);
-
-		this.set('_serverAttributes', Em.Object.create());
-		this.set('_clientAttributes', Em.Object.create());
-
-		this.set('_serverRelationships', {});
-		this.set('_clientRelationships', {});
-		this.set('_deletedRelationships', {});
 
 		this.set('isDeleted', false);
 		this.set('isSaving', false);
 		this.set('isReloading', false);
-	},
+	}.on('init'),
 
 	/**
 	 * Loads JSON data from the server into the record. This may be used when
@@ -3362,6 +3348,11 @@ EG.Model.reopen({
 	 */
 	_clientAttributes: null,
 
+	_initializeAttributes: function() {
+		this.set('_serverAttributes', Em.Object.create());
+		this.set('_clientAttributes', Em.Object.create());
+	}.on('init'),
+
 	/**
 	 * Watches the client side attributes for changes and detects if there are
 	 * any dirty attributes based on how many client attributes differ from
@@ -3632,6 +3623,12 @@ EG.Model.reopen({
 	 * @type {Object.<String, Relationship>}
 	 */
 	_clientRelationships: null,
+
+	_initializeRelationships: function() {
+		this.set('_serverRelationships', Em.Object.create());
+		this.set('_clientRelationships', Em.Object.create());
+		this.set('_deletedRelationships', Em.Object.create());
+	}.on('init'),
 
 	/**
 	 * Determines the value of a hasOne relationship, either the

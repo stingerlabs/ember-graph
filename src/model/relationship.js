@@ -205,6 +205,12 @@ EG.Model.reopen({
 	 */
 	_clientRelationships: null,
 
+	_initializeRelationships: function() {
+		this.set('_serverRelationships', Em.Object.create());
+		this.set('_clientRelationships', Em.Object.create());
+		this.set('_deletedRelationships', Em.Object.create());
+	}.on('init'),
+
 	/**
 	 * Determines the value of a hasOne relationship, either the
 	 * original value sent from the server, or the current client value.

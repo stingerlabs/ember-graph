@@ -145,6 +145,11 @@ EG.Model.reopen({
 	 */
 	_clientAttributes: null,
 
+	_initializeAttributes: function() {
+		this.set('_serverAttributes', Em.Object.create());
+		this.set('_clientAttributes', Em.Object.create());
+	}.on('init'),
+
 	/**
 	 * Watches the client side attributes for changes and detects if there are
 	 * any dirty attributes based on how many client attributes differ from

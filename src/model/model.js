@@ -147,28 +147,14 @@ EG.Model = Em.Object.extend(Em.Evented, {
 		return EG.String.startsWith(this.get('_id'), this.constructor.temporaryIdPrefix);
 	}).property('_id'),
 
-	/**
-	 * Sets up the instance variables of this class.
-	 *
-	 * @method init
-	 */
-	init: function() {
-		this._super();
-
+	_initializeProperties: function() {
 		this.set('_id', null);
 		this.set('store', null);
-
-		this.set('_serverAttributes', Em.Object.create());
-		this.set('_clientAttributes', Em.Object.create());
-
-		this.set('_serverRelationships', {});
-		this.set('_clientRelationships', {});
-		this.set('_deletedRelationships', {});
 
 		this.set('isDeleted', false);
 		this.set('isSaving', false);
 		this.set('isReloading', false);
-	},
+	}.on('init'),
 
 	/**
 	 * Loads JSON data from the server into the record. This may be used when
