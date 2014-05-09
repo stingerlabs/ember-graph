@@ -7,7 +7,7 @@ var DELETED_STATE = EG.Relationship.DELETED_STATE;
 
 var disallowedRelationshipNames = new Em.Set(['id', 'type', 'content']);
 
-var createRelationship = function(kind, options) {
+var createRelationship = function(name, kind, options) {
 	Em.assert('Your relationship must specify a relatedType.', typeof options.relatedType === 'string');
 	Em.assert('Your relationship must specify an inverse relationship.',
 		options.inverse === null || typeof options.inverse === 'string');
@@ -27,19 +27,16 @@ var createRelationship = function(kind, options) {
 			(kind === HAS_MANY_KEY && Em.isArray(meta.defaultValue)) ||
 			(kind === HAS_ONE_KEY && (meta.defaultValue === null || typeof meta.defaultValue === 'string')));
 
-	var relationship;
-
 	if (kind === HAS_MANY_KEY) {
-		relationship = function(key) {
+		return Em.computed(function(key) {
 			return this._hasManyValue(key.substring(1));
-		};
+		}).property('_serverRelationships.' + name + '.@each',
+				'_clientRelationships.' + name + '.@each').meta(meta).readOnly();
 	} else {
-		relationship = function(key) {
+		return Em.computed(function(key) {
 			return this._hasOneValue(key.substring(1));
-		};
+		}).property('_serverRelationships.' + name, '_clientRelationships.' + name).meta(meta).readOnly();
 	}
-
-	return Em.computed(relationship).property('_serverRelationships', '_clientRelationships').meta(meta).readOnly();
 };
 
 EG.Model.reopenClass({
@@ -71,10 +68,10 @@ EG.Model.reopenClass({
 				};
 			}
 
-			obj['_' + name] = createRelationship(kind, options);
+			obj['_' + name] = createRelationship(name, kind, options);
 			var meta = Em.copy(obj['_' + name].meta(), true);
 			meta.isRelationship = true;
-			obj[name] = relationship.property('_' + name).meta(meta).readOnly();
+			obj[name] = Em.computed(relationship).property('_' + name).meta(meta).readOnly();
 		});
 
 		this.reopen(obj);
