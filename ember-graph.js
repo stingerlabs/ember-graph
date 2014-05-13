@@ -1768,10 +1768,8 @@ EG.Store = Em.Object.extend({
 	 * @param {Object} payload
 	 */
 	extractPayload: function(payload) {
-		var reloadDirty = this.get('reloadDirty');
-
-		try {
-			this.beginPropertyChanges();
+		Em.changeProperties(function() {
+			var reloadDirty = this.get('reloadDirty');
 
 			Em.keys(payload).forEach(function(typeKey) {
 				if (typeKey === 'meta') {
@@ -1792,9 +1790,7 @@ EG.Store = Em.Object.extend({
 					}
 				}, this);
 			}, this);
-		} finally {
-			this.endPropertyChanges();
-		}
+		}, this);
 	},
 
 	/**
@@ -1907,22 +1903,18 @@ EG.Store.reopen({
 	 * Will connect all queued relationships to the given record.
 	 *
 	 * @param {Model} record
-	 * @returns {Object[]} The objects to alert of changes, along with the corresponding properties
 	 */
 	_connectQueuedRelationships: function(record) {
-		var alerts = [];
 		var queued = this.get('_queuedRelationships');
 		var toConnect = this._queuedRelationshipsFor(record.typeKey, record.get('id'));
 
 		toConnect.forEach(function(relationship) {
-			alerts.push(record._connectRelationship(relationship));
+			record._connectRelationship(relationship);
 			relationship.set('object2', record);
 			delete queued[relationship.get('id')];
 		});
 
 		this.notifyPropertyChange('_queuedRelationships');
-
-		return alerts;
 	},
 
 	/**
@@ -1961,15 +1953,13 @@ EG.Store.reopen({
 	 * @param {String} relationship2
 	 * @param {String} id2
 	 * @param {String} state The state of the relationship
-	 * @returns {Object[]} The objects to alert of changes, along with the corresponding properties
 	 */
 	_createRelationship: function(type1, relationship1, id1, type2, relationship2, id2, state) { // jshint ignore:line
-		var alerts = [];
 		var record1 = this.getRecord(type1, id1);
 		var record2 = this.getRecord(type2, id2);
 
 		if (record1 === null && record2 === null) {
-			return alerts;
+			return;
 		}
 
 		if (record1 === null) {
@@ -1987,12 +1977,12 @@ EG.Store.reopen({
 		}
 
 		if (relationship1 === null) {
-			return alerts;
+			return;
 		}
 
 		if (record1._isLinkedTo(relationship1, id2)) {
 			// TODO: Do we need to check both sides, or can we assume consistency?
-			return alerts;
+			return;
 		}
 
 		var relationship = EG.Relationship.create({
@@ -2005,16 +1995,14 @@ EG.Store.reopen({
 
 		this.get('_relationships')[relationship.get('id')] = relationship;
 
-		alerts.push(record1._connectRelationship(relationship));
+		record1._connectRelationship(relationship);
 
 		if (record2 !== null) {
-			alerts.push(record2._connectRelationship(relationship));
+			record2._connectRelationship(relationship);
 		} else {
 			this.set('_queuedRelationships.' + relationship.get('id'), relationship);
 			this.notifyPropertyChange('_queuedRelationships');
 		}
-
-		return alerts;
 	},
 
 	/**
@@ -2022,44 +2010,35 @@ EG.Store.reopen({
 	 * then destroys, all references to the relationship.
 	 *
 	 * @param {String} id
-	 * @returns {Object[]} The objects to alert of changes, along with the corresponding properties
 	 */
 	_deleteRelationship: function(id) {
-		var alerts = [];
-
 		var relationship = this.get('_relationships')[id];
 		if (Em.isNone(relationship)) {
-			return alerts;
+			return;
 		}
 
 		var object1 = relationship.get('object1');
 		var object2 = relationship.get('object2');
 
-		alerts.push(object1._disconnectRelationship(relationship));
+		object1._disconnectRelationship(relationship);
 		if (object2 instanceof EG.Model) {
-			alerts.push(object2._disconnectRelationship(relationship));
+			object2._disconnectRelationship(relationship);
 		} else {
 			delete this.get('_queuedRelationships')[id];
 			this.notifyPropertyChange('_queuedRelationships');
 		}
 
 		delete this.get('_relationships')[id];
-
-		return alerts;
 	},
 
 	/**
 	 * @param {String} id
 	 * @param {String} state
-	 *
-	 * @returns {Object[]} The objects to alert of changes, along with the corresponding properties
 	 */
 	_changeRelationshipState: function(id, state) {
-		var alerts = [];
-
 		var relationship = this.get('_relationships')[id];
 		if (Em.isNone(relationship) || relationship.get('state') === state) {
-			return alerts;
+			return;
 		}
 
 		var object1 = relationship.get('object1');
@@ -2072,17 +2051,15 @@ EG.Store.reopen({
 
 		object1.set(newHash + '.' + id, object1.get(oldHash + '.' + id));
 		delete object1.get(oldHash)[id];
-		alerts.push({ record: object1, property: oldHash });
-		alerts.push({ record: object1, property: newHash });
+		object1.notifyPropertyChange(oldHash);
+		object1.notifyPropertyChange(newHash);
 
 		if (object2 instanceof EG.Model) {
 			object2.set(newHash + '.' + id, object2.get(oldHash + '.' + id));
 			delete object2.get(oldHash)[id];
-			alerts.push({ record: object2, property: oldHash });
-			alerts.push({ record: object2, property: newHash });
+			object2.notifyPropertyChange(oldHash);
+			object2.notifyPropertyChange(newHash);
 		}
-
-		return alerts;
 	},
 
 	/**
@@ -2117,18 +2094,14 @@ EG.Store.reopen({
 	},
 
 	_deleteRelationshipsForRecord: function(typeKey, id) {
-		var alerts = [];
+		// TODO: Get rid of EG.util.values
 		var relationships = EG.util.values(this.get('_relationships'));
 
 		relationships.forEach(function(relationship) {
 			if (relationship.isConnectedTo(typeKey, id)) {
-				alerts = alerts.concat(this._deleteRelationship(Em.get(relationship, 'id')));
+				this._deleteRelationship(Em.get(relationship, 'id'));
 			}
 		}, this);
-
-		alerts.forEach(function(alert) {
-			Em.tryInvoke(alert.record, 'notifyPropertyChange', [alert.property]);
-		});
 	}
 });
 
@@ -3626,26 +3599,6 @@ EG.Model.reopenClass({
 				callback.call(binding, name, meta);
 			}
 		});
-	},
-
-	/**
-	 * Alerts the records and properties in the given array.
-	 */
-	_notifyProperties: function(properties) {
-		properties.forEach(function(property) {
-			try {
-				var obj = property.record;
-				var name = property.property;
-
-				if (obj.constructor.isRelationship && obj.constructor.isRelationship(name)) {
-					obj.notifyPropertyChange('_' + name);
-				} else {
-					obj.notifyPropertyChange(name);
-				}
-			} catch (e) {
-				Em.warn(e);
-			}
-		}, this);
 	}
 });
 
@@ -3765,7 +3718,6 @@ EG.Model.reopen({
 	 * @private
 	 */
 	_loadRelationships: function(json) {
-		var alerts = [];
 		var store = this.get('store');
 		var sideWithClient = store.get('sideWithClientOnConflict');
 
@@ -3807,8 +3759,7 @@ EG.Model.reopen({
 							if (sideWithClient) {
 								// Leave it alone
 							} else {
-								alerts = alerts.concat(
-									store._changeRelationshipState(relationship.get('id'), SAVED_STATE));
+								store._changeRelationshipState(relationship.get('id'), SAVED_STATE);
 							}
 						}
 					} else {
@@ -3816,8 +3767,7 @@ EG.Model.reopen({
 							if (sideWithClient) {
 								// Leave it alone
 							} else {
-								alerts = alerts.concat(
-									store._changeRelationshipState(relationship.get('id'), SAVED_STATE));
+								store._changeRelationshipState(relationship.get('id'), SAVED_STATE);
 							}
 						}
 					}
@@ -3826,7 +3776,7 @@ EG.Model.reopen({
 				}
 
 				if (state === SAVED_STATE) {
-					alerts = alerts.concat(store._deleteRelationship(relationship.get('id')));
+					store._deleteRelationship(relationship.get('id'));
 					return false;
 				} else {
 					return true;
@@ -3839,7 +3789,7 @@ EG.Model.reopen({
 				// Update client side relationships that have been saved
 				client.forEach(function(relationship) {
 					if (given.contains(relationship.otherId(this))) {
-						alerts = alerts.concat(store._changeRelationshipState(relationship.get('id'), SAVED_STATE));
+						store._changeRelationshipState(relationship.get('id'), SAVED_STATE);
 					}
 				}, this);
 
@@ -3857,7 +3807,7 @@ EG.Model.reopen({
 							case SAVED_STATE:
 								// Delete it because the server says that relationship no longer exists.
 								// It is now occupied by another relationship
-								alerts = alerts.concat(store._deleteRelationship(conflict.get('id')));
+								store._deleteRelationship(conflict.get('id'));
 								break;
 							case NEW_STATE:
 								if (sideWithClient) {
@@ -3865,14 +3815,14 @@ EG.Model.reopen({
 									addState = DELETED_STATE;
 								} else {
 									// We have to side with the server, so delete it
-									alerts = alerts.concat(store._deleteRelationship(conflict.get('id')));
+									store._deleteRelationship(conflict.get('id'));
 								}
 								break;
 						}
 					}
 
-					alerts = alerts.concat(store._createRelationship(this.typeKey, name, this.get('id'),
-						meta.relatedType, meta.inverse, id, addState));
+					store._createRelationship(this.typeKey, name, this.get('id'),
+						meta.relatedType, meta.inverse, id, addState);
 				}, this);
 			} else {
 				// There should only be one relationship in there
@@ -3883,7 +3833,7 @@ EG.Model.reopen({
 				// Update client side relationships that have been saved
 				if (client.length === 1) {
 					if (client[0].otherId(this) === value) {
-						alerts = alerts.concat(store._changeRelationshipState(client[0].get('id'), SAVED_STATE));
+						store._changeRelationshipState(client[0].get('id'), SAVED_STATE);
 					} else {
 						// The server is in conflict with the client
 						if (sideWithClient) {
@@ -3894,7 +3844,7 @@ EG.Model.reopen({
 										case SAVED_STATE:
 											// Delete it because the server says that relationship no longer exists.
 											// It is now occupied by another relationship
-											alerts = alerts.concat(store._deleteRelationship(conflict.get('id')));
+											store._deleteRelationship(conflict.get('id'));
 											break;
 										case NEW_STATE:
 											// We have to side with the client, so leave it alone
@@ -3903,21 +3853,21 @@ EG.Model.reopen({
 								}
 
 								// Add the server relationship as deleted
-								alerts = alerts.concat(store._createRelationship(this.typeKey, name, this.get('id'),
-									meta.relatedType, meta.inverse, value, DELETED_STATE));
+								store._createRelationship(this.typeKey, name, this.get('id'),
+									meta.relatedType, meta.inverse, value, DELETED_STATE);
 							}
 						} else {
 							// Delete the client side relationship
-							alerts = alerts.concat(store._deleteRelationship(client[0].get('id')));
+							store._deleteRelationship(client[0].get('id'));
 							if (value !== null) {
 								if (conflict !== null) { // jshint ignore:line
 									// Delete it because the server says that relationship no longer exists.
 									// It is now occupied by another relationship
-									alerts = alerts.concat(store._deleteRelationship(conflict.get('id')));
+									store._deleteRelationship(conflict.get('id'));
 								}
 
-								alerts = alerts.concat(store._createRelationship(this.typeKey, name, this.get('id'),
-									meta.relatedType, meta.inverse, value, SAVED_STATE));
+								store._createRelationship(this.typeKey, name, this.get('id'),
+									meta.relatedType, meta.inverse, value, SAVED_STATE);
 							}
 						}
 					}
@@ -3927,11 +3877,11 @@ EG.Model.reopen({
 						if (conflict !== null) { // jshint ignore:line
 							// Delete it because the server says that relationship no longer exists.
 							// It is now occupied by another relationship
-							alerts = alerts.concat(store._deleteRelationship(conflict.get('id')));
+							store._deleteRelationship(conflict.get('id'));
 						}
 
-						alerts = alerts.concat(store._createRelationship(this.typeKey, name, this.get('id'),
-							meta.relatedType, meta.inverse, value, SAVED_STATE));
+						store._createRelationship(this.typeKey, name, this.get('id'),
+							meta.relatedType, meta.inverse, value, SAVED_STATE);
 					}
 				} else {
 					// TODO: This should really never happen in production.
@@ -3939,8 +3889,6 @@ EG.Model.reopen({
 				}
 			}
 		}, this);
-
-		this.constructor._notifyProperties(alerts);
 	},
 
 	/**
@@ -4038,24 +3986,21 @@ EG.Model.reopen({
 	 * @for Model
 	 */
 	rollbackRelationships: function() {
-		var alerts = [];
 		var store = this.get('store');
 
 		this._getAllRelationships().forEach(function(relationship) {
 			switch (relationship.get('state')) {
 				case NEW_STATE:
-					alerts = alerts.concat(store._deleteRelationship(relationship.get('id')));
+					store._deleteRelationship(relationship.get('id'));
 					break;
 				case SAVED_STATE:
 					// NOP
 					break;
 				case DELETED_STATE:
-					alerts = alerts.concat(store._changeRelationshipState(relationship.get('id'), SAVED_STATE));
+					store._changeRelationshipState(relationship.get('id'), SAVED_STATE);
 					break;
 			}
 		}, this);
-
-		this.constructor._notifyProperties(alerts);
 	},
 
 	/**
@@ -4072,7 +4017,6 @@ EG.Model.reopen({
 			id = id.get('id');
 		}
 
-		var alerts = [];
 		var store = this.get('store');
 		var meta = this.constructor.metaForRelationship(relationshipName);
 		Em.assert('Cannot modify a read-only relationship', meta.readOnly === false);
@@ -4086,8 +4030,7 @@ EG.Model.reopen({
 		}
 
 		if (link && link.get('state') === DELETED_STATE) {
-			alerts = alerts.concat(this.get('store')._changeRelationshipState(link.get('id'), SAVED_STATE));
-			this.constructor._notifyProperties(alerts);
+			this.get('store')._changeRelationshipState(link.get('id'), SAVED_STATE);
 			return;
 		}
 
@@ -4098,18 +4041,16 @@ EG.Model.reopen({
 					// NOP
 					break;
 				case SAVED_STATE:
-					alerts = alerts.concat(store._changeRelationshipState(conflict.get('id'), DELETED_STATE));
+					store._changeRelationshipState(conflict.get('id'), DELETED_STATE);
 					break;
 				case NEW_STATE:
-					alerts = alerts.concat(store._deleteRelationship(conflict.get('id')));
+					store._deleteRelationship(conflict.get('id'));
 					break;
 			}
 		}
 
-		alerts = alerts.concat(store._createRelationship(this.typeKey, relationshipName,
-			this.get('id'), meta.relatedType, meta.inverse, id, NEW_STATE));
-
-		this.constructor._notifyProperties(alerts);
+		store._createRelationship(this.typeKey, relationshipName,
+			this.get('id'), meta.relatedType, meta.inverse, id, NEW_STATE);
 	},
 
 	/**
@@ -4137,11 +4078,10 @@ EG.Model.reopen({
 		if (r !== null) {
 			switch (r.get('state')) {
 				case NEW_STATE:
-					this.constructor._notifyProperties(this.get('store')._deleteRelationship(r.get('id')));
+					this.get('store')._deleteRelationship(r.get('id'));
 					break;
 				case SAVED_STATE:
-					this.constructor._notifyProperties(
-						this.get('store')._changeRelationshipState(r.get('id'), DELETED_STATE));
+					this.get('store')._changeRelationshipState(r.get('id'), DELETED_STATE);
 					break;
 				case DELETED_STATE:
 					// NOP?
@@ -4163,7 +4103,6 @@ EG.Model.reopen({
 			id = id.get('id');
 		}
 
-		var alerts = [];
 		var meta = this.constructor.metaForRelationship(relationshipName);
 		Em.assert('Cannot modify a read-only relationship', meta.readOnly === false);
 		if (meta.readOnly) {
@@ -4176,8 +4115,7 @@ EG.Model.reopen({
 		}
 
 		if (link && link.get('state') === DELETED_STATE) {
-			alerts = alerts.concat(this.get('store')._changeRelationshipState(link.get('id'), SAVED_STATE));
-			this.constructor._notifyProperties(alerts);
+			this.get('store')._changeRelationshipState(link.get('id'), SAVED_STATE);
 			return;
 		}
 
@@ -4190,7 +4128,7 @@ EG.Model.reopen({
 			return;
 		}
 
-		alerts = alerts.concat(this.clearHasOneRelationship(relationshipName, true));
+		this.clearHasOneRelationship(relationshipName, true);
 
 		var store = this.get('store');
 		var conflict = this._hasOneConflict(relationshipName, id);
@@ -4200,18 +4138,16 @@ EG.Model.reopen({
 					// NOP
 					break;
 				case SAVED_STATE:
-					alerts = alerts.concat(store._changeRelationshipState(conflict.get('id'), DELETED_STATE));
+					store._changeRelationshipState(conflict.get('id'), DELETED_STATE);
 					break;
 				case NEW_STATE:
-					alerts = alerts.concat(store._deleteRelationship(conflict.get('id')));
+					store._deleteRelationship(conflict.get('id'));
 					break;
 			}
 		}
 
-		alerts = alerts.concat(store._createRelationship(this.typeKey, relationshipName,
-			this.get('id'), meta.relatedType, meta.inverse, id, NEW_STATE));
-
-		this.constructor._notifyProperties(alerts);
+		store._createRelationship(this.typeKey, relationshipName,
+			this.get('id'), meta.relatedType, meta.inverse, id, NEW_STATE);
 	},
 
 	/**
@@ -4221,12 +4157,11 @@ EG.Model.reopen({
 	 * @for Model
 	 * @param {String} relationshipName
 	 */
-	clearHasOneRelationship: function(relationshipName, suppressNotifications) {
-		var alerts = [];
+	clearHasOneRelationship: function(relationshipName) {
 		var meta = this.constructor.metaForRelationship(relationshipName);
 		Em.assert('Cannot modify a read-only relationship', meta.readOnly === false);
 		if (meta.readOnly) {
-			return [];
+			return;
 		}
 
 		var current = this._hasOneValue(relationshipName);
@@ -4237,23 +4172,16 @@ EG.Model.reopen({
 			if (r !== null) {
 				switch (r.get('state')) {
 					case NEW_STATE:
-						alerts = alerts.concat(this.get('store')._deleteRelationship(r.get('id')));
+						this.get('store')._deleteRelationship(r.get('id'));
 						break;
 					case SAVED_STATE:
-						alerts = alerts.concat(this.get('store')._changeRelationshipState(r.get('id'), DELETED_STATE));
+						this.get('store')._changeRelationshipState(r.get('id'), DELETED_STATE);
 						break;
 					case DELETED_STATE:
 						// NOP?
 						break;
 				}
 			}
-		}
-
-		if (suppressNotifications) {
-			return alerts;
-		} else {
-			this.constructor._notifyProperties(alerts);
-			return [];
 		}
 	},
 
@@ -4315,7 +4243,7 @@ EG.Model.reopen({
 	_connectRelationship: function(relationship) {
 		var hash = EG.Relationship.stateToHash(relationship.get('state'));
 		this.set(hash + '.' + relationship.get('id'), relationship);
-		return { record: this, property: hash };
+		this.notifyPropertyChange(hash);
 	},
 
 	/**
@@ -4328,7 +4256,7 @@ EG.Model.reopen({
 	_disconnectRelationship: function(relationship) {
 		var hash = EG.Relationship.stateToHash(relationship.get('state'));
 		delete this.get(hash)[relationship.get('id')];
-		return { record: this, property: hash };
+		this.notifyPropertyChange(hash);
 	}
 });
 

@@ -431,10 +431,8 @@ EG.Store = Em.Object.extend({
 	 * @param {Object} payload
 	 */
 	extractPayload: function(payload) {
-		var reloadDirty = this.get('reloadDirty');
-
-		try {
-			this.beginPropertyChanges();
+		Em.changeProperties(function() {
+			var reloadDirty = this.get('reloadDirty');
 
 			Em.keys(payload).forEach(function(typeKey) {
 				if (typeKey === 'meta') {
@@ -455,9 +453,7 @@ EG.Store = Em.Object.extend({
 					}
 				}, this);
 			}, this);
-		} finally {
-			this.endPropertyChanges();
-		}
+		}, this);
 	},
 
 	/**

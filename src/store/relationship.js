@@ -89,22 +89,18 @@ EG.Store.reopen({
 	 * Will connect all queued relationships to the given record.
 	 *
 	 * @param {Model} record
-	 * @returns {Object[]} The objects to alert of changes, along with the corresponding properties
 	 */
 	_connectQueuedRelationships: function(record) {
-		var alerts = [];
 		var queued = this.get('_queuedRelationships');
 		var toConnect = this._queuedRelationshipsFor(record.typeKey, record.get('id'));
 
 		toConnect.forEach(function(relationship) {
-			alerts.push(record._connectRelationship(relationship));
+			record._connectRelationship(relationship);
 			relationship.set('object2', record);
 			delete queued[relationship.get('id')];
 		});
 
 		this.notifyPropertyChange('_queuedRelationships');
-
-		return alerts;
 	},
 
 	/**
@@ -143,15 +139,13 @@ EG.Store.reopen({
 	 * @param {String} relationship2
 	 * @param {String} id2
 	 * @param {String} state The state of the relationship
-	 * @returns {Object[]} The objects to alert of changes, along with the corresponding properties
 	 */
 	_createRelationship: function(type1, relationship1, id1, type2, relationship2, id2, state) { // jshint ignore:line
-		var alerts = [];
 		var record1 = this.getRecord(type1, id1);
 		var record2 = this.getRecord(type2, id2);
 
 		if (record1 === null && record2 === null) {
-			return alerts;
+			return;
 		}
 
 		if (record1 === null) {
@@ -169,12 +163,12 @@ EG.Store.reopen({
 		}
 
 		if (relationship1 === null) {
-			return alerts;
+			return;
 		}
 
 		if (record1._isLinkedTo(relationship1, id2)) {
 			// TODO: Do we need to check both sides, or can we assume consistency?
-			return alerts;
+			return;
 		}
 
 		var relationship = EG.Relationship.create({
@@ -187,16 +181,14 @@ EG.Store.reopen({
 
 		this.get('_relationships')[relationship.get('id')] = relationship;
 
-		alerts.push(record1._connectRelationship(relationship));
+		record1._connectRelationship(relationship);
 
 		if (record2 !== null) {
-			alerts.push(record2._connectRelationship(relationship));
+			record2._connectRelationship(relationship);
 		} else {
 			this.set('_queuedRelationships.' + relationship.get('id'), relationship);
 			this.notifyPropertyChange('_queuedRelationships');
 		}
-
-		return alerts;
 	},
 
 	/**
@@ -204,44 +196,35 @@ EG.Store.reopen({
 	 * then destroys, all references to the relationship.
 	 *
 	 * @param {String} id
-	 * @returns {Object[]} The objects to alert of changes, along with the corresponding properties
 	 */
 	_deleteRelationship: function(id) {
-		var alerts = [];
-
 		var relationship = this.get('_relationships')[id];
 		if (Em.isNone(relationship)) {
-			return alerts;
+			return;
 		}
 
 		var object1 = relationship.get('object1');
 		var object2 = relationship.get('object2');
 
-		alerts.push(object1._disconnectRelationship(relationship));
+		object1._disconnectRelationship(relationship);
 		if (object2 instanceof EG.Model) {
-			alerts.push(object2._disconnectRelationship(relationship));
+			object2._disconnectRelationship(relationship);
 		} else {
 			delete this.get('_queuedRelationships')[id];
 			this.notifyPropertyChange('_queuedRelationships');
 		}
 
 		delete this.get('_relationships')[id];
-
-		return alerts;
 	},
 
 	/**
 	 * @param {String} id
 	 * @param {String} state
-	 *
-	 * @returns {Object[]} The objects to alert of changes, along with the corresponding properties
 	 */
 	_changeRelationshipState: function(id, state) {
-		var alerts = [];
-
 		var relationship = this.get('_relationships')[id];
 		if (Em.isNone(relationship) || relationship.get('state') === state) {
-			return alerts;
+			return;
 		}
 
 		var object1 = relationship.get('object1');
@@ -254,17 +237,15 @@ EG.Store.reopen({
 
 		object1.set(newHash + '.' + id, object1.get(oldHash + '.' + id));
 		delete object1.get(oldHash)[id];
-		alerts.push({ record: object1, property: oldHash });
-		alerts.push({ record: object1, property: newHash });
+		object1.notifyPropertyChange(oldHash);
+		object1.notifyPropertyChange(newHash);
 
 		if (object2 instanceof EG.Model) {
 			object2.set(newHash + '.' + id, object2.get(oldHash + '.' + id));
 			delete object2.get(oldHash)[id];
-			alerts.push({ record: object2, property: oldHash });
-			alerts.push({ record: object2, property: newHash });
+			object2.notifyPropertyChange(oldHash);
+			object2.notifyPropertyChange(newHash);
 		}
-
-		return alerts;
 	},
 
 	/**
@@ -299,17 +280,13 @@ EG.Store.reopen({
 	},
 
 	_deleteRelationshipsForRecord: function(typeKey, id) {
-		var alerts = [];
+		// TODO: Get rid of EG.util.values
 		var relationships = EG.util.values(this.get('_relationships'));
 
 		relationships.forEach(function(relationship) {
 			if (relationship.isConnectedTo(typeKey, id)) {
-				alerts = alerts.concat(this._deleteRelationship(Em.get(relationship, 'id')));
+				this._deleteRelationship(Em.get(relationship, 'id'));
 			}
 		}, this);
-
-		alerts.forEach(function(alert) {
-			Em.tryInvoke(alert.record, 'notifyPropertyChange', [alert.property]);
-		});
 	}
 });

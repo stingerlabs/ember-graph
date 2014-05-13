@@ -554,6 +554,7 @@
 	});
 
 	test('Observers aren\'t fired until after the relationship operations are done', function() {
+		// TODO: This test seems a bit unnecessary now. Transactions should be wrapped in `changeProperties`.
 		expect(3);
 
 		var post = store.getRecord('post', '1');
@@ -561,24 +562,29 @@
 
 		var observer = function(obj, prop) {
 			if (Em.get(obj, prop) !== '2') {
-				throw null;
+				throw new Error();
 			}
 		};
 		post.addObserver('_author', observer);
 
-		post.setHasOneRelationship('author', '2');
-		strictEqual(post.get('_author'), '2');
-		post.removeObserver('_author', observer);
+		Em.changeProperties(function() {
+			post.setHasOneRelationship('author', '2');
+			strictEqual(post.get('_author'), '2');
+			post.removeObserver('_author', observer);
+		});
 
 		observer = function(obj, prop) {
 			if (Em.get(obj, prop) !== '1') {
-				throw null;
+				throw new Error();
 			}
 		};
-		post.addObserver('_author', observer);
-		post.rollbackRelationships();
-		strictEqual(post.get('_author'), '1');
-		post.removeObserver('_author', observer);
+
+		Em.changeProperties(function() {
+			post.addObserver('_author', observer);
+			post.rollbackRelationships();
+			strictEqual(post.get('_author'), '1');
+			post.removeObserver('_author', observer);
+		});
 	});
 
 	test('Modifying relationships works with records and not just IDs', function() {
