@@ -90,7 +90,7 @@ EG.Model.reopenClass({
 
 		this.eachComputedProperty(function(name, meta) {
 			if (meta.isRelationship) {
-				Em.assert('The ' + name + ' cannot be used as a relationship name.',
+				Em.assert('`' + name + '` cannot be used as a relationship name.',
 					!disallowedRelationshipNames.contains(name));
 				Em.assert('Relationship names must start with a lowercase letter.', name[0].match(/[a-z]/g));
 

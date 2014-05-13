@@ -79,7 +79,7 @@ EG.Model.reopenClass({
 
 		this.eachComputedProperty(function(name, meta) {
 			if (meta.isAttribute) {
-				Em.assert('The ' + name + ' cannot be used as an attribute name.',
+				Em.assert('`' + name + '` cannot be used as an attribute name.',
 					!disallowedAttributeNames.contains(name));
 
 				attributes.addObject(name);
