@@ -3488,8 +3488,7 @@ var createRelationship = function(name, kind, options) {
 	if (kind === HAS_MANY_KEY) {
 		return Em.computed(function(key) {
 			return this._hasManyValue(key.substring(1));
-		}).property('_serverRelationships.' + name + '.@each',
-				'_clientRelationships.' + name + '.@each').meta(meta).readOnly();
+		}).property('_serverRelationships.' + name, '_clientRelationships.' + name).meta(meta).readOnly();
 	} else {
 		return Em.computed(function(key) {
 			return this._hasOneValue(key.substring(1));
