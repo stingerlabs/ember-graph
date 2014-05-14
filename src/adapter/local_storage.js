@@ -48,7 +48,7 @@ EG.LocalStorageAdapter = EG.SynchronousAdapter.extend({
 	_getRecord: function(typeKey, id) {
 		var recordString = localStorage['ember-graph.models.' + typeKey + '.' + id];
 
-		if (typeof recordString === 'string') {
+		if (Em.typeOf(recordString) === 'string') {
 			return JSON.parse(recordString);
 		} else {
 			return null;

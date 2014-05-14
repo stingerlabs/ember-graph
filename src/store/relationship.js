@@ -207,7 +207,7 @@ EG.Store.reopen({
 		var object2 = relationship.get('object2');
 
 		object1._disconnectRelationship(relationship);
-		if (object2 instanceof EG.Model) {
+		if (EG.Model.detectInstance(object2)) {
 			object2._disconnectRelationship(relationship);
 		} else {
 			delete this.get('_queuedRelationships')[id];
@@ -240,7 +240,7 @@ EG.Store.reopen({
 		object1.notifyPropertyChange(oldHash);
 		object1.notifyPropertyChange(newHash);
 
-		if (object2 instanceof EG.Model) {
+		if (EG.Model.detectInstance(object2)) {
 			object2.set(newHash + '.' + id, object2.get(oldHash + '.' + id));
 			delete object2.get(oldHash)[id];
 			object2.notifyPropertyChange(oldHash);
@@ -266,7 +266,7 @@ EG.Store.reopen({
 			if (relationship.get('type2') === typeKey && relationship.get('relationship2') === name) {
 				var object2 = relationship.get('object2');
 
-				if (typeof object2 === 'string') {
+				if (Em.typeOf(object2) === 'string') {
 					if (object2 === id) {
 						return true;
 					}

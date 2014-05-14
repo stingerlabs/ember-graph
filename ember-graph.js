@@ -471,7 +471,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 			json = json || {};
 			json.links = json.links || {};
 
-			if (typeof json.id !== 'string' && typeof json.id !== 'number') {
+			if (Em.typeOf(json.id) !== 'string' && Em.typeOf(json.id) !== 'number') {
 				Em.warn('Your JSON was missing an ID.');
 				Em.warn('JSON: ' + JSON.stringify(json));
 				return null;
@@ -1084,7 +1084,7 @@ EG.LocalStorageAdapter = EG.SynchronousAdapter.extend({
 	_getRecord: function(typeKey, id) {
 		var recordString = localStorage['ember-graph.models.' + typeKey + '.' + id];
 
-		if (typeof recordString === 'string') {
+		if (Em.typeOf(recordString) === 'string') {
 			return JSON.parse(recordString);
 		} else {
 			return null;
@@ -1313,7 +1313,7 @@ EG.RESTAdapter = EG.Adapter.extend({
 			$.ajax({
 				cache: false,
 				contentType: 'application/json',
-				data: (body === undefined ? undefined : (typeof body === 'string' ? body : JSON.stringify(body))),
+				data: (body === undefined ? undefined : (Em.typeOf(body) === 'string' ? body : JSON.stringify(body))),
 				headers: headers || {},
 				processData: false,
 				type: verb,
@@ -2021,7 +2021,7 @@ EG.Store.reopen({
 		var object2 = relationship.get('object2');
 
 		object1._disconnectRelationship(relationship);
-		if (object2 instanceof EG.Model) {
+		if (EG.Model.detectInstance(object2)) {
 			object2._disconnectRelationship(relationship);
 		} else {
 			delete this.get('_queuedRelationships')[id];
@@ -2054,7 +2054,7 @@ EG.Store.reopen({
 		object1.notifyPropertyChange(oldHash);
 		object1.notifyPropertyChange(newHash);
 
-		if (object2 instanceof EG.Model) {
+		if (EG.Model.detectInstance(object2)) {
 			object2.set(newHash + '.' + id, object2.get(oldHash + '.' + id));
 			delete object2.get(oldHash)[id];
 			object2.notifyPropertyChange(oldHash);
@@ -2080,7 +2080,7 @@ EG.Store.reopen({
 			if (relationship.get('type2') === typeKey && relationship.get('relationship2') === name) {
 				var object2 = relationship.get('object2');
 
-				if (typeof object2 === 'string') {
+				if (Em.typeOf(object2) === 'string') {
 					if (object2 === id) {
 						return true;
 					}
@@ -2327,7 +2327,7 @@ EG.Relationship = Em.Object.extend({
 
 		if (this.get('object1') === record) {
 			var object2 = this.get('object2');
-			return (typeof object2 === 'string' ? object2 : object2.get('id'));
+			return (Em.typeOf(object2) === 'string' ? object2 : object2.get('id'));
 		} else {
 			return this.get('object1.id');
 		}
@@ -2348,7 +2348,7 @@ EG.Relationship = Em.Object.extend({
 		if (object1 === record) {
 			var object2 = this.get('object2');
 
-			if (typeof object2 === 'string') {
+			if (Em.typeOf(object2) === 'string') {
 				var inverse = object1.constructor.metaForRelationship(this.get('relationship1')).relatedType;
 				return object1.get('store').getRecord(inverse, object2);
 			} else {
@@ -2419,19 +2419,19 @@ EG.Relationship.reopenClass({
 
 		Em.assert('Possible state values are new, deleted or saved.',
 			properties.state === NEW_STATE || properties.state === DELETED_STATE || properties.state === SAVED_STATE);
-		Em.assert('The first object must always be a record.', properties.object1 instanceof EG.Model);
+		Em.assert('The first object must always be a record.', EG.Model.detectInstance(properties.object1));
 		Em.assert('You must include a relationship name for the first object.',
-			typeof properties.relationship1 === 'string');
+			Em.typeOf(properties.relationship1) === 'string');
 		Em.assert('The second object must either be a record, or a permanent ID.',
-			properties.object2 instanceof EG.Model || (typeof properties.object2 === 'string' &&
+			EG.Model.detectInstance(properties.object2) || (Em.typeOf(properties.object2) === 'string' &&
 			!EG.String.startsWith(properties.object2, EG.Model.temporaryIdPrefix)));
 		Em.assert('You must include a relationship name for the second object.',
-			typeof properties.relationship1 === 'string' || properties.relationship1 === null);
+			Em.typeOf(properties.relationship1) === 'string' || properties.relationship1 === null);
 		relationship.setProperties(properties);
 
 		relationship.set('type1', properties.object1.typeKey);
 
-		if (properties.object2 instanceof EG.Model) {
+		if (EG.Model.detectInstance(properties.object2)) {
 			relationship.set('type2', properties.object2.typeKey);
 		} else {
 			relationship.set('type2',
@@ -2769,7 +2769,7 @@ EG.NumberType = EG.AttributeType.extend({
 (function() {
 
 var isObject = function(obj) {
-	return !Em.isNone(obj) && typeof obj === 'object' && obj.constructor === Object;
+	return !Em.isNone(obj) && Em.typeOf(obj) === 'object' && obj.constructor === Object;
 };
 
 var deepCompare = function(a, b) {
@@ -3157,6 +3157,7 @@ EG.Model.reopenClass({
 		var attributes = {};
 		var relationships = {};
 
+		// Ember.Mixin doesn't have a `detectInstance` method
 		if (!(options instanceof Em.Mixin)) {
 			Em.keys(options).forEach(function(key) {
 				var value = options[key];
@@ -3456,9 +3457,9 @@ var DELETED_STATE = EG.Relationship.DELETED_STATE;
 var disallowedRelationshipNames = new Em.Set(['id', 'type', 'content']);
 
 var createRelationship = function(name, kind, options) {
-	Em.assert('Your relationship must specify a relatedType.', typeof options.relatedType === 'string');
+	Em.assert('Your relationship must specify a relatedType.', Em.typeOf(options.relatedType) === 'string');
 	Em.assert('Your relationship must specify an inverse relationship.',
-		options.inverse === null || typeof options.inverse === 'string');
+		options.inverse === null || Em.typeOf(options.inverse) === 'string');
 
 	var meta = {
 		isRelationship: false,
@@ -3473,7 +3474,7 @@ var createRelationship = function(name, kind, options) {
 	Em.assert('The default value for a hasOne relationship must be a string or null, and the default value' +
 			'for a hasMany relationship must be an array.',
 			(kind === HAS_MANY_KEY && Em.isArray(meta.defaultValue)) ||
-			(kind === HAS_ONE_KEY && (meta.defaultValue === null || typeof meta.defaultValue === 'string')));
+			(kind === HAS_ONE_KEY && (meta.defaultValue === null || Em.typeOf(meta.defaultValue) === 'string')));
 
 	if (kind === HAS_MANY_KEY) {
 		return Em.computed(function(key) {

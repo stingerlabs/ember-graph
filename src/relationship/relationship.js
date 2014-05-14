@@ -147,7 +147,7 @@ EG.Relationship = Em.Object.extend({
 
 		if (this.get('object1') === record) {
 			var object2 = this.get('object2');
-			return (typeof object2 === 'string' ? object2 : object2.get('id'));
+			return (Em.typeOf(object2) === 'string' ? object2 : object2.get('id'));
 		} else {
 			return this.get('object1.id');
 		}
@@ -168,7 +168,7 @@ EG.Relationship = Em.Object.extend({
 		if (object1 === record) {
 			var object2 = this.get('object2');
 
-			if (typeof object2 === 'string') {
+			if (Em.typeOf(object2) === 'string') {
 				var inverse = object1.constructor.metaForRelationship(this.get('relationship1')).relatedType;
 				return object1.get('store').getRecord(inverse, object2);
 			} else {
@@ -239,19 +239,19 @@ EG.Relationship.reopenClass({
 
 		Em.assert('Possible state values are new, deleted or saved.',
 			properties.state === NEW_STATE || properties.state === DELETED_STATE || properties.state === SAVED_STATE);
-		Em.assert('The first object must always be a record.', properties.object1 instanceof EG.Model);
+		Em.assert('The first object must always be a record.', EG.Model.detectInstance(properties.object1));
 		Em.assert('You must include a relationship name for the first object.',
-			typeof properties.relationship1 === 'string');
+			Em.typeOf(properties.relationship1) === 'string');
 		Em.assert('The second object must either be a record, or a permanent ID.',
-			properties.object2 instanceof EG.Model || (typeof properties.object2 === 'string' &&
+			EG.Model.detectInstance(properties.object2) || (Em.typeOf(properties.object2) === 'string' &&
 			!EG.String.startsWith(properties.object2, EG.Model.temporaryIdPrefix)));
 		Em.assert('You must include a relationship name for the second object.',
-			typeof properties.relationship1 === 'string' || properties.relationship1 === null);
+			Em.typeOf(properties.relationship1) === 'string' || properties.relationship1 === null);
 		relationship.setProperties(properties);
 
 		relationship.set('type1', properties.object1.typeKey);
 
-		if (properties.object2 instanceof EG.Model) {
+		if (EG.Model.detectInstance(properties.object2)) {
 			relationship.set('type2', properties.object2.typeKey);
 		} else {
 			relationship.set('type2',

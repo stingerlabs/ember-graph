@@ -1,5 +1,5 @@
 var isObject = function(obj) {
-	return !Em.isNone(obj) && typeof obj === 'object' && obj.constructor === Object;
+	return !Em.isNone(obj) && Em.typeOf(obj) === 'object' && obj.constructor === Object;
 };
 
 var deepCompare = function(a, b) {

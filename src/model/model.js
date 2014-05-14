@@ -264,6 +264,7 @@ EG.Model.reopenClass({
 		var attributes = {};
 		var relationships = {};
 
+		// Ember.Mixin doesn't have a `detectInstance` method
 		if (!(options instanceof Em.Mixin)) {
 			Em.keys(options).forEach(function(key) {
 				var value = options[key];

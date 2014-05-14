@@ -8,9 +8,9 @@ var DELETED_STATE = EG.Relationship.DELETED_STATE;
 var disallowedRelationshipNames = new Em.Set(['id', 'type', 'content']);
 
 var createRelationship = function(name, kind, options) {
-	Em.assert('Your relationship must specify a relatedType.', typeof options.relatedType === 'string');
+	Em.assert('Your relationship must specify a relatedType.', Em.typeOf(options.relatedType) === 'string');
 	Em.assert('Your relationship must specify an inverse relationship.',
-		options.inverse === null || typeof options.inverse === 'string');
+		options.inverse === null || Em.typeOf(options.inverse) === 'string');
 
 	var meta = {
 		isRelationship: false,
@@ -25,7 +25,7 @@ var createRelationship = function(name, kind, options) {
 	Em.assert('The default value for a hasOne relationship must be a string or null, and the default value' +
 			'for a hasMany relationship must be an array.',
 			(kind === HAS_MANY_KEY && Em.isArray(meta.defaultValue)) ||
-			(kind === HAS_ONE_KEY && (meta.defaultValue === null || typeof meta.defaultValue === 'string')));
+			(kind === HAS_ONE_KEY && (meta.defaultValue === null || Em.typeOf(meta.defaultValue) === 'string')));
 
 	if (kind === HAS_MANY_KEY) {
 		return Em.computed(function(key) {

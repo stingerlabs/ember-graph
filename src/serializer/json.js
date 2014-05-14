@@ -139,7 +139,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 			json = json || {};
 			json.links = json.links || {};
 
-			if (typeof json.id !== 'string' && typeof json.id !== 'number') {
+			if (Em.typeOf(json.id) !== 'string' && Em.typeOf(json.id) !== 'number') {
 				Em.warn('Your JSON was missing an ID.');
 				Em.warn('JSON: ' + JSON.stringify(json));
 				return null;

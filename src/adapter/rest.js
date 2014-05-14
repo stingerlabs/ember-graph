@@ -183,7 +183,7 @@ EG.RESTAdapter = EG.Adapter.extend({
 			$.ajax({
 				cache: false,
 				contentType: 'application/json',
-				data: (body === undefined ? undefined : (typeof body === 'string' ? body : JSON.stringify(body))),
+				data: (body === undefined ? undefined : (Em.typeOf(body) === 'string' ? body : JSON.stringify(body))),
 				headers: headers || {},
 				processData: false,
 				type: verb,
