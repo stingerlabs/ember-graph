@@ -305,10 +305,7 @@ EG.Store = Em.Object.extend({
 			}.bind(this));
 		}
 
-		return EG.ModelPromiseArray.create({
-			ids: ids,
-			promise: promise
-		});
+		return EG.PromiseArray.create({ promise: promise });
 	},
 
 	/**
