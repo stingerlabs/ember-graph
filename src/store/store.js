@@ -265,7 +265,10 @@ EG.Store = Em.Object.extend({
 			}.bind(this));
 		}
 
-		return EG.ModelPromiseObject.create({ promise: promise });
+		return EG.ModelPromiseObject.create({
+			id: id,
+			promise: promise
+		});
 	},
 
 	/**
@@ -302,7 +305,10 @@ EG.Store = Em.Object.extend({
 			}.bind(this));
 		}
 
-		return EG.ModelPromiseArray.create({ promise: promise });
+		return EG.ModelPromiseArray.create({
+			ids: ids,
+			promise: promise
+		});
 	},
 
 	/**
@@ -318,7 +324,7 @@ EG.Store = Em.Object.extend({
 			return this.cachedRecordsFor(type);
 		}.bind(this));
 
-		return EG.ModelPromiseArray.create({ promise: promise });
+		return EG.PromiseArray.create({ promise: promise });
 	},
 
 	/**
@@ -339,7 +345,7 @@ EG.Store = Em.Object.extend({
 			}, this);
 		}.bind(this));
 
-		return EG.ModelPromiseArray.create({ promise: promise });
+		return EG.PromiseArray.create({ promise: promise });
 	},
 
 	/**
