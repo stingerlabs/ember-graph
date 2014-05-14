@@ -1,6 +1,3 @@
-/**
- * @class FixtureAdapter
- */
 EG.FixtureAdapter = EG.SynchronousAdapter.extend({
 
 	/**

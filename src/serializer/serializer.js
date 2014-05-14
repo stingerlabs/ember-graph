@@ -7,13 +7,16 @@ var methodMissing = function(method) {
  * objects back and forth between the JSON that the server uses,
  * and the records that are used on the client side.
  *
- * @class {Serializer}
+ * @class Serializer
  */
 EG.Serializer = Em.Object.extend({
 
 	/**
 	 * The store that the records will be loaded into.
 	 * This can be used for fetching models and their metadata.
+	 *
+	 * @property store
+	 * @type Store
 	 */
 	store: null,
 
@@ -23,9 +26,10 @@ EG.Serializer = Em.Object.extend({
 	 * Current options:
 	 * includeId: true to include the ID in the JSON, should default to false
 	 *
+	 * @method serialize
 	 * @param {Model} record The record to serialize
 	 * @param {Object} options Any options that were passed by the adapter
-	 * @returns {Object} JSON representation of record
+	 * @return {Object} JSON representation of record
 	 */
 	serialize: function(record, options) {
 		throw methodMissing('serialize');
@@ -44,9 +48,10 @@ EG.Serializer = Em.Object.extend({
 	 *
 	 * Note: For now, it is assumed that a query can only query over one type of object.
 	 *
+	 * @method deserialize
 	 * @param {Object} payload
 	 * @param {Object} options Any options that were passed by the adapter
-	 * @returns {Object} Normalized JSON Payload
+	 * @return {Object} Normalized JSON Payload
 	 */
 	deserialize: function(payload, options) {
 		throw methodMissing('deserialize');

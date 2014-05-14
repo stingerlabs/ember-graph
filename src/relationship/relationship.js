@@ -2,11 +2,6 @@ var NEW_STATE = 'new';
 var SAVED_STATE = 'saved';
 var DELETED_STATE = 'deleted';
 
-/**
- * A class used internally by Ember-Graph to keep the object-graph up-to-date.
- *
- * @class {Relationship}
- */
 EG.Relationship = Em.Object.extend({
 
 	/**

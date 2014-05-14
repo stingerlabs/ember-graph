@@ -1,5 +1,6 @@
 /**
- * @class {JSONSerializer}
+ * @class JSONSerializer
+ * @extends Serializer
  */
 EG.JSONSerializer = EG.Serializer.extend({
 
@@ -13,9 +14,10 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * Current options:
 	 * includeId: true to include the ID in the JSON, should default to false
 	 *
+	 * @method serialize
 	 * @param {Model} record The record to serialize
 	 * @param {Object} options Any options that were passed by the adapter
-	 * @returns {Object} JSON representation of record
+	 * @return {Object} JSON representation of record
 	 */
 	serialize: function(record, options) {
 		options = options || {};
@@ -63,9 +65,10 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 *
 	 * Note: For now, it is assumed that a query can only query over one type of object.
 	 *
+	 * @method deserialize
 	 * @param {Object} payload
 	 * @param {Object} options Any options that were passed by the adapter
-	 * @returns {Object} Normalized JSON Payload
+	 * @return {Object} Normalized JSON Payload
 	 */
 	deserialize: function(payload, options) {
 		if (!payload || Em.keys(payload).length === 0) {
@@ -104,9 +107,10 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * The records are all in the correct arrays, but the individual
 	 * records themselves have yet to be deserialized.
 	 *
+	 * @method _extract
 	 * @param {Object} payload
 	 * @returns {Object} Normalized JSON
-	 * @private
+	 * @protected
 	 */
 	_extract: function(payload) {
 		var json = (payload.hasOwnProperty('linked') ? this._extract(payload.linked) : {});
@@ -129,10 +133,11 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * exist, and no extras are found. It repeats the process for the,
 	 * relationships only it converts all IDs to strings in the process.
 	 *
-	 * @param typeKey
-	 * @param json
-	 * @returns {null}
-	 * @private
+	 * @method _deserializeSingle
+	 * @param {String} typeKey
+	 * @param {Object} json
+	 * @return {Object}
+	 * @protected
 	 */
 	_deserializeSingle: function(typeKey, json) {
 		try {
@@ -190,9 +195,8 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * for unrecoverable errors (missing required attributes) and will make assertions
 	 * for errors than can be ignored (extra attributes).
 	 *
-	 * @param {Model} model
-	 * @param {JSON} json
-	 * @private
+	 * @param {Class} model
+	 * @param {Object} json
 	 */
 	_validateAttributes: function(model, json) {
 		var attributes = Em.get(model, 'attributes');
@@ -214,9 +218,8 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * for unrecoverable errors (missing required relationships or incorrect types) and will
 	 * make assertions for errors than can be ignored (extra relationships).
 	 *
-	 * @param {Model} model
-	 * @param {JSON} json
-	 * @private
+	 * @param {Class} model
+	 * @param {Object} json
 	 */
 	_validateRelationships: function(model, json) {
 		var relationships = Em.get(model, 'relationships');

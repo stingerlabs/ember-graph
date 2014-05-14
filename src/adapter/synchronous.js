@@ -2,9 +2,6 @@ var removeEmpty = function(item) {
 	return !Em.isEmpty(item);
 };
 
-/**
- * @class SynchronousAdapter
- */
 EG.SynchronousAdapter = EG.Adapter.extend({
 	/**
 	 * @param {String} typeKey

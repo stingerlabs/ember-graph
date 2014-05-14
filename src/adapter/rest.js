@@ -1,15 +1,17 @@
+/**
+ * An adapter that communicates with REST back-ends.
+ *
+ * @class RESTAdapter
+ * @extends Adapter
+ */
 EG.RESTAdapter = EG.Adapter.extend({
 
 	/**
-	 * Persists a record to the server. This method returns normalized JSON
-	 * as the other methods do, but the normalized JSON must contain one
-	 * extra field. It must contain an `id` field that represents the
-	 * permanent ID of the record that was created. This helps distinguish
-	 * it from any other records of that same type that may have been
-	 * returned from the server.
+	 * Sends a `POST` request to `/{pluralized_type}` with the serialized record as the body.
 	 *
-	 * @param {Model} record The record to persist
-	 * @returns {Promise} A promise that resolves to normalized JSON
+	 * @method createRecord
+	 * @param {Model} record
+	 * @returns {Promise} A promise that resolves to the created record
 	 */
 	createRecord: function(record) {
 		var url = this._buildUrl(record.typeKey, null);
@@ -21,11 +23,12 @@ EG.RESTAdapter = EG.Adapter.extend({
 	},
 
 	/**
-	 * Fetch a record from the server.
+	 * Sends a `GET` request to `/{singularized_type}/{id}`.
 	 *
-	 * @param {String|} typeKey
-	 * @param {String} id The ID of the record to fetch
-	 * @returns {Promise} A promise that resolves to normalized JSON
+	 * @method findRecord
+	 * @param {String} typeKey
+	 * @param {String} id
+	 * @returns {Promise} A promise that resolves to the requested record
 	 */
 	findRecord: function(typeKey, id) {
 		var url = this._buildUrl(typeKey, id);
@@ -36,15 +39,15 @@ EG.RESTAdapter = EG.Adapter.extend({
 	},
 
 	/**
-	 * The same as find, only it should load several records. The
-	 * promise can return any type of enumerable containing the records.
+	 * Sends a `GET` request to `/{singularized_type}/{id},{id},{id}`
 	 *
+	 * @method findMany
 	 * @param {String} typeKey
-	 * @param {String[]} ids Enumerable of IDs
-	 * @returns {Promise} A promise that resolves to normalized JSON
+	 * @param {String[]} ids
+	 * @returns {Promise} A promise that resolves to an array of requested records
 	 */
 	findMany: function(typeKey, ids) {
-		var url = this._buildUrl(typeKey, ids.join());
+		var url = this._buildUrl(typeKey, ids.join(','));
 
 		return this._ajax(url, 'GET').then(function(payload) {
 			return this.deserialize(payload);
@@ -52,11 +55,11 @@ EG.RESTAdapter = EG.Adapter.extend({
 	},
 
 	/**
-	 * The same as find, only it should load all records of the given type.
-	 * The promise can return any type of enumerable containing the records.
+	 * Sends a `GET` request to `/{pluralized_type}`.
 	 *
+	 * @method findAll
 	 * @param {String} typeKey
-	 * @returns {Promise} A promise that resolves to normalized JSON
+	 * @returns {Promise} A promise that resolves to an array of requested records
 	 */
 	findAll: function(typeKey) {
 		var url = this._buildUrl(typeKey, null);
@@ -67,15 +70,12 @@ EG.RESTAdapter = EG.Adapter.extend({
 	},
 
 	/**
-	 * This method returns normalized JSON as the other methods do, but
-	 * the normalized JSON must contain one extra field. It must contain
-	 * an `ids` field that represents the IDs of the records that matched
-	 * the query. This helps distinguish them from any other records of
-	 * that same type that may have been returned from the server.
+	 * Sends a `GET` request to `/{pluralized_type}?option=value`.
 	 *
+	 * @method findQuery
 	 * @param {String} typeKey
-	 * @param {Object} query The query parameters that were passed into `find` earlier
-	 * @returns {Promise} A promise that resolves to normalized JSON
+	 * @param {Object} query An object with query parameters to serialize into the URL
+	 * @returns {Promise} A promise that resolves to an array of requested records
 	 */
 	findQuery: function(typeKey, query) {
 		var options = {};
@@ -92,10 +92,11 @@ EG.RESTAdapter = EG.Adapter.extend({
 	},
 
 	/**
-	 * Update the given record.
+	 * Sends a `PUT` request to `/{singularized_type}/{id}` with the serialized record as the body.
 	 *
-	 * @param {Model} record The model to save
-	 * @returns {Promise} A promise that resolves to normalized JSON
+	 * @method updateRecord
+	 * @param {Model} record
+	 * @returns {Promise} A promise that resolves to the updated record
 	 */
 	updateRecord: function(record) {
 		var url = this._buildUrl(record.typeKey, record.get('id'));
@@ -107,10 +108,11 @@ EG.RESTAdapter = EG.Adapter.extend({
 	},
 
 	/**
-	 * Update the given record.
+	 * Sends a `DELETE` request to `/{singularized_type}/{id}`.
 	 *
-	 * @param {Model} record The model to save
-	 * @returns {Promise} A promise that resolves to normalized JSON
+	 * @method deleteRecord
+	 * @param {Model} record
+	 * @returns {Promise} A promise that resolves on success and rejects on failure
 	 */
 	deleteRecord: function(record) {
 		var url = this._buildUrl(record.typeKey, record.get('id'));
@@ -123,16 +125,17 @@ EG.RESTAdapter = EG.Adapter.extend({
 	/**
 	 * This function will build the URL that the request will be posted to.
 	 * If an ID is provided, it will used the singular version of the
-	 * typeKey given (`/user/52`). If no ID is provided, it uses the plural
-	 * version of the typeKey given (`/users`). Either way, it appends the
-	 * options passed in as query parameters. The options must be strings,
-	 * but they don't have to be escaped, this function will do that.
+	 * typeKey given (`/user/52`). If no ID is provided (or is null), it uses
+	 * the plural version of the typeKey given (`/users`). Either way, it
+	 * appends the options passed in as query parameters. The options must
+	 * be strings, but they don't have to be escaped, this function will do that.
 	 *
+	 * @method _buildUrl
 	 * @param {String} typeKey
 	 * @param {String} id
-	 * @param {Object.<String,String>} [options]
+	 * @param {Object} [options]
 	 * @returns {String}
-	 * @private
+	 * @protected
 	 */
 	_buildUrl: function(typeKey, id, options) {
 		var url = this.get('prefix') + '/';
@@ -161,7 +164,8 @@ EG.RESTAdapter = EG.Adapter.extend({
 	 * Warning: Do NOT put a trailing slash. The adapter won't check for
 	 * mistakes, so just don't do it.
 	 *
-	 * @private
+	 * @property prefix
+	 * @protected
 	 */
 	prefix: Em.computed(function() {
 		return '';
@@ -171,12 +175,13 @@ EG.RESTAdapter = EG.Adapter.extend({
 	 * This method sends the request to the server.
 	 * The response is processed in the Ember run-loop.
 	 *
+	 * @method _ajax
 	 * @param {String} url
-	 * @param {String} verb GET, POST, PUT or DELETE
-	 * @param {Object.<String, String>} [headers]
+	 * @param {String} verb `GET`, `POST`, `PUT` or `DELETE`
+	 * @param {Object} [headers]
 	 * @param {String} [body]
 	 * @returns {Promise}
-	 * @private
+	 * @protected
 	 */
 	_ajax: function(url, verb, headers, body) {
 		return new Em.RSVP.Promise(function(resolve, reject) {

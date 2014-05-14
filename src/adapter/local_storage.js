@@ -1,6 +1,3 @@
-/**
- * @class LocalStorageAdapter
- */
 EG.LocalStorageAdapter = EG.SynchronousAdapter.extend({
 
 	/**
