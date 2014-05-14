@@ -19,7 +19,8 @@ module.exports = function(grunt) {
 		neuter: config('neuter'),
 		qunit: config('qunit'),
 		uglify: config('uglify'),
-		watch: config('watch')
+		watch: config('watch'),
+		yuidoc: config('yuidoc')
 	});
 
 	grunt.loadNpmTasks('grunt-neuter');
@@ -29,6 +30,7 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-contrib-qunit');
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-contrib-watch');
+	grunt.loadNpmTasks('grunt-contrib-yuidoc');
 	grunt.loadNpmTasks('grunt-groundskeeper');
 
 	grunt.task.loadTasks('./tasks');
@@ -37,4 +39,5 @@ module.exports = function(grunt) {
 	grunt.registerTask('test', ['neuter', 'build_test_runner', 'qunit:cli', 'clean:test']);
 	grunt.registerTask('release', ['neuter', 'groundskeeper:compile',
 		'uglify:release', 'build_test_runner', 'qunit:cli', 'jshint:build']);
+	grunt.registerTask('doc', ['yuidoc', 'convert_documentation_data']);
 };

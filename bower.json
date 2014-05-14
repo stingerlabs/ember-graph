@@ -1,5 +1,5 @@
 {
-	"name": "ember-graph",
+	"name": "Ember-Graph",
 	"version": "0.1.0",
 	"main": ["ember-graph.js"],
 	"ignore": [
@@ -11,6 +11,5 @@
 	"devDependencies": {
 		"qunit": "1.14",
 		"primer": "git@github.com:gordonkristan/primer.git"
-	},
-	"private": true
+	}
 }
