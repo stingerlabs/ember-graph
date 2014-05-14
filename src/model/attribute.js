@@ -14,6 +14,7 @@ var createAttribute = function(attributeName, options) {
 	};
 
 	var attribute = Em.computed(function(key, value) {
+		var meta = this.constructor.metaForAttribute(key);
 		var server = this.get('_serverAttributes.' + key);
 		var client = this.get('_clientAttributes.' + key);
 		var current = (client === undefined ? server : client);
