@@ -280,13 +280,15 @@ EG.Store.reopen({
 	},
 
 	_deleteRelationshipsForRecord: function(typeKey, id) {
-		// TODO: Get rid of EG.util.values
-		var relationships = EG.util.values(this.get('_relationships'));
-
-		relationships.forEach(function(relationship) {
-			if (relationship.isConnectedTo(typeKey, id)) {
-				this._deleteRelationship(Em.get(relationship, 'id'));
+		var current;
+		var relationships = this.get('_relationships');
+		for (var i in relationships) {
+			if (relationships.hasOwnProperty(i)) {
+				current = relationships[i];
+				if (current.isConnectedTo(typeKey, id)) {
+					this._deleteRelationship(Em.get(current, 'id'));
+				}
 			}
-		}, this);
+		}
 	}
 });
