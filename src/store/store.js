@@ -140,7 +140,7 @@ EG.Store = Em.Object.extend({
 
 		this._setRecord(typeKey, record);
 
-		record._loadData(json);
+		record.loadData(json);
 
 		return record;
 	},
@@ -163,7 +163,7 @@ EG.Store = Em.Object.extend({
 			this._connectQueuedRelationships(record);
 		}
 
-		record._loadData(json);
+		record.loadData(json);
 
 		return record;
 	},
@@ -449,7 +449,7 @@ EG.Store = Em.Object.extend({
 
 					if (record) {
 						if (!record.get('isDirty') || reloadDirty) {
-							record._loadData(json);
+							record.loadData(json);
 						}
 					} else {
 						this._loadRecord(typeKey, json);

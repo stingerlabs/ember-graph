@@ -1503,7 +1503,7 @@ EG.Store = Em.Object.extend({
 
 		this._setRecord(typeKey, record);
 
-		record._loadData(json);
+		record.loadData(json);
 
 		return record;
 	},
@@ -1526,7 +1526,7 @@ EG.Store = Em.Object.extend({
 			this._connectQueuedRelationships(record);
 		}
 
-		record._loadData(json);
+		record.loadData(json);
 
 		return record;
 	},
@@ -1812,7 +1812,7 @@ EG.Store = Em.Object.extend({
 
 					if (record) {
 						if (!record.get('isDirty') || reloadDirty) {
-							record._loadData(json);
+							record.loadData(json);
 						}
 					} else {
 						this._loadRecord(typeKey, json);
@@ -3135,9 +3135,13 @@ EG.Model = Em.Object.extend(Em.Evented, {
 	 * Loads JSON data from the server into the record. This may be used when
 	 * the record is brand new, or when the record is being reloaded. This
 	 * should generally only be used by the store or for testing purposes.
-	 * If called directly in production, this will have unintended consequences.
+	 * However, this can be useful to override to intercept data before it's
+	 * loaded into the record;
+	 *
+	 * @method loadData
+	 * @param {Object} json
 	 */
-	_loadData: function(json) {
+	loadData: function(json) {
 		json = json || {};
 		Em.assert('The record `' + this.typeKey + ':' + this.get('id') + '` was attempted to be reloaded ' +
 			'while dirty with `reloadDirty` disabled.', !this.get('isDirty') || this.get('store.reloadDirty'));

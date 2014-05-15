@@ -378,7 +378,7 @@
 		expect(2);
 
 		var post = store.getRecord('post', '1');
-		post._loadData({
+		post.loadData({
 			author: '50',
 			tags: post.get('_tags').toArray()
 		});
@@ -392,7 +392,7 @@
 		expect(2);
 
 		var post = store.getRecord('post', '1');
-		post._loadData({
+		post.loadData({
 			author: null,
 			tags: post.get('_tags').toArray()
 		});
@@ -406,7 +406,7 @@
 		expect(3);
 
 		var user = store.getRecord('user', '1');
-		user._loadData({
+		user.loadData({
 			posts: ['1', '50', '51']
 		});
 
@@ -423,7 +423,7 @@
 
 		var post = store.getRecord('post', '1');
 		var user = store.getRecord('user', post.get('_author'));
-		post._loadData({});
+		post.loadData({});
 
 		ok(post.get('_author') === null);
 		ok(!user.get('_posts').contains('1'));
