@@ -12,6 +12,10 @@ module.exports = function(grunt) {
 			all: ['test/**/*.js']
 		},
 
+		build_release_test_runner: {
+			all: ['test/**/*.js']
+		},
+
 		clean: config('clean'),
 		connect: config('connect'),
 		groundskeeper: config('groundskeeper'),
@@ -38,6 +42,6 @@ module.exports = function(grunt) {
 	grunt.registerTask('develop', ['neuter', 'build_test_runner', 'connect:test', 'watch']);
 	grunt.registerTask('test', ['neuter', 'build_test_runner', 'qunit:cli', 'clean:test']);
 	grunt.registerTask('release', ['neuter', 'groundskeeper:compile',
-		'uglify:release', 'build_test_runner', 'qunit:cli', 'jshint:build']);
+		'uglify:release', 'build_release_test_runner', 'qunit:cli', 'jshint:build']);
 	grunt.registerTask('doc', ['yuidoc', 'convert_documentation_data']);
 };
