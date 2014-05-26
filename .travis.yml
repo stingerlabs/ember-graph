@@ -9,3 +9,5 @@ install:
     - "npm install"
 script:
     - "grunt release"
+notifications:
+    email: false
