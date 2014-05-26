@@ -1,4 +1,4 @@
-Ember-Graph
+Ember-Graph [![Code Climate](https://codeclimate.com/github/gordonkristan/ember-graph.png)](https://codeclimate.com/github/gordonkristan/ember-graph)
 ===========
 
 Ember-Graph is a data persistence library for Ember.js with a focus on complex object graphs.
