@@ -25,13 +25,12 @@
 	});
 
 	test('Serialization works correctly', function() {
-		expect(5);
+		expect(4);
 
 		var now = new Date();
 		strictEqual(type.serialize(now), now.getTime());
 		strictEqual(type.serialize(), null);
 		strictEqual(type.serialize(null), null);
-		ok(Math.abs(type.serialize('') - new Date('').getTime()) < 5000);
 		strictEqual(type.serialize(832748734), 832748734);
 	});
 
