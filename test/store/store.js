@@ -115,7 +115,7 @@
 	});
 
 	asyncTest('The store saves new records properly', function() {
-		expect(5);
+		expect(4);
 
 		var record = store.createRecord(typeKey, {});
 		var tempId = record.get('id');
@@ -123,8 +123,6 @@
 		ok(store.hasRecord(typeKey, tempId));
 
 		var promise = store.saveRecord(record);
-
-		ok(record.get('isSaving') === true);
 
 		promise.then(function() {
 			start();
@@ -136,7 +134,7 @@
 	});
 
 	asyncTest('The store deletes a record properly', function() {
-		expect(5);
+		expect(3);
 
 		var record;
 
@@ -145,8 +143,7 @@
 			var promise = record.destroy();
 
 			start();
-			ok(record.get('isDirty') === true);
-			ok(record.get('isDeleted') === true);
+			ok(record.get('isDeleting') === true);
 			stop();
 
 			return promise;
@@ -154,7 +151,6 @@
 			start();
 
 			ok(!store.hasRecord(typeKey, '1'));
-			ok(record.get('isDirty') === false);
 			ok(record.get('isDeleted') === true);
 		});
 	});

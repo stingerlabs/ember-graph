@@ -367,12 +367,9 @@ EG.Store = Em.Object.extend({
 		var isNew = record.get('isNew');
 		var tempId = record.get('id');
 
-		record.set('isSaving', true);
-
 		if (isNew) {
 			return this.get('adapter').createRecord(record).then(function(payload) {
 				record.set('id', payload.meta.newId);
-				record.set('isSaving', false);
 
 				this._deleteRecord(type, tempId);
 				this._setRecord(type, record);
@@ -383,7 +380,6 @@ EG.Store = Em.Object.extend({
 		} else {
 			return this.get('adapter').updateRecord(record).then(function(payload) {
 				this.extractPayload(payload);
-				record.set('isSaving', false);
 				return record;
 			}.bind(this));
 		}
@@ -399,13 +395,9 @@ EG.Store = Em.Object.extend({
 		var id = record.get('id');
 		var records = (this.get('_records.' + type) || {});
 
-		record.set('isSaving', true);
-		record.set('isDeleted', true);
-
 		return this.get('adapter').deleteRecord(record).then(function(payload) {
 			this._deleteRelationshipsForRecord(type, id);
 			this.extractPayload(payload);
-			record.set('isSaving', false);
 			this._deleteRecord(type, id);
 		}.bind(this));
 	},
@@ -418,11 +410,9 @@ EG.Store = Em.Object.extend({
 	reloadRecord: function(record) {
 		Em.assert('You can\'t reload record `' + record.typeKey + ':' +
 			record.get('id') + '` while it\'s dirty.', !record.get('isDirty'));
-		record.set('isReloading', true);
 
-		return this.get('adapter').find(record.typeKey, record.get('id')).then(function(payload) {
+		return this.get('adapter').findRecord(record.typeKey, record.get('id')).then(function(payload) {
 			this.extractPayload(payload);
-			record.set('isReloading', false);
 			return record;
 		}.bind(this));
 	},

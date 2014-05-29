@@ -1730,12 +1730,9 @@ EG.Store = Em.Object.extend({
 		var isNew = record.get('isNew');
 		var tempId = record.get('id');
 
-		record.set('isSaving', true);
-
 		if (isNew) {
 			return this.get('adapter').createRecord(record).then(function(payload) {
 				record.set('id', payload.meta.newId);
-				record.set('isSaving', false);
 
 				this._deleteRecord(type, tempId);
 				this._setRecord(type, record);
@@ -1746,7 +1743,6 @@ EG.Store = Em.Object.extend({
 		} else {
 			return this.get('adapter').updateRecord(record).then(function(payload) {
 				this.extractPayload(payload);
-				record.set('isSaving', false);
 				return record;
 			}.bind(this));
 		}
@@ -1762,13 +1758,9 @@ EG.Store = Em.Object.extend({
 		var id = record.get('id');
 		var records = (this.get('_records.' + type) || {});
 
-		record.set('isSaving', true);
-		record.set('isDeleted', true);
-
 		return this.get('adapter').deleteRecord(record).then(function(payload) {
 			this._deleteRelationshipsForRecord(type, id);
 			this.extractPayload(payload);
-			record.set('isSaving', false);
 			this._deleteRecord(type, id);
 		}.bind(this));
 	},
@@ -1781,11 +1773,9 @@ EG.Store = Em.Object.extend({
 	reloadRecord: function(record) {
 		Em.assert('You can\'t reload record `' + record.typeKey + ':' +
 			record.get('id') + '` while it\'s dirty.', !record.get('isDirty'));
-		record.set('isReloading', true);
 
-		return this.get('adapter').find(record.typeKey, record.get('id')).then(function(payload) {
+		return this.get('adapter').findRecord(record.typeKey, record.get('id')).then(function(payload) {
 			this.extractPayload(payload);
-			record.set('isReloading', false);
 			return record;
 		}.bind(this));
 	},
@@ -3051,87 +3041,6 @@ EG.Model = Em.Object.extend(Em.Evented, {
 	store: null,
 
 	/**
-	 * Denotes that a record has been deleted. If `isDirty` is also true,
-	 * the change hasn't been persisted to the server yet.
-	 *
-	 * @property isDeleted
-	 * @type Boolean
-	 * @final
-	 */
-	isDeleted: null,
-
-	/**
-	 * Denotes that the record is currently saving its changes
-	 * to the server, but the server hasn't responded yet.
-	 *
-	 * @property isSaving
-	 * @type Boolean
-	 * @final
-	 */
-	isSaving: null,
-
-	/**
-	 * Denotes that the record is being reloaded from the server,
-	 * and will likely change when the server responds.
-	 *
-	 * @property isReloading
-	 * @type Boolean
-	 * @final
-	 */
-	isReloading: null,
-
-	/**
-	 * Denotes that a record has been loaded into a store and isn't freestanding.
-	 *
-	 * @property isLoaded
-	 * @type Boolean
-	 * @final
-	 */
-	isLoaded: Em.computed(function() {
-		return this.get('store') !== null;
-	}).property('store'),
-
-	/**
-	 * Denotes that the record has changes that have not been saved to the server yet.
-	 *
-	 * @property isDirty
-	 * @type Boolean
-	 * @final
-	 */
-	isDirty: Em.computed(function() {
-		var isDeleted = this.get('isDeleted');
-		var isSaving = this.get('isSaving');
-
-		if (isDeleted && !isSaving) {
-			return false;
-		}
-
-		var deleting = isDeleted && isSaving;
-		return this.get('_areAttributesDirty') || this.get('_areRelationshipsDirty') || deleting;
-	}).property('_areAttributesDirty', '_areRelationshipsDirty', 'isDeleted', 'isSaving'),
-
-	/**
-	 * Denotes that a record has just been created and has not been saved to
-	 * the server yet. Most likely has a temporary ID if this is true.
-	 *
-	 * @property isNew
-	 * @type Boolean
-	 * @final
-	 */
-	isNew: Em.computed(function() {
-		return EG.String.startsWith(this.get('_id'), this.constructor.temporaryIdPrefix);
-	}).property('_id'),
-
-	_initializeProperties: function() {
-		this.set('_id', null);
-		this.set('store', null);
-
-		this.set('isDeleted', false);
-		this.set('isSaving', false);
-		this.set('isReloading', false);
-	}.on('init'),
-
-	/**
 	 * Loads JSON data from the server into the record. This may be used when
 	 * the record is brand new, or when the record is being reloaded. This
 	 * should generally only be used by the store or for testing purposes.
@@ -3157,7 +3066,19 @@ EG.Model = Em.Object.extend(Em.Evented, {
 	 * @return Promise
 	 */
 	save: function() {
-		return this.get('store').saveRecord(this);
+		var _this = this;
+		var property = null;
+
+		if (this.get('isNew')) {
+			property = 'isCreating';
+		} else {
+			property = 'isSaving';
+		}
+
+		this.set(property, true);
+		return this.get('store').saveRecord(this).finally(function() {
+			_this.set(property, false);
+		});
 	},
 
 	/**
@@ -3167,7 +3088,12 @@ EG.Model = Em.Object.extend(Em.Evented, {
 	 * @return Promise
 	 */
 	reload: function() {
-		return this.get('store').reloadRecord(this);
+		var _this = this;
+
+		this.set('isReloading', true);
+		return this.get('store').reloadRecord(this).finally(function() {
+			_this.set('isReloading', false);
+		});
 	},
 
 	/**
@@ -3177,7 +3103,15 @@ EG.Model = Em.Object.extend(Em.Evented, {
 	 * @return Promise
 	 */
 	destroy: function() {
-		return this.get('store').deleteRecord(this);
+		var _this = this;
+
+		this.set('isDeleting', true);
+		return this.get('store').deleteRecord(this).then(function() {
+			_this.set('isDeleted', true);
+			_this.set('store', null);
+		}).finally(function() {
+			_this.set('isDeleting', false);
+		});
 	},
 
 	/**
@@ -3307,6 +3241,101 @@ EG.Model.reopenClass({
 
 (function() {
 
+EG.Model.reopen({
+
+	/**
+	 * Denotes that the record is currently being deleted, but the server hasn't responded yet.
+	 *
+	 * @property isDeleting
+	 * @type Boolean
+	 * @final
+	 */
+	isDeleting: false,
+
+	/**
+	 * Denotes that a record has been deleted and the change persisted to the server.
+	 *
+	 * @property isDeleted
+	 * @type Boolean
+	 * @final
+	 */
+	isDeleted: false,
+
+	/**
+	 * Denotes that the record is currently saving its changes to the server, but the server hasn't responded yet.
+	 * (This doesn't overlap with `isCreating` at all. This is only true on subsequent saves.)
+	 *
+	 * @property isSaving
+	 * @type Boolean
+	 * @final
+	 */
+	isSaving: false,
+
+	/**
+	 * Denotes that the record is being reloaded from the server, but the server hasn't responded yet.
+	 *
+	 * @property isReloading
+	 * @type Boolean
+	 * @final
+	 */
+	isReloading: false,
+
+	/**
+	 * Denotes that a record has been loaded into a store and isn't freestanding.
+	 *
+	 * @property isLoaded
+	 * @type Boolean
+	 * @final
+	 */
+	isLoaded: Em.computed(function() {
+		return this.get('store') !== null;
+	}).property('store'),
+
+	/**
+	 * Denotes that the record has attribute or relationship changes that have not been saved to the server yet.
+	 *
+	 * @property isDirty
+	 * @type Boolean
+	 * @final
+	 */
+	isDirty: Em.computed.or('_areAttributesDirty', '_areRelationshipsDirty'),
+
+	/**
+	 * Denotes that the record is currently being saved to the server for the first time,
+	 * and the server hasn't responded yet.
+	 *
+	 * @property isCreating
+	 * @type Boolean
+	 * @final
+	 */
+	isCreating: false,
+
+	/**
+	 * Denotes that a record has just been created and has not been saved to
+	 * the server yet. Most likely has a temporary ID if this is true.
+	 *
+	 * @property isNew
+	 * @type Boolean
+	 * @final
+	 */
+	isNew: Em.computed(function() {
+		return EG.String.startsWith(this.get('_id'), this.constructor.temporaryIdPrefix);
+	}).property('_id'),
+
+	/**
+	 * Denotes that the record is currently waiting for the server to respond to an operation.
+	 *
+	 * @property isInTransit
+	 * @type Boolean
+	 * @final
+	 */
+	isInTransit: Em.computed.or('isSaving', 'isDeleting', 'isCreating', 'isReloading')
+});
+
+})();
+
+(function() {
+
 var disallowedAttributeNames = new Em.Set(['id', 'type', 'content']);
 
 var createAttribute = function(attributeName, options) {
@@ -3343,7 +3372,7 @@ var createAttribute = function(attributeName, options) {
 
 			var isEqual = meta.isEqual || this.get('store').attributeTypeFor(meta.type).isEqual;
 			if (isEqual(server, value)) {
-				this.set('_clientAttributes.' + key, undefined);
+				delete this.get('_clientAttributes')[key];
 			} else {
 				this.set('_clientAttributes.' + key, value);
 			}
@@ -3522,11 +3551,28 @@ EG.Model.reopen({
 			var isValid = meta.isValid || this.get('store').attributeTypeFor(meta.type).isValid;
 			if (isValid(value)) {
 				this.set('_serverAttributes.' + attributeName, value);
+				this._synchronizeAttribute(attributeName);
 			} else {
 				Em.assert('Your value for the \'' + attributeName + '\' property is inValid.');
 				this.set('_serverAttributes.' + attributeName, meta.defaultValue);
 			}
 		}, this);
+	},
+
+	/**
+	 * When an attribute's value is set directly (like in `extractPayload`), this
+	 * will synchronize the server and client attributes and fix the dirty state.
+	 */
+	_synchronizeAttribute: function(name) {
+		var server = this.get('_serverAttributes.' + name);
+		var client = this.get('_clientAttributes.' + name);
+
+		var meta = this.constructor.metaForAttribute(name);
+		var isEqual = meta.isEqual || this.get('store').attributeTypeFor(meta.type).isEqual;
+		if (isEqual(server, client)) {
+			delete this.get('_clientAttributes')[name];
+			this.notifyPropertyChange('_clientAttributes');
+		}
 	}
 });
 

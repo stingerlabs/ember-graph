@@ -34,7 +34,7 @@ var createAttribute = function(attributeName, options) {
 
 			var isEqual = meta.isEqual || this.get('store').attributeTypeFor(meta.type).isEqual;
 			if (isEqual(server, value)) {
-				this.set('_clientAttributes.' + key, undefined);
+				delete this.get('_clientAttributes')[key];
 			} else {
 				this.set('_clientAttributes.' + key, value);
 			}
@@ -213,10 +213,27 @@ EG.Model.reopen({
 			var isValid = meta.isValid || this.get('store').attributeTypeFor(meta.type).isValid;
 			if (isValid(value)) {
 				this.set('_serverAttributes.' + attributeName, value);
+				this._synchronizeAttribute(attributeName);
 			} else {
 				Em.assert('Your value for the \'' + attributeName + '\' property is inValid.');
 				this.set('_serverAttributes.' + attributeName, meta.defaultValue);
 			}
 		}, this);
+	},
+
+	/**
+	 * When an attribute's value is set directly (like in `extractPayload`), this
+	 * will synchronize the server and client attributes and fix the dirty state.
+	 */
+	_synchronizeAttribute: function(name) {
+		var server = this.get('_serverAttributes.' + name);
+		var client = this.get('_clientAttributes.' + name);
+
+		var meta = this.constructor.metaForAttribute(name);
+		var isEqual = meta.isEqual || this.get('store').attributeTypeFor(meta.type).isEqual;
+		if (isEqual(server, client)) {
+			delete this.get('_clientAttributes')[name];
+			this.notifyPropertyChange('_clientAttributes');
+		}
 	}
 });

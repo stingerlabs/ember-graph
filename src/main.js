@@ -44,6 +44,7 @@ require('model/attribute_type/type');
 require('model/attribute_type/**/*');
 
 require('model/model');
+require('model/states');
 require('model/attribute');
 require('model/relationship');
 require('model/schema');

@@ -76,87 +76,6 @@ EG.Model = Em.Object.extend(Em.Evented, {
 	store: null,
 
 	/**
-	 * Denotes that a record has been deleted. If `isDirty` is also true,
-	 * the change hasn't been persisted to the server yet.
-	 *
-	 * @property isDeleted
-	 * @type Boolean
-	 * @final
-	 */
-	isDeleted: null,
-
-	/**
-	 * Denotes that the record is currently saving its changes
-	 * to the server, but the server hasn't responded yet.
-	 *
-	 * @property isSaving
-	 * @type Boolean
-	 * @final
-	 */
-	isSaving: null,
-
-	/**
-	 * Denotes that the record is being reloaded from the server,
-	 * and will likely change when the server responds.
-	 *
-	 * @property isReloading
-	 * @type Boolean
-	 * @final
-	 */
-	isReloading: null,
-
-	/**
-	 * Denotes that a record has been loaded into a store and isn't freestanding.
-	 *
-	 * @property isLoaded
-	 * @type Boolean
-	 * @final
-	 */
-	isLoaded: Em.computed(function() {
-		return this.get('store') !== null;
-	}).property('store'),
-
-	/**
-	 * Denotes that the record has changes that have not been saved to the server yet.
-	 *
-	 * @property isDirty
-	 * @type Boolean
-	 * @final
-	 */
-	isDirty: Em.computed(function() {
-		var isDeleted = this.get('isDeleted');
-		var isSaving = this.get('isSaving');
-
-		if (isDeleted && !isSaving) {
-			return false;
-		}
-
-		var deleting = isDeleted && isSaving;
-		return this.get('_areAttributesDirty') || this.get('_areRelationshipsDirty') || deleting;
-	}).property('_areAttributesDirty', '_areRelationshipsDirty', 'isDeleted', 'isSaving'),
-
-	/**
-	 * Denotes that a record has just been created and has not been saved to
-	 * the server yet. Most likely has a temporary ID if this is true.
-	 *
-	 * @property isNew
-	 * @type Boolean
-	 * @final
-	 */
-	isNew: Em.computed(function() {
-		return EG.String.startsWith(this.get('_id'), this.constructor.temporaryIdPrefix);
-	}).property('_id'),
-
-	_initializeProperties: function() {
-		this.set('_id', null);
-		this.set('store', null);
-
-		this.set('isDeleted', false);
-		this.set('isSaving', false);
-		this.set('isReloading', false);
-	}.on('init'),
-
-	/**
 	 * Loads JSON data from the server into the record. This may be used when
 	 * the record is brand new, or when the record is being reloaded. This
 	 * should generally only be used by the store or for testing purposes.
@@ -182,7 +101,19 @@ EG.Model = Em.Object.extend(Em.Evented, {
 	 * @return Promise
 	 */
 	save: function() {
-		return this.get('store').saveRecord(this);
+		var _this = this;
+		var property = null;
+
+		if (this.get('isNew')) {
+			property = 'isCreating';
+		} else {
+			property = 'isSaving';
+		}
+
+		this.set(property, true);
+		return this.get('store').saveRecord(this).finally(function() {
+			_this.set(property, false);
+		});
 	},
 
 	/**
@@ -192,7 +123,12 @@ EG.Model = Em.Object.extend(Em.Evented, {
 	 * @return Promise
 	 */
 	reload: function() {
-		return this.get('store').reloadRecord(this);
+		var _this = this;
+
+		this.set('isReloading', true);
+		return this.get('store').reloadRecord(this).finally(function() {
+			_this.set('isReloading', false);
+		});
 	},
 
 	/**
@@ -202,7 +138,15 @@ EG.Model = Em.Object.extend(Em.Evented, {
 	 * @return Promise
 	 */
 	destroy: function() {
-		return this.get('store').deleteRecord(this);
+		var _this = this;
+
+		this.set('isDeleting', true);
+		return this.get('store').deleteRecord(this).then(function() {
+			_this.set('isDeleted', true);
+			_this.set('store', null);
+		}).finally(function() {
+			_this.set('isDeleting', false);
+		});
 	},
 
 	/**
