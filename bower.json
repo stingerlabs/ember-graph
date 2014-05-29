@@ -9,7 +9,6 @@
 		"ember": "1.5.1"
 	},
 	"devDependencies": {
-		"qunit": "1.14",
-		"primer": "git@github.com:gordonkristan/primer.git"
+		"qunit": "1.14"
 	}
 }
