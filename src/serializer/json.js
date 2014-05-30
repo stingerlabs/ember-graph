@@ -4,6 +4,8 @@
  */
 EG.JSONSerializer = EG.Serializer.extend({
 
+	// TODO: Option to specify action for invalid values
+
 	/**
 	 * Converts the record given to a JSON representation where the ID
 	 * and attributes are stored at the top level, and relationships
@@ -28,8 +30,13 @@ EG.JSONSerializer = EG.Serializer.extend({
 		}
 
 		record.constructor.eachAttribute(function(name, meta) {
+			// TODO: I'd like to cache the store and types somehow
 			var type = this.get('store').attributeTypeFor(meta.type);
-			json[name] = type.serialize(record.get(name));
+
+			var serialized = this.serializeAttribute(record, type, name, meta);
+			if (serialized) {
+				json[serialized.key] = serialized.value;
+			}
 		}, this);
 
 		if (Em.get(record.constructor, 'relationships').length > 0) {
@@ -53,6 +60,56 @@ EG.JSONSerializer = EG.Serializer.extend({
 		});
 
 		return json;
+	},
+
+	/**
+	 * Performs the serialization of individual attributes. This allows attributes to be
+	 * treated differently depending on the record or record type. It also allows you to
+	 * change the name of the attribute in serialization, or remove it completely. This
+	 * function also takes care of any validity and existence checking. If an attribute
+	 * value is incorrect or missing, it's up to this function to either throw an error
+	 * or provide a default value.
+	 *
+	 * The return value of this function should either be `null` to remove the attribute
+	 * in the serialized object, or an object similar to the one below to keep it.
+	 *
+	 * ```
+	 * {
+	 *    key: "serialized_attribute_name",
+	 *    value: "json_representation_of_value"
+	 * }
+	 * ```
+	 *
+	 * By default, this function will serialize the value using the AttributeType,
+	 * and it will leave the name unchanged. If the value of the attribute is invalid
+	 * for some reason, it will attempt to use the default value. If the attribute is
+	 * required and invalid, it has no choice but to throw an error.
+	 *
+	 * @method serializeAttribute
+	 * @param {Model} record
+	 * @param {AttributeType} attributeType
+	 * @param {String} attributeName
+	 * @param {Object} attributeMeta
+	 * @return {Object} And object as seen in the example, or `null`
+	 */
+	serializeAttribute: function(record, attributeType, attributeName, attributeMeta) {
+		var value = attributeType.serialize(record.get(attributeName));
+		var isValid = attributeMeta.isValid || attributeType.isValid;
+
+		if (!isValid(value)) {
+			if (attributeMeta.isRequired) {
+				throw new Error('While serializing the record with ID `' + record.get('id') + '`, ' +
+					'the `' + attributeName + '` attribute had an invalid value.');
+			} else {
+				value = (attributeMeta.defaultValue === undefined ?
+					attributeType.get('defaultValue') : attributeMeta.defaultValue);
+			}
+		}
+
+		return {
+			key: attributeName,
+			value: value
+		};
 	},
 
 	/**
@@ -150,19 +207,16 @@ EG.JSONSerializer = EG.Serializer.extend({
 				return null;
 			}
 
-			var model = this.get('store').modelForType(typeKey);
+			var store = this.get('store');
+			var model = store.modelForType(typeKey);
 			var record = { id: json.id + '' };
 
-			this._validateAttributes(model, json);
-
-			Em.keys(json).forEach(function(attribute) {
-				if (attribute === 'id' || attribute === 'links') {
-					return;
+			model.eachAttribute(function(name, meta) {
+				var type = store.attributeTypeFor(meta.type);
+				var deserialized = this.deserializeAttribute(json, type, name, meta);
+				if (deserialized) {
+					record[deserialized.key] = deserialized.value;
 				}
-
-				var meta = model.metaForAttribute(attribute);
-				var type = this.get('store').attributeTypeFor(meta.type);
-				record[attribute] = type.deserialize(json[attribute]);
 			}, this);
 
 			this._validateRelationships(model, json);
@@ -191,26 +245,75 @@ EG.JSONSerializer = EG.Serializer.extend({
 	},
 
 	/**
-	 * Checks the validity of the attributes in the given JSON. It will throw exceptions
-	 * for unrecoverable errors (missing required attributes) and will make assertions
-	 * for errors than can be ignored (extra attributes).
+	 * Performs the deserialization of individual attributes. This allows attributes to be
+	 * treated differently depending on the record or record type. It also allows you to
+	 * change the name of the attribute in deserialization, or remove it completely. This
+	 * function also takes care of any validity and existence checking. If an attribute
+	 * value is incorrect or missing, it's up to this function to either throw an error
+	 * or provide a default value.
 	 *
-	 * @param {Class} model
-	 * @param {Object} json
+	 * The return value of this function should either be `null` to remove the attribute
+	 * in the deserialized object, or an object similar to the one below to keep it.
+	 *
+	 * ```
+	 * {
+	 *    key: "deserialized_attribute_name",
+	 *    value: "javascript_representation_of_value"
+	 * }
+	 * ```
+	 *
+	 * By default, this function will serialize the value using the AttributeType,
+	 * and it will leave the name unchanged. If the value of the attribute is invalid
+	 * for some reason, it will attempt to use the default value. If the attribute is
+	 * required and invalid, it has no choice but to throw an error.
+	 *
+	 * By default, this function attempts to deserialize the value using the AttributeType,
+	 * and it will leave the name unchanged. If the value is missing or invalid, it will
+	 * attempt to use the default value. If the attribute is also required, it has no
+	 * choice but to throw an error.
+	 *
+	 * @method deserializeAttribute
+	 * @param {JSON} json
+	 * @param {AttributeType} attributeType
+	 * @param {String} attributeName
+	 * @param {Object} attributeMeta
+	 * @return {Object} And object as seen in the example, or `null`
 	 */
-	_validateAttributes: function(model, json) {
-		var attributes = Em.get(model, 'attributes');
-		var givenAttributes = new Em.Set(Em.keys(json));
-		givenAttributes.removeObjects(['id', 'links']);
-		var extra = givenAttributes.withoutAll(attributes);
+	deserializeAttribute: function(json, attributeType, attributeName, attributeMeta) {
+		var value = null;
 
-		Em.assert('Your JSON contained extra attributes: ' + extra.toArray().join(','), extra.length <= 0);
+		if (json.hasOwnProperty(attributeName)) {
+			var isValid = attributeMeta.isValid || attributeType.isValid;
+			var deserialized = attributeType.deserialize(json[attributeName]);
+			if (isValid(deserialized)) {
+				value = deserialized;
+			} else {
+				if (attributeMeta.isRequired) {
+					throw new Error('The JSON object with id `' + json.id + '` had an invalid value of `' +
+						json[attributeName] + '` for the required `' + attributeName + '` attribute.');
+				} else {
+					console.warn('The JSON object with id `' + json.id + '` had an invalid value of `' +
+						json[attributeName] + '` for the non-required`' + attributeName + '` attribute.' +
+						' The serializer will use the default value for the attribute instead.');
 
-		model.eachAttribute(function(name, meta) {
-			if (!json.hasOwnProperty(name) && meta.isRequired) {
-				throw new Error('Your JSON is missing the required `' + name + '` attribute.');
+					value = (attributeMeta.defaultValue === undefined ?
+						attributeType.get('defaultValue') : attributeMeta.defaultValue);
+				}
 			}
-		});
+		} else {
+			if (attributeMeta.isRequired) {
+				throw new Error('The JSON object with id `' + json.id +
+					'` was missing the required `' + attributeName + '` attribute.');
+			} else {
+				value = (attributeMeta.defaultValue === undefined ?
+					attributeType.get('defaultValue') : attributeMeta.defaultValue);
+			}
+		}
+
+		return {
+			key: attributeName,
+			value: value
+		};
 	},
 
 	/**
