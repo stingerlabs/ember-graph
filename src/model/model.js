@@ -15,7 +15,6 @@
  *
  * @class Model
  * @constructor
- * @extends Ember.Object
  * @uses Ember.Evented
  */
 EG.Model = Em.Object.extend(Em.Evented, {
