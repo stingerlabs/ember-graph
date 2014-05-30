@@ -2,8 +2,15 @@
 
 var fs = require('fs');
 var marked = require('marked');
+var renderer = new marked.Renderer();
+
+// We insert our own paragraphs where needed in the templates
+renderer.paragraph = function(text) {
+	return text;
+};
 
 marked.setOptions({
+	renderer: renderer,
 	highlight: function (code) {
 		return require('highlight.js').highlightAuto(code).value;
 	}
