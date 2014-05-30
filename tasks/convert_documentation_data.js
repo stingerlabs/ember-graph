@@ -84,6 +84,7 @@ function extractClasses(json) {
 		return {
 			name: className,
 			extends: classes[className].extends || '',
+			uses: classes[className].uses || [],
 			description: marked(classes[className].description || ''),
 			deprecated: classes[className].deprecated === true,
 			file: {

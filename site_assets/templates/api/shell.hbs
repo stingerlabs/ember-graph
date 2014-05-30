@@ -14,18 +14,24 @@
 					</div>
 
 					<div class="api-metadata">
-						<strong>Defined in:</strong>
-						<a href="https://github.com/gordonkristan/ember-graph/blob/master/{{file.path}}#L{{file.line}}">
-							{{file.path}}:{{file.line}}
-						</a>
-
 						{{#if extends}}
-							<br>
 							<strong>Extends:</strong>
 							<a href="#">
 								{{extends}}
 							</a>
+							<br>
 						{{/if}}
+
+						{{#if uses}}
+							<strong>Uses:</strong>
+							{{#each uses}}{{#if @index}}, {{/if}}<a href="#">{{this}}</a>{{/each}}
+							<br>
+						{{/if}}
+
+						<strong>Defined in:</strong>
+						<a href="https://github.com/gordonkristan/ember-graph/blob/master/{{file.path}}#L{{file.line}}">
+							{{file.path}}:{{file.line}}
+						</a>
 					</div>
 					<br>
 					<p>{{{description}}}</p>

@@ -10,7 +10,9 @@
 				<span>
 					({{#each parameters}}{{#if @index}}, {{/if}}{{name}}{{/each}})
 				</span>
-				<a>&#123;{{return.type}}&#125;</a>
+				{{#if return.type}}
+					<a>&#123;{{return.type}}&#125;</a>
+				{{/if}}
 				{{#if static}}
 					<code>static</code>
 				{{/if}}
