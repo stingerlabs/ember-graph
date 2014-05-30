@@ -24,6 +24,7 @@ $(window).on('hashchange', function() {
 		showPane(href);
 		$('html, body').scrollTop(el.offset().top);
 	} else if (el.length === 0) {
+		window.location.hash = '#index';
 		showPane('#index');
 	}
 });

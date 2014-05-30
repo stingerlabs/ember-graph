@@ -1,6 +1,13 @@
 'use strict';
 
 var fs = require('fs');
+var marked = require('marked');
+
+marked.setOptions({
+	highlight: function (code) {
+		return require('highlight.js').highlightAuto(code).value;
+	}
+});
 
 module.exports = function(grunt) {
 	grunt.registerTask('convert_documentation_data', function() {
@@ -29,7 +36,7 @@ function extractTopLevelMethods(json) {
 
 		return {
 			name: item.name,
-			description: item.description,
+			description: marked(item.description || ''),
 			parameters: item.params,
 			return: item.return,
 			static: item.static === 1,
@@ -53,7 +60,7 @@ function extractTopLevelProperties(json) {
 
 		return {
 			name: item.name,
-			description: item.description,
+			description: marked(item.description || ''),
 			type: item.type,
 			static: item.static === 1,
 			deprecated: item.deprecated === true,
@@ -73,7 +80,7 @@ function extractClasses(json) {
 	return Object.keys(classes).sort().map(function(className) {
 		return {
 			name: className,
-			description: classes[className].description,
+			description: marked(classes[className].description || ''),
 			deprecated: classes[className].deprecated === true,
 			file: {
 				path: classes[className].file,
@@ -89,7 +96,7 @@ function extractMethods(className, json) {
 	}).map(function(item) {
 		return {
 			name: item.name,
-			description: item.description,
+			description: marked(item.description || ''),
 			parameters: item.params,
 			return: item.return,
 			static: item.static === 1,
@@ -110,11 +117,12 @@ function extractProperties(className, json) {
 	}).map(function(item) {
 		return {
 			name: item.name,
-			description: item.description,
+			description: marked(item.description || ''),
 			type: item.type,
 			static: item.static === 1,
 			deprecated: item.deprecated === true,
 			readOnly: item.final === 1,
+			default: item.default,
 			file: {
 				path: item.file,
 				line: item.line

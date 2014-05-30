@@ -12,6 +12,8 @@
 		"grunt-contrib-yuidoc": "0.5.2",
 		"grunt-neuter": "0.6.0",
 		"grunt-groundskeeper": "0.1.7",
-		"handlebars": "2.0.0-alpha.4"
+		"handlebars": "2.0.0-alpha.4",
+		"highlight.js": "8.0.0",
+		"marked": "0.3.2"
 	}
 }
