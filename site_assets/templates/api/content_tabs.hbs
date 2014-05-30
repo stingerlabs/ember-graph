@@ -1,25 +1,27 @@
-<div class="api-index">
-	<ul class="nav nav-tabs nav-justified">
-		<li>
-			<a href="#index">Index</a>
-		</li>
-		<li>
-			<a href="#properties">Properties</a>
-		</li>
-		<li>
-			<a href="#methods">Methods</a>
-		</li>
-	</ul>
+{{#if index}}
+	<div class="api-index">
+		<ul class="nav nav-tabs nav-justified">
+			<li>
+				<a href="#index">Index</a>
+			</li>
+			<li>
+				<a href="#properties">Properties</a>
+			</li>
+			<li>
+				<a href="#methods">Methods</a>
+			</li>
+		</ul>
 
-	<div class="tab-content contents">
-		<div class="tab-pane active" id="index">
-			{{{index}}}
-		</div>
-		<div class="tab-pane" id="properties">
-			{{{properties}}}
-		</div>
-		<div class="tab-pane" id="methods">
-			{{{methods}}}
+		<div class="tab-content contents">
+			<div class="tab-pane active" id="index">
+				{{{index}}}
+			</div>
+			<div class="tab-pane" id="properties">
+				{{{properties}}}
+			</div>
+			<div class="tab-pane" id="methods">
+				{{{methods}}}
+			</div>
 		</div>
 	</div>
-</div>
+{{/if}}

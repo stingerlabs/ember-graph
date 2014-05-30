@@ -37,7 +37,10 @@ function extractTopLevelMethods(json) {
 		return {
 			name: item.name,
 			description: marked(item.description || ''),
-			parameters: item.params,
+			parameters: (item.params || []).map(function(param) {
+				param.description = marked(param.description || '');
+				return param;
+			}),
 			return: item.return,
 			static: item.static === 1,
 			deprecated: item.deprecated === true,
@@ -98,7 +101,10 @@ function extractMethods(className, json) {
 		return {
 			name: item.name,
 			description: marked(item.description || ''),
-			parameters: item.params,
+			parameters: (item.params || []).map(function(param) {
+				param.description = marked(param.description || '');
+				return param;
+			}),
 			return: item.return,
 			static: item.static === 1,
 			deprecated: item.deprecated === true,

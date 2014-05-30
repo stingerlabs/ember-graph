@@ -24,7 +24,11 @@ function compileTemplates() {
 		'api/content_tabs', 'api/shell', 'api/sidebar', 'api/base'];
 
 	names.forEach(function(name) {
-		templates[name] = Handlebars.compile(getTemplate(name));
+		var template = Handlebars.compile(getTemplate(name));
+
+		templates[name] = function(data) {
+			return template(data).trim();
+		};
 	});
 }
 
