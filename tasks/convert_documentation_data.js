@@ -20,6 +20,8 @@ module.exports = function(grunt) {
 				klass.methods = extractMethods(klass.name, json);
 				klass.properties = extractProperties(klass.name, json);
 				return klass;
+			}).filter(function(klass) {
+				return klass.name !== 'EG';
 			})
 		};
 
