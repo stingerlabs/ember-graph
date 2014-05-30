@@ -114,6 +114,7 @@ function extractProperties(className, json) {
 			type: item.type,
 			static: item.static === 1,
 			deprecated: item.deprecated === true,
+			readOnly: item.final === 1,
 			file: {
 				path: item.file,
 				line: item.line

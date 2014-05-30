@@ -43,5 +43,7 @@ module.exports = function(grunt) {
 	grunt.registerTask('test', ['neuter', 'build_test_runner', 'qunit:cli', 'clean:test']);
 	grunt.registerTask('release', ['neuter', 'groundskeeper:compile',
 		'uglify:release', 'build_release_test_runner', 'qunit:cli', 'jshint:build']);
-	grunt.registerTask('doc', ['yuidoc', 'convert_documentation_data']);
+
+	grunt.registerTask('build_site', ['yuidoc', 'convert_documentation_data', 'setup_site_structure',
+		'build_api_pages']);
 };

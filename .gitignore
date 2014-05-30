@@ -3,3 +3,5 @@ test/index.html
 .idea/*
 lib/*
 doc/*
+site/*
+site_assets/stylesheets/style.css

@@ -1,0 +1,62 @@
+{{#each methods}}
+	{{#if @index}}
+		<hr>
+	{{/if}}
+
+	<div class="api-method" id="method_{{name}}">
+		<h4 class="property-name">
+			<strong>{{name}}</strong>
+			<small>
+				<span>
+					({{#each parameters}}{{#if @index}}, {{/if}}{{name}}{{/each}})
+				</span>
+				<a>&#123;{{return.type}}&#125;</a>
+				{{#if static}}
+					<code>static</code>
+				{{/if}}
+				{{#if private}}
+					<code>private</code>
+				{{/if}}
+				{{#if protected}}
+					<code>private</code>
+				{{/if}}
+				{{#if deprecated}}
+					<code>deprecated</code>
+				{{/if}}
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/{{file.path}}#L{{file.line}}">
+				{{file.path}}:{{file.line}}
+			</a>
+		</small>
+		<p>{{{description}}}</p>
+
+		{{#if parameters}}
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				{{#each parameters}}
+					<li>
+						<strong>{{name}}</strong>
+						<small>
+							<a>&#123;{{type}}&#125;</a><br>
+							<span>{{{description}}}</span>
+						</small>
+					</li>
+				{{/each}}
+			</ul>
+		{{/if}}
+
+		{{#if return}}
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;{{return.type}}&#125;</a><br>
+						<span>{{{return.description}}}</span>
+					</small>
+				</li>
+			</ul>
+		{{/if}}
+	</div>
+{{/each}}

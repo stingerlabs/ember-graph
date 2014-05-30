@@ -1,0 +1,41 @@
+{{#each properties}}
+	{{#if @index}}
+		<hr>
+	{{/if}}
+
+	<div class="api-property" id="property_{{name}}">
+		<h4 class="property-name">
+			<strong>{{name}}</strong>
+			<small>
+				<a>&#123;{{type}}&#125;</a>
+				{{#if static}}
+					<code>static</code>
+				{{/if}}
+				{{#if readOnly}}
+					<code>read only</code>
+				{{/if}}
+				{{#if private}}
+					<code>private</code>
+				{{/if}}
+				{{#if protected}}
+					<code>protected</code>
+				{{/if}}
+				{{#if deprecated}}
+					<code>deprecated</code>
+				{{/if}}
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/{{file.path}}#L{{file.line}}">
+				{{file.path}}:{{file.line}}
+			</a>
+		</small>
+		<p>{{{description}}}</p>
+
+		{{#if default}}
+			<span>
+				<strong>Default:</strong> <code>{{{default}}}</code>
+			</span>
+		{{/if}}
+	</div>
+{{/each}}

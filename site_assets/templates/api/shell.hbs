@@ -1,0 +1,28 @@
+<div class="container">
+	<div class="row">
+		<div class="col-md-3 well side-nav">
+			{{{sidebar}}}
+		</div>
+		<div class="col-md-9 api-contents">
+			{{#with class}}
+				<div class="api-page-header">
+					<h1>
+						<i class="fa fa-code"></i> {{name}} Class
+					</h1>
+					<hr>
+				</div>
+
+				<div class="api-metadata">
+					<strong>Defined in:</strong>
+					<a href="https://github.com/gordonkristan/ember-graph/blob/master/{{file.path}}#L{{file.line}}">
+						{{file.path}}:{{file.line}}
+					</a>
+				</div>
+				<br>
+				<p>{{{description}}}</p>
+			{{/with}}
+
+			{{{content}}}
+		</div>
+	</div>
+</div>
