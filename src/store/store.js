@@ -418,7 +418,53 @@ EG.Store = Em.Object.extend({
 	},
 
 	/**
-	 * Takes a normalized JSON payload and loads it into the store.
+	 * Takes a normalized payload from the server and load the
+	 * record into the store. This format is called normalized JSON
+	 * and allows you to easily load multiple records in at once.
+	 * Normalized JSON is a single object that contains keys that are
+	 * model type names, and whose values are arrays of JSON records.
+	 * In addition, there is a single `meta` key that contains some
+	 * extra information that the store may need. For example, say
+	 * that the following models were defined:
+	 *
+	 * ```js
+	 * App.Post = EG.Model.extend({
+	 *     title: EG.attr({ type: 'string' }),
+	 *     tags: EG.hasMany({ relatedType: 'tag', inverse: null })
+	 * });
+	 *
+	 * App.Tag = EG.Model.extend({
+	 *     name: EG.attr({ type: 'string' })
+	 * });
+	 * ```
+	 *
+	 * A normalized JSON payload for these models might look like this:
+	 *
+	 * ```js
+	 * {
+	 *     post: [
+	 *         { id: '1', title: 'Introduction To Ember-Graph', tags: [] },
+	 *         { id: '2', title: 'Defining Models', tags: ['1', '3'] },
+	 *         { id: '3', title: 'Connecting to a REST API', tags: ['2'] }
+	 *     ],
+	 *     tag: [
+	 *         { id: '1', name: 'relationship' },
+	 *         { id: '2', name: 'adapter' },
+	 *         { id: '3', name: 'store' }
+	 *     ],
+	 *     meta: {}
+	 * }
+	 * ```
+	 *
+	 * Notice that the names of the types are in singular form. Also, the
+	 * records contain all attributes and relationships in the top level.
+	 * In addition, all IDs (either of records or in relationships) must
+	 * be strings, not numbers.
+	 *
+	 * This format allows records to be easily loaded into the store even
+	 * if they weren't specifically requested (side-loading). The store
+	 * doesn't care how or where the records come from, as long as they can
+	 * be converted to this form.
 	 *
 	 * @method extractPayload
 	 * @param {Object} payload
