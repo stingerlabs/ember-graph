@@ -80,6 +80,7 @@ function extractClasses(json) {
 	return Object.keys(classes).sort().map(function(className) {
 		return {
 			name: className,
+			extends: classes[className].extends || '',
 			description: marked(classes[className].description || ''),
 			deprecated: classes[className].deprecated === true,
 			file: {

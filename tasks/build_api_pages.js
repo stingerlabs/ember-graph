@@ -11,6 +11,7 @@ module.exports = function(grunt) {
 
 		var data = JSON.parse(fs.readFileSync('./doc/ember-graph.json', { encoding: 'utf8' }));
 		buildPages(data);
+		buildEmberGraphNamespacePage(data);
 	});
 };
 
@@ -48,7 +49,36 @@ function buildPages(data) {
 	});
 }
 
-function buildSidebar(classNames, currentClass) {
+function buildEmberGraphNamespacePage(data) {
+	var classNames = data.classes.map(function(c) {
+		return c.name;
+	});
+
+	var index = templates['api/content_index']({ methods: data.methods, properties: data.properties });
+	var methodList = templates['api/content_methods']({ methods: data.methods });
+	var propertyList = templates['api/content_properties']({ properties: data.properties });
+
+	var tabs = templates['api/content_tabs']({ index: index, properties: propertyList, methods: methodList });
+	var sidebar = buildSidebar(classNames, null, true);
+
+	var page = templates['api/shell']({
+		sidebar: sidebar,
+		content: tabs,
+		namespace: {
+			name: 'EmberGraph',
+			description: ''
+		}
+	});
+	var file = templates['api/base']({ body: page });
+
+	fs.writeFileSync('site/api/EG.html', file);
+}
+
+function buildStringNamespacePage(data) {
+
+}
+
+function buildSidebar(classNames, currentClass, emberGraphNamespace, stringNamespace) {
 	var classes = classNames.map(function(className) {
 		return {
 			name: className,
@@ -56,5 +86,9 @@ function buildSidebar(classNames, currentClass) {
 		};
 	});
 
-	return templates['api/sidebar']({ classes: classes });
+	return templates['api/sidebar']({
+		classes: classes,
+		emberGraphNamespace: emberGraphNamespace,
+		stringNamespace: stringNamespace
+	});
 }

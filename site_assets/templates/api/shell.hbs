@@ -4,23 +4,48 @@
 			{{{sidebar}}}
 		</div>
 		<div class="col-md-9 api-contents">
-			{{#with class}}
-				<div class="api-page-header">
-					<h1>
-						<i class="fa fa-code"></i> {{name}} Class
-					</h1>
-					<hr>
-				</div>
+			{{#if class}}
+				{{#with class}}
+					<div class="api-page-header">
+						<h1>
+							<i class="fa fa-code"></i> {{name}} Class
+						</h1>
+						<hr>
+					</div>
 
-				<div class="api-metadata">
-					<strong>Defined in:</strong>
-					<a href="https://github.com/gordonkristan/ember-graph/blob/master/{{file.path}}#L{{file.line}}">
-						{{file.path}}:{{file.line}}
-					</a>
-				</div>
-				<br>
-				<p>{{{description}}}</p>
-			{{/with}}
+					<div class="api-metadata">
+						<strong>Defined in:</strong>
+						<a href="https://github.com/gordonkristan/ember-graph/blob/master/{{file.path}}#L{{file.line}}">
+							{{file.path}}:{{file.line}}
+						</a>
+
+						{{#if extends}}
+							<br>
+							<strong>Extends:</strong>
+							<a href="#">
+								{{extends}}
+							</a>
+						{{/if}}
+					</div>
+					<br>
+					<p>{{{description}}}</p>
+				{{/with}}
+			{{/if}}
+
+			{{#if namespace}}
+				{{#with namespace}}
+					<div class="api-page-header">
+						<h1>
+							<i class="fa fa-code"></i> {{name}} Namespace
+						</h1>
+						<hr>
+					</div>
+
+					<div class="api-metadata"></div>
+					<br>
+					<p>{{{description}}}</p>
+				{{/with}}
+			{{/if}}
 
 			{{{content}}}
 		</div>
