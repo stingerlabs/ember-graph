@@ -43,6 +43,8 @@ EG.AttributeType = Em.Object.extend({
 
 	/**
 	 * Determines if a value of this type is a valid value.
+	 * This function will always be passed the Javascript
+	 * representation of the value, not the JSON representation.
 	 * The default function always returns `true`.
 	 *
 	 * @method isValid

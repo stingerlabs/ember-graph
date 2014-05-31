@@ -29,9 +29,9 @@ EG.Serializer = Em.Object.extend({
 	 * adapters pass in just one option: `requestType`. This lets the
 	 * serializer know what kind of request will made using the payload
 	 * returned from this call. The value of `requestType` will be one of
-	 * the following: `createRecord`, `updateRecord`, `deleteRecord`. If
-	 * you write a custom adapter or serializer, you're free to pass in
-	 * any other options you may need.
+	 * either `createRecord` or `updateRecord`. If you write a custom
+	 * adapter or serializer, you're free to pass in any other options
+	 * you may need.
 	 *
 	 * @method serialize
 	 * @param {Model} record The record to serialize
@@ -49,8 +49,8 @@ EG.Serializer = Em.Object.extend({
 	 *
 	 * In addition to the format described by the store, the adapter
 	 * may require some additional information. This information should
-	 * be included in the `meta` object. The attributes required by
-	 * built-in Ember-Graph are:
+	 * be included in the `meta` object. The attributes required by the
+	 * built-in Ember-Graph adapters are:
 	 *
 	 * - `queryIds`: This is an array of IDs that represents the records
 	 *     returned as the result of a query. This helps the adapter in the
@@ -66,6 +66,14 @@ EG.Serializer = Em.Object.extend({
 	 * If the value is `findQuery`, then the `queryIds` meta attribute is
 	 * required. If the value is `createRecord`, then the `newId` meta
 	 * attribute is required.
+	 *
+	 * In addition to `requestType`, the following options are available:
+	 *
+	 * - `recordType`: The type of record that the request was performed on
+	 * - `id`:  The ID of the record referred to by a `findRecord`,
+	 *     `updateRecord` or `deleteRecord` request
+	 * - `ids`: The IDs of the records requested by a `findMany` request
+	 * - `query`: The query submitted to the `findQuery` request
 	 *
 	 * @method deserialize
 	 * @param {JSON} payload
