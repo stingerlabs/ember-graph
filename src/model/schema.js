@@ -10,9 +10,6 @@
  * - `isEqual`: Function that will compare two different instances of the attribute. Should take
  * two arguments and return `true` if the given attributes are equal. Defaults to the function
  * declared in the `AttributeType` subclass.
- * - `isValid`: Function that determines if a value is valid or not. It's used during serialization
- * and deserialization, as well as when changing the value. The function should take a single
- * argument and return `true` or `false` depending on validity of the value.
  *
  * The option values are all available as property metadata, as well the `isAttribute` property
  * which is always `true`, and the `isRequired` property.

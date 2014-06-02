@@ -5,20 +5,6 @@
 
 	module('String Attribute Type Test');
 
-	test('Validity checking works correctly', function() {
-		expect(8);
-
-		ok(type.isValid(null));
-		ok(type.isValid(''));
-		ok(type.isValid(new String(''))); // jshint ignore:line
-		ok(type.isValid(new String(3))); // jshint ignore:line
-
-		ok(!type.isValid());
-		ok(!type.isValid(undefined));
-		ok(!type.isValid(4));
-		ok(!type.isValid({}));
-	});
-
 	test('Serialization works correctly', function() {
 		expect(7);
 

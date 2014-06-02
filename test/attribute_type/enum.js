@@ -20,18 +20,6 @@
 		strictEqual(type.serialize(String('violet')), 'violet'); // jshint ignore:line
 	});
 
-	test('Valid values are recognized correctly', function() {
-		expect(7);
-
-		ok(type.isValid('RED'));
-		ok(type.isValid('blue'));
-		ok(type.isValid('yEllOw'));
-		ok(type.isValid(new String('green'))); // jshint ignore:line
-		ok(type.isValid(String('orange'))); // jshint ignore:line
-		ok(!type.isValid(null));
-		ok(!type.isValid(''));
-	});
-
 	test('Values are compared correctly', function() {
 		expect(7);
 

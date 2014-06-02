@@ -5,24 +5,6 @@
 
 	module('Boolean Attribute Type Test');
 
-	test('Validity checking works correctly', function() {
-		expect(12);
-
-		ok(type.isValid(true));
-		ok(type.isValid(false));
-		ok(type.isValid(new Boolean(true))); // jshint ignore:line
-		ok(type.isValid(Boolean(false))); // jshint ignore:line
-
-		ok(!type.isValid());
-		ok(!type.isValid(null));
-		ok(!type.isValid(NaN));
-		ok(!type.isValid(undefined));
-		ok(!type.isValid(''));
-		ok(!type.isValid({}));
-		ok(!type.isValid(600));
-		ok(!type.isValid(Infinity));
-	});
-
 	test('Serialization works correctly', function() {
 		expect(12);
 

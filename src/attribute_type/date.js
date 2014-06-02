@@ -38,14 +38,6 @@ EG.DateType = EG.AttributeType.extend({
 	},
 
 	/**
-	 * @param {*} obj Javascript object
-	 * @returns {Boolean} Whether or not the object is a valid value for this type
-	 */
-	isValid: function(obj) {
-		return (obj === null || Em.typeOf(obj) === 'date');
-	},
-
-	/**
 	 * @param {*} a Javascript Object
 	 * @param {*} b Javascript Object
 	 * @returns {Boolean} Whether or not the objects are equal or not

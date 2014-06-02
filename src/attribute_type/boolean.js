@@ -41,13 +41,5 @@ EG.BooleanType = EG.AttributeType.extend({
 		}
 
 		return false;
-	},
-
-	/**
-	 * @param {*} obj Javascript object
-	 * @returns {Boolean} Whether or not the object is a valid value for this type
-	 */
-	isValid: function(obj) {
-		return (Em.typeOf(obj) === 'boolean');
 	}
 });

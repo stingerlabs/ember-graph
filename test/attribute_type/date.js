@@ -5,25 +5,6 @@
 
 	module('Date Attribute Type Test');
 
-	test('Validity checking works correctly', function() {
-		expect(10);
-
-		var CustomDate = function() {};
-		CustomDate.prototype = new Date();
-
-		ok(type.isValid(null));
-		ok(type.isValid(new Date()));
-		ok(type.isValid(new CustomDate()));
-
-		ok(!type.isValid());
-		ok(!type.isValid(NaN));
-		ok(!type.isValid(undefined));
-		ok(!type.isValid(''));
-		ok(!type.isValid({}));
-		ok(!type.isValid(600));
-		ok(!type.isValid(Infinity));
-	});
-
 	test('Serialization works correctly', function() {
 		expect(4);
 

@@ -2482,20 +2482,6 @@ EG.AttributeType = Em.Object.extend({
 	},
 
 	/**
-	 * Determines if a value of this type is a valid value.
-	 * This function will always be passed the Javascript
-	 * representation of the value, not the JSON representation.
-	 * The default function always returns `true`.
-	 *
-	 * @method isValid
-	 * @param {Any} obj Javascript object
-	 * @return {Boolean} Whether or not the object is a valid value for this type
-	 */
-	isValid: function(obj) {
-		return true;
-	},
-
-	/**
 	 * Determines if two values of this type are equal.
 	 * Defaults to using `===`.
 	 *
@@ -2538,19 +2524,6 @@ EG.ArrayType = EG.AttributeType.extend({
 	 */
 	deserialize: function(json) {
 		return (Em.isArray(json) ? json : null);
-	},
-
-	/**
-	 * @param {*} obj Javascript object
-	 * @returns {Boolean} Whether or not the object is a valid value for this type
-	 */
-	isValid: function(obj) {
-		try {
-			JSON.stringify(obj);
-			return Em.isArray(obj);
-		} catch (e) {
-			return false;
-		}
 	},
 
 	/**
@@ -2614,14 +2587,6 @@ EG.BooleanType = EG.AttributeType.extend({
 		}
 
 		return false;
-	},
-
-	/**
-	 * @param {*} obj Javascript object
-	 * @returns {Boolean} Whether or not the object is a valid value for this type
-	 */
-	isValid: function(obj) {
-		return (Em.typeOf(obj) === 'boolean');
 	}
 });
 
@@ -2666,14 +2631,6 @@ EG.DateType = EG.AttributeType.extend({
 			default:
 				return null;
 		}
-	},
-
-	/**
-	 * @param {*} obj Javascript object
-	 * @returns {Boolean} Whether or not the object is a valid value for this type
-	 */
-	isValid: function(obj) {
-		return (obj === null || Em.typeOf(obj) === 'date');
 	},
 
 	/**
@@ -2738,10 +2695,6 @@ EG.EnumType = EG.AttributeType.extend({
 
 	deserialize: Em.aliasMethod('serialize'),
 
-	isValid: function(obj) {
-		return this._isValidValue(obj + '');
-	},
-
 	isEqual: function(a, b) {
 		if (Em.typeOf(a) !== 'string' || Em.typeOf(b) !== 'string') {
 			return false;
@@ -2754,6 +2707,10 @@ EG.EnumType = EG.AttributeType.extend({
 })();
 
 (function() {
+
+var isValidNumber = function(num) {
+	return (Em.typeOf(num) === 'number' && !isNaN(num) && isFinite(num));
+};
 
 /**
  * Will coerce any type to a number (0 being the default). `null` is not a valid value.
@@ -2794,26 +2751,18 @@ EG.NumberType = EG.AttributeType.extend({
 	 * @private
 	 */
 	_coerceToNumber: function(obj) {
-		if (this.isValid(obj)) {
+		if (isValidNumber(obj)) {
 			return Number(obj);
 		}
 
 		if (Em.typeOf(obj) === 'string') {
 			var parsed = Number(obj);
-			if (this.isValid(parsed)) {
+			if (isValidNumber(parsed)) {
 				return parsed;
 			}
 		}
 
 		return 0;
-	},
-
-	/**
-	 * @param {*} obj Javascript object
-	 * @returns {Boolean} Whether or not the object is a valid value for this type
-	 */
-	isValid: function(obj) {
-		return (Em.typeOf(obj) === 'number' && !isNaN(obj) && isFinite(obj));
 	}
 });
 
@@ -2883,19 +2832,6 @@ EG.ObjectType = EG.AttributeType.extend({
 	},
 
 	/**
-	 * @param {*} obj Javascript object
-	 * @returns {Boolean} Whether or not the object is a valid value for this type
-	 */
-	isValid: function(obj) {
-		try {
-			JSON.stringify(obj);
-			return isObject(obj);
-		} catch (e) {
-			return false;
-		}
-	},
-
-	/**
 	 * @param {*} a Javascript Object
 	 * @param {*} b Javascript Object
 	 * @returns {Boolean} Whether or not the objects are equal or not
@@ -2929,14 +2865,6 @@ EG.StringType = EG.AttributeType.extend({
 	 */
 	deserialize: function(json) {
 		return (json === null ? null : '' + json);
-	},
-
-	/**
-	 * @param {*} obj Javascript object
-	 * @returns {Boolean} Whether or not the object is a valid value for this type
-	 */
-	isValid: function(obj) {
-		return (obj === null || Em.typeOf(obj) === 'string');
 	}
 });
 
@@ -3327,9 +3255,7 @@ var createAttribute = function(attributeName, options) {
 		readOnly: options.readOnly === true,
 
 		// These should really only be used internally by the model class
-		isEqual: options.isEqual,
-		/** @deprecated */
-		isValid: options.isValid
+		isEqual: options.isEqual
 	};
 
 	var attribute = Em.computed(function(key, value) {
@@ -3345,12 +3271,6 @@ var createAttribute = function(attributeName, options) {
 		});
 
 		if (value !== undefined) {
-			var isValid = meta.isValid || this.get('store').attributeTypeFor(meta.type).isValid;
-			if (!isValid(value)) {
-				Em.warn('The value \'' + value + '\' wasn\'t valid for the \'' + key + '\' property.');
-				return current;
-			}
-
 			var isEqual = meta.isEqual || this.get('store').attributeTypeFor(meta.type).isEqual;
 			if (isEqual(server, value)) {
 				delete this.get('_clientAttributes')[key];
@@ -3528,15 +3448,8 @@ EG.Model.reopen({
 
 			var value = (json.hasOwnProperty(attributeName) ? json[attributeName] : meta.defaultValue);
 
-			// TODO: Do we want a way to accept non-valid value from the server?
-			var isValid = meta.isValid || this.get('store').attributeTypeFor(meta.type).isValid;
-			if (isValid(value)) {
-				this.set('_serverAttributes.' + attributeName, value);
-				this._synchronizeAttribute(attributeName);
-			} else {
-				Em.assert('Your value for the \'' + attributeName + '\' property is inValid.');
-				this.set('_serverAttributes.' + attributeName, meta.defaultValue);
-			}
+			this.set('_serverAttributes.' + attributeName, value);
+			this._synchronizeAttribute(attributeName);
 		}, this);
 	},
 
@@ -4391,9 +4304,6 @@ EG.Model.reopen({
  * - `isEqual`: Function that will compare two different instances of the attribute. Should take
  * two arguments and return `true` if the given attributes are equal. Defaults to the function
  * declared in the `AttributeType` subclass.
- * - `isValid`: Function that determines if a value is valid or not. It's used during serialization
- * and deserialization, as well as when changing the value. The function should take a single
- * argument and return `true` or `false` depending on validity of the value.
  *
  * The option values are all available as property metadata, as well the `isAttribute` property
  * which is always `true`, and the `isRequired` property.

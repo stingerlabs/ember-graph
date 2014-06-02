@@ -5,23 +5,6 @@
 
 	module('Number Attribute Type Test');
 
-	test('Validity checking works correctly', function() {
-		expect(11);
-
-		ok(type.isValid(52.4));
-		ok(type.isValid(new Number('1.2'))); // jshint ignore:line
-		ok(type.isValid(new Number(3))); // jshint ignore:line
-
-		ok(!type.isValid());
-		ok(!type.isValid(null));
-		ok(!type.isValid(NaN));
-		ok(!type.isValid(undefined));
-		ok(!type.isValid(''));
-		ok(!type.isValid({}));
-		ok(!type.isValid(Infinity));
-		ok(!type.isValid(-Infinity));
-	});
-
 	test('Serialization works correctly', function() {
 		expect(7);
 

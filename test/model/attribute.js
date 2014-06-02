@@ -122,19 +122,6 @@
 		});
 	});
 
-	test('Setting an invalid property value fails', function() {
-		expect(1);
-
-		var birthday = new Date();
-		var model = store.createRecord('test', {
-			name: 'Bob',
-			birthday: birthday
-		});
-
-		model.set('birthday', 42);
-		ok(model.get('birthday').getTime() === birthday.getTime());
-	});
-
 	test('Setting value to undefined fails', function() {
 		expect(2);
 

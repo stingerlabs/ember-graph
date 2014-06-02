@@ -1,3 +1,7 @@
+var isValidNumber = function(num) {
+	return (Em.typeOf(num) === 'number' && !isNaN(num) && isFinite(num));
+};
+
 /**
  * Will coerce any type to a number (0 being the default). `null` is not a valid value.
  */
@@ -37,25 +41,17 @@ EG.NumberType = EG.AttributeType.extend({
 	 * @private
 	 */
 	_coerceToNumber: function(obj) {
-		if (this.isValid(obj)) {
+		if (isValidNumber(obj)) {
 			return Number(obj);
 		}
 
 		if (Em.typeOf(obj) === 'string') {
 			var parsed = Number(obj);
-			if (this.isValid(parsed)) {
+			if (isValidNumber(parsed)) {
 				return parsed;
 			}
 		}
 
 		return 0;
-	},
-
-	/**
-	 * @param {*} obj Javascript object
-	 * @returns {Boolean} Whether or not the object is a valid value for this type
-	 */
-	isValid: function(obj) {
-		return (Em.typeOf(obj) === 'number' && !isNaN(obj) && isFinite(obj));
 	}
 });

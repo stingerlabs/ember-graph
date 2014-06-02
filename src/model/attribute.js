@@ -9,9 +9,7 @@ var createAttribute = function(attributeName, options) {
 		readOnly: options.readOnly === true,
 
 		// These should really only be used internally by the model class
-		isEqual: options.isEqual,
-		/** @deprecated */
-		isValid: options.isValid
+		isEqual: options.isEqual
 	};
 
 	var attribute = Em.computed(function(key, value) {
@@ -27,12 +25,6 @@ var createAttribute = function(attributeName, options) {
 		});
 
 		if (value !== undefined) {
-			var isValid = meta.isValid || this.get('store').attributeTypeFor(meta.type).isValid;
-			if (!isValid(value)) {
-				Em.warn('The value \'' + value + '\' wasn\'t valid for the \'' + key + '\' property.');
-				return current;
-			}
-
 			var isEqual = meta.isEqual || this.get('store').attributeTypeFor(meta.type).isEqual;
 			if (isEqual(server, value)) {
 				delete this.get('_clientAttributes')[key];
@@ -210,15 +202,8 @@ EG.Model.reopen({
 
 			var value = (json.hasOwnProperty(attributeName) ? json[attributeName] : meta.defaultValue);
 
-			// TODO: Do we want a way to accept non-valid value from the server?
-			var isValid = meta.isValid || this.get('store').attributeTypeFor(meta.type).isValid;
-			if (isValid(value)) {
-				this.set('_serverAttributes.' + attributeName, value);
-				this._synchronizeAttribute(attributeName);
-			} else {
-				Em.assert('Your value for the \'' + attributeName + '\' property is inValid.');
-				this.set('_serverAttributes.' + attributeName, meta.defaultValue);
-			}
+			this.set('_serverAttributes.' + attributeName, value);
+			this._synchronizeAttribute(attributeName);
 		}, this);
 	},
 

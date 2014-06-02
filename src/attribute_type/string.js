@@ -14,13 +14,5 @@ EG.StringType = EG.AttributeType.extend({
 	 */
 	deserialize: function(json) {
 		return (json === null ? null : '' + json);
-	},
-
-	/**
-	 * @param {*} obj Javascript object
-	 * @returns {Boolean} Whether or not the object is a valid value for this type
-	 */
-	isValid: function(obj) {
-		return (obj === null || Em.typeOf(obj) === 'string');
 	}
 });

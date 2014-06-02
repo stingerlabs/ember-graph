@@ -26,19 +26,6 @@ EG.ArrayType = EG.AttributeType.extend({
 	},
 
 	/**
-	 * @param {*} obj Javascript object
-	 * @returns {Boolean} Whether or not the object is a valid value for this type
-	 */
-	isValid: function(obj) {
-		try {
-			JSON.stringify(obj);
-			return Em.isArray(obj);
-		} catch (e) {
-			return false;
-		}
-	},
-
-	/**
 	 * @param {*} a Javascript Object
 	 * @param {*} b Javascript Object
 	 * @returns {Boolean} Whether or not the objects are equal or not

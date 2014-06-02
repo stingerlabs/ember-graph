@@ -42,20 +42,6 @@ EG.AttributeType = Em.Object.extend({
 	},
 
 	/**
-	 * Determines if a value of this type is a valid value.
-	 * This function will always be passed the Javascript
-	 * representation of the value, not the JSON representation.
-	 * The default function always returns `true`.
-	 *
-	 * @method isValid
-	 * @param {Any} obj Javascript object
-	 * @return {Boolean} Whether or not the object is a valid value for this type
-	 */
-	isValid: function(obj) {
-		return true;
-	},
-
-	/**
 	 * Determines if two values of this type are equal.
 	 * Defaults to using `===`.
 	 *

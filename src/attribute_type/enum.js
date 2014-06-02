@@ -37,10 +37,6 @@ EG.EnumType = EG.AttributeType.extend({
 
 	deserialize: Em.aliasMethod('serialize'),
 
-	isValid: function(obj) {
-		return this._isValidValue(obj + '');
-	},
-
 	isEqual: function(a, b) {
 		if (Em.typeOf(a) !== 'string' || Em.typeOf(b) !== 'string') {
 			return false;
