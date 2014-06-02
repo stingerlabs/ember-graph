@@ -4,6 +4,11 @@
 	var store;
 	var serializer;
 
+	var jsonSort = function(a, b) {
+		// Order doesn't matter, as long as it's consistent
+		return (JSON.stringify(a) < JSON.stringify(b) ? -1 : 1);
+	};
+
 	module('JSON Serializer Test', {
 		setup: function() {
 			store = setupStore({
@@ -182,5 +187,54 @@
 		throws(function() {
 			serializer.deserialize({ posts: [{ id: 0, title: '', links: { author: 1, tags: null } }] }, options);
 		}, /invalid hasmany/i, 'Invalid relationship');
+	});
+
+	test('Serialize a create record request', function() {
+		expect(1);
+
+		var post = store.createRecord('post', {
+			title: 'title',
+			body: 'body',
+			author: '1',
+			tags: []
+		});
+
+		var expected = {
+			posts: [{
+				title: 'title',
+				body: 'body',
+				links: {
+					author: '1',
+					tags: []
+				}
+			}]
+		};
+
+		var serialized = serializer.serialize(post, { requestType: 'createRecord' });
+
+		deepEqual(serialized, expected);
+	});
+
+	test('Serialize an update request properly', function() {
+		expect(1);
+
+		//store._loadRecord('post', { id: '1', title: 'Test Post 1', body: 'Body1', author: '1', tags: ['1', '2'] });
+		var post = store.getRecord('post', '1');
+
+		post.removeFromRelationship('tags', '2');
+		post.addToRelationship('tags', '7');
+		post.clearHasOneRelationship('author');
+		post.set('body', null);
+
+		var expected = [
+			{ op: 'remove', path: '/links/tags/2' },
+			{ op: 'add', path: '/links/tags/-', value: '7' },
+			{ op: 'replace', path: '/links/author', value: null },
+			{ op: 'replace', path: '/body', value: null }
+		];
+
+		var operations = serializer.serialize(post, { requestType: 'updateRecord' });
+
+		deepEqual(operations.sort(jsonSort), expected.sort(jsonSort));
 	});
 })();

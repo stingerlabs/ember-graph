@@ -119,13 +119,15 @@
 			strictEqual(verb, 'POST');
 
 			deepEqual(typeof body === 'string' ? JSON.parse(body) : body, {
-				string: '',
-				number: 0,
-				links: {
-					hasOne1: null,
-					hasOne2: '123',
-					hasMany: []
-				}
+				tests: [{
+					string: '',
+					number: 0,
+					links: {
+						hasOne1: null,
+						hasOne2: '123',
+						hasMany: []
+					}
+				}]
 			});
 
 

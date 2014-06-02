@@ -23,7 +23,16 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * @category inherit_documentation
 	 */
 	serialize: function(record, options) {
-		return this.serializeRecord(record, options.requestType === 'createRecord');
+		switch (options.requestType) {
+			case 'updateRecord':
+				return this.serializeDelta(record);
+			case 'createRecord':
+				var json = {};
+				json[EG.String.pluralize(record.typeKey)] = [this.serializeRecord(record)];
+				return json;
+			default:
+				throw new Error('Invalid request type for JSON serializer.');
+		}
 	},
 
 	/**
@@ -31,17 +40,12 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 *
 	 * @method serializeRecord
 	 * @param {Model} record
-	 * @param {Boolean} includeId
 	 * @return {JSON} The JSON representation of the record
 	 */
-	serializeRecord: function(record, includeId) {
+	serializeRecord: function(record) {
 		var json = {
 			links: {}
 		};
-
-		if (includeId) {
-			json.id = record.get('id');
-		}
 
 		record.constructor.eachAttribute(function(name, meta) {
 			var serialized = this.serializeAttribute(record, name);
@@ -77,9 +81,6 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * By default, this function will keep the name of the
 	 * attribute and serialize the value using the corresponding
 	 * {{#link-to-class 'AttributeType'}}AttributeType{{/link-to-class}}.
-	 * If the value is invalid for some reason, it will attempt
-	 * to use the default value. If the value is invalid and
-	 * required, it will throw an error.
 	 *
 	 * @method serializeAttribute
 	 * @param {Model} record
@@ -89,20 +90,8 @@ EG.JSONSerializer = EG.Serializer.extend({
 	serializeAttribute: function(record, name) {
 		var meta = record.constructor.metaForAttribute(name);
 		var type = this.get('store').attributeTypeFor(meta.type);
-		var isValid = meta.isValid || type.isValid;
-		var value = record.get(name);
 
-		if (isValid(value)) {
-			return { name: name, value: value };
-		} else {
-			if (meta.isRequired) {
-				var context = { id: record.get('id'), typeKey: record.typeKey, attribute: name, value: value };
-				throw new Error('Invalid attribute during serialization: ' + JSON.stringify(context));
-			} else {
-				value = (meta.defaultValue === undefined ? type.get('defaultValue') : meta.defaultValue);
-				return { name: name, value: value };
-			}
-		}
+		return { name: name, value: type.serialize(record.get(name)) };
 	},
 
 	/**
@@ -144,6 +133,105 @@ EG.JSONSerializer = EG.Serializer.extend({
 		}
 
 		return { name: name, value: value };
+	},
+
+	/**
+	 * Serializes a record's changes to a list of change operations
+	 * that can be used in a JSON API `PATCH` request. The format
+	 * follows the specification except for one minor detail. At the
+	 * time of writing this, the `path` in a change operation must
+	 * be fully qualified, but there is a change upcoming to fix
+	 * that. This uses the soon-to-be format. So instead of this:
+	 *
+	 * ```json
+	 * PATCH /photos/1
+	 *
+	 * [
+	 *     { "op": "remove", "path": "/photos/1/links/comments/5" }
+	 * ]
+	 * ```
+	 *
+	 * It uses this:
+	 *
+	 * ```json
+	 * PATCH /photos/1
+	 *
+	 * [
+	 *     { "op": "remove", "path": "/links/comments/5" }
+	 * ]
+	 * ```
+	 *
+	 * Everything else remains the same. It will use the `replace`
+	 * operation for attributes and hasOne relationships, and the
+	 * `add` and `remove` operations for hasMany relationships.
+	 *
+	 * @method serializeDelta
+	 * @param {Model} record
+	 * @return {JSON} Array of change operations
+	 */
+	serializeDelta: function(record) {
+		var operations = [];
+
+		operations = operations.concat(this.serializeAttributeDelta(record));
+		operations = operations.concat(this.serializeRelationshipDelta(record));
+
+		return operations;
+	},
+
+	/**
+	 * Serializes a record's attributes changes to operation objects.
+	 *
+	 * @method serializeAttributeDelta
+	 * @param {Model} record
+	 * @return {JSON} Array of change operations
+	 */
+	serializeAttributeDelta: function(record) {
+		var changes = record.changedAttributes();
+		var store = this.get('store');
+
+		return map.call(Em.keys(changes), function(attributeName) {
+			var meta = record.constructor.metaForAttribute(attributeName);
+			var type = store.attributeTypeFor(meta.type);
+			var value = type.serialize(changes[attributeName][1]);
+
+			return { op: 'replace', path: '/' + attributeName, value: value };
+		});
+	},
+
+	/**
+	 * Serializes a record's relationship changes to operation objects.
+	 *
+	 * @method serializeAttributeDelta
+	 * @param {Model} record
+	 * @return {JSON} Array of change operations
+	 */
+	serializeRelationshipDelta: function(record) {
+		var operations = [];
+		var changes = record.changedRelationships();
+
+		forEach.call(Em.keys(changes), function(relationshipName) {
+			var values = changes[relationshipName];
+			var meta = record.constructor.metaForRelationship(relationshipName);
+
+			if (meta.kind === EG.Model.HAS_ONE_KEY) {
+				operations.push({ op: 'replace', path: '/links/' + relationshipName, value: values[1] });
+			} else if (meta.kind === EG.Model.HAS_MANY_KEY) {
+				var added = new Em.Set(values[1]).withoutAll(values[0]);
+				var removed = new Em.Set(values[0]).withoutAll(values[1]);
+
+				added.forEach(function(id) {
+					operations.push({ op: 'add', path: '/links/' + relationshipName + '/-', value: id });
+				});
+
+				removed.forEach(function(id) {
+					operations.push({ op: 'remove', path: '/links/' + relationshipName + '/' + id });
+				});
+			} else {
+				Em.assert('Invalid relationship kind.');
+			}
+		});
+
+		return operations;
 	},
 
 	/**
@@ -277,9 +365,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * {{#link-to-class 'AttributeType'}}AttributeType{{/link-to-class}}.
 	 * If the value is missing, it attempts to use the default
 	 * value. If it's missing and required, it has to throw an
-	 * error. If the value is invalid, it will also try to use
-	 * the default. If it's both invalid and required, again,
-	 * it has to throw an error.
+	 * error.
 	 *
 	 * @param {Class} model
 	 * @param {JSON} json
@@ -289,8 +375,6 @@ EG.JSONSerializer = EG.Serializer.extend({
 	deserializeAttribute: function(model, json, name) {
 		var meta = model.metaForAttribute(name);
 		var type = this.get('store').attributeTypeFor(meta.type);
-		var isValid = meta.isValid || type.isValid;
-		var defaultValue = (meta.defaultValue === undefined ? type.get('defaultValue') : meta.defaultValue);
 		var value = json[name];
 		var error;
 
@@ -299,19 +383,13 @@ EG.JSONSerializer = EG.Serializer.extend({
 				error = { id: json.id, typeKey: model.typeKey, name: name };
 				throw new Error('Attribute was missing: ' + JSON.stringify(error));
 			} else {
-				return { name: name, value: defaultValue };
+				return {
+					name: name,
+					value: (meta.defaultValue === undefined ? type.get('defaultValue') : meta.defaultValue)
+				};
 			}
 		} else {
-			if (isValid(value)) {
-				return { name: name, value: value };
-			} else {
-				if (meta.isRequired) {
-					error = { id: json.id, typeKey: model.typeKey, name: name, value: value };
-					throw new Error('Attribute value was invalid: ' + JSON.stringify(error));
-				} else {
-					return { name: name, value: defaultValue };
-				}
-			}
+			return { name: name, value: value };
 		}
 	},
 
@@ -386,7 +464,8 @@ EG.JSONSerializer = EG.Serializer.extend({
 					})
 				};
 			} else {
-				throw new Error('Invalid relationship kind.');
+				Em.assert('Invalid relationship kind.');
+				return null;
 			}
 		}
 	}

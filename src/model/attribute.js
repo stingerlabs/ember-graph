@@ -10,6 +10,7 @@ var createAttribute = function(attributeName, options) {
 
 		// These should really only be used internally by the model class
 		isEqual: options.isEqual,
+		/** @deprecated */
 		isValid: options.isValid
 	};
 

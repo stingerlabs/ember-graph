@@ -15,7 +15,7 @@ EG.RESTAdapter = EG.Adapter.extend({
 	 */
 	createRecord: function(record) {
 		var url = this._buildUrl(record.typeKey, null);
-		var json = this.serialize(record, { includeId: false });
+		var json = this.serialize(record, { requestType: 'createRecord' });
 
 		return this._ajax(url, 'POST', {}, json).then(function(payload) {
 			var options = { requestType: 'createRecord', recordType: record.typeKey };
@@ -105,9 +105,9 @@ EG.RESTAdapter = EG.Adapter.extend({
 	 */
 	updateRecord: function(record) {
 		var url = this._buildUrl(record.typeKey, record.get('id'));
-		var json = this.serialize(record, { includeId: true });
+		var json = this.serialize(record, { requestType: 'updateRecord' });
 
-		return this._ajax(url, 'PUT', {}, json).then(function(payload) {
+		return this._ajax(url, 'PATCH', {}, json).then(function(payload) {
 			var options = { requestType: 'updateRecord', recordType: record.typeKey };
 			return this.deserialize(payload, options);
 		}.bind(this));
