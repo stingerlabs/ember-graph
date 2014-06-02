@@ -18,7 +18,8 @@ EG.RESTAdapter = EG.Adapter.extend({
 		var json = this.serialize(record, { includeId: false });
 
 		return this._ajax(url, 'POST', {}, json).then(function(payload) {
-			return this.deserialize(payload, { isCreatedRecord: true });
+			var options = { requestType: 'createRecord', recordType: record.typeKey };
+			return this.deserialize(payload, options);
 		}.bind(this));
 	},
 
@@ -34,7 +35,8 @@ EG.RESTAdapter = EG.Adapter.extend({
 		var url = this._buildUrl(typeKey, id);
 
 		return this._ajax(url, 'GET').then(function(payload) {
-			return this.deserialize(payload);
+			var options = { requestType: 'findRecord', recordType: typeKey, id: id };
+			return this.deserialize(payload, options);
 		}.bind(this));
 	},
 
@@ -50,7 +52,8 @@ EG.RESTAdapter = EG.Adapter.extend({
 		var url = this._buildUrl(typeKey, ids.join(','));
 
 		return this._ajax(url, 'GET').then(function(payload) {
-			return this.deserialize(payload);
+			var options = { requestType: 'findMany', recordType: typeKey, ids: ids };
+			return this.deserialize(payload, options);
 		}.bind(this));
 	},
 
@@ -65,7 +68,8 @@ EG.RESTAdapter = EG.Adapter.extend({
 		var url = this._buildUrl(typeKey, null);
 
 		return this._ajax(url, 'GET').then(function(payload) {
-			return this.deserialize(payload);
+			var options = { requestType: 'findAll', recordType: typeKey };
+			return this.deserialize(payload, options);
 		}.bind(this));
 	},
 
@@ -87,7 +91,8 @@ EG.RESTAdapter = EG.Adapter.extend({
 		var url = this._buildUrl(typeKey, null, options);
 
 		return this._ajax(url, 'GET').then(function(payload) {
-			return this.deserialize(payload, { isQuery: true });
+			var options = { requestType: 'findQuery', recordType: typeKey, query: query };
+			return this.deserialize(payload, options);
 		}.bind(this));
 	},
 
@@ -103,7 +108,8 @@ EG.RESTAdapter = EG.Adapter.extend({
 		var json = this.serialize(record, { includeId: true });
 
 		return this._ajax(url, 'PUT', {}, json).then(function(payload) {
-			return this.deserialize(payload);
+			var options = { requestType: 'updateRecord', recordType: record.typeKey };
+			return this.deserialize(payload, options);
 		}.bind(this));
 	},
 
@@ -118,7 +124,8 @@ EG.RESTAdapter = EG.Adapter.extend({
 		var url = this._buildUrl(record.typeKey, record.get('id'));
 
 		return this._ajax(url, 'DELETE').then(function(payload) {
-			return this.deserialize(payload) || {};
+			var options = { requestType: 'deleteRecord', recordType: record.typeKey };
+			return this.deserialize(payload, options);
 		}.bind(this));
 	},
 

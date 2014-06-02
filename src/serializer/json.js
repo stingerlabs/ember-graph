@@ -1,6 +1,9 @@
 var map = Ember.ArrayPolyfills.map;
 var filter = Ember.ArrayPolyfills.filter;
 var forEach = Ember.ArrayPolyfills.forEach;
+var isArray = function(array) {
+	return Object.prototype.toString.call(array) === '[object Array]';
+};
 
 var coerceId = function(id) {
 	return (id === null ? null : id + '');
@@ -45,14 +48,14 @@ EG.JSONSerializer = EG.Serializer.extend({
 			if (serialized) {
 				json[serialized.name] = serialized.value;
 			}
-		});
+		}, this);
 
 		record.constructor.eachRelationship(function(name, meta) {
 			var serialized = this.serializeRelationship(record, name);
 			if (serialized) {
 				json.links[serialized.name] = serialized.value;
 			}
-		});
+		}, this);
 
 		return json;
 	},
@@ -85,7 +88,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 */
 	serializeAttribute: function(record, name) {
 		var meta = record.constructor.metaForAttribute(name);
-		var type = this.get('store').attributeTypeFor(record.type);
+		var type = this.get('store').attributeTypeFor(meta.type);
 		var isValid = meta.isValid || type.isValid;
 		var value = record.get(name);
 
@@ -128,10 +131,10 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 */
 	serializeRelationship: function(record, name) {
 		var meta = record.constructor.metaForRelationship(name);
-		var value = record.get(name);
+		var value = record.get('_' + name);
 
 		if (meta.kind === EG.Model.HAS_ONE_KEY) {
-			if (EG.Model.isTemporaryId(value)) {
+			if (value === null || EG.Model.isTemporaryId(value)) {
 				value = null;
 			}
 		} else if (meta.kind === EG.Model.HAS_MANY_KEY) {
@@ -147,12 +150,17 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * @category inherit_documentation
 	 */
 	deserialize: function(payload, options) {
+		payload = payload || {};
 		options = options || {};
 
 		var store = this.get('store');
 		var normalized = this.transformPayload(payload, options);
 
 		forEach.call(Em.keys(normalized), function(typeKey) {
+			if (typeKey === 'meta') {
+				return;
+			}
+
 			var model = store.modelForType(typeKey);
 
 			normalized[typeKey] = map.call(normalized[typeKey], function(json) {
@@ -174,20 +182,24 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * @return {Object} Normalized JSON payload
 	 */
 	transformPayload: function(payload, options) {
+		if (!payload || Em.keys(payload).length === 0) {
+			return {};
+		}
+
 		var normalized = {
 			meta: {
 				serverMeta: payload.meta || {}
 			}
 		};
 
-		var mainTypeKey = payload[EG.String.pluralize(options.recordType)];
+		var mainTypeKey = EG.String.pluralize(options.recordType);
 
-		if (options.relatedType === 'findQuery') {
-			normalized.queryIds = map.call(mainTypeKey, function(record) {
+		if (options.requestType === 'findQuery') {
+			normalized.meta.queryIds = map.call(payload[mainTypeKey], function(record) {
 				return coerceId(record.id);
 			});
-		} else if (options.relatedType === 'createRecord') {
-			normalized.newId = coerceId(mainTypeKey);
+		} else if (options.requestType === 'createRecord') {
+			normalized.meta.newId = coerceId(payload[mainTypeKey][0].id);
 		}
 
 		normalized[options.recordType] = payload[mainTypeKey];
@@ -195,7 +207,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 		delete payload[mainTypeKey];
 		delete payload.meta;
 
-		forEach.call(Em.keys(payload.linked), function(key) {
+		forEach.call(Em.keys(payload.linked || {}), function(key) {
 			normalized[EG.String.singularize(key)] = payload.linked[key];
 		});
 
@@ -215,6 +227,17 @@ EG.JSONSerializer = EG.Serializer.extend({
 		var record = {
 			id: coerceId(json.id)
 		};
+
+		switch (Em.typeOf(json.id)) {
+			case 'string':
+			case 'number':
+				record.id = coerceId(json.id);
+				break;
+			case 'undefined':
+				throw new Error('Your JSON is missing an ID: ' + JSON.stringify(json));
+			default:
+				throw new Error('Your JSON has an invalid ID: ' + JSON.stringify(json));
+		}
 
 		model.eachAttribute(function(name, meta) {
 			var deserialized = this.deserializeAttribute(model, json, name);
@@ -265,7 +288,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 */
 	deserializeAttribute: function(model, json, name) {
 		var meta = model.metaForAttribute(name);
-		var type = this.get('store').attributeTypeFort(meta.type);
+		var type = this.get('store').attributeTypeFor(meta.type);
 		var isValid = meta.isValid || type.isValid;
 		var defaultValue = (meta.defaultValue === undefined ? type.get('defaultValue') : meta.defaultValue);
 		var value = json[name];
@@ -343,10 +366,15 @@ EG.JSONSerializer = EG.Serializer.extend({
 						throw new Error('Invalid hasOne relationship value: ' + JSON.stringify(error));
 				}
 			} else if (meta.kind === EG.Model.HAS_MANY_KEY) {
+				if (!isArray(value)) {
+					error = { id: json.id, typeKey: model.typeKey, name: name, value: value };
+					throw new Error('Invalid hasMany relationship value: ' + JSON.stringify(error));
+				}
+
 				return {
 					name: name,
 					value: map.call(value, function(id) {
-						switch (Em.typeOf(value)) {
+						switch (Em.typeOf(id)) {
 							case 'null':
 							case 'string':
 							case 'number':

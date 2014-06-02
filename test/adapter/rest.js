@@ -12,8 +12,8 @@
 					string: EG.attr({ type: 'string' }),
 					number: EG.attr({ type: 'number', defaultValue: 0 }),
 
-					hasONe1: EG.hasOne({ relatedType: 'foo', inverse: null }),
-					hasONe2: EG.hasOne({
+					hasOne1: EG.hasOne({ relatedType: 'foo', inverse: null }),
+					hasOne2: EG.hasOne({
 						relatedType: 'foo', inverse: null, isRequired: false, defaultValue: '123' }),
 					hasMany: EG.hasMany({ relatedType: 'foo', inverse: null, isRequired: false })
 				})
@@ -32,8 +32,8 @@
 				string: 'foo',
 				number: 42,
 
-				hasONe1: '1',
-				hasONe2: '2',
+				hasOne1: '1',
+				hasOne2: '2',
 				hasMany: ['1', '2', '4', '8']
 			});
 		}
@@ -122,8 +122,8 @@
 				string: '',
 				number: 0,
 				links: {
-					hasONe1: null,
-					hasONe2: '123',
+					hasOne1: null,
+					hasOne2: '123',
 					hasMany: []
 				}
 			});
@@ -132,40 +132,7 @@
 			return Em.RSVP.resolve();
 		};
 
-		adapter.createRecord(store.createRecord('test', { string: '', hasONe1: null }));
-	});
-
-	asyncTest('Update requests are properly formed', function() {
-		expect(3);
-
-		adapter._ajax = function(url, verb, headers, body) {
-			start();
-
-			strictEqual(url, prefix + '/test/1');
-			strictEqual(verb, 'PUT');
-
-			if (typeof body === 'string') {
-				body = JSON.parse(body);
-			}
-
-			body.links.hasMany.sort();
-
-			deepEqual(body, {
-				id: '1',
-				string: 'foo',
-				number: 42,
-				links: {
-					hasONe1: '1',
-					hasONe2: '2',
-					hasMany: ['1', '2', '4', '8']
-				}
-			});
-
-
-			return Em.RSVP.resolve();
-		};
-
-		adapter.updateRecord(store.getRecord('test', '1'));
+		adapter.createRecord(store.createRecord('test', { string: '', hasOne1: null }));
 	});
 
 	asyncTest('Delete requests are properly formed', function() {
