@@ -1,41 +1,23 @@
 (function() {
 	'use strict';
 
-	var prefix = 'http://foo.com/api';
 	var store, adapter;
 
 	module('REST Adapter', {
 		setup: function() {
 			store = setupStore({
-				foo: EG.Model.extend(),
-				test: EG.Model.extend({
-					string: EG.attr({ type: 'string' }),
-					number: EG.attr({ type: 'number', defaultValue: 0 }),
-
-					hasOne1: EG.hasOne({ relatedType: 'foo', inverse: null }),
-					hasOne2: EG.hasOne({
-						relatedType: 'foo', inverse: null, isRequired: false, defaultValue: '123' }),
-					hasMany: EG.hasMany({ relatedType: 'foo', inverse: null, isRequired: false })
-				})
+				person: EG.Model.extend()
 			}, {
 				adapter: EG.RESTAdapter.extend({
 					prefix: Em.computed(function() {
-						return prefix;
+						return '/api';
 					}).property()
 				})
 			});
 
 			adapter = store.get('adapter');
 
-			store._loadRecord('test', {
-				id: '1',
-				string: 'foo',
-				number: 42,
-
-				hasOne1: '1',
-				hasOne2: '2',
-				hasMany: ['1', '2', '4', '8']
-			});
+			store._loadRecord('person', { id: '1' });
 		}
 	});
 
@@ -45,111 +27,118 @@
 		ok(EG.JSONSerializer.detectInstance(adapter.get('serializer')));
 	});
 
-	asyncTest('Find requests are properly formed', function() {
+	asyncTest('findRecord request', function() {
 		expect(3);
 
-		adapter._ajax = function(url, verb, headers, body) {
+		adapter.ajax = function(url, verb, body) {
 			start();
 
-			strictEqual(url, prefix + '/test/1');
+			strictEqual(url, '/api/people/10');
 			strictEqual(verb, 'GET');
-			ok(body === undefined || body === '');
+			strictEqual(body, undefined);
 
 			return Em.RSVP.resolve();
 		};
 
-		adapter.findRecord('test', '1');
+		adapter.findRecord('person', '10');
 	});
 
-	asyncTest('Find many requests are properly formed', function() {
+	asyncTest('findMany request', function() {
 		expect(3);
 
-		adapter._ajax = function(url, verb, headers, body) {
+		adapter.ajax = function(url, verb, body) {
 			start();
 
-			strictEqual(url, prefix + '/test/1,2,3');
+			strictEqual(url, '/api/people/5,6,7');
 			strictEqual(verb, 'GET');
-			ok(body === undefined || body === '');
+			strictEqual(body, undefined);
 
 			return Em.RSVP.resolve();
 		};
 
-		adapter.findMany('test', ['1', '2', '3']);
+		adapter.findMany('person', ['5', '6', '7']);
 	});
 
-	asyncTest('Find all requests are properly formed', function() {
+	asyncTest('findAll request', function() {
 		expect(3);
 
-		adapter._ajax = function(url, verb, headers, body) {
+		adapter.ajax = function(url, verb, body) {
 			start();
 
-			strictEqual(url, prefix + '/tests');
+			strictEqual(url, '/api/people');
 			strictEqual(verb, 'GET');
-			ok(body === undefined || body === '');
+			strictEqual(body, undefined);
 
 			return Em.RSVP.resolve();
 		};
 
-		adapter.findAll('test');
+		adapter.findAll('person');
 	});
 
-	asyncTest('Find query requests are properly formed', function() {
+	asyncTest('findRecord request', function() {
 		expect(3);
 
-		adapter._ajax = function(url, verb, headers, body) {
+		adapter.ajax = function(url, verb, body) {
 			start();
 
-			strictEqual(url, prefix + '/tests?' + 'search=' + encodeURIComponent('this should be escaped'));
+			strictEqual(url, '/api/people?searchTerm=none&sortAscending=true');
 			strictEqual(verb, 'GET');
-			ok(body === undefined || body === '');
+			strictEqual(body, undefined);
 
 			return Em.RSVP.resolve();
 		};
 
-		adapter.findQuery('test', { search: 'this should be escaped' });
+		adapter.findQuery('person', { searchTerm: 'none', sortAscending: true });
 	});
 
-	asyncTest('Create requests are properly formed', function() {
+	asyncTest('createRecord request', function() {
 		expect(3);
 
-		adapter._ajax = function(url, verb, headers, body) {
+		adapter.ajax = function(url, verb, body) {
 			start();
 
-			strictEqual(url, prefix + '/tests');
+			strictEqual(url, '/api/people');
 			strictEqual(verb, 'POST');
+			deepEqual(body, { people: [{ links: {} }] });
 
-			deepEqual(typeof body === 'string' ? JSON.parse(body) : body, {
-				tests: [{
-					string: '',
-					number: 0,
-					links: {
-						hasOne1: null,
-						hasOne2: '123',
-						hasMany: []
-					}
-				}]
-			});
+			return Em.RSVP.resolve({ people: [{ id: '100' }] });
+		};
 
+		var person = store.createRecord('person');
+		adapter.createRecord(person);
+	});
+
+	asyncTest('updateRecord request', function() {
+		expect(3);
+
+		adapter.ajax = function(url, verb, body) {
+			start();
+
+			strictEqual(url, '/api/people/1');
+			strictEqual(verb, 'PATCH');
+			deepEqual(body, []);
 
 			return Em.RSVP.resolve();
 		};
 
-		adapter.createRecord(store.createRecord('test', { string: '', hasOne1: null }));
+		var person = store.getRecord('person', '1');
+		adapter.updateRecord(person);
 	});
 
-	asyncTest('Delete requests are properly formed', function() {
+	asyncTest('deleteRecord request', function() {
 		expect(3);
 
-		adapter._ajax = function(url, verb, headers, body) {
+		adapter.ajax = function(url, verb, body) {
 			start();
 
-			strictEqual(url, prefix + '/test/1');
+			strictEqual(url, '/api/people/1');
 			strictEqual(verb, 'DELETE');
-			ok(body === undefined || body === '');
+			strictEqual(body, undefined);
 
-			return Em.RSVP.Promise.resolve();
+			return Em.RSVP.resolve();
 		};
 
-		adapter.deleteRecord(store.getRecord('test', '1'));
+		var person = store.getRecord('person', '1');
+		adapter.deleteRecord(person);
 	});
 })();

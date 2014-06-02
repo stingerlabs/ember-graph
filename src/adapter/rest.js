@@ -11,49 +11,46 @@ EG.RESTAdapter = EG.Adapter.extend({
 	 *
 	 * @method createRecord
 	 * @param {Model} record
-	 * @returns {Promise} A promise that resolves to the created record
+	 * @return {Promise} A promise that resolves to the created record
 	 */
 	createRecord: function(record) {
-		var url = this._buildUrl(record.typeKey, null);
+		var url = this.buildUrl(record.typeKey, null);
 		var json = this.serialize(record, { requestType: 'createRecord' });
 
-		return this._ajax(url, 'POST', {}, json).then(function(payload) {
-			var options = { requestType: 'createRecord', recordType: record.typeKey };
-			return this.deserialize(payload, options);
+		return this.ajax(url, 'POST', json).then(function(payload) {
+			return this.deserialize(payload, { requestType: 'createRecord', recordType: record.typeKey });
 		}.bind(this));
 	},
 
 	/**
-	 * Sends a `GET` request to `/{singularized_type}/{id}`.
+	 * Sends a `GET` request to `/{pluralized_type}/{id}`.
 	 *
 	 * @method findRecord
 	 * @param {String} typeKey
 	 * @param {String} id
-	 * @returns {Promise} A promise that resolves to the requested record
+	 * @return {Promise} A promise that resolves to the requested record
 	 */
 	findRecord: function(typeKey, id) {
-		var url = this._buildUrl(typeKey, id);
+		var url = this.buildUrl(typeKey, id);
 
-		return this._ajax(url, 'GET').then(function(payload) {
-			var options = { requestType: 'findRecord', recordType: typeKey, id: id };
-			return this.deserialize(payload, options);
+		return this.ajax(url, 'GET').then(function(payload) {
+			return this.deserialize(payload, { requestType: 'findRecord', recordType: typeKey, id: id });
 		}.bind(this));
 	},
 
 	/**
-	 * Sends a `GET` request to `/{singularized_type}/{id},{id},{id}`
+	 * Sends a `GET` request to `/{pluralized_type}/{id},{id},{id}`
 	 *
 	 * @method findMany
 	 * @param {String} typeKey
 	 * @param {String[]} ids
-	 * @returns {Promise} A promise that resolves to an array of requested records
+	 * @return {Promise} A promise that resolves to an array of requested records
 	 */
 	findMany: function(typeKey, ids) {
-		var url = this._buildUrl(typeKey, ids.join(','));
+		var url = this.buildUrl(typeKey, ids.join(','));
 
-		return this._ajax(url, 'GET').then(function(payload) {
-			var options = { requestType: 'findMany', recordType: typeKey, ids: ids };
-			return this.deserialize(payload, options);
+		return this.ajax(url, 'GET').then(function(payload) {
+			return this.deserialize(payload, { requestType: 'findMany', recordType: typeKey, ids: ids });
 		}.bind(this));
 	},
 
@@ -62,14 +59,13 @@ EG.RESTAdapter = EG.Adapter.extend({
 	 *
 	 * @method findAll
 	 * @param {String} typeKey
-	 * @returns {Promise} A promise that resolves to an array of requested records
+	 * @return {Promise} A promise that resolves to an array of requested records
 	 */
 	findAll: function(typeKey) {
-		var url = this._buildUrl(typeKey, null);
+		var url = this.buildUrl(typeKey, null);
 
-		return this._ajax(url, 'GET').then(function(payload) {
-			var options = { requestType: 'findAll', recordType: typeKey };
-			return this.deserialize(payload, options);
+		return this.ajax(url, 'GET').then(function(payload) {
+			return this.deserialize(payload, { requestType: 'findAll', recordType: typeKey });
 		}.bind(this));
 	},
 
@@ -79,7 +75,7 @@ EG.RESTAdapter = EG.Adapter.extend({
 	 * @method findQuery
 	 * @param {String} typeKey
 	 * @param {Object} query An object with query parameters to serialize into the URL
-	 * @returns {Promise} A promise that resolves to an array of requested records
+	 * @return {Promise} A promise that resolves to an array of requested records
 	 */
 	findQuery: function(typeKey, query) {
 		var options = {};
@@ -88,28 +84,27 @@ EG.RESTAdapter = EG.Adapter.extend({
 			options[key] = '' + query[key];
 		});
 
-		var url = this._buildUrl(typeKey, null, options);
+		var url = this.buildUrl(typeKey, null, options);
 
-		return this._ajax(url, 'GET').then(function(payload) {
-			var options = { requestType: 'findQuery', recordType: typeKey, query: query };
-			return this.deserialize(payload, options);
+		return this.ajax(url, 'GET').then(function(payload) {
+			return this.deserialize(payload, { requestType: 'findQuery', recordType: typeKey, query: query });
 		}.bind(this));
 	},
 
 	/**
-	 * Sends a `PUT` request to `/{singularized_type}/{id}` with the serialized record as the body.
+	 * Sends a `PATCH` request to `/{pluralized_type}/{id}` with the record's
+	 * changes serialized to JSON change operations.
 	 *
 	 * @method updateRecord
 	 * @param {Model} record
-	 * @returns {Promise} A promise that resolves to the updated record
+	 * @return {Promise} A promise that resolves to the updated record
 	 */
 	updateRecord: function(record) {
-		var url = this._buildUrl(record.typeKey, record.get('id'));
+		var url = this.buildUrl(record.typeKey, record.get('id'));
 		var json = this.serialize(record, { requestType: 'updateRecord' });
 
-		return this._ajax(url, 'PATCH', {}, json).then(function(payload) {
-			var options = { requestType: 'updateRecord', recordType: record.typeKey };
-			return this.deserialize(payload, options);
+		return this.ajax(url, 'PATCH', json).then(function(payload) {
+			return this.deserialize(payload, { requestType: 'updateRecord', recordType: record.typeKey });
 		}.bind(this));
 	},
 
@@ -118,12 +113,12 @@ EG.RESTAdapter = EG.Adapter.extend({
 	 *
 	 * @method deleteRecord
 	 * @param {Model} record
-	 * @returns {Promise} A promise that resolves on success and rejects on failure
+	 * @return {Promise} A promise that resolves on success and rejects on failure
 	 */
 	deleteRecord: function(record) {
-		var url = this._buildUrl(record.typeKey, record.get('id'));
+		var url = this.buildUrl(record.typeKey, record.get('id'));
 
-		return this._ajax(url, 'DELETE').then(function(payload) {
+		return this.ajax(url, 'DELETE').then(function(payload) {
 			var options = { requestType: 'deleteRecord', recordType: record.typeKey };
 			return this.deserialize(payload, options);
 		}.bind(this));
@@ -131,26 +126,21 @@ EG.RESTAdapter = EG.Adapter.extend({
 
 	/**
 	 * This function will build the URL that the request will be posted to.
-	 * If an ID is provided, it will used the singular version of the
-	 * typeKey given (`/user/52`). If no ID is provided (or is null), it uses
-	 * the plural version of the typeKey given (`/users`). Either way, it
-	 * appends the options passed in as query parameters. The options must
-	 * be strings, but they don't have to be escaped, this function will do that.
+	 * The options must be strings, but they don't have to be escaped,
+	 * this function will do that.
 	 *
-	 * @method _buildUrl
+	 * @method buildUrl
 	 * @param {String} typeKey
-	 * @param {String} id
+	 * @param {String} [id]
 	 * @param {Object} [options]
-	 * @returns {String}
+	 * @return {String}
 	 * @protected
 	 */
-	_buildUrl: function(typeKey, id, options) {
-		var url = this.get('prefix') + '/';
+	buildUrl: function(typeKey, id, options) {
+		var url = this.get('prefix') + '/' + EG.String.pluralize(typeKey);
 
 		if (id) {
-			url += (typeKey + '/' + id);
-		} else {
-			url += EG.String.pluralize(typeKey);
+			url += '/' + id;
 		}
 
 		if (options) {
@@ -163,16 +153,17 @@ EG.RESTAdapter = EG.Adapter.extend({
 	},
 
 	/**
-	 * This hook is called by the adapter when forming the URL for requests.
+	 * This property is used by the adapter when forming the URL for requests.
 	 * The adapter normally makes requests to the current location. So the URL
-	 * looks like `/user/6`. If you want to add a different host, or a prefix,
-	 * override this hook.
+	 * looks like `/users/6`. If you want to add a different host, or a prefix,
+	 * override this property.
 	 *
-	 * Warning: Do NOT put a trailing slash. The adapter won't check for
+	 * Warning: Do **not** include a trailing slash. The adapter won't check for
 	 * mistakes, so just don't do it.
 	 *
 	 * @property prefix
-	 * @protected
+	 * @type String
+	 * @default ''
 	 */
 	prefix: Em.computed(function() {
 		return '';
@@ -182,21 +173,22 @@ EG.RESTAdapter = EG.Adapter.extend({
 	 * This method sends the request to the server.
 	 * The response is processed in the Ember run-loop.
 	 *
-	 * @method _ajax
+	 * @method ajax
 	 * @param {String} url
-	 * @param {String} verb `GET`, `POST`, `PUT` or `DELETE`
-	 * @param {Object} [headers]
-	 * @param {String} [body]
-	 * @returns {Promise}
+	 * @param {String} verb `GET`, `POST`, `PATCH` or `DELETE`
+	 * @param {String} [body=undefined]
+	 * @return {Promise}
 	 * @protected
 	 */
-	_ajax: function(url, verb, headers, body) {
+	ajax: function(url, verb, body) {
+		var headers = this.headers(url, verb, body);
+
 		return new Em.RSVP.Promise(function(resolve, reject) {
 			$.ajax({
 				cache: false,
 				contentType: 'application/json',
 				data: (body === undefined ? undefined : (Em.typeOf(body) === 'string' ? body : JSON.stringify(body))),
-				headers: headers || {},
+				headers: headers,
 				processData: false,
 				type: verb,
 				url: url,
@@ -210,5 +202,19 @@ EG.RESTAdapter = EG.Adapter.extend({
 				}
 			});
 		});
+	},
+
+	/**
+	 * This is a small hook to allow including extra headers in the AJAX request.
+	 *
+	 * @method headers
+	 * @param {String} url
+	 * @param {String} verb `GET`, `POST`, `PATCH` or `DELETE`
+	 * @param {String} [body=undefined]
+	 * @return {Object} Headers to give to jQuery `ajax` function
+	 * @protected
+	 */
+	headers: function(url, verb, body) {
+		return {};
 	}
 });
