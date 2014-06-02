@@ -1,7 +1,11 @@
 {
 	"predef": [
 		"Eg",
-		"Em"
+		"Em",
+		"ok",
+		"strictEqual",
+		"deepEqual",
+		"throws"
 	],
 	"bitwise": true,
 	"camelcase": false,
