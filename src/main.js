@@ -40,8 +40,8 @@ require('data/promise_object');
 
 require('relationship/relationship');
 
-require('model/attribute_type/type');
-require('model/attribute_type/**/*');
+require('attribute_type/type');
+require('attribute_type/**/*');
 
 require('model/model');
 require('model/states');
