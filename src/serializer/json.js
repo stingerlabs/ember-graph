@@ -147,6 +147,8 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * @category inherit_documentation
 	 */
 	deserialize: function(payload, options) {
+		options = options || {};
+
 		var store = this.get('store');
 		var normalized = this.transformPayload(payload, options);
 

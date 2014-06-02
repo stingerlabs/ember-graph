@@ -69,4 +69,39 @@
 			store._loadRecord('tag', { id: '4', name: 'eggs' });
 		}
 	});
+
+	test('Deserialize a normal payload', function() {
+		expect(1);
+
+		var payload = {
+			posts: [
+				{ id: 3, title: 'Test Post 3', author: 1, tags: [1, 3] },
+				{ id: 4, title: 'Test Post 4', body: 'Body4', author: '1', tags: ['2', '4'] }
+			],
+			linked: {
+				tags: [
+					{ id: 10, name: '10' },
+					{ id: 11, name: '11' }
+				]
+			}
+		};
+
+		var expected = {
+			meta: {
+				serverMeta: {}
+			},
+			post: [
+				{ id: '3', title: 'Test Post 3', body: '', author: '1', tags: ['1', '3'] },
+				{ id: '4', title: 'Test Post 4', body: 'Body4', author: '1', tags: ['2', '4'] }
+			],
+			tag: [
+				{ id: '10', name: '10' },
+				{ id: '11', name: '11' }
+			]
+		};
+
+		var normalized = serializer.deserialize(payload);
+
+		deepEqual(normalized, expected);
+	});
 })();
