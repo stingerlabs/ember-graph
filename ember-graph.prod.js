@@ -6,13 +6,11 @@
  */
 window.EmberGraph = window.EG = Em.Namespace.create({
 	/**
-	 * Neuter will take care of inserting the version number from bower.json
-	 *
 	 * @property VERSION
-	 * @for EG
 	 * @category top-level
 	 * @type String
 	 * @static
+	 * @final
 	 */
 	VERSION: '0.1.0'
 });
