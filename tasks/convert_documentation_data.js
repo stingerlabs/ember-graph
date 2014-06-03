@@ -20,12 +20,14 @@ module.exports = function(grunt) {
 	grunt.registerTask('convert_documentation_data', function() {
 		var json = JSON.parse(fs.readFileSync('doc/data.json', { encoding: 'utf8' }));
 
+		//delete json.classes.EG;
+
 		var data = {
 			methods: extractTopLevelMethods(json),
 			properties: extractTopLevelProperties(json),
 			classes: extractClasses(json).map(function(klass) {
-				klass.methods = extractMethods(klass.name, json);
-				klass.properties = extractProperties(klass.name, json);
+				klass.methods = extractClassMethods(json, getInheritanceChain(json, klass.name));
+				klass.properties = extractClassProperties(json, getInheritanceChain(json, klass.name));
 				return klass;
 			}).filter(function(klass) {
 				return klass.name !== 'EG';
@@ -43,21 +45,7 @@ function extractTopLevelMethods(json) {
 		// Make sure this method isn't detected later in the conversion
 		item.class = null;
 
-		return {
-			name: item.name,
-			description: marked(item.description || ''),
-			parameters: (item.params || []).map(function(param) {
-				param.description = marked(param.description || '');
-				return param;
-			}),
-			return: item.return,
-			static: item.static === 1,
-			deprecated: item.deprecated === true,
-			file: {
-				path: item.file,
-				line: item.line
-			}
-		};
+		return convertMethodItem(item);
 	}).sort(function(a, b) {
 		return (a.name < b.name ? -1 : 1);
 	});
@@ -70,82 +58,116 @@ function extractTopLevelProperties(json) {
 		// Make sure this property isn't detected later in the conversion
 		item.class = null;
 
-		return {
-			name: item.name,
-			description: marked(item.description || ''),
-			type: item.type,
-			static: item.static === 1,
-			deprecated: item.deprecated === true,
-			file: {
-				path: item.file,
-				line: item.line
-			}
-		};
+		return convertPropertyItem(item);
 	}).sort(function(a, b) {
 		return (a.name < b.name ? -1 : 1);
 	});
 }
 
-function extractClasses(json) {
-	var classes = json.classes;
-
-	return Object.keys(classes).sort().map(function(className) {
-		return {
-			name: className,
-			extends: classes[className].extends || '',
-			uses: classes[className].uses || [],
-			description: marked(classes[className].description || ''),
-			deprecated: classes[className].deprecated === true,
-			file: {
-				path: classes[className].file,
-				line: classes[className].line
-			}
-		};
+function extractClasses(data) {
+	return Object.keys(data.classes).sort().map(function(className) {
+		return convertClassItem(data.classes[className]);
 	});
 }
 
-function extractMethods(className, json) {
-	return json.classitems.filter(function(item) {
-		return (item.itemtype === 'method' && item.class === className);
-	}).map(function(item) {
-		return {
-			name: item.name,
-			description: marked(item.description || ''),
-			parameters: (item.params || []).map(function(param) {
-				param.description = marked(param.description || '');
-				return param;
-			}),
-			return: item.return,
-			static: item.static === 1,
-			deprecated: item.deprecated === true,
-			file: {
-				path: item.file,
-				line: item.line
-			}
-		};
-	}).sort(function(a, b) {
-		return (a.name < b.name ? -1 : 1);
-	});
+function getInheritanceChain(data, className) {
+	var superClass = data.classes[className].extends;
+
+	if (data.classes[superClass]) {
+		var chain = getInheritanceChain(data, superClass);
+		chain.push(className);
+		return chain;
+	} else {
+		return [className];
+	}
 }
 
-function extractProperties(className, json) {
-	return json.classitems.filter(function(item) {
-		return (item.itemtype === 'property' && item.class === className);
-	}).map(function(item) {
-		return {
-			name: item.name,
-			description: marked(item.description || ''),
-			type: item.type,
-			static: item.static === 1,
-			deprecated: item.deprecated === true,
-			readOnly: item.final === 1,
-			default: item.default,
-			file: {
-				path: item.file,
-				line: item.line
-			}
-		};
-	}).sort(function(a, b) {
-		return (a.name < b.name ? -1 : 1);
+function extractClassMethods(data, classChain, methods) {
+	methods = methods || {};
+
+	if (classChain.length <= 0) {
+		return Object.keys(methods).sort().map(function(key) {
+			return methods[key];
+		});
+	}
+
+	var classItems = data.classitems.filter(function(item) {
+		return (item.itemtype === 'method' && item.class === classChain[0]);
 	});
+
+	classItems.forEach(function(item) {
+		methods[item.name] = convertMethodItem(item);
+	});
+
+	return extractClassMethods(data, classChain.slice(1), methods);
+}
+
+function extractClassProperties(data, classChain, properties) {
+	properties = properties || {};
+
+	if (classChain.length <= 0) {
+		return Object.keys(properties).sort().map(function(key) {
+			return properties[key];
+		});
+	}
+
+	var classItems = data.classitems.filter(function(item) {
+		return (item.itemtype === 'property' && item.class === classChain[0]);
+	});
+
+	classItems.forEach(function(item) {
+		properties[item.name] = convertPropertyItem(item);
+	});
+
+	return extractClassProperties(data, classChain.slice(1), properties);
+}
+
+function convertClassItem(item) {
+	return {
+		name: item.name,
+		'extends': item.extends || null,
+		uses: item.uses || [],
+		description: marked(item.description || ''),
+		deprecated: item.deprecated === true,
+		file: {
+			path: item.file,
+			line: item.line
+		}
+	};
+}
+
+function convertMethodItem(item) {
+	return {
+		name: item.name,
+		description: marked(item.description || ''),
+		'static': item.static === 1,
+		deprecated: item.deprecated === true,
+		parameters: (item.params || []).map(function(param) {
+			param.description = marked(param.description || '');
+			return param;
+		}),
+		'return': item.return,
+		defined_in: item.class,
+		file: {
+			path: item.file,
+			line: item.line
+		}
+	};
+}
+
+function convertPropertyItem(item) {
+	return {
+		name: item.name,
+		description: marked(item.description || ''),
+		type: item.type,
+		'static': item.static === 1,
+		deprecated: item.deprecated === true,
+		readOnly: item.final === 1,
+		'default': item.default,
+		defined_in: item.class,
+		file: {
+			path: item.file,
+			line: item.line
+		}
+	};
 }
