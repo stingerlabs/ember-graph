@@ -42,7 +42,9 @@
 						<strong>{{name}}</strong>
 						<small>
 							<a>&#123;{{type}}&#125;</a><br>
-							<span>{{{description}}}</span>
+							{{#if description}}
+								<span>{{{description}}}</span>
+							{{/if}}
 						</small>
 					</li>
 				{{/each}}
@@ -55,7 +57,9 @@
 				<li>
 					<small>
 						<a>&#123;{{return.type}}&#125;</a><br>
-						<span>{{{return.description}}}</span>
+						{{#if return.description}}
+							<span>{{{return.description}}}</span>
+						{{/if}}
 					</small>
 				</li>
 			</ul>

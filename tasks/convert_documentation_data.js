@@ -148,6 +148,9 @@ function convertMethodItem(item) {
 		}),
 		'return': item.return,
 		defined_in: item.class,
+		'public': (item.access !== 'protected' && item.access !== 'private'),
+		'protected': item.access === 'protected',
+		'private': item.access === 'private',
 		file: {
 			path: item.file,
 			line: item.line
@@ -165,6 +168,9 @@ function convertPropertyItem(item) {
 		readOnly: item.final === 1,
 		'default': item.default,
 		defined_in: item.class,
+		'public': (item.access !== 'protected' && item.access !== 'private'),
+		'protected': item.access === 'protected',
+		'private': item.access === 'private',
 		file: {
 			path: item.file,
 			line: item.line
