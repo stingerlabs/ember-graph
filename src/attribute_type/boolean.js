@@ -1,37 +1,50 @@
 /**
- * Will coerce any type to a boolean (`null` being the default). `null` is not a valid value.
+ * @class BooleanType
+ * @extends AttributeType
+ * @constructor
  */
 EG.BooleanType = EG.AttributeType.extend({
 
 	/**
-	 * The default value to use if a value of this type is missing.
+	 * @property defaultValue
+	 * @default false
+	 * @final
 	 */
 	defaultValue: false,
 
 	/**
-	 * @param {*} obj Javascript object
-	 * @returns {Object} JSON representation
+	 * Coerces to a boolean using
+	 * {{#link-to-method 'BooleanType' 'coerceToBoolean'}}coerceToBoolean{{/link-to-method}}.
+	 *
+	 * @method serialize
+	 * @param {Boolean} bool
+	 * @return {Boolean}
 	 */
-	serialize: function(obj) {
-		return this._coerceToBoolean(obj);
+	serialize: function(bool) {
+		return this.coerceToBoolean(bool);
 	},
 
 	/**
-	 * @param {Object} json JSON representation of object
-	 * @returns {*} Javascript object
+	 * Coerces to a boolean using
+	 * {{#link-to-method 'BooleanType' 'coerceToBoolean'}}coerceToBoolean{{/link-to-method}}.
+	 *
+	 * @method deserialize
+	 * @param {Boolean} json
+	 * @return {Boolean}
 	 */
 	deserialize: function(json) {
-		return this._coerceToBoolean(json);
+		return this.coerceToBoolean(json);
 	},
 
 	/**
-	 * The only things that equal true are: true (primitive or object) and 'true' (string).
-	 * Everything else is false.
+	 * Coerces a value to a boolean. `true` and `'true'` resolve to
+	 * `true`, everything else resolves to `false`.
 	 *
-	 * @param obj
-	 * @private
+	 * @method coerceToBoolean
+	 * @param {Any} obj
+	 * @return {Boolean}
 	 */
-	_coerceToBoolean: function(obj) {
+	coerceToBoolean: function(obj) {
 		if (Em.typeOf(obj) === 'boolean' && obj == true) { // jshint ignore:line
 			return true;
 		}

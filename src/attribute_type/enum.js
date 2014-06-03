@@ -9,34 +9,91 @@
  */
 EG.EnumType = EG.AttributeType.extend({
 
+	/**
+	 * The default enum value. Must be overridden in subclasses.
+	 *
+	 * @property defaultValue
+	 * @type String
+	 * @final
+	 */
 	defaultValue: Em.computed(function() {
 		throw new Error('You must override the `defaultValue` in an enumeration type.');
 	}).property(),
 
+	/**
+	 * @property values
+	 * @type {Array<String>}
+	 * @default []
+	 * @final
+	 */
 	values: [],
 
-	_valuesSet: Em.computed(function() {
+	/**
+	 * Contains all of the values converted to lower case.
+	 *
+	 * @property valueSet
+	 * @type {Set<String>}
+	 * @default []
+	 * @final
+	 */
+	valueSet: Em.computed(function() {
 		return new Em.Set(this.get('values').map(function(value) {
 			return value.toLocaleLowerCase();
 		}));
-	}).property(),
+	}).property('values'),
 
-	_isValidValue: function(option) {
-		return this.get('_valuesSet').contains(option.toLowerCase());
+	/**
+	 * Determines if the given option is a valid enum value.
+	 *
+	 * @property isValidValue
+	 * @param {String} option
+	 * @return {Boolean}
+	 */
+	isValidValue: function(option) {
+		return this.get('valueSet').contains(option.toLowerCase());
 	},
 
-	serialize: function(obj) {
-		obj = obj + '';
+	/**
+	 * Converts the given option to a valid enum value.
+	 * If the given value isn't valid, it uses the default value.
+	 *
+	 * @method serialize
+	 * @param {String} option
+	 * @return {String}
+	 */
+	serialize: function(option) {
+		option = option + '';
 
-		if (this._isValidValue(obj)) {
-			return obj;
+		if (this.isValidValue(option)) {
+			return option;
 		} else {
-			return this.get('defaultValue');
+			var defaultValue = this.get('defaultValue');
+
+			if (this.isValidValue(defaultValue)) {
+				return defaultValue;
+			} else {
+				throw new Error('The default value you provided isn\'t a valid value.');
+			}
 		}
 	},
 
+	/**
+	 *
+	 * Converts the given option to a valid enum value.
+	 * If the given value isn't valid, it uses the default value.
+	 *
+	 * @method deserialize
+	 * @param {String} option
+	 * @return {String}
+	 */
 	deserialize: Em.aliasMethod('serialize'),
 
+	/**
+	 * Compares two enum values, case-insensitive.
+	 * @param {String} a
+	 * @param {String} b
+	 * @return {Boolean}
+	 */
 	isEqual: function(a, b) {
 		if (Em.typeOf(a) !== 'string' || Em.typeOf(b) !== 'string') {
 			return false;

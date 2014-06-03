@@ -2500,16 +2500,21 @@ EG.AttributeType = Em.Object.extend({
 (function() {
 
 /**
- * Will coerce any value to a JSON array (`null` is a valid value).
- * Ember enumerables are converted to arrays using `toArray()`
+ * @class ArrayType
+ * @extends AttributeType
+ * @constructor
  */
 EG.ArrayType = EG.AttributeType.extend({
 
 	/**
-	 * @param {*} obj Javascript object
-	 * @returns {Object} JSON representation
+	 * If the object is an array, it's returned. Otherwise, `null` is returned.
+	 * This doesn't check the individual elements, just the array.
+	 *
+	 * @method serialize
+	 * @param {Array} arr
+	 * @returns {Array}
 	 */
-	serialize: function(obj) {
+	serialize: function(arr) {
 		if (Em.isNone(obj)) {
 			return null;
 		}
@@ -2519,17 +2524,24 @@ EG.ArrayType = EG.AttributeType.extend({
 	},
 
 	/**
-	 * @param {Object} json JSON representation of object
-	 * @returns {*} Javascript object
+	 * If the object is an array, it's returned. Otherwise, `null` is returned.
+	 * This doesn't check the individual elements, just the array.
+	 *
+	 * @method deserialize
+	 * @param {Array} arr
+	 * @returns {Array}
 	 */
-	deserialize: function(json) {
-		return (Em.isArray(json) ? json : null);
+	deserialize: function(arr) {
+		return (Em.isArray(arr) ? arr : null);
 	},
 
 	/**
-	 * @param {*} a Javascript Object
-	 * @param {*} b Javascript Object
-	 * @returns {Boolean} Whether or not the objects are equal or not
+	 * Compares two arrays using `Ember.compare`.
+	 *
+	 * @method isEqual
+	 * @param {Array} a
+	 * @param {Array} b
+	 * @returns {Boolean}
 	 */
 	isEqual: function(a, b) {
 		if (!Em.isArray(a) || !Em.isArray(b)) {
@@ -2545,39 +2557,52 @@ EG.ArrayType = EG.AttributeType.extend({
 (function() {
 
 /**
- * Will coerce any type to a boolean (`null` being the default). `null` is not a valid value.
+ * @class BooleanType
+ * @extends AttributeType
+ * @constructor
  */
 EG.BooleanType = EG.AttributeType.extend({
 
 	/**
-	 * The default value to use if a value of this type is missing.
+	 * @property defaultValue
+	 * @default false
+	 * @final
 	 */
 	defaultValue: false,
 
 	/**
-	 * @param {*} obj Javascript object
-	 * @returns {Object} JSON representation
+	 * Coerces to a boolean using
+	 * {{#link-to-method 'BooleanType' 'coerceToBoolean'}}coerceToBoolean{{/link-to-method}}.
+	 *
+	 * @method serialize
+	 * @param {Boolean} bool
+	 * @return {Boolean}
 	 */
-	serialize: function(obj) {
-		return this._coerceToBoolean(obj);
+	serialize: function(bool) {
+		return this.coerceToBoolean(bool);
 	},
 
 	/**
-	 * @param {Object} json JSON representation of object
-	 * @returns {*} Javascript object
+	 * Coerces to a boolean using
+	 * {{#link-to-method 'BooleanType' 'coerceToBoolean'}}coerceToBoolean{{/link-to-method}}.
+	 *
+	 * @method deserialize
+	 * @param {Boolean} json
+	 * @return {Boolean}
 	 */
 	deserialize: function(json) {
-		return this._coerceToBoolean(json);
+		return this.coerceToBoolean(json);
 	},
 
 	/**
-	 * The only things that equal true are: true (primitive or object) and 'true' (string).
-	 * Everything else is false.
+	 * Coerces a value to a boolean. `true` and `'true'` resolve to
+	 * `true`, everything else resolves to `false`.
 	 *
-	 * @param obj
-	 * @private
+	 * @method coerceToBoolean
+	 * @param {Any} obj
+	 * @return {Boolean}
 	 */
-	_coerceToBoolean: function(obj) {
+	coerceToBoolean: function(obj) {
 		if (Em.typeOf(obj) === 'boolean' && obj == true) { // jshint ignore:line
 			return true;
 		}
@@ -2595,48 +2620,56 @@ EG.BooleanType = EG.AttributeType.extend({
 (function() {
 
 /**
- * When serializing, will coerce to a timestamp. Numbers, dates and strings are are converted to dates,
- * then timestamps. Everything else serializes to null.
- *
- * When deserializing, numbers and strings are converted to dates, everything is is converted to null.
+ * @class DateType
+ * @extends AttributeType
+ * @constructor
  */
 EG.DateType = EG.AttributeType.extend({
 
 	/**
-	 * @param {*} obj Javascript object
-	 * @returns {Object} JSON representation
+	 * Converts any Date object, number or string to a timestamp.
+	 *
+	 * @method serialize
+	 * @param {Date|Number|String} date
+	 * @return {Number}
 	 */
-	serialize: function(obj) {
-		switch (Em.typeOf(obj)) {
+	serialize: function(date) {
+		switch (Em.typeOf(date)) {
 			case 'date':
-				return obj.getTime();
+				return date.getTime();
 			case 'number':
-				return obj;
+				return date;
 			case 'string':
-				return new Date(obj).getTime();
+				return new Date(date).getTime();
 			default:
 				return null;
 		}
 	},
 
 	/**
-	 * @param {Object} json JSON representation of object
-	 * @returns {*} Javascript object
+	 * Converts any numeric or string timestamp to a Date object.
+	 * Everything else gets converted to `null`.
+	 *
+	 * @method deserialize
+	 * @param {Number|String} timestamp
+	 * @return {Date}
 	 */
-	deserialize: function(json) {
-		switch (Em.typeOf(json)) {
+	deserialize: function(timestamp) {
+		switch (Em.typeOf(timestamp)) {
 			case 'number':
 			case 'string':
-				return new Date(json);
+				return new Date(timestamp);
 			default:
 				return null;
 		}
 	},
 
 	/**
-	 * @param {*} a Javascript Object
-	 * @param {*} b Javascript Object
-	 * @returns {Boolean} Whether or not the objects are equal or not
+	 * Converts both arguments to a timestamp, then compares.
+	 *
+	 * @param {Date} a
+	 * @param {Date} b
+	 * @return {Boolean}
 	 */
 	isEqual: function(a, b) {
 		var aNone = (a === null);
@@ -2667,34 +2700,91 @@ EG.DateType = EG.AttributeType.extend({
  */
 EG.EnumType = EG.AttributeType.extend({
 
+	/**
+	 * The default enum value. Must be overridden in subclasses.
+	 *
+	 * @property defaultValue
+	 * @type String
+	 * @final
+	 */
 	defaultValue: Em.computed(function() {
 		throw new Error('You must override the `defaultValue` in an enumeration type.');
 	}).property(),
 
+	/**
+	 * @property values
+	 * @type {Array<String>}
+	 * @default []
+	 * @final
+	 */
 	values: [],
 
-	_valuesSet: Em.computed(function() {
+	/**
+	 * Contains all of the values converted to lower case.
+	 *
+	 * @property valueSet
+	 * @type {Set<String>}
+	 * @default []
+	 * @final
+	 */
+	valueSet: Em.computed(function() {
 		return new Em.Set(this.get('values').map(function(value) {
 			return value.toLocaleLowerCase();
 		}));
-	}).property(),
+	}).property('values'),
 
-	_isValidValue: function(option) {
-		return this.get('_valuesSet').contains(option.toLowerCase());
+	/**
+	 * Determines if the given option is a valid enum value.
+	 *
+	 * @property isValidValue
+	 * @param {String} option
+	 * @return {Boolean}
+	 */
+	isValidValue: function(option) {
+		return this.get('valueSet').contains(option.toLowerCase());
 	},
 
-	serialize: function(obj) {
-		obj = obj + '';
+	/**
+	 * Converts the given option to a valid enum value.
+	 * If the given value isn't valid, it uses the default value.
+	 *
+	 * @method serialize
+	 * @param {String} option
+	 * @return {String}
+	 */
+	serialize: function(option) {
+		option = option + '';
 
-		if (this._isValidValue(obj)) {
-			return obj;
+		if (this.isValidValue(option)) {
+			return option;
 		} else {
-			return this.get('defaultValue');
+			var defaultValue = this.get('defaultValue');
+
+			if (this.isValidValue(defaultValue)) {
+				return defaultValue;
+			} else {
+				throw new Error('The default value you provided isn\'t a valid value.');
+			}
 		}
 	},
 
+	/**
+	 *
+	 * Converts the given option to a valid enum value.
+	 * If the given value isn't valid, it uses the default value.
+	 *
+	 * @method deserialize
+	 * @param {String} option
+	 * @return {String}
+	 */
 	deserialize: Em.aliasMethod('serialize'),
 
+	/**
+	 * Compares two enum values, case-insensitive.
+	 * @param {String} a
+	 * @param {String} b
+	 * @return {Boolean}
+	 */
 	isEqual: function(a, b) {
 		if (Em.typeOf(a) !== 'string' || Em.typeOf(b) !== 'string') {
 			return false;
@@ -2708,61 +2798,80 @@ EG.EnumType = EG.AttributeType.extend({
 
 (function() {
 
-var isValidNumber = function(num) {
-	return (Em.typeOf(num) === 'number' && !isNaN(num) && isFinite(num));
-};
-
 /**
  * Will coerce any type to a number (0 being the default). `null` is not a valid value.
+ *
+ * @class NumberType
+ * @extends AttributeType
+ * @constructor
  */
 EG.NumberType = EG.AttributeType.extend({
 
 	/**
-	 * The default value to use if a value of this type is missing.
+	 * @property defaultValue
+	 * @default 0
+	 * @final
 	 */
 	defaultValue: 0,
 
 	/**
-	 * Will
+	 * Coerces the given value to a number.
 	 *
-	 * @param {*} obj Javascript object
-	 * @returns {Object} JSON representation
+	 * @method serialize
+	 * @param {Number} obj Javascript object
+	 * @return {Number} JSON representation
 	 */
 	serialize: function(obj) {
-		return this._coerceToNumber(obj);
+		return this.coerceToNumber(obj);
 	},
 
 	/**
-	 * @param {Object} json JSON representation of object
-	 * @returns {*} Javascript object
+	 * Coerces the given value to a number.
+	 *
+	 * @method deserialize
+	 * @param {Number} json JSON representation of object
+	 * @return {Number} Javascript object
 	 */
 	deserialize: function(json) {
-		return this._coerceToNumber(json);
+		return this.coerceToNumber(json);
 	},
 
 	/**
 	 * If the object passed is a number (and not NaN), it returns
 	 * the object coerced to a number primitive. If the object is
 	 * a string, it attempts to parse it (again, no NaN allowed).
-	 * Otherwise, the default value (0) is returned.
+	 * Otherwise, the default value is returned.
 	 *
-	 * @param obj
-	 * @returns {*}
-	 * @private
+	 * @method coerceToNumber
+	 * @param {Any} obj
+	 * @return {Number}
+	 * @protected
 	 */
-	_coerceToNumber: function(obj) {
-		if (isValidNumber(obj)) {
-			return Number(obj);
+	coerceToNumber: function(obj) {
+		if (this.isValidNumber(obj)) {
+			return Number(obj).valueOf();
 		}
 
 		if (Em.typeOf(obj) === 'string') {
-			var parsed = Number(obj);
-			if (isValidNumber(parsed)) {
+			var parsed = Number(obj).valueOf();
+			if (this.isValidNumber(parsed)) {
 				return parsed;
 			}
 		}
 
 		return 0;
+	},
+
+	/**
+	 * Determines if the given number is an actual number and finite.
+	 *
+	 * @method isValidNumber
+	 * @param {Number} num
+	 * @return {Boolean}
+	 * @protected
+	 */
+	isValidNumber: function(num) {
+		return (Em.typeOf(num) === 'number' && !isNaN(num) && isFinite(num));
 	}
 });
 
@@ -2770,44 +2879,23 @@ EG.NumberType = EG.AttributeType.extend({
 
 (function() {
 
-var isObject = function(obj) {
-	return !Em.isNone(obj) && Em.typeOf(obj) === 'object' && obj.constructor === Object;
-};
-
-var deepCompare = function(a, b) {
-	if (isObject(a) && isObject(b)) {
-		if (!new Em.Set(Em.keys(a)).isEqual(new Em.Set(Em.keys(b)))) {
-			return false;
-		}
-
-		var keys = Em.keys(a);
-
-		for (var i = 0; i < keys.length; i = i + 1) {
-			if (!deepCompare(a[keys[i]], b[keys[i]])) {
-				return false;
-			}
-		}
-
-		return true;
-	} else if (Em.isArray(a) && Em.isArray(b)) {
-		return Em.compare(a, b) === 0;
-	} else {
-		return (a === b);
-	}
-};
-
 /**
- * Will coerce any value to a JSON object (`null` is a valid value).
- * If JSON.stringify fails because the object is circular, it uses null instead.
+ * @class ObjectType
+ * @extends AttributeType
+ * @constructor
  */
 EG.ObjectType = EG.AttributeType.extend({
 
 	/**
-	 * @param {*} obj Javascript object
-	 * @returns {Object} JSON representation
+	 * If the value is a JSON object, it's returned.
+	 * Otherwise, it serializes to `null`.
+	 *
+	 * @method serialize
+	 * @param {Object} obj
+	 * @return {Object}
 	 */
 	serialize: function(obj) {
-		if (isObject(obj)) {
+		if (this.isObject(obj)) {
 			try {
 				JSON.stringify(obj);
 				return obj;
@@ -2820,11 +2908,14 @@ EG.ObjectType = EG.AttributeType.extend({
 	},
 
 	/**
-	 * @param {Object} json JSON representation of object
-	 * @returns {*} Javascript object
+	 * Returns the value if it's an object, `null` otherwise.
+	 *
+	 * @method deserialize
+	 * @param {Object} json
+	 * @return {Object}
 	 */
 	deserialize: function(json) {
-		if (isObject(json)) {
+		if (this.isObject(json)) {
 			return json;
 		} else {
 			return null;
@@ -2832,16 +2923,62 @@ EG.ObjectType = EG.AttributeType.extend({
 	},
 
 	/**
-	 * @param {*} a Javascript Object
-	 * @param {*} b Javascript Object
-	 * @returns {Boolean} Whether or not the objects are equal or not
+	 * Checks for equality using
+	 * {{#link-to-method 'ObjectType', 'deepCompare'}}deepCompare{{/link-to-method}}.
+	 *
+	 * @method isEqual
+	 * @param {Object} a
+	 * @param {Object} b
+	 * @return {Boolean}
 	 */
 	isEqual: function(a, b) {
-		if (!isObject(a) || !isObject(b)) {
+		if (!this.isObject(a) || !this.isObject(b)) {
 			return false;
 		}
 
-		return deepCompare(a, b);
+		return this.deepCompare(a, b);
+	},
+
+	/**
+	 * Determines if the value is a plain Javascript object.
+	 *
+	 * @method isObject
+	 * @param {Object} obj
+	 * @return {Boolean}
+	 */
+	isObject: function(obj) {
+		return !Em.isNone(obj) && Em.typeOf(obj) === 'object' && obj.constructor === Object;
+	},
+
+	/**
+	 * Performs a deep comparison on the objects, iterating
+	 * objects and arrays, and using `===` on primitives.
+	 *
+	 * @method deepCompare
+	 * @param {Object} a
+	 * @param {Object} b
+	 * @return {Boolean}
+	 */
+	deepCompare: function(a, b) {
+		if (this.isObject(a) && this.isObject(b)) {
+			if (!new Em.Set(Em.keys(a)).isEqual(new Em.Set(Em.keys(b)))) {
+				return false;
+			}
+
+			var keys = Em.keys(a);
+
+			for (var i = 0; i < keys.length; i = i + 1) {
+				if (!this.deepCompare(a[keys[i]], b[keys[i]])) {
+					return false;
+				}
+			}
+
+			return true;
+		} else if (Em.isArray(a) && Em.isArray(b)) {
+			return Em.compare(a, b) === 0;
+		} else {
+			return (a === b);
+		}
 	}
 });
 
@@ -2849,19 +2986,32 @@ EG.ObjectType = EG.AttributeType.extend({
 
 (function() {
 
+/**
+ * @class StringType
+ * @extends AttributeType
+ * @constructor
+ */
 EG.StringType = EG.AttributeType.extend({
 
 	/**
-	 * @param {*} obj Javascript object
-	 * @returns {Object} JSON representation
+	 * Coerces the given value to a string, unless it's `null`,
+	 * in which case it returns `null`.
+	 *
+	 * @method serialize
+	 * @param {String} str
+	 * @returns {String}
 	 */
-	serialize: function(obj) {
-		return (obj === null ? null : '' + obj);
+	serialize: function(str) {
+		return (str === null ? null : '' + str);
 	},
 
 	/**
-	 * @param {Object} json JSON representation of object
-	 * @returns {*} Javascript object
+	 * Coerces the given value to a string, unless it's `null`,
+	 * in which case it returns `null`.
+	 *
+	 * @method deserialize
+	 * @param {String} json
+	 * @returns {String}
 	 */
 	deserialize: function(json) {
 		return (json === null ? null : '' + json);

@@ -1,14 +1,19 @@
 /**
- * Will coerce any value to a JSON array (`null` is a valid value).
- * Ember enumerables are converted to arrays using `toArray()`
+ * @class ArrayType
+ * @extends AttributeType
+ * @constructor
  */
 EG.ArrayType = EG.AttributeType.extend({
 
 	/**
-	 * @param {*} obj Javascript object
-	 * @returns {Object} JSON representation
+	 * If the object is an array, it's returned. Otherwise, `null` is returned.
+	 * This doesn't check the individual elements, just the array.
+	 *
+	 * @method serialize
+	 * @param {Array} arr
+	 * @returns {Array}
 	 */
-	serialize: function(obj) {
+	serialize: function(arr) {
 		if (Em.isNone(obj)) {
 			return null;
 		}
@@ -18,17 +23,24 @@ EG.ArrayType = EG.AttributeType.extend({
 	},
 
 	/**
-	 * @param {Object} json JSON representation of object
-	 * @returns {*} Javascript object
+	 * If the object is an array, it's returned. Otherwise, `null` is returned.
+	 * This doesn't check the individual elements, just the array.
+	 *
+	 * @method deserialize
+	 * @param {Array} arr
+	 * @returns {Array}
 	 */
-	deserialize: function(json) {
-		return (Em.isArray(json) ? json : null);
+	deserialize: function(arr) {
+		return (Em.isArray(arr) ? arr : null);
 	},
 
 	/**
-	 * @param {*} a Javascript Object
-	 * @param {*} b Javascript Object
-	 * @returns {Boolean} Whether or not the objects are equal or not
+	 * Compares two arrays using `Ember.compare`.
+	 *
+	 * @method isEqual
+	 * @param {Array} a
+	 * @param {Array} b
+	 * @returns {Boolean}
 	 */
 	isEqual: function(a, b) {
 		if (!Em.isArray(a) || !Em.isArray(b)) {

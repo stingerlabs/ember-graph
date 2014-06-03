@@ -1,46 +1,54 @@
 /**
- * When serializing, will coerce to a timestamp. Numbers, dates and strings are are converted to dates,
- * then timestamps. Everything else serializes to null.
- *
- * When deserializing, numbers and strings are converted to dates, everything is is converted to null.
+ * @class DateType
+ * @extends AttributeType
+ * @constructor
  */
 EG.DateType = EG.AttributeType.extend({
 
 	/**
-	 * @param {*} obj Javascript object
-	 * @returns {Object} JSON representation
+	 * Converts any Date object, number or string to a timestamp.
+	 *
+	 * @method serialize
+	 * @param {Date|Number|String} date
+	 * @return {Number}
 	 */
-	serialize: function(obj) {
-		switch (Em.typeOf(obj)) {
+	serialize: function(date) {
+		switch (Em.typeOf(date)) {
 			case 'date':
-				return obj.getTime();
+				return date.getTime();
 			case 'number':
-				return obj;
+				return date;
 			case 'string':
-				return new Date(obj).getTime();
+				return new Date(date).getTime();
 			default:
 				return null;
 		}
 	},
 
 	/**
-	 * @param {Object} json JSON representation of object
-	 * @returns {*} Javascript object
+	 * Converts any numeric or string timestamp to a Date object.
+	 * Everything else gets converted to `null`.
+	 *
+	 * @method deserialize
+	 * @param {Number|String} timestamp
+	 * @return {Date}
 	 */
-	deserialize: function(json) {
-		switch (Em.typeOf(json)) {
+	deserialize: function(timestamp) {
+		switch (Em.typeOf(timestamp)) {
 			case 'number':
 			case 'string':
-				return new Date(json);
+				return new Date(timestamp);
 			default:
 				return null;
 		}
 	},
 
 	/**
-	 * @param {*} a Javascript Object
-	 * @param {*} b Javascript Object
-	 * @returns {Boolean} Whether or not the objects are equal or not
+	 * Converts both arguments to a timestamp, then compares.
+	 *
+	 * @param {Date} a
+	 * @param {Date} b
+	 * @return {Boolean}
 	 */
 	isEqual: function(a, b) {
 		var aNone = (a === null);

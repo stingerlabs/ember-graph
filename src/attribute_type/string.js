@@ -1,16 +1,29 @@
+/**
+ * @class StringType
+ * @extends AttributeType
+ * @constructor
+ */
 EG.StringType = EG.AttributeType.extend({
 
 	/**
-	 * @param {*} obj Javascript object
-	 * @returns {Object} JSON representation
+	 * Coerces the given value to a string, unless it's `null`,
+	 * in which case it returns `null`.
+	 *
+	 * @method serialize
+	 * @param {String} str
+	 * @returns {String}
 	 */
-	serialize: function(obj) {
-		return (obj === null ? null : '' + obj);
+	serialize: function(str) {
+		return (str === null ? null : '' + str);
 	},
 
 	/**
-	 * @param {Object} json JSON representation of object
-	 * @returns {*} Javascript object
+	 * Coerces the given value to a string, unless it's `null`,
+	 * in which case it returns `null`.
+	 *
+	 * @method deserialize
+	 * @param {String} json
+	 * @returns {String}
 	 */
 	deserialize: function(json) {
 		return (json === null ? null : '' + json);

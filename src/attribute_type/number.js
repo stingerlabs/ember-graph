@@ -1,57 +1,76 @@
-var isValidNumber = function(num) {
-	return (Em.typeOf(num) === 'number' && !isNaN(num) && isFinite(num));
-};
-
 /**
  * Will coerce any type to a number (0 being the default). `null` is not a valid value.
+ *
+ * @class NumberType
+ * @extends AttributeType
+ * @constructor
  */
 EG.NumberType = EG.AttributeType.extend({
 
 	/**
-	 * The default value to use if a value of this type is missing.
+	 * @property defaultValue
+	 * @default 0
+	 * @final
 	 */
 	defaultValue: 0,
 
 	/**
-	 * Will
+	 * Coerces the given value to a number.
 	 *
-	 * @param {*} obj Javascript object
-	 * @returns {Object} JSON representation
+	 * @method serialize
+	 * @param {Number} obj Javascript object
+	 * @return {Number} JSON representation
 	 */
 	serialize: function(obj) {
-		return this._coerceToNumber(obj);
+		return this.coerceToNumber(obj);
 	},
 
 	/**
-	 * @param {Object} json JSON representation of object
-	 * @returns {*} Javascript object
+	 * Coerces the given value to a number.
+	 *
+	 * @method deserialize
+	 * @param {Number} json JSON representation of object
+	 * @return {Number} Javascript object
 	 */
 	deserialize: function(json) {
-		return this._coerceToNumber(json);
+		return this.coerceToNumber(json);
 	},
 
 	/**
 	 * If the object passed is a number (and not NaN), it returns
 	 * the object coerced to a number primitive. If the object is
 	 * a string, it attempts to parse it (again, no NaN allowed).
-	 * Otherwise, the default value (0) is returned.
+	 * Otherwise, the default value is returned.
 	 *
-	 * @param obj
-	 * @returns {*}
-	 * @private
+	 * @method coerceToNumber
+	 * @param {Any} obj
+	 * @return {Number}
+	 * @protected
 	 */
-	_coerceToNumber: function(obj) {
-		if (isValidNumber(obj)) {
-			return Number(obj);
+	coerceToNumber: function(obj) {
+		if (this.isValidNumber(obj)) {
+			return Number(obj).valueOf();
 		}
 
 		if (Em.typeOf(obj) === 'string') {
-			var parsed = Number(obj);
-			if (isValidNumber(parsed)) {
+			var parsed = Number(obj).valueOf();
+			if (this.isValidNumber(parsed)) {
 				return parsed;
 			}
 		}
 
 		return 0;
+	},
+
+	/**
+	 * Determines if the given number is an actual number and finite.
+	 *
+	 * @method isValidNumber
+	 * @param {Number} num
+	 * @return {Boolean}
+	 * @protected
+	 */
+	isValidNumber: function(num) {
+		return (Em.typeOf(num) === 'number' && !isNaN(num) && isFinite(num));
 	}
 });
