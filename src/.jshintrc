@@ -1,8 +1,11 @@
 {
 	"predef": [
-		"Eg",
+		"EmberGraph",
+		"EG",
 		"Em",
+		"Ember",
 		"ok",
+		"require",
 		"strictEqual",
 		"deepEqual",
 		"throws"
