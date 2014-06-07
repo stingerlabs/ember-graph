@@ -11,7 +11,7 @@ var coerceId = function(id) {
 
 /**
  * This serializer was designed to be compatible with the
- * {{#link-to 'http://jsonapi.org'}}JSON API{{/link-to}}
+ * {{link-to 'JSON API' 'http://jsonapi.org'}}
  * (the ID format, not the URL format).
  *
  * @class JSONSerializer

@@ -9,9 +9,10 @@ EG.AttributeType = Em.Object.extend({
 
 	/**
 	 * The default value to use if a value of this type is missing.
-	 * This defaults to `null`, but can be overridden in subclasses.
+	 * Can be overridden in subclasses.
 	 *
 	 * @property defaultValue
+	 * @type Any
 	 * @default null
 	 * @final
 	 */

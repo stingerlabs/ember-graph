@@ -14,7 +14,7 @@ EG.BooleanType = EG.AttributeType.extend({
 
 	/**
 	 * Coerces to a boolean using
-	 * {{#link-to-method 'BooleanType' 'coerceToBoolean'}}coerceToBoolean{{/link-to-method}}.
+	 * {{link-to-method 'BooleanType' 'coerceToBoolean'}}.
 	 *
 	 * @method serialize
 	 * @param {Boolean} bool
@@ -26,7 +26,7 @@ EG.BooleanType = EG.AttributeType.extend({
 
 	/**
 	 * Coerces to a boolean using
-	 * {{#link-to-method 'BooleanType' 'coerceToBoolean'}}coerceToBoolean{{/link-to-method}}.
+	 * {{link-to-method 'BooleanType' 'coerceToBoolean'}}.
 	 *
 	 * @method deserialize
 	 * @param {Boolean} json

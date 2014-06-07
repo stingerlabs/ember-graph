@@ -45,7 +45,8 @@ EG.Serializer = Em.Object.extend({
 	/**
 	 * Takes a payload from the server and converts it into a normalized
 	 * JSON payload that the store can use. Details about the format
-	 * can be found {{#link-to-method 'Store', 'extractPayload'}}here{{/link-to-method}}.
+	 * can be found in the {{link-to-method 'Store' 'extractPayload'}}
+	 * documentation.
 	 *
 	 * In addition to the format described by the store, the adapter
 	 * may require some additional information. This information should

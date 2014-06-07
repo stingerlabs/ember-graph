@@ -43,7 +43,7 @@
 						<small>
 							<a>&#123;{{type}}&#125;</a><br>
 							{{#if description}}
-								<span>{{{description}}}</span>
+								<span>{{strip-outer-paragraph description}}</span>
 							{{/if}}
 						</small>
 					</li>
@@ -58,7 +58,7 @@
 					<small>
 						<a>&#123;{{return.type}}&#125;</a><br>
 						{{#if return.description}}
-							<span>{{{return.description}}}</span>
+							<span>{{strip-outer-paragraph return.description}}</span>
 						{{/if}}
 					</small>
 				</li>

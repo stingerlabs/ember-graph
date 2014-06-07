@@ -43,7 +43,7 @@ EG.ObjectType = EG.AttributeType.extend({
 
 	/**
 	 * Checks for equality using
-	 * {{#link-to-method 'ObjectType', 'deepCompare'}}deepCompare{{/link-to-method}}.
+	 * {{link-to-method 'ObjectType' 'deepCompare'}}.
 	 *
 	 * @method isEqual
 	 * @param {Object} a

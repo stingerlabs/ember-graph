@@ -3,11 +3,7 @@
 var fs = require('fs');
 var marked = require('marked');
 var renderer = new marked.Renderer();
-
-// We insert our own paragraphs where needed in the templates
-renderer.paragraph = function(text) {
-	return text;
-};
+var Handlebars = require('handlebars');
 
 marked.setOptions({
 	renderer: renderer,
@@ -19,8 +15,6 @@ marked.setOptions({
 module.exports = function(grunt) {
 	grunt.registerTask('convert_documentation_data', function() {
 		var json = JSON.parse(fs.readFileSync('doc/data.json', { encoding: 'utf8' }));
-
-		//delete json.classes.EG;
 
 		var data = {
 			methods: extractTopLevelMethods(json),
@@ -127,7 +121,7 @@ function convertClassItem(item) {
 		name: item.name,
 		'extends': item.extends || null,
 		uses: item.uses || [],
-		description: marked(item.description || ''),
+		description: templateAndParseText(item.description || ''),
 		deprecated: item.deprecated === true,
 		file: {
 			path: item.file,
@@ -139,11 +133,11 @@ function convertClassItem(item) {
 function convertMethodItem(item) {
 	return {
 		name: item.name,
-		description: marked(item.description || ''),
+		description: templateAndParseText(item.description || ''),
 		'static': item.static === 1,
 		deprecated: item.deprecated === true,
 		parameters: (item.params || []).map(function(param) {
-			param.description = marked(param.description || '');
+			param.description = templateAndParseText(param.description || '');
 			return param;
 		}),
 		'return': item.return,
@@ -161,7 +155,7 @@ function convertMethodItem(item) {
 function convertPropertyItem(item) {
 	return {
 		name: item.name,
-		description: marked(item.description || ''),
+		description: templateAndParseText(item.description || ''),
 		type: item.type,
 		'static': item.static === 1,
 		deprecated: item.deprecated === true,
@@ -176,4 +170,9 @@ function convertPropertyItem(item) {
 			line: item.line
 		}
 	};
+}
+
+function templateAndParseText(text) {
+	text = text || '';
+	return marked(Handlebars.compile(text)());
 }
