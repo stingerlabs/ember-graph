@@ -1,7 +1,3 @@
-var missingMethod = function(method) {
-	return new Error('Your adapter failed to implement the \'' + method + '\' method.');
-};
-
 /**
  * An interface for an adapter. And adapter is used to communicated with
  * the server. The adapter is never called directly, its methods are
@@ -13,6 +9,7 @@ var missingMethod = function(method) {
  *
  * @class Adapter
  * @constructor
+ * @category abstract
  */
 EG.Adapter = Em.Object.extend({
 
@@ -61,10 +58,9 @@ EG.Adapter = Em.Object.extend({
 	 * @method createRecord
 	 * @param {Model} record
 	 * @return {Promise} Resolves to the normalized JSON
+	 * @category abstract
 	 */
-	createRecord: function(record) {
-		throw missingMethod('createRecord');
-	},
+	createRecord: EG.required('createRecord'),
 
 	/**
 	 * Fetch a record from the server.
@@ -73,10 +69,9 @@ EG.Adapter = Em.Object.extend({
 	 * @param {String} typeKey
 	 * @param {String} id
 	 * @return {Promise} Resolves to the normalized JSON
+	 * @category abstract
 	 */
-	findRecord: function(typeKey, id) {
-		throw missingMethod('findRecord');
-	},
+	findRecord: EG.required('findRecord'),
 
 	/**
 	 * The same as find, only it should load several records.
@@ -85,10 +80,9 @@ EG.Adapter = Em.Object.extend({
 	 * @param {String} typeKey
 	 * @param {String[]} ids
 	 * @return {Promise} Resolves to the normalized JSON
+	 * @category abstract
 	 */
-	findMany: function(typeKey, ids) {
-		throw missingMethod('findMany');
-	},
+	findMany: EG.required('findMany'),
 
 	/**
 	 * The same as find, only it should load all records of the given type.
@@ -96,10 +90,9 @@ EG.Adapter = Em.Object.extend({
 	 * @method findAll
 	 * @param {String} typeKey
 	 * @return {Promise} Resolves to the normalized JSON
+	 * @category abstract
 	 */
-	findAll: function(typeKey) {
-		throw missingMethod('findAll');
-	},
+	findAll: EG.required('findAll'),
 
 	/**
 	 * Queries the server for records of the given type. The resolved
@@ -110,10 +103,9 @@ EG.Adapter = Em.Object.extend({
 	 * @param {String} typeKey
 	 * @param {Object} query The query object passed into the store's `find` method
 	 * @return {Promise} Resolves to the normalized JSON
+	 * @category abstract
 	 */
-	findQuery: function(typeKey, query) {
-		throw missingMethod('findQuery');
-	},
+	findQuery: EG.required('findQuery'),
 
 	/**
 	 * Saves the record's changes to the server.
@@ -121,10 +113,9 @@ EG.Adapter = Em.Object.extend({
 	 * @method updateRecord
 	 * @param {Model} record
 	 * @return {Promise} Resolves to the normalized JSON
+	 * @category abstract
 	 */
-	updateRecord: function(record) {
-		throw missingMethod('updateRecord');
-	},
+	updateRecord: EG.required('updateRecord'),
 
 	/**
 	 * Deletes the record.
@@ -132,10 +123,9 @@ EG.Adapter = Em.Object.extend({
 	 * @method deleteRecord
 	 * @param {Model} record
 	 * @return {Promise} Resolves to the normalized JSON
+	 * @category abstract
 	 */
-	deleteRecord: function(record) {
-		throw missingMethod('deleteRecord');
-	},
+	deleteRecord: EG.required('deleteRecord'),
 
 	/**
 	 * Serializes the given record. By default, it defers to the serializer.
@@ -144,6 +134,7 @@ EG.Adapter = Em.Object.extend({
 	 * @param {Model} record
 	 * @param {Object} options
 	 * @return {Object} Serialized record
+	 * @protected
 	 */
 	serialize: function(record, options) {
 		return this.get('serializer').serialize(record, options);
@@ -156,6 +147,7 @@ EG.Adapter = Em.Object.extend({
 	 * @param {JSON} payload
 	 * @param {Object} options
 	 * @return {Object} Normalized JSON payload
+	 * @protected
 	 */
 	deserialize: function(payload, options) {
 		return this.get('serializer').deserialize(payload, options);
