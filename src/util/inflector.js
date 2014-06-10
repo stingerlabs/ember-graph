@@ -2,7 +2,7 @@
  I took the rules in this code from inflection.js, whose license can be found below.
  */
 
-/*
+/*!
  Copyright (c) 2010 Ryan Schuft (ryan.schuft@gmail.com)
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
