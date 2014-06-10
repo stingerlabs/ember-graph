@@ -141,7 +141,7 @@ EG.Adapter = Em.Object.extend({
 	},
 
 	/**
-	 * Deserializes the given record. By default, it defers to the serializer.
+	 * Deserializes the given payload. By default, it defers to the serializer.
 	 *
 	 * @method deserialize
 	 * @param {JSON} payload
