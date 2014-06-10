@@ -7,22 +7,12 @@ var missingMethod = function(method) {
  * the server. The adapter is never called directly, its methods are
  * called by the store to perform its operations.
  *
- * The adapter should return normalized JSON from its operations. Normalized JSON
- * is a single object whose keys are the type names of the records being returned.
- * The JSON may also contain a `meta` key. The value of each key will be the
- * records of that type that were returned by the server. The records must be
- * in normalized JSON form which means that they must contain an `id` field,
- * and they must contain the required attributes and relationships to
- * create a record of that type.
- *
- * Example:
- * {
- *     meta: {},
- *     user: [{ id: 3, posts: [1,2] }],
- *     post: [{ id: 1 }, { id: 2 }]
- * }
+ * The adapter should return normalized JSON from its operations. Details
+ * about normalized JSON can be found in the {{link-to-method 'Store' 'extractPayload'}}
+ * documentation.
  *
  * @class Adapter
+ * @constructor
  */
 EG.Adapter = Em.Object.extend({
 
@@ -45,7 +35,10 @@ EG.Adapter = Em.Object.extend({
 	defaultSerializer: 'json',
 
 	/**
-	 * This class will proxy to the serializer for the serialize methods of this class.
+	 * The serializer used to convert records and payload to the correct formats.
+	 * The adapter will attempt to use the application serializer, and if one
+	 * isn't found, it will used the serializer specified by
+	 * {{link-to-property 'Adapter' 'defaultSerializer'}}.
 	 *
 	 * @property serializer
 	 * @type Serializer
@@ -61,16 +54,13 @@ EG.Adapter = Em.Object.extend({
 	}).property().readOnly(),
 
 	/**
-	 * Persists a record to the server. This method returns normalized JSON
-	 * as the other methods do, but the normalized JSON must contain one
-	 * extra field. It must contain an `id` field that represents the
-	 * permanent ID of the record that was created. This helps distinguish
-	 * it from any other records of that same type that may have been
-	 * returned from the server.
+	 * Persists a record to the server. The returned JSON
+	 * must include the `newId` meta attribute as described
+	 * {{link-to-method 'here' 'Serializer' 'deserialize'}}.
 	 *
 	 * @method createRecord
-	 * @param {Model} record The record to persist
-	 * @return {Promise} A promise that resolves to normalized JSON
+	 * @param {Model} record
+	 * @return {Promise} Resolves to the normalized JSON
 	 */
 	createRecord: function(record) {
 		throw missingMethod('createRecord');
@@ -81,21 +71,20 @@ EG.Adapter = Em.Object.extend({
 	 *
 	 * @method findRecord
 	 * @param {String} typeKey
-	 * @param {String} id The ID of the record to fetch
-	 * @return {Promise} A promise that resolves to normalized JSON
+	 * @param {String} id
+	 * @return {Promise} Resolves to the normalized JSON
 	 */
 	findRecord: function(typeKey, id) {
 		throw missingMethod('findRecord');
 	},
 
 	/**
-	 * The same as find, only it should load several records. The
-	 * promise can return any type of enumerable containing the records.
+	 * The same as find, only it should load several records.
 	 *
 	 * @method findMany
 	 * @param {String} typeKey
-	 * @param {String[]} ids Enumerable of IDs
-	 * @return {Promise} A promise that resolves to normalized JSON
+	 * @param {String[]} ids
+	 * @return {Promise} Resolves to the normalized JSON
 	 */
 	findMany: function(typeKey, ids) {
 		throw missingMethod('findMany');
@@ -103,56 +92,53 @@ EG.Adapter = Em.Object.extend({
 
 	/**
 	 * The same as find, only it should load all records of the given type.
-	 * The promise can return any type of enumerable containing the records.
 	 *
 	 * @method findAll
 	 * @param {String} typeKey
-	 * @return {Promise} A promise that resolves to normalized JSON
+	 * @return {Promise} Resolves to the normalized JSON
 	 */
 	findAll: function(typeKey) {
 		throw missingMethod('findAll');
 	},
 
 	/**
-	 * This method returns normalized JSON as the other methods do, but
-	 * the normalized JSON must contain one extra field. It must contain
-	 * an `ids` field that represents the IDs of the records that matched
-	 * the query. This helps distinguish them from any other records of
-	 * that same type that may have been returned from the server.
+	 * Queries the server for records of the given type. The resolved
+	 * JSON should include the `queryIds` meta attribute as
+	 * described {{link-to-method 'here' 'Serializer' 'deserialize'}}.
 	 *
 	 * @method findQuery
 	 * @param {String} typeKey
-	 * @param {Object} query The query parameters that were passed into `find` earlier
-	 * @return {Promise} A promise that resolves to normalized JSON
+	 * @param {Object} query The query object passed into the store's `find` method
+	 * @return {Promise} Resolves to the normalized JSON
 	 */
 	findQuery: function(typeKey, query) {
 		throw missingMethod('findQuery');
 	},
 
 	/**
-	 * Update the given record.
+	 * Saves the record's changes to the server.
 	 *
 	 * @method updateRecord
-	 * @param {Model} record The model to save
-	 * @return {Promise} A promise that resolves to normalized JSON
+	 * @param {Model} record
+	 * @return {Promise} Resolves to the normalized JSON
 	 */
 	updateRecord: function(record) {
 		throw missingMethod('updateRecord');
 	},
 
 	/**
-	 * Update the given record.
+	 * Deletes the record.
 	 *
 	 * @method deleteRecord
-	 * @param {Model} record The model to save
-	 * @return {Promise} A promise that resolves to normalized JSON
+	 * @param {Model} record
+	 * @return {Promise} Resolves to the normalized JSON
 	 */
 	deleteRecord: function(record) {
 		throw missingMethod('deleteRecord');
 	},
 
 	/**
-	 * Proxies to the serializer of this class.
+	 * Serializes the given record. By default, it defers to the serializer.
 	 *
 	 * @method serialize
 	 * @param {Model} record
@@ -164,10 +150,10 @@ EG.Adapter = Em.Object.extend({
 	},
 
 	/**
-	 * Proxies to the serializer of this class.
+	 * Deserializes the given record. By default, it defers to the serializer.
 	 *
 	 * @method deserialize
-	 * @param {Object} payload
+	 * @param {JSON} payload
 	 * @param {Object} options
 	 * @return {Object} Normalized JSON payload
 	 */

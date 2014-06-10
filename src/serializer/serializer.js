@@ -68,6 +68,27 @@ EG.Serializer = Em.Object.extend({
 	 * required. If the value is `createRecord`, then the `newId` meta
 	 * attribute is required.
 	 *
+	 * TODO: Implement...
+	 *
+	 * There's also an optional attribute that can be given for any call:
+	 *
+	 * - `deletedRecords`: This attribute is given to the store to let it
+	 *     know that records were deleted from the server and that the store
+	 *     should unload them. This allows you to remove records from the
+	 *     store as easily as you can add them. The format of this attribute
+	 *     can be seen in the example below:
+	 *
+	 * ```js
+	 * {
+	 *     deletedRecords: [
+	 *         { typeKey: 'user', id: '3' },
+	 *         { typeKey: 'post', id: '10' },
+	 *         { typeKey: 'post', id: '11' },
+	 *         { typeKey: 'tag', id: '674' }
+	 *     ]
+	 * }
+	 * ```
+	 *
 	 * In addition to `requestType`, the following options are available:
 	 *
 	 * - `recordType`: The type of record that the request was performed on
