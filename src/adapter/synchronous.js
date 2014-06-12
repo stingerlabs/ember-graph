@@ -224,7 +224,7 @@ EG.SynchronousAdapter = EG.Adapter.extend({
 	 * @method serverCreateRecord
 	 * @param {Model} record
 	 * @return {JSON} Created record
-	 * @private
+	 * @protected
 	 */
 	serverCreateRecord: function(record) {
 
@@ -238,7 +238,7 @@ EG.SynchronousAdapter = EG.Adapter.extend({
 	 * @method serverUpdateRecord
 	 * @param {Model} record
 	 * @return {JSON} Updated version of record
-	 * @private
+	 * @protected
 	 */
 	serverUpdateRecord: function(record) {
 
@@ -249,7 +249,7 @@ EG.SynchronousAdapter = EG.Adapter.extend({
 	 *
 	 * @method serverDeleteRecord
 	 * @param {Model} record
-	 * @private
+	 * @protected
 	 */
 	serverDeleteRecord: function(record) {
 
