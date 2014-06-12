@@ -1,3 +1,6 @@
+var Promise = Em.RSVP.Promise;
+var map = Ember.ArrayPolyfills.map;
+
 /**
  * An abstract base class that allows easy integration of synchronous
  * data stores. Examples include in-memory, local storage and web SQL.
@@ -28,31 +31,103 @@ EG.SynchronousAdapter = EG.Adapter.extend({
 	}).property().readOnly(),
 
 	createRecord: function(record) {
+		try {
+			var json = this.serverCreateRecord(record);
+			var payload = { meta: { newId: json.id } };
+			payload[EG.String.pluralize(record.typeKey)] = [json];
 
+			return Promise.resolve(payload);
+		} catch (e) {
+			Em.warn(e && e.stack);
+			return Promise.reject();
+		}
 	},
 
 	findRecord: function(typeKey, id) {
+		try {
+			var json = this.retrieveRecord(typeKey, id);
+			var deserialized = this.deserialize(json, { requestType: 'findRecord', id: id });
 
+			var payload = {};
+			payload[EG.String.pluralize(typeKey)] = [deserialized];
+
+			return Promise.resolve(payload);
+		} catch (e) {
+			Em.warn(e && e.stack);
+			return Promise.reject();
+		}
 	},
 
 	findMany: function(typeKey, ids) {
+		try {
+			var json = map.call(ids, function(id) {
+				return this.retrieveRecord(typeKey, id);
+			}, this);
 
+			var deserialized = this.deserialize(json, { requestType: 'findMany', ids: ids });
+
+			var payload = {};
+			payload[EG.String.pluralize(typeKey)] = deserialized;
+
+			return Promise.resolve(payload);
+		} catch (e) {
+			Em.warn(e && e.stack);
+			return Promise.reject();
+		}
 	},
 
 	findAll: function(typeKey) {
+		try {
+			var json = this.retrieveRecords(typeKey);
+			var deserialized = this.deserialize(json, { requestType: 'findAll' });
 
+			var payload = {};
+			payload[EG.String.pluralize(typeKey)] = deserialized;
+
+			return Promise.resolve(payload);
+		} catch (e) {
+			Em.warn(e && e.stack);
+			return Promise.reject();
+		}
 	},
 
 	findQuery: function(typeKey, query) {
+		try {
+			var json = this.retrieveRecords(typeKey, query);
+			var deserialized = this.deserialize(json, { requestType: 'findAll', query: query });
 
+			var payload = {};
+			payload[EG.String.pluralize(typeKey)] = deserialized;
+
+			return Promise.resolve(payload);
+		} catch (e) {
+			Em.warn(e && e.stack);
+			return Promise.reject();
+		}
 	},
 
 	updateRecord: function(record) {
+		try {
+			var json = this.serverUpdateRecord(record);
 
+			var payload = {};
+			payload[EG.String.pluralize(record.typeKey)] = [json];
+
+			return Promise.resolve(payload);
+		} catch (e) {
+			Em.warn(e && e.stack);
+			return Promise.reject();
+		}
 	},
 
 	deleteRecord: function(record) {
-
+		try {
+			this.serverDeleteRecord(record);
+			return Promise.resolve();
+		} catch (e) {
+			Em.warn(e && e.stack);
+			return Promise.reject();
+		}
 	},
 
 	/**
@@ -65,7 +140,8 @@ EG.SynchronousAdapter = EG.Adapter.extend({
 	 * @protected
 	 */
 	serialize: function(record, options) {
-
+		var payload = this.get('serializer').serialize(record, options);
+		return payload[EG.String.pluralize(record.typeKey)][0];
 	},
 
 	/**
@@ -78,7 +154,8 @@ EG.SynchronousAdapter = EG.Adapter.extend({
 	 * @protected
 	 */
 	deserialize: function(record, options) {
-
+		var payload = {};
+		payload[EG.String.pluralize(options.recordType)] = [record];
 	},
 
 	/**
@@ -94,26 +171,26 @@ EG.SynchronousAdapter = EG.Adapter.extend({
 	},
 
 	/**
-	 * Retrieves records from the data store. The `options` parameter
-	 * can either be an array or object. If it's an array, it will
-	 * be an array of objects with the following fields:
+	 * Retrieves a single record from the data store.
 	 *
-	 * - `typeKey`: The type of the record to retrieve.
-	 * - `id`: The ID of the record to retrieve.
-	 *
-	 * This function should return an array of the records requested,
-	 * in the order that they were requested.
-	 *
-	 * If the `options` parameter is an object, it's a query. The
-	 * `typeKey` field will tell you the type of object while the
-	 * `query` field will give you the query. If `query` is
-	 * `undefined`, it should return all records of the given type.
-	 * Note that you do not have to implement the query version if
-	 * your application will not call `store.find(typeKey)` or
-	 * `store.find(typeKey, query)`.
+	 * @method retrieveRecord
+	 * @param {String} typeKey
+	 * @param {String} id
+	 * @return {JSON}
+	 * @protected
+	 * @category abstract
+	 */
+	retrieveRecord: EG.required('retrieveRecord'),
+
+	/**
+	 * Retrieves records from the data store. If 'query`
+	 * is `undefined`, it should return all records of
+	 * the given type. Otherwise it should only return
+	 * the records that match the given query.
 	 *
 	 * @method retrieveRecords
-	 * @param {Object|Array} options
+	 * @param {String} typeKey
+	 * @param {Object} query
 	 * @return {JSON} Array of records
 	 * @protected
 	 * @category abstract
@@ -137,6 +214,45 @@ EG.SynchronousAdapter = EG.Adapter.extend({
 	 * @protected
 	 * @category abstract
 	 */
-	modifyRecords: EG.required('modifyRecords')
+	modifyRecords: EG.required('modifyRecords'),
+
+	/**
+	 * Creates the record as if it were the server. It serializes
+	 * the record, generates an ID, puts the record in the store
+	 * and connects any relationships it needs to.
+	 *
+	 * @method serverCreateRecord
+	 * @param {Model} record
+	 * @return {JSON} Created record
+	 * @private
+	 */
+	serverCreateRecord: function(record) {
+
+	},
+
+	/**
+	 * Updates the record as if it were the server. It serializes
+	 * the record, puts the record in the store and connects any
+	 * relationships it needs to.
+	 *
+	 * @method serverUpdateRecord
+	 * @param {Model} record
+	 * @return {JSON} Updated version of record
+	 * @private
+	 */
+	serverUpdateRecord: function(record) {
+
+	},
+
+	/**
+	 * Deletes the record and its relationships from the store.
+	 *
+	 * @method serverDeleteRecord
+	 * @param {Model} record
+	 * @private
+	 */
+	serverDeleteRecord: function(record) {
+
+	}
 
 });

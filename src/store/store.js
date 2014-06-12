@@ -151,6 +151,7 @@ EG.Store = Em.Object.extend({
 	 *
 	 * @param typeKey
 	 * @param json
+	 * @deprecated Use `extractPayload` instead
 	 */
 	_loadRecord: function(typeKey, json) {
 		var record = this.modelForType(typeKey)._create();
