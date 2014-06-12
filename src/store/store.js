@@ -136,7 +136,7 @@ EG.Store = Em.Object.extend({
 
 		var record = this.modelForType(typeKey)._create();
 		record.set('store', this);
-		record.set('id', EG.Model.temporaryIdPrefix + EG.util.generateGUID());
+		record.set('id', EG.Model.temporaryIdPrefix + EG.generateUUID());
 
 		this._setRecord(typeKey, record);
 

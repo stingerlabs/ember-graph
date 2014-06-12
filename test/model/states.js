@@ -21,7 +21,7 @@
 					createRecord: function(record) {
 						return Em.RSVP.Promise.resolve({
 							meta: {
-								newId: EG.util.generateGUID()
+								newId: EG.generateUUID()
 							}
 						});
 					},

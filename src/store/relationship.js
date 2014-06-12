@@ -74,11 +74,15 @@ EG.Store.reopen({
 	 * @returns {Boolean}
 	 */
 	_hasQueuedRelationships: function(typeKey, id) {
-		var queued = EG.util.values(this.get('_queuedRelationships'));
+		var qid, relationship;
+		var queuedRelationships = this.get('_queuedRelationships');
 
-		for (var i = 0; i < queued.length; i = i + 1) {
-			if (queued[i].get('type2') === typeKey && queued[i].get('object2') === id) {
-				return true;
+		for (qid in queuedRelationships) {
+			if (queuedRelationships.hasOwnProperty(qid)) {
+				if (queuedRelationships[qid].get('type2') === typeKey &&
+					queuedRelationships[qid].get('object2') === id) {
+					return true;
+				}
 			}
 		}
 
@@ -254,29 +258,40 @@ EG.Store.reopen({
 	 * @param {String} typeKey
 	 * @param {String} name
 	 * @param {String} id
-	 * @returns {Boolean}
+	 * @returns {Relationship[]}
 	 */
 	_relationshipsForRecord: function(typeKey, name, id) {
-		return EG.util.values(this.get('_relationships')).filter(function(relationship) {
-			if (relationship.get('type1') === typeKey && relationship.get('id') === id &&
-				relationship.get('relationship1') === name) {
-				return true;
-			}
+		var rid, relationship, object2;
+		var all = [];
+		var relationships = this.get('_relationships');
 
-			if (relationship.get('type2') === typeKey && relationship.get('relationship2') === name) {
-				var object2 = relationship.get('object2');
+		for (rid in relationships) {
+			if (relationships.hasOwnProperty(rid)) {
+				relationship = relationships[rid];
 
-				if (Em.typeOf(object2) === 'string') {
-					if (object2 === id) {
-						return true;
+				if (relationship.get('type1') === typeKey && relationship.get('id') === id &&
+					relationship.get('relationship1') === name) {
+					all.push(relationship);
+					continue;
+				}
+
+				if (relationship.get('type2') === typeKey && relationship.get('relationship2') === name) {
+					object2 = relationship.get('object2');
+
+					if (Em.typeOf(object2) === 'string') {
+						if (object2 === id) {
+							all.push(relationship);
+							continue;
+						}
+					} else if (object2.get('id') === id) {
+						all.push(relationship);
+						continue;
 					}
-				} else if (object2.get('id') === id) {
-					return true;
 				}
 			}
+		}
 
-			return false;
-		});
+		return all;
 	},
 
 	_deleteRelationshipsForRecord: function(typeKey, id) {

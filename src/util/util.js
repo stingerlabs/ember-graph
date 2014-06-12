@@ -29,20 +29,3 @@ EG.generateUUID = function() {
 		return v.toString(16);
 	});
 };
-
-EG.util = {
-
-	/**
-	 * @deprecated
-	 */
-	generateGUID: EG.generateUUID,
-
-	/**
-	 * @deprecated
-	 */
-	values: function(obj) {
-		return Em.keys(obj).map(function(key) {
-			return obj[key];
-		});
-	}
-};

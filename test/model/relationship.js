@@ -96,13 +96,17 @@
 		var user3 = store.getRecord('user', '3');
 		ok(user3.get('_posts').contains('7'));
 
+		var rid, relationship;
 		var queued = store.get('_queuedRelationships');
-		var rid = null;
-		EG.util.values(queued).forEach(function(r) {
-			if (r.get('type2') === 'post' && r.get('object2') === '7') {
-				rid = r.get('id');
+
+		for (rid in queued) {
+			if (queued.hasOwnProperty(rid)) {
+				relationship = queued[rid];
+				if (relationship.get('type2') === 'post' && relationship.get('object2') === '7') {
+					break;
+				}
 			}
-		});
+		}
 
 		var post = store._loadRecord('post', { id: '7', author: '3', tags: [] });
 

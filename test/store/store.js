@@ -8,7 +8,7 @@
 	var Adapter = EG.Adapter.extend({
 
 		createRecord: function(record) {
-			var id = EG.util.generateGUID();
+			var id = EG.generateUUID();
 			return Em.RSVP.Promise.resolve({ meta: { newId: id }, storeTest: [{ id: id }] });
 		},
 

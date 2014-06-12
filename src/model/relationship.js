@@ -197,13 +197,23 @@ EG.Model.reopen({
 	 * @private
 	 */
 	_hasOneValue: function(relationship, server) {
-		var serverRelationships = EG.util.values(this.get('_serverRelationships'));
-		var otherRelationships = EG.util.values(this.get((server ? '_deleted' : '_client') + 'Relationships'));
-		var current = serverRelationships.concat(otherRelationships);
+		var id;
 
-		for (var i = 0; i < current.length; i = i + 1) {
-			if (current[i].relationshipName(this) === relationship) {
-				return current[i].otherId(this);
+		var serverRelationships = this.get('_serverRelationships');
+		for (id in serverRelationships) {
+			if (serverRelationships.hasOwnProperty(id)) {
+				if (serverRelationships[id].relationshipName(this) === relationship) {
+					return serverRelationships[id].otherId(this);
+				}
+			}
+		}
+
+		var otherRelationships = this.get((server ? '_deleted' : '_client') + 'Relationships');
+		for (id in otherRelationships) {
+			if (otherRelationships.hasOwnProperty(id)) {
+				if (otherRelationships[id].relationshipName(this) === relationship) {
+					return otherRelationships[id].otherId(this);
+				}
 			}
 		}
 
@@ -220,14 +230,24 @@ EG.Model.reopen({
 	 * @private
 	 */
 	_hasManyValue: function(relationship, server) {
-		var serverRelationships = EG.util.values(this.get('_serverRelationships'));
-		var otherRelationships = EG.util.values(this.get((server ? '_deleted' : '_client') + 'Relationships'));
-		var current = serverRelationships.concat(otherRelationships);
-
+		var id;
 		var found = [];
-		for (var i = 0; i < current.length; i = i + 1) {
-			if (current[i].relationshipName(this) === relationship) {
-				found.push(current[i].otherId(this));
+
+		var serverRelationships = this.get('_serverRelationships');
+		for (id in serverRelationships) {
+			if (serverRelationships.hasOwnProperty(id)) {
+				if (serverRelationships[id].relationshipName(this) === relationship) {
+					found.push(serverRelationships[id].otherId(this));
+				}
+			}
+		}
+
+		var otherRelationships = this.get((server ? '_deleted' : '_client') + 'Relationships');
+		for (id in otherRelationships) {
+			if (otherRelationships.hasOwnProperty(id)) {
+				if (otherRelationships[id].relationshipName(this) === relationship) {
+					found.push(otherRelationships[id].otherId(this));
+				}
 			}
 		}
 
@@ -253,11 +273,31 @@ EG.Model.reopen({
 	 * @private
 	 */
 	_getAllRelationships: function() {
-		var server = EG.util.values(this.get('_serverRelationships'));
-		var client = EG.util.values(this.get('_clientRelationships'));
-		var deleted = EG.util.values(this.get('_deletedRelationships'));
+		var id;
+		var all = [];
 
-		return server.concat(client.concat(deleted));
+		var serverRelationships = this.get('_serverRelationships');
+		for (id in serverRelationships) {
+			if (serverRelationships.hasOwnProperty(id)) {
+				all.push(serverRelationships[id]);
+			}
+		}
+
+		var clientRelationships = this.get('_clientRelationships');
+		for (id in clientRelationships) {
+			if (clientRelationships.hasOwnProperty(id)) {
+				all.push(clientRelationships[id]);
+			}
+		}
+
+		var deletedRelationships = this.get('_deletedRelationships');
+		for (id in deletedRelationships) {
+			if (deletedRelationships.hasOwnProperty(id)) {
+				all.push(deletedRelationships[id]);
+			}
+		}
+
+		return all;
 	},
 
 	/**
