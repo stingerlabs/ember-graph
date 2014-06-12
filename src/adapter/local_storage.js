@@ -9,8 +9,20 @@ var forEach = Ember.ArrayPolyfills.forEach;
  */
 EG.LocalStorageAdapter = EG.SynchronousAdapter.extend({
 
+	/**
+	 * The value with which to prefix local storage keys.
+	 * This helps separate the local storage entries made
+	 * by this adapter from other data.
+	 *
+	 * @property keyPrefix
+	 * @type String
+	 * @default 'records'
+	 * @final
+	 */
+	keyPrefix: 'records',
+
 	retrieveRecord: function(typeKey, id) {
-		var json = JSON.parse(localStorage['records.' + typeKey + '.' + id] || 'null');
+		var json = JSON.parse(localStorage[this.get('keyPrefix') + '.' + typeKey + '.' + id] || 'null');
 
 		if (json) {
 			return json;
@@ -27,7 +39,7 @@ EG.LocalStorageAdapter = EG.SynchronousAdapter.extend({
 
 		for (var key in localStorage) {
 			if (localStorage.hasOwnProperty(key)) {
-				if (EG.String.startsWith(key, 'records.' + typeKey)) {
+				if (EG.String.startsWith(key, this.get('keyPrefix') + '.' + typeKey)) {
 					record = JSON.parse(localStorage(key) || 'null');
 
 					if (record) {
@@ -41,28 +53,43 @@ EG.LocalStorageAdapter = EG.SynchronousAdapter.extend({
 	},
 
 	modifyRecords: function(updates) {
-		forEach(updates, function(update) {
-			update.oldData = localStorage['records.' + update.typeKey + '.' + update.id];
-		});
+		forEach.call(updates, function(update) {
+			update.oldData = localStorage[this.get('keyPrefix') +  '.' + update.typeKey + '.' + update.id];
+		}, this);
 
 		try {
-			forEach(updates, function(update) {
+			forEach.call(updates, function(update) {
 				if (update.data) {
-					localStorage['records.' + update.typeKey + '.' + update.id] = update.data;
+					localStorage[this.get('keyPrefix') + '.' + update.typeKey + '.' + update.id] = update.data;
 				} else {
-					delete localStorage['records.' + update.typeKey + '.' + update.id];
+					delete localStorage[this.get('keyPrefix') + '.' + update.typeKey + '.' + update.id];
 				}
-			});
+			}, this);
 		} catch (e) {
-			forEach(updates, function(update) {
-				localStorage['records.' + update.typeKey + '.' + update.id] = '';
-			});
+			forEach.call(updates, function(update) {
+				localStorage[this.get('keyPrefix') + '.' + update.typeKey + '.' + update.id] = '';
+			}, this);
 
-			forEach(updates, function(update) {
-				localStorage['records.' + update.typeKey + '.' + update.id] = update.oldData;
-			});
+			forEach.call(updates, function(update) {
+				localStorage[this.get('keyPrefix') + '.' + update.typeKey + '.' + update.id] = update.oldData;
+			}, this);
 
 			throw e;
 		}
+	},
+
+	/**
+	 * Clears all records from the local storage.
+	 *
+	 * @method clearData
+	 */
+	clearData: function() {
+		var keyPrefix = this.get('keyPrefix');
+
+		forEach.call(Em.keys(localStorage), function(key) {
+			if (EG.String.startsWith(key, keyPrefix)) {
+				delete localStorage[key];
+			}
+		});
 	}
 });

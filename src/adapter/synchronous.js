@@ -46,7 +46,7 @@ EG.SynchronousAdapter = EG.Adapter.extend({
 	findRecord: function(typeKey, id) {
 		try {
 			var json = this.retrieveRecord(typeKey, id);
-			var deserialized = this.deserialize(json, { requestType: 'findRecord', id: id });
+			var deserialized = this.deserialize(json, { recordType: typeKey, requestType: 'findRecord', id: id });
 
 			var payload = {};
 			payload[EG.String.pluralize(typeKey)] = [deserialized];
@@ -64,7 +64,7 @@ EG.SynchronousAdapter = EG.Adapter.extend({
 				return this.retrieveRecord(typeKey, id);
 			}, this);
 
-			var deserialized = this.deserialize(json, { requestType: 'findMany', ids: ids });
+			var deserialized = this.deserialize(json, { recordType: typeKey, requestType: 'findMany', ids: ids });
 
 			var payload = {};
 			payload[EG.String.pluralize(typeKey)] = deserialized;
@@ -79,7 +79,7 @@ EG.SynchronousAdapter = EG.Adapter.extend({
 	findAll: function(typeKey) {
 		try {
 			var json = this.retrieveRecords(typeKey);
-			var deserialized = this.deserialize(json, { requestType: 'findAll' });
+			var deserialized = this.deserialize(json, { recordType: typeKey, requestType: 'findAll' });
 
 			var payload = {};
 			payload[EG.String.pluralize(typeKey)] = deserialized;
@@ -94,7 +94,7 @@ EG.SynchronousAdapter = EG.Adapter.extend({
 	findQuery: function(typeKey, query) {
 		try {
 			var json = this.retrieveRecords(typeKey, query);
-			var deserialized = this.deserialize(json, { requestType: 'findAll', query: query });
+			var deserialized = this.deserialize(json, { recordType: typeKey, requestType: 'findAll', query: query });
 
 			var payload = {};
 			payload[EG.String.pluralize(typeKey)] = deserialized;
@@ -154,8 +154,7 @@ EG.SynchronousAdapter = EG.Adapter.extend({
 	 * @protected
 	 */
 	deserialize: function(record, options) {
-		var payload = {};
-		payload[EG.String.pluralize(options.recordType)] = [record];
+		return record;
 	},
 
 	/**

@@ -1081,7 +1081,7 @@ EG.SynchronousAdapter = EG.Adapter.extend({
 	findRecord: function(typeKey, id) {
 		try {
 			var json = this.retrieveRecord(typeKey, id);
-			var deserialized = this.deserialize(json, { requestType: 'findRecord', id: id });
+			var deserialized = this.deserialize(json, { recordType: typeKey, requestType: 'findRecord', id: id });
 
 			var payload = {};
 			payload[EG.String.pluralize(typeKey)] = [deserialized];
@@ -1099,7 +1099,7 @@ EG.SynchronousAdapter = EG.Adapter.extend({
 				return this.retrieveRecord(typeKey, id);
 			}, this);
 
-			var deserialized = this.deserialize(json, { requestType: 'findMany', ids: ids });
+			var deserialized = this.deserialize(json, { recordType: typeKey, requestType: 'findMany', ids: ids });
 
 			var payload = {};
 			payload[EG.String.pluralize(typeKey)] = deserialized;
@@ -1114,7 +1114,7 @@ EG.SynchronousAdapter = EG.Adapter.extend({
 	findAll: function(typeKey) {
 		try {
 			var json = this.retrieveRecords(typeKey);
-			var deserialized = this.deserialize(json, { requestType: 'findAll' });
+			var deserialized = this.deserialize(json, { recordType: typeKey, requestType: 'findAll' });
 
 			var payload = {};
 			payload[EG.String.pluralize(typeKey)] = deserialized;
@@ -1129,7 +1129,7 @@ EG.SynchronousAdapter = EG.Adapter.extend({
 	findQuery: function(typeKey, query) {
 		try {
 			var json = this.retrieveRecords(typeKey, query);
-			var deserialized = this.deserialize(json, { requestType: 'findAll', query: query });
+			var deserialized = this.deserialize(json, { recordType: typeKey, requestType: 'findAll', query: query });
 
 			var payload = {};
 			payload[EG.String.pluralize(typeKey)] = deserialized;
@@ -1189,8 +1189,7 @@ EG.SynchronousAdapter = EG.Adapter.extend({
 	 * @protected
 	 */
 	deserialize: function(record, options) {
-		var payload = {};
-		payload[EG.String.pluralize(options.recordType)] = [record];
+		return record;
 	},
 
 	/**
@@ -1259,7 +1258,7 @@ EG.SynchronousAdapter = EG.Adapter.extend({
 	 * @method serverCreateRecord
 	 * @param {Model} record
 	 * @return {JSON} Created record
-	 * @private
+	 * @protected
 	 */
 	serverCreateRecord: function(record) {
 
@@ -1273,7 +1272,7 @@ EG.SynchronousAdapter = EG.Adapter.extend({
 	 * @method serverUpdateRecord
 	 * @param {Model} record
 	 * @return {JSON} Updated version of record
-	 * @private
+	 * @protected
 	 */
 	serverUpdateRecord: function(record) {
 
@@ -1284,7 +1283,7 @@ EG.SynchronousAdapter = EG.Adapter.extend({
 	 *
 	 * @method serverDeleteRecord
 	 * @param {Model} record
-	 * @private
+	 * @protected
 	 */
 	serverDeleteRecord: function(record) {
 
@@ -1304,8 +1303,100 @@ EG.FixtureAdapter = EG.SynchronousAdapter.extend({
 
 (function() {
 
+var forEach = Ember.ArrayPolyfills.forEach;
+
+/**
+ * Provides a way to persist model data to the browser's local storage.
+ *
+ * @class LocalStorageAdapter
+ * @extends SynchronousAdapter
+ * @constructor
+ */
 EG.LocalStorageAdapter = EG.SynchronousAdapter.extend({
 
+	/**
+	 * The value with which to prefix local storage keys.
+	 * This helps separate the local storage entries made
+	 * by this adapter from other data.
+	 *
+	 * @property keyPrefix
+	 * @type String
+	 * @default 'records'
+	 * @final
+	 */
+	keyPrefix: 'records',
+
+	retrieveRecord: function(typeKey, id) {
+		var json = JSON.parse(localStorage[this.get('keyPrefix') + '.' + typeKey + '.' + id] || 'null');
+
+		if (json) {
+			return json;
+		} else {
+			throw new Error('The record `' + typeKey + ':' + id + '` wasn\'t found in localStorage.');
+		}
+	},
+
+	retrieveRecords: function(typeKey, query) {
+		
+
+		var record;
+		var records = [];
+
+		for (var key in localStorage) {
+			if (localStorage.hasOwnProperty(key)) {
+				if (EG.String.startsWith(key, this.get('keyPrefix') + '.' + typeKey)) {
+					record = JSON.parse(localStorage(key) || 'null');
+
+					if (record) {
+						records.push(record);
+					}
+				}
+			}
+		}
+
+		return records;
+	},
+
+	modifyRecords: function(updates) {
+		forEach.call(updates, function(update) {
+			update.oldData = localStorage[this.get('keyPrefix') +  '.' + update.typeKey + '.' + update.id];
+		}, this);
+
+		try {
+			forEach.call(updates, function(update) {
+				if (update.data) {
+					localStorage[this.get('keyPrefix') + '.' + update.typeKey + '.' + update.id] = update.data;
+				} else {
+					delete localStorage[this.get('keyPrefix') + '.' + update.typeKey + '.' + update.id];
+				}
+			}, this);
+		} catch (e) {
+			forEach.call(updates, function(update) {
+				localStorage[this.get('keyPrefix') + '.' + update.typeKey + '.' + update.id] = '';
+			}, this);
+
+			forEach.call(updates, function(update) {
+				localStorage[this.get('keyPrefix') + '.' + update.typeKey + '.' + update.id] = update.oldData;
+			}, this);
+
+			throw e;
+		}
+	},
+
+	/**
+	 * Clears all records from the local storage.
+	 *
+	 * @method clearData
+	 */
+	clearData: function() {
+		var keyPrefix = this.get('keyPrefix');
+
+		forEach.call(Em.keys(localStorage), function(key) {
+			if (EG.String.startsWith(key, keyPrefix)) {
+				delete localStorage[key];
+			}
+		});
+	}
 });
 
 })();
