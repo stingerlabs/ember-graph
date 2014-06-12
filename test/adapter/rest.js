@@ -6,7 +6,9 @@
 	module('REST Adapter', {
 		setup: function() {
 			store = setupStore({
-				person: EG.Model.extend()
+				person: EG.Model.extend({
+					name: EG.attr({ type: 'string', defaultValue: '' })
+				})
 			}, {
 				adapter: EG.RESTAdapter.extend({
 					prefix: Em.computed(function() {
@@ -99,7 +101,7 @@
 
 			strictEqual(url, '/api/people');
 			strictEqual(verb, 'POST');
-			deepEqual(body, { people: [{ links: {} }] });
+			deepEqual(body, { people: [{ name: '', links: {} }] });
 
 			return Em.RSVP.resolve({ people: [{ id: '100' }] });
 		};
@@ -116,12 +118,13 @@
 
 			strictEqual(url, '/api/people/1');
 			strictEqual(verb, 'PATCH');
-			deepEqual(body, []);
+			deepEqual(body, [{ op: 'replace', path: '/name', value: 'Bob' }]);
 
 			return Em.RSVP.resolve();
 		};
 
 		var person = store.getRecord('person', '1');
+		person.set('name', 'Bob');
 		adapter.updateRecord(person);
 	});
 

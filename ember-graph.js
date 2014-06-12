@@ -68,14 +68,44 @@ if (Em) {
 
 (function() {
 
+/**
+ * Denotes that method must be implemented in a subclass.
+ * If it's not overridden, calling it will throw an error.
+ *
+ * @method required
+ * @param {String} methodName
+ * @return {Function}
+ * @category top-level
+ * @for EG
+ */
+EG.required = function(methodName) {
+	return function() {
+		throw new Error('You failed to implement the abstract `' + methodName + '` method.');
+	};
+};
+
+/**
+ * Generates a version 4 (random) UUID.
+ *
+ * @method generateUUID
+ * @return {String}
+ * @category top-level
+ * @for EG
+ */
+EG.generateUUID = function() {
+	return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+		var r = Math.random()*16|0; // jshint ignore:line
+		var v = (c == 'x' ? r : (r&0x3|0x8)); // jshint ignore:line
+		return v.toString(16);
+	});
+};
+
 EG.util = {
-	generateGUID: function() {
-		return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-			var r = Math.random()*16|0; // jshint ignore:line
-			var v = (c == 'x' ? r : (r&0x3|0x8)); // jshint ignore:line
-			return v.toString(16);
-		});
-	},
+
+	/**
+	 * @deprecated
+	 */
+	generateGUID: EG.generateUUID,
 
 	/**
 	 * @deprecated
@@ -154,7 +184,7 @@ if (Em.EXTEND_PROTOTYPES === true || Em.EXTEND_PROTOTYPES.String) {
  I took the rules in this code from inflection.js, whose license can be found below.
  */
 
-/*
+/*!
  Copyright (c) 2010 Ryan Schuft (ryan.schuft@gmail.com)
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -315,7 +345,8 @@ EG.Serializer = Em.Object.extend({
 	/**
 	 * Takes a payload from the server and converts it into a normalized
 	 * JSON payload that the store can use. Details about the format
-	 * can be found {{#link-to-method 'Store', 'extractPayload'}}here{{/link-to-method}}.
+	 * can be found in the {{link-to-method 'Store' 'extractPayload'}}
+	 * documentation.
 	 *
 	 * In addition to the format described by the store, the adapter
 	 * may require some additional information. This information should
@@ -336,6 +367,27 @@ EG.Serializer = Em.Object.extend({
 	 * If the value is `findQuery`, then the `queryIds` meta attribute is
 	 * required. If the value is `createRecord`, then the `newId` meta
 	 * attribute is required.
+	 *
+	 * TODO: Implement...
+	 *
+	 * There's also an optional attribute that can be given for any call:
+	 *
+	 * - `deletedRecords`: This attribute is given to the store to let it
+	 *     know that records were deleted from the server and that the store
+	 *     should unload them. This allows you to remove records from the
+	 *     store as easily as you can add them. The format of this attribute
+	 *     can be seen in the example below:
+	 *
+	 * ```js
+	 * {
+	 *     deletedRecords: [
+	 *         { typeKey: 'user', id: '3' },
+	 *         { typeKey: 'post', id: '10' },
+	 *         { typeKey: 'post', id: '11' },
+	 *         { typeKey: 'tag', id: '674' }
+	 *     ]
+	 * }
+	 * ```
 	 *
 	 * In addition to `requestType`, the following options are available:
 	 *
@@ -373,7 +425,7 @@ var coerceId = function(id) {
 
 /**
  * This serializer was designed to be compatible with the
- * {{#link-to 'http://jsonapi.org'}}JSON API{{/link-to}}
+ * {{link-to 'JSON API' 'http://jsonapi.org'}}
  * (the ID format, not the URL format).
  *
  * @class JSONSerializer
@@ -837,31 +889,18 @@ EG.JSONSerializer = EG.Serializer.extend({
 
 (function() {
 
-var missingMethod = function(method) {
-	return new Error('Your adapter failed to implement the \'' + method + '\' method.');
-};
-
 /**
  * An interface for an adapter. And adapter is used to communicated with
  * the server. The adapter is never called directly, its methods are
  * called by the store to perform its operations.
  *
- * The adapter should return normalized JSON from its operations. Normalized JSON
- * is a single object whose keys are the type names of the records being returned.
- * The JSON may also contain a `meta` key. The value of each key will be the
- * records of that type that were returned by the server. The records must be
- * in normalized JSON form which means that they must contain an `id` field,
- * and they must contain the required attributes and relationships to
- * create a record of that type.
- *
- * Example:
- * {
- *     meta: {},
- *     user: [{ id: 3, posts: [1,2] }],
- *     post: [{ id: 1 }, { id: 2 }]
- * }
+ * The adapter should return normalized JSON from its operations. Details
+ * about normalized JSON can be found in the {{link-to-method 'Store' 'extractPayload'}}
+ * documentation.
  *
  * @class Adapter
+ * @constructor
+ * @category abstract
  */
 EG.Adapter = Em.Object.extend({
 
@@ -884,7 +923,10 @@ EG.Adapter = Em.Object.extend({
 	defaultSerializer: 'json',
 
 	/**
-	 * This class will proxy to the serializer for the serialize methods of this class.
+	 * The serializer used to convert records and payload to the correct formats.
+	 * The adapter will attempt to use the application serializer, and if one
+	 * isn't found, it will used the serializer specified by
+	 * {{link-to-property 'Adapter' 'defaultSerializer'}}.
 	 *
 	 * @property serializer
 	 * @type Serializer
@@ -900,115 +942,103 @@ EG.Adapter = Em.Object.extend({
 	}).property().readOnly(),
 
 	/**
-	 * Persists a record to the server. This method returns normalized JSON
-	 * as the other methods do, but the normalized JSON must contain one
-	 * extra field. It must contain an `id` field that represents the
-	 * permanent ID of the record that was created. This helps distinguish
-	 * it from any other records of that same type that may have been
-	 * returned from the server.
+	 * Persists a record to the server. The returned JSON
+	 * must include the `newId` meta attribute as described
+	 * {{link-to-method 'here' 'Serializer' 'deserialize'}}.
 	 *
 	 * @method createRecord
-	 * @param {Model} record The record to persist
-	 * @return {Promise} A promise that resolves to normalized JSON
+	 * @param {Model} record
+	 * @return {Promise} Resolves to the normalized JSON
+	 * @category abstract
 	 */
-	createRecord: function(record) {
-		throw missingMethod('createRecord');
-	},
+	createRecord: EG.required('createRecord'),
 
 	/**
 	 * Fetch a record from the server.
 	 *
 	 * @method findRecord
 	 * @param {String} typeKey
-	 * @param {String} id The ID of the record to fetch
-	 * @return {Promise} A promise that resolves to normalized JSON
+	 * @param {String} id
+	 * @return {Promise} Resolves to the normalized JSON
+	 * @category abstract
 	 */
-	findRecord: function(typeKey, id) {
-		throw missingMethod('findRecord');
-	},
+	findRecord: EG.required('findRecord'),
 
 	/**
-	 * The same as find, only it should load several records. The
-	 * promise can return any type of enumerable containing the records.
+	 * The same as find, only it should load several records.
 	 *
 	 * @method findMany
 	 * @param {String} typeKey
-	 * @param {String[]} ids Enumerable of IDs
-	 * @return {Promise} A promise that resolves to normalized JSON
+	 * @param {String[]} ids
+	 * @return {Promise} Resolves to the normalized JSON
+	 * @category abstract
 	 */
-	findMany: function(typeKey, ids) {
-		throw missingMethod('findMany');
-	},
+	findMany: EG.required('findMany'),
 
 	/**
 	 * The same as find, only it should load all records of the given type.
-	 * The promise can return any type of enumerable containing the records.
 	 *
 	 * @method findAll
 	 * @param {String} typeKey
-	 * @return {Promise} A promise that resolves to normalized JSON
+	 * @return {Promise} Resolves to the normalized JSON
+	 * @category abstract
 	 */
-	findAll: function(typeKey) {
-		throw missingMethod('findAll');
-	},
+	findAll: EG.required('findAll'),
 
 	/**
-	 * This method returns normalized JSON as the other methods do, but
-	 * the normalized JSON must contain one extra field. It must contain
-	 * an `ids` field that represents the IDs of the records that matched
-	 * the query. This helps distinguish them from any other records of
-	 * that same type that may have been returned from the server.
+	 * Queries the server for records of the given type. The resolved
+	 * JSON should include the `queryIds` meta attribute as
+	 * described {{link-to-method 'here' 'Serializer' 'deserialize'}}.
 	 *
 	 * @method findQuery
 	 * @param {String} typeKey
-	 * @param {Object} query The query parameters that were passed into `find` earlier
-	 * @return {Promise} A promise that resolves to normalized JSON
+	 * @param {Object} query The query object passed into the store's `find` method
+	 * @return {Promise} Resolves to the normalized JSON
+	 * @category abstract
 	 */
-	findQuery: function(typeKey, query) {
-		throw missingMethod('findQuery');
-	},
+	findQuery: EG.required('findQuery'),
 
 	/**
-	 * Update the given record.
+	 * Saves the record's changes to the server.
 	 *
 	 * @method updateRecord
-	 * @param {Model} record The model to save
-	 * @return {Promise} A promise that resolves to normalized JSON
+	 * @param {Model} record
+	 * @return {Promise} Resolves to the normalized JSON
+	 * @category abstract
 	 */
-	updateRecord: function(record) {
-		throw missingMethod('updateRecord');
-	},
+	updateRecord: EG.required('updateRecord'),
 
 	/**
-	 * Update the given record.
+	 * Deletes the record.
 	 *
 	 * @method deleteRecord
-	 * @param {Model} record The model to save
-	 * @return {Promise} A promise that resolves to normalized JSON
+	 * @param {Model} record
+	 * @return {Promise} Resolves to the normalized JSON
+	 * @category abstract
 	 */
-	deleteRecord: function(record) {
-		throw missingMethod('deleteRecord');
-	},
+	deleteRecord: EG.required('deleteRecord'),
 
 	/**
-	 * Proxies to the serializer of this class.
+	 * Serializes the given record. By default, it defers to the serializer.
 	 *
 	 * @method serialize
 	 * @param {Model} record
 	 * @param {Object} options
 	 * @return {Object} Serialized record
+	 * @protected
 	 */
 	serialize: function(record, options) {
 		return this.get('serializer').serialize(record, options);
 	},
 
 	/**
-	 * Proxies to the serializer of this class.
+	 * Deserializes the given payload. By default, it defers to the serializer.
 	 *
 	 * @method deserialize
-	 * @param {Object} payload
+	 * @param {JSON} payload
 	 * @param {Object} options
 	 * @return {Object} Normalized JSON payload
+	 * @protected
 	 */
 	deserialize: function(payload, options) {
 		return this.get('serializer').deserialize(payload, options);
@@ -1020,7 +1050,146 @@ EG.Adapter = Em.Object.extend({
 
 (function() {
 
+/**
+ * An abstract base class that allows easy integration of synchronous
+ * data stores. Examples include in-memory, local storage and web SQL.
+ * To extend this adapter, you must implement
+ * {{link-to-method 'SynchronousAdapter' 'retrieveRecords'}} and
+ * {{link-to-method 'SynchronousAdapter' 'modifyRecords'}}. You may
+ * also override {{link-to-method 'SynchronousAdapter' 'generateId'}}
+ * if you wish to customize the IDs that new records are assigned.
+ *
+ * If any operations fail (for any reason), throw an error and
+ * the adapter will take care of rejecting the right promises.
+ *
+ * @class SynchronousAdapter
+ * @extends Adapter
+ * @constructor
+ */
 EG.SynchronousAdapter = EG.Adapter.extend({
+
+	/**
+	 * This adapter requires the built-in JSON serializer to function properly.
+	 *
+	 * @property serializer
+	 * @type JSONSerializer
+	 * @final
+	 */
+	serializer: Em.computed(function() {
+		return this.get('container').lookup('serializer:json');
+	}).property().readOnly(),
+
+	createRecord: function(record) {
+
+	},
+
+	findRecord: function(typeKey, id) {
+
+	},
+
+	findMany: function(typeKey, ids) {
+
+	},
+
+	findAll: function(typeKey) {
+
+	},
+
+	findQuery: function(typeKey, query) {
+
+	},
+
+	updateRecord: function(record) {
+
+	},
+
+	deleteRecord: function(record) {
+
+	},
+
+	/**
+	 * Serializes a single record to its JSON format.
+	 *
+	 * @method serialize
+	 * @param {Model} record
+	 * @param {Object} options
+	 * @return {Object} Serialized record
+	 * @protected
+	 */
+	serialize: function(record, options) {
+
+	},
+
+	/**
+	 * Deserializes a single record from its JSON format.
+	 *
+	 * @method deserialize
+	 * @param {JSON} record
+	 * @param {Object} options
+	 * @return {Object} Normalized JSON payload
+	 * @protected
+	 */
+	deserialize: function(record, options) {
+
+	},
+
+	/**
+	 * Generates an ID for a newly created record.
+	 *
+	 * @method generateId
+	 * @param {Model} record
+	 * @return {String}
+	 * @protected
+	 */
+	generateId: function(record) {
+		return EG.generateUUID();
+	},
+
+	/**
+	 * Retrieves records from the data store. The `options` parameter
+	 * can either be an array or object. If it's an array, it will
+	 * be an array of objects with the following fields:
+	 *
+	 * - `typeKey`: The type of the record to retrieve.
+	 * - `id`: The ID of the record to retrieve.
+	 *
+	 * This function should return an array of the records requested,
+	 * in the order that they were requested.
+	 *
+	 * If the `options` parameter is an object, it's a query. The
+	 * `typeKey` field will tell you the type of object while the
+	 * `query` field will give you the query. If `query` is
+	 * `undefined`, it should return all records of the given type.
+	 * Note that you do not have to implement the query version if
+	 * your application will not call `store.find(typeKey)` or
+	 * `store.find(typeKey, query)`.
+	 *
+	 * @method retrieveRecords
+	 * @param {Object|Array} options
+	 * @return {JSON} Array of records
+	 * @protected
+	 * @category abstract
+	 */
+	retrieveRecords: EG.required('retrieveRecords'),
+
+	/**
+	 * Modifies a set of records. The records should be updated in a transaction.
+	 * Either all of the records are updated, or none of them. If the records
+	 * aren't updated together, corrupted data is possible.
+	 *
+	 * The `updates` parameter is a list of objects that have the following fields:
+	 *
+	 * - `typeKey`: The type of the record to modify.
+	 * - `id`: The ID of the record to modify.
+	 * - `data`: The data that represents the updated version of the record.
+	 *     If the value is `undefined`, the record should be removed from the store.
+	 *
+	 * @method modifyRecords
+	 * @param {Object[]} updates
+	 * @protected
+	 * @category abstract
+	 */
+	modifyRecords: EG.required('modifyRecords')
 
 });
 
@@ -1148,6 +1317,10 @@ EG.RESTAdapter = EG.Adapter.extend({
 	updateRecord: function(record) {
 		var url = this.buildUrl(record.typeKey, record.get('id'));
 		var json = this.serialize(record, { requestType: 'updateRecord' });
+
+		if (json.length <= 0) {
+			return Em.RSVP.resolve();
+		}
 
 		return this.ajax(url, 'PATCH', json).then(function(payload) {
 			return this.deserialize(payload, { requestType: 'updateRecord', recordType: record.typeKey });
@@ -2447,9 +2620,10 @@ EG.AttributeType = Em.Object.extend({
 
 	/**
 	 * The default value to use if a value of this type is missing.
-	 * This defaults to `null`, but can be overridden in subclasses.
+	 * Can be overridden in subclasses.
 	 *
 	 * @property defaultValue
+	 * @type Any
 	 * @default null
 	 * @final
 	 */
@@ -2570,7 +2744,7 @@ EG.BooleanType = EG.AttributeType.extend({
 
 	/**
 	 * Coerces to a boolean using
-	 * {{#link-to-method 'BooleanType' 'coerceToBoolean'}}coerceToBoolean{{/link-to-method}}.
+	 * {{link-to-method 'BooleanType' 'coerceToBoolean'}}.
 	 *
 	 * @method serialize
 	 * @param {Boolean} bool
@@ -2582,7 +2756,7 @@ EG.BooleanType = EG.AttributeType.extend({
 
 	/**
 	 * Coerces to a boolean using
-	 * {{#link-to-method 'BooleanType' 'coerceToBoolean'}}coerceToBoolean{{/link-to-method}}.
+	 * {{link-to-method 'BooleanType' 'coerceToBoolean'}}.
 	 *
 	 * @method deserialize
 	 * @param {Boolean} json
@@ -2922,7 +3096,7 @@ EG.ObjectType = EG.AttributeType.extend({
 
 	/**
 	 * Checks for equality using
-	 * {{#link-to-method 'ObjectType', 'deepCompare'}}deepCompare{{/link-to-method}}.
+	 * {{link-to-method 'ObjectType' 'deepCompare'}}.
 	 *
 	 * @method isEqual
 	 * @param {Object} a

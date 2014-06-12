@@ -103,6 +103,10 @@ EG.RESTAdapter = EG.Adapter.extend({
 		var url = this.buildUrl(record.typeKey, record.get('id'));
 		var json = this.serialize(record, { requestType: 'updateRecord' });
 
+		if (json.length <= 0) {
+			return Em.RSVP.resolve();
+		}
+
 		return this.ajax(url, 'PATCH', json).then(function(payload) {
 			return this.deserialize(payload, { requestType: 'updateRecord', recordType: record.typeKey });
 		}.bind(this));
