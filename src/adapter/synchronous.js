@@ -1,5 +1,7 @@
 var Promise = Em.RSVP.Promise;
-var map = Ember.ArrayPolyfills.map;
+var map = Em.ArrayPolyfills.map;
+var forEach = Em.ArrayPolyfills.forEach;
+var indexOf = Em.ArrayPolyfills.indexOf;
 
 /**
  * An abstract base class that allows easy integration of synchronous
@@ -64,7 +66,9 @@ EG.SynchronousAdapter = EG.Adapter.extend({
 				return this.retrieveRecord(typeKey, id);
 			}, this);
 
-			var deserialized = this.deserialize(json, { recordType: typeKey, requestType: 'findMany', ids: ids });
+			var deserialized = map.call(json, function(record) {
+				return this.deserialize(record, { recordType: typeKey, requestType: 'findMany', ids: ids });
+			}, this);
 
 			var payload = {};
 			payload[EG.String.pluralize(typeKey)] = deserialized;
@@ -79,7 +83,9 @@ EG.SynchronousAdapter = EG.Adapter.extend({
 	findAll: function(typeKey) {
 		try {
 			var json = this.retrieveRecords(typeKey);
-			var deserialized = this.deserialize(json, { recordType: typeKey, requestType: 'findAll' });
+			var deserialized = map.call(json, function(record) {
+				return this.deserialize(record, { recordType: typeKey, requestType: 'findRecord' });
+			}, this);
 
 			var payload = {};
 			payload[EG.String.pluralize(typeKey)] = deserialized;
@@ -94,7 +100,9 @@ EG.SynchronousAdapter = EG.Adapter.extend({
 	findQuery: function(typeKey, query) {
 		try {
 			var json = this.retrieveRecords(typeKey, query);
-			var deserialized = this.deserialize(json, { recordType: typeKey, requestType: 'findAll', query: query });
+			var deserialized = map.call(json, function(record) {
+				return this.deserialize(record, { recordType: typeKey, requestType: 'findRecord' });
+			}, this);
 
 			var payload = {};
 			payload[EG.String.pluralize(typeKey)] = deserialized;
@@ -154,7 +162,11 @@ EG.SynchronousAdapter = EG.Adapter.extend({
 	 * @protected
 	 */
 	deserialize: function(record, options) {
-		return record;
+		var payload = {};
+		payload[EG.String.pluralize(options.recordType)] = [record];
+		var deserializeOptions = { requestType: 'findRecord', recordType: options.recordType, id: record.id };
+		var deserialized = this.get('serializer').deserialize(payload, deserializeOptions);
+		return deserialized[options.recordType][0];
 	},
 
 	/**
@@ -226,7 +238,96 @@ EG.SynchronousAdapter = EG.Adapter.extend({
 	 * @protected
 	 */
 	serverCreateRecord: function(record) {
+		var HAS_MANY_KEY = EG.Model.HAS_MANY_KEY;
+		var HAS_ONE_KEY = EG.Model.HAS_ONE_KEY;
 
+		// A small cache that keeps records we've already retrieved and modified
+		var recordCache = {};
+		var getRecord = function(typeKey, id) {
+			if (!recordCache[typeKey + '.' + id]) {
+				recordCache[typeKey + '.' + id] = this.retrieveRecord(typeKey, id);
+			}
+
+			return recordCache[typeKey + '.' + id];
+		}.bind(this);
+
+		// Helper functions to (dis)connect new relationships
+		var store = this.get('store');
+		var connectRelationshipTo = function(typeKey, id, name, value) {
+			var model = store.modelForType(typeKey);
+			var meta = model.metaForRelationship(name);
+			var record = getRecord(typeKey, id);
+
+			if (meta.kind === HAS_MANY_KEY) {
+				record.links[name].push(value);
+			} else if (meta.kind === HAS_ONE_KEY) {
+				if (record.links[name] !== null) {
+					disconnectRelationshipFrom(typeKey, id, name, record.links[name]);
+				}
+
+				record.links[name] = value;
+			} else {
+				Em.assert('Bad relationship kind');
+			}
+		};
+		var disconnectRelationshipFrom = function(typeKey, id, name, value) {
+			var model = store.modelForType(typeKey);
+			var meta = model.metaForRelationship(name);
+			var record = getRecord(typeKey, id);
+
+			if (meta.kind === HAS_MANY_KEY) {
+				record.links[name].splice(indexOf.call(record.links[name], value), 1);
+			} else if (meta.kind === HAS_ONE_KEY) {
+				if (record.links[name] === value) {
+					record.links[name] = null;
+				}
+			} else {
+				Em.assert('Bad relationship kind');
+			}
+		};
+
+		// Serialize the created record and store it in the cache
+		var json = this.serialize(record, { requestType: 'createRecord' });
+		json.id = this.generateId(record);
+		recordCache[record.typeKey + '.' + json.id] = json;
+
+		// Connect all of the necessary relationships
+		record.constructor.eachRelationship(function(name, meta) {
+			if (!meta.inverse) {
+				return;
+			}
+
+			if (json.links[name] === null || (Em.isArray(json.links[name]) && json.links[name].length <= 0)) {
+				return;
+			}
+
+			var value = record.get('_' + name);
+
+			if (meta.kind === HAS_MANY_KEY) {
+				forEach.call(value, function(id) {
+					connectRelationshipTo(meta.relatedType, id, meta.inverse, json.id);
+				});
+			} else if (meta.kind === HAS_ONE_KEY) {
+				connectRelationshipTo(meta.relatedType, value, meta.inverse, json.id);
+			} else {
+				Em.assert('Bad relationship kind');
+			}
+		}, this);
+
+		// Gather the modifications
+		//modifications.push({ typeKey: record.typeKey, id: json.id, data: json });
+
+		var modifications = map.call(Em.keys(recordCache), function(key) {
+			return {
+				typeKey: key.substring(0, key.indexOf('.')),
+				id: recordCache[key].id,
+				data: recordCache[key]
+			};
+		});
+
+		this.modifyRecords(modifications);
+
+		return json;
 	},
 
 	/**

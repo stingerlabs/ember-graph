@@ -40,7 +40,7 @@ EG.LocalStorageAdapter = EG.SynchronousAdapter.extend({
 		for (var key in localStorage) {
 			if (localStorage.hasOwnProperty(key)) {
 				if (EG.String.startsWith(key, this.get('keyPrefix') + '.' + typeKey)) {
-					record = JSON.parse(localStorage(key) || 'null');
+					record = JSON.parse(localStorage[key] || 'null');
 
 					if (record) {
 						records.push(record);
@@ -53,26 +53,28 @@ EG.LocalStorageAdapter = EG.SynchronousAdapter.extend({
 	},
 
 	modifyRecords: function(updates) {
+		var keyPrefix = this.get('keyPrefix');
+
 		forEach.call(updates, function(update) {
-			update.oldData = localStorage[this.get('keyPrefix') +  '.' + update.typeKey + '.' + update.id];
-		}, this);
+			update.oldData = localStorage[keyPrefix +  '.' + update.typeKey + '.' + update.id];
+		});
 
 		try {
 			forEach.call(updates, function(update) {
 				if (update.data) {
-					localStorage[this.get('keyPrefix') + '.' + update.typeKey + '.' + update.id] = update.data;
+					localStorage[keyPrefix + '.' + update.typeKey + '.' + update.id] = JSON.stringify(update.data);
 				} else {
-					delete localStorage[this.get('keyPrefix') + '.' + update.typeKey + '.' + update.id];
+					delete localStorage[keyPrefix + '.' + update.typeKey + '.' + update.id];
 				}
-			}, this);
+			});
 		} catch (e) {
 			forEach.call(updates, function(update) {
-				localStorage[this.get('keyPrefix') + '.' + update.typeKey + '.' + update.id] = '';
-			}, this);
+				localStorage[keyPrefix + '.' + update.typeKey + '.' + update.id] = '';
+			});
 
 			forEach.call(updates, function(update) {
-				localStorage[this.get('keyPrefix') + '.' + update.typeKey + '.' + update.id] = update.oldData;
-			}, this);
+				localStorage[keyPrefix + '.' + update.typeKey + '.' + update.id] = update.oldData;
+			});
 
 			throw e;
 		}
