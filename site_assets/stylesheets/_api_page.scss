@@ -2,7 +2,6 @@
 	ul {
 		li.active a {
 			font-weight: bold;
-			color: #3498db;
 		}
 
 		&:first-of-type li:first-of-type h4 {
@@ -40,6 +39,33 @@
 }
 
 .api-index {
+//	ul.nav-tabs {
+//		border-bottom: 3px solid $theme-color;
+//
+//		li {
+//			a, a:hover {
+//				border: none;
+//			}
+//
+//			a {
+//				color: $theme-color;
+//			}
+//
+//			a:hover {
+//				background-color: #f6f6f6;
+//			}
+//		}
+//
+//		li.active {
+//			a, a:hover {
+//				background-color: $theme-color;
+//				color: white;
+//				border: none;
+//				border-bottom: 1px solid $theme-color;
+//			}
+//		}
+//	}
+
 	.contents {
 		h3 {
 			margin-left: .25em;
@@ -50,7 +76,7 @@
 			margin: 1em 1.5em;
 		}
 
-		border: 1px solid #ecf0f1;
+		border: 1px solid #ddd;
 		border-top: none;
 		border-radius: 0 0 4px 4px;
 

@@ -20,7 +20,7 @@
  * @for EG
  * @category top-level
  * @param {Object} options
- * @return {Ember.ComputedProperty}
+ * @return {Object} Property descriptor used by model during initialization
  */
 EG.attr = function(options) {
 	return {
@@ -47,7 +47,7 @@ EG.attr = function(options) {
  * @for EG
  * @category top-level
  * @param {Object} options
- * @return {Ember.ComputedProperty}
+ * @return {Object} Property descriptor used by model during initialization
  */
 EG.hasMany = function(options) {
 	return {
@@ -75,7 +75,7 @@ EG.hasMany = function(options) {
  * @for EG
  * @category top-level
  * @param {Object} options
- * @return {Ember.ComputedProperty}
+ * @return {Object} Property descriptor used by model during initialization
  */
 EG.hasOne = function(options) {
 	return {

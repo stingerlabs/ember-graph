@@ -194,7 +194,7 @@ EG.SynchronousAdapter = EG.Adapter.extend({
 	retrieveRecord: EG.required('retrieveRecord'),
 
 	/**
-	 * Retrieves records from the data store. If 'query`
+	 * Retrieves records from the data store. If `query`
 	 * is `undefined`, it should return all records of
 	 * the given type. Otherwise it should only return
 	 * the records that match the given query.

@@ -2,6 +2,12 @@
  * Denotes that method must be implemented in a subclass.
  * If it's not overridden, calling it will throw an error.
  *
+ * ```js
+ * var Shape = Ember.Object.extend({
+ *     getNumberOfSides: EG.required('getNumberOfSides')
+ * });
+ * ```
+ *
  * @method required
  * @param {String} methodName
  * @return {Function}

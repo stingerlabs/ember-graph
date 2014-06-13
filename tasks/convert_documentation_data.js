@@ -93,7 +93,10 @@ function extractClassMethods(data, classChain, methods) {
 		methods[item.name] = convertMethodItem(item);
 	});
 
-	return extractClassMethods(data, classChain.slice(1), methods);
+	var chainMethods = extractClassMethods(data, classChain.slice(1), methods);
+	return chainMethods.filter(function(method) {
+		return (method.private === false || method.defined_in === classChain[classChain.length -1]);
+	});
 }
 
 function extractClassProperties(data, classChain, properties) {
@@ -113,7 +116,10 @@ function extractClassProperties(data, classChain, properties) {
 		properties[item.name] = convertPropertyItem(item);
 	});
 
-	return extractClassProperties(data, classChain.slice(1), properties);
+	var chainProperties = extractClassProperties(data, classChain.slice(1), properties);
+	return chainProperties.filter(function(property) {
+		return (property.private === false || property.defined_in === classChain[classChain.length - 1]);
+	});
 }
 
 function convertClassItem(item) {
@@ -145,6 +151,7 @@ function convertMethodItem(item) {
 		'public': (item.access !== 'protected' && item.access !== 'private'),
 		'protected': item.access === 'protected',
 		'private': item.access === 'private',
+		abstract: (item.category || []).indexOf('abstract') >= 0,
 		file: {
 			path: item.file,
 			line: item.line
