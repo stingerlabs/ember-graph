@@ -12,7 +12,7 @@ EG.Store = Em.Object.extend({
 	 *
 	 * @property defaultAdapter
 	 * @type String
-	 * @default `'rest'`
+	 * @default 'rest'
 	 */
 	defaultAdapter: 'rest',
 
@@ -20,6 +20,10 @@ EG.Store = Em.Object.extend({
 	 * The number of milliseconds after a record in the cache expires
 	 * and must be re-fetched from the server. Leave at Infinity for
 	 * now, as finite timeouts will likely cause a lot of bugs.
+	 *
+	 * @property cacheTimeout
+	 * @type Number
+	 * @default Infinity
 	 */
 	cacheTimeout: Infinity,
 
@@ -33,8 +37,12 @@ EG.Store = Em.Object.extend({
 
 	/**
 	 * The adapter used by the store to communicate with the server.
-	 * The adapter is found by looking for App.ApplicationAdapter.
+	 * The adapter is found by looking for the application adapter.
 	 * If not found, defaults to the REST adapter.
+	 *
+	 * @property adapter
+	 * @type Adapter
+	 * @default RESTAdapter
 	 */
 	adapter: Em.computed(function() {
 		var container = this.get('container');
@@ -50,6 +58,7 @@ EG.Store = Em.Object.extend({
 	 * Initializes all of the variables properly
 	 */
 	init: function() {
+		this._super();
 		this.set('_records', {});
 		this.set('_types', {});
 		this.set('_relationships', {});
@@ -106,7 +115,7 @@ EG.Store = Em.Object.extend({
 	 *
 	 * @method modelForType
 	 * @param {String} typeKey
-	 * @returns {Model}
+	 * @return {Class}
 	 */
 	modelForType: function(typeKey) {
 		this._modelCache = this._modelCache || {};
@@ -122,14 +131,12 @@ EG.Store = Em.Object.extend({
 	},
 
 	/**
-	 * Creates a record of the specified type. If the JSON has an ID,
-	 * then the record 'created' is a permanent record from the server.
-	 * If it doesn't contain an ID, the store assumes that it's new.
+	 * Creates a record of the specified type.
 	 *
 	 * @method createRecord
 	 * @param {String} typeKey
 	 * @param {Object} json
-	 * @returns {Model}
+	 * @return {Model}
 	 */
 	createRecord: function(typeKey, json) {
 		json = json || {};
@@ -174,7 +181,7 @@ EG.Store = Em.Object.extend({
 	 *
 	 * @method cachedRecordsFor
 	 * @param {String} typeKey
-	 * @returns {Array} Array of records of the given type
+	 * @return {Model[]}
 	 */
 	cachedRecordsFor: function(typeKey) {
 		var records = this.get('_records.' + typeKey) || {};
@@ -193,17 +200,19 @@ EG.Store = Em.Object.extend({
 
 	/**
 	 * Fetches a record (or records), either from the cache or from the server.
-	 * Options can be different types which have different functions:
+	 * The type of `options` determines the behavior of this method:
 	 *
-	 * ID String - Fetches a single record by ID
-	 * ID Enumerable - Fetches many records by the IDs
-	 * Object - A query that is passed to the adapter
-	 * undefined - Fetches all records of a type
+	 * - `string` fetches a single record by ID
+	 * - `string[]` fetches several records by the IDs
+	 * - `object` fetches records according to the given query object
+	 * - `undefined` fetches all records of the given type
 	 *
+	 * Any other value, including `null`, will result in an error being thrown.
+     *
 	 * @method find
 	 * @param {String} typeKey
-	 * @param {String|String[]|Object} options
-	 * @returns {PromiseObject|PromiseArray}
+	 * @param {String|String[]|Object} [options]
+	 * @return {PromiseObject|PromiseArray}
 	 */
 	find: function(typeKey, options) {
 		if (arguments.length > 1 && !options) {
@@ -212,8 +221,7 @@ EG.Store = Em.Object.extend({
 
 		switch (Em.typeOf(options)) {
 			case 'string':
-			case 'number':
-				return this._findSingle(typeKey, options + '');
+				return this._findSingle(typeKey, options);
 			case 'array':
 				return this._findMany(typeKey, options);
 			case 'object':
@@ -227,12 +235,12 @@ EG.Store = Em.Object.extend({
 
 	/**
 	 * Returns the record directly if the record is cached in the store.
-	 * Otherwise returns null.
+	 * Otherwise returns `null`.
 	 *
 	 * @method getRecord
 	 * @param {String} typeKey
 	 * @param {String} id
-	 * @returns {Model}
+	 * @return {Model}
 	 */
 	getRecord: function(typeKey, id) {
 		var record = this._getRecord(typeKey, id);
@@ -277,7 +285,7 @@ EG.Store = Em.Object.extend({
 	 *
 	 * @param {String} type
 	 * @param {String[]} ids
-	 * @returns {PromiseArray}
+	 * @return {PromiseArray}
 	 * @private
 	 */
 	_findMany: function(type, ids) {
@@ -313,7 +321,7 @@ EG.Store = Em.Object.extend({
 	 * Gets all of the records of a type from the adapter as a PromiseArray.
 	 *
 	 * @param {String} type
-	 * @returns {PromiseArray}
+	 * @return {PromiseArray}
 	 * @private
 	 */
 	_findAll: function(type) {
@@ -330,7 +338,7 @@ EG.Store = Em.Object.extend({
 	 *
 	 * @param {String} typeKey
 	 * @param {Object} options
-	 * @returns {PromiseArray}
+	 * @return {PromiseArray}
 	 * @private
 	 */
 	_findQuery: function(typeKey, options) {
@@ -347,21 +355,23 @@ EG.Store = Em.Object.extend({
 	},
 
 	/**
-	 * Returns true if the record is cached in the store, false otherwise.
+	 * Returns `true` if the record is cached in the store, `false` otherwise.
 	 *
 	 * @method hasRecord
-	 * @param {String|Model} typeKey
+	 * @param {String} typeKey
 	 * @param {String} id
-	 * @returns {Boolean}
+	 * @return {Boolean}
 	 */
 	hasRecord: function(typeKey, id) {
 		return this.getRecord(typeKey, id) !== null;
 	},
 
 	/**
+	 * Persists a record (new or old) to the server.
+	 *
 	 * @method saveRecord
 	 * @param {Model} record
-	 * @returns {Promise} Resolves to the saved record
+	 * @return {Promise} Resolves to the saved record
 	 */
 	saveRecord: function(record) {
 		var type = record.typeKey;
@@ -387,9 +397,11 @@ EG.Store = Em.Object.extend({
 	},
 
 	/**
+	 * Deletes a record from the server.
+	 *
 	 * @method deleteRecord
 	 * @param {Model} record
-	 * @returns {Promise}
+	 * @return {Promise}
 	 */
 	deleteRecord: function(record) {
 		var type = record.typeKey;
@@ -404,9 +416,11 @@ EG.Store = Em.Object.extend({
 	},
 
 	/**
+	 * Reloads a record from the server.
+	 *
 	 * @method reloadRecord
 	 * @param {Model} record
-	 * @returns {Promise} Resolves to the reloaded record
+	 * @return {Promise} Resolves to the reloaded record
 	 */
 	reloadRecord: function(record) {
 		Em.assert('You can\'t reload record `' + record.typeKey + ':' +
@@ -497,11 +511,11 @@ EG.Store = Em.Object.extend({
 	},
 
 	/**
-	 * Returns an AttributeType instance for the given type.
+	 * Returns an `AttributeType` instance for the given named type.
 	 *
 	 * @method attributeTypeFor
 	 * @param {String} typeName
-	 * @returns {AttributeType}
+	 * @return {AttributeType}
 	 */
 	attributeTypeFor: function(typeName) {
 		var attributeType = this.get('container').lookup('type:' + typeName);
