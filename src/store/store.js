@@ -455,19 +455,19 @@ EG.Store = Em.Object.extend({
 	 *
 	 * A normalized JSON payload for these models might look like this:
 	 *
-	 * ```js
+	 * ```json
 	 * {
-	 *     post: [
-	 *         { id: '1', title: 'Introduction To Ember-Graph', tags: [] },
-	 *         { id: '2', title: 'Defining Models', tags: ['1', '3'] },
-	 *         { id: '3', title: 'Connecting to a REST API', tags: ['2'] }
+	 *     "post": [
+	 *         { id: "1", title: "Introduction To Ember-Graph", tags: [] },
+	 *         { id: "2", title: "Defining Models", tags: ["1", "3"] },
+	 *         { id: "3", title: "Connecting to a REST API", tags: ["2"] }
 	 *     ],
-	 *     tag: [
-	 *         { id: '1', name: 'relationship' },
-	 *         { id: '2', name: 'adapter' },
-	 *         { id: '3', name: 'store' }
+	 *     "tag": [
+	 *         { id: "1", name: "relationship" },
+	 *         { id: "2", name: "adapter" },
+	 *         { id: "3", name: "store" }
 	 *     ],
-	 *     meta: {}
+	 *     "meta": {}
 	 * }
 	 * ```
 	 *
