@@ -2,13 +2,28 @@ language: node_js
 node_js:
     - "0.10"
 before_install:
-    - "npm install -g grunt-cli"
-    - "npm install -g bower"
-    - "npm install -g jshint"
+    - npm install -g grunt-cli
+    - npm install -g bower
+    - npm install -g jshint
 install:
-    - "bower install"
-    - "npm install"
+    - bower install
+    - npm install
 script:
-    - "grunt release"
+    - grunt release
+after_success:
+    - grunt build_site
+    - cd site
+    - git init
+    - git config user.name "Travis-CI"
+    - git config user.email "travis@ember-graph.com"
+    - git add --all .
+    - git commit -m "Deployed to Github Pages"
+    - git push --force --quiet "https://${GH_TOKEN}@${GH_REF}" master:gh-pages > /dev/null 2>&1
+after_failure:
+    - echo "SITE DEPLOYMENT FAILED"
 notifications:
     email: false
+env:
+    global:
+        - GH_REF: github.com/gordonkristan/ember-graph.git
+        - secure: MgMI2LQwzgjO38L5UKKgkmV0J4d1d+b4DK4kuPYegDxBgADB/o8NocW2LF2IARWGUEhU1BBDmKv45xs1X4TavQJ5/+AM5D/HdyK9VB8cQ+3nHBaqyvO7lURKOi8Pvs+hxiWoTLtXF8rImVtWzoJwcyzNbwY/UceKF3d58PMJ++w=
