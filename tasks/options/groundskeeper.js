@@ -1,12 +1,12 @@
 module.exports = {
 	compile: {
 		files: {
-			'ember-graph.prod.js': 'ember-graph.js'
+			'dist/ember-graph.prod.js': 'dist/ember-graph.js'
 		},
 
 		options: {
 			console: false,
-			debugger: false,
+			debugger: true,
 			namespace: [
 				'Em.assert', 'Ember.assert',
 				'Em.warn', 'Ember.warn',

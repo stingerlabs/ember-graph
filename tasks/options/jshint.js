@@ -1,4 +1,4 @@
 module.exports = {
 	jshintrc: true,
-	build: ['ember-graph.js']
+	build: ['dist/ember-graph.js']
 };

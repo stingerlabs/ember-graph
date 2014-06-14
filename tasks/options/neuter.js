@@ -23,6 +23,6 @@ module.exports = {
 		},
 
 		src: 'src/main.js',
-		dest: 'ember-graph.js'
+		dest: 'dist/ember-graph.js'
 	}
 };

@@ -33,7 +33,7 @@ module.exports = {
 
 	release: {
 		files: {
-			'ember-graph.min.js': 'ember-graph.prod.js'
+			'dist/ember-graph.min.js': 'dist/ember-graph.prod.js'
 		}
 	}
 };
