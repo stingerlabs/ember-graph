@@ -12,7 +12,7 @@ script:
     - grunt release
 after_success:
     - grunt build_site
-    - cd site
+    - cd site_build
     - git init
     - git config user.name "Travis-CI"
     - git config user.email "travis@ember-graph.com"

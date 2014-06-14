@@ -1,7 +1,7 @@
 module.exports = {
 	dist: {
 		files: {
-			'site/stylesheets/style.css': 'site_assets/stylesheets/style.scss'
+			'site/stylesheets/style.css': 'site/stylesheets/style.scss'
 		}
 	}
 };

@@ -17,7 +17,7 @@ module.exports = function(grunt) {
 
 function compileTemplates() {
 	function getTemplate(name) {
-		return fs.readFileSync('./site_assets/templates/' + name + '.hbs', { encoding: 'utf8' });
+		return fs.readFileSync('./site/templates/' + name + '.hbs', { encoding: 'utf8' });
 	}
 
 	var names = ['api/content_index', 'api/content_methods', 'api/content_properties',
@@ -49,7 +49,7 @@ function buildPages(data) {
 		var page = templates['api/shell']({ sidebar: sidebar, content: tabs, 'class': c });
 		var file = templates['api/base']({ body: page });
 
-		fs.writeFileSync('site/api/' + c.name + '.html', file);
+		fs.writeFileSync('site_build/api/' + c.name + '.html', file);
 	});
 }
 
@@ -75,7 +75,7 @@ function buildEmberGraphNamespacePage(data) {
 	});
 	var file = templates['api/base']({ body: page });
 
-	fs.writeFileSync('site/api/EG.html', file);
+	fs.writeFileSync('site_build/api/EG.html', file);
 }
 
 function buildStringNamespacePage(data) {
