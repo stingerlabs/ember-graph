@@ -13,6 +13,5 @@ module.exports = function(grunt) {
 		sh.run('cp -r site_assets/index.html site/');
 
 		sh.run('mkdir -p site/stylesheets');
-		sh.run('cp -r site_assets/stylesheets/style.css site/stylesheets/');
 	});
 };

@@ -22,6 +22,7 @@ module.exports = function(grunt) {
 		jshint: config('jshint'),
 		neuter: config('neuter'),
 		qunit: config('qunit'),
+		sass: config('sass'),
 		uglify: config('uglify'),
 		watch: config('watch'),
 		yuidoc: config('yuidoc')
@@ -36,6 +37,7 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-contrib-watch');
 	grunt.loadNpmTasks('grunt-contrib-yuidoc');
 	grunt.loadNpmTasks('grunt-groundskeeper');
+	grunt.loadNpmTasks('grunt-sass');
 
 	grunt.task.loadTasks('./tasks');
 
@@ -45,5 +47,5 @@ module.exports = function(grunt) {
 		'uglify:release', 'build_release_test_runner', 'qunit:cli', 'jshint:build']);
 
 	grunt.registerTask('build_site', ['yuidoc', 'register_handlebars_helpers', 'convert_documentation_data',
-		'setup_site_structure', 'build_api_pages']);
+		'setup_site_structure', 'sass', 'build_api_pages']);
 };
