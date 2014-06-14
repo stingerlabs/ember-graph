@@ -30,7 +30,7 @@ function linkToClass(content, name, options) {
 		name = content;
 	}
 
-	return new Handlebars.SafeString('<a href="api/' + name + '.html">' + content + '</a>');
+	return new Handlebars.SafeString('<a href="/api/' + name + '.html">' + content + '</a>');
 }
 
 function linkToMethod(content, name, method, options) {
@@ -41,7 +41,7 @@ function linkToMethod(content, name, method, options) {
 		content = method;
 	}
 
-	return new Handlebars.SafeString('<a href="api/' + name + '.html#method_' + method + '">' + content + '</a>');
+	return new Handlebars.SafeString('<a href="/api/' + name + '.html#method_' + method + '">' + content + '</a>');
 }
 
 function linkToProperty(content, name, property, options) {
@@ -52,7 +52,7 @@ function linkToProperty(content, name, property, options) {
 		content = property;
 	}
 
-	return new Handlebars.SafeString('<a href="api/' + name + '.html#property_' + property + '">' + content + '</a>');
+	return new Handlebars.SafeString('<a href="/api/' + name + '.html#property_' + property + '">' + content + '</a>');
 }
 
 function stripOuterParagraph(text) {

@@ -16,12 +16,10 @@ var coerceId = function(id) {
  *
  * @class JSONSerializer
  * @extends Serializer
+ * @constructor
  */
 EG.JSONSerializer = EG.Serializer.extend({
 
-	/**
-	 * @category inherit_documentation
-	 */
 	serialize: function(record, options) {
 		switch (options.requestType) {
 			case 'updateRecord':
@@ -234,9 +232,6 @@ EG.JSONSerializer = EG.Serializer.extend({
 		return operations;
 	},
 
-	/**
-	 * @category inherit_documentation
-	 */
 	deserialize: function(payload, options) {
 		payload = payload || {};
 		options = options || {};

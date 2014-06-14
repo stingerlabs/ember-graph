@@ -27,6 +27,11 @@ $(window).on('hashchange', function() {
 		window.location.hash = '#index';
 		showPane('#index');
 	}
+
+	// Make sure the index tab is selected if the panel is visible
+	if ($('#index').is(':visible')) {
+		showPane('#index');
+	}
 });
 
 $(window).trigger('hashchange');

@@ -1,5 +1,5 @@
 /**
- * An interface for an adapter. And adapter is used to communicated with
+ * An interface for an adapter. And adapter is used to communicate with
  * the server. The adapter is never called directly, its methods are
  * called by the store to perform its operations.
  *
@@ -19,6 +19,7 @@ EG.Adapter = Em.Object.extend({
 	 *
 	 * @property store
 	 * @type Store
+	 * @final
 	 */
 	store: null,
 
