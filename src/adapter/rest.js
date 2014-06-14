@@ -108,12 +108,12 @@ EG.RESTAdapter = EG.Adapter.extend({
 	 * changes serialized to JSON change operations. The change operations
 	 * use the path format described by the standard. See the example below:
 	 *
-	 * ```js
+	 * ```json
 	 * [
-	 *     { op: 'replace', path: '/title', value: 'Getting Started With Ember-Graph' },
-	 *     { op: 'replace', path: '/links/author', value: '24' },
-	 *     { op: 'add', path: '/links/tags/-', value: '73' },
-	 *     { op: 'remove', path: '/links/109' }
+	 *     { op: "replace", path: "/title", value: "Getting Started With Ember-Graph" },
+	 *     { op: "replace", path: "/links/author", value: "24" },
+	 *     { op: "add", path: "/links/tags/-", value: "73" },
+	 *     { op: "remove", path: "/links/109" }
 	 * ]
 	 * ```
 	 *

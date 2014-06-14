@@ -78,13 +78,13 @@ EG.Serializer = Em.Object.extend({
 	 *     store as easily as you can add them. The format of this attribute
 	 *     can be seen in the example below:
 	 *
-	 * ```js
+	 * ```json
 	 * {
-	 *     deletedRecords: [
-	 *         { typeKey: 'user', id: '3' },
-	 *         { typeKey: 'post', id: '10' },
-	 *         { typeKey: 'post', id: '11' },
-	 *         { typeKey: 'tag', id: '674' }
+	 *     "deletedRecords": [
+	 *         { typeKey: "user", id: "3" },
+	 *         { typeKey: "post", id: "10" },
+	 *         { typeKey: "post", id: "11" },
+	 *         { typeKey: "tag", id: "674" }
 	 *     ]
 	 * }
 	 * ```

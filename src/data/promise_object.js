@@ -4,6 +4,9 @@
  * given promise when it resolves.
  *
  * @class PromiseObject
+ * @extends ObjectProxy
+ * @uses PromiseProxyMixin
+ * @constructor
  */
 EG.PromiseObject = Em.ObjectProxy.extend(Em.PromiseProxyMixin);
 
@@ -13,6 +16,9 @@ EG.PromiseObject = Em.ObjectProxy.extend(Em.PromiseProxyMixin);
  * given promise when it resolves.
  *
  * @class PromiseArray
+ * @extends ArrayProxy
+ * @uses PromiseProxyMixin
+ * @constructor
  */
 EG.PromiseArray = Em.ArrayProxy.extend(Em.PromiseProxyMixin);
 
@@ -20,8 +26,19 @@ EG.PromiseArray = Em.ArrayProxy.extend(Em.PromiseProxyMixin);
  * Acts just like `PromiseObject` only it's able to hold the
  * ID of a model before it's resolved completely.
  *
+ * ```js
+ * var user = EG.ModelPromiseObject.create({
+ *     promise: this.store.find('user', '52'),
+ *     id: '52'
+ * });
+ *
+ * user.get('isPending'); // true
+ * user.get('id'); // '52'
+ * ```
+ *
  * @class ModelPromiseObject
  * @extends PromiseObject
+ * @constructor
  */
 EG.ModelPromiseObject = EG.PromiseObject.extend({
 	__modelId: null,
@@ -43,21 +60,4 @@ EG.ModelPromiseObject = EG.PromiseObject.extend({
 			return this.get('__modelId');
 		}
 	}.property('__modelId', 'content.id')
-});
-
-/**
- * Acts just like `PromiseArray` only it's able to hold the
- * IDs of the models before they're resolved completely.
- *
- * @class ModelPromiseArray
- * @extends PromiseArray
- */
-EG.ModelPromiseArray = EG.PromiseArray.extend({
-	ids: function(key, value) {
-		this.set('content', (value || []).map(function(id) {
-			return {
-				id: id
-			};
-		}));
-	}.property()
 });
