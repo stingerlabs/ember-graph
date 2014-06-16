@@ -218,7 +218,6 @@
 	test('Serialize an update request properly', function() {
 		expect(1);
 
-		//store._loadRecord('post', { id: '1', title: 'Test Post 1', body: 'Body1', author: '1', tags: ['1', '2'] });
 		var post = store.getRecord('post', '1');
 
 		post.removeFromRelationship('tags', '2');
@@ -236,5 +235,42 @@
 		var operations = serializer.serialize(post, { requestType: 'updateRecord' });
 
 		deepEqual(operations.sort(jsonSort), expected.sort(jsonSort));
+	});
+
+	test('Deserialize payload with no options', function() {
+		expect(1);
+
+		var payload = {
+			posts: [
+				{ id: 158, title: '', links: { author: 1, tags: [] } },
+				{ id: 98, title: '', links: { author: 1, tags: [10] } },
+				{ id: 262, title: '', links: { author: 1, tags: [11] } },
+				{ id: 0, title: '', links: { author: 1, tags: [] } }
+			],
+			tags: [
+				{ id: 10, name: '10' },
+				{ id: 11, name: '11' }
+			]
+		};
+
+		var expected = {
+			meta: {
+				serverMeta: {}
+			},
+
+			post: [
+				{ id: '158', title: '', body: '', author: '1', tags: [] },
+				{ id: '98', title: '', body: '', author: '1', tags: ['10'] },
+				{ id: '262', title: '', body: '', author: '1', tags: ['11'] },
+				{ id: '0', title: '', body: '', author: '1', tags: [] }
+			],
+
+			tag: [
+				{ id: '10', name: '10' },
+				{ id: '11', name: '11' }
+			]
+		};
+
+		deepEqual(serializer.deserialize(payload), expected);
 	});
 })();

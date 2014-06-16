@@ -770,20 +770,22 @@ EG.JSONSerializer = EG.Serializer.extend({
 			}
 		};
 
-		var mainTypeKey = EG.String.pluralize(options.recordType);
+		delete payload.meta;
 
 		if (options.requestType === 'findQuery') {
-			normalized.meta.queryIds = map.call(payload[mainTypeKey], function(record) {
+			normalized.meta.queryIds = map.call(payload[EG.String.pluralize(options.recordType)], function(record) {
 				return coerceId(record.id);
 			});
 		} else if (options.requestType === 'createRecord') {
-			normalized.meta.newId = coerceId(payload[mainTypeKey][0].id);
+			normalized.meta.newId = coerceId(payload[EG.String.pluralize(options.recordType)][0].id);
 		}
 
-		normalized[options.recordType] = payload[mainTypeKey];
-
-		delete payload[mainTypeKey];
-		delete payload.meta;
+		forEach.call(Em.keys(payload), function(key) {
+			if (key !== 'linked' && key !== 'meta') {
+				normalized[EG.String.singularize(key)] = payload[key];
+				delete payload[key];
+			}
+		});
 
 		forEach.call(Em.keys(payload.linked || {}), function(key) {
 			normalized[EG.String.singularize(key)] = payload.linked[key];
