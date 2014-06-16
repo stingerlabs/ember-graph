@@ -1,11 +1,13 @@
 'use strict';
 
 module.exports = {
-	cli: ['test/**/*.html'],
-
-	development: {
-		options: {
-			urls: ['http://localhost:8000/test/index.html']
+	options: {
+		coverage: {
+			src: ['dist/ember-graph.js'],
+			instrumentedFiles: 'temp/',
+			lcovReport: 'report/'
 		}
-	}
+	},
+
+	all: ['test/index.html']
 };
