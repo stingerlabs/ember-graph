@@ -25,7 +25,7 @@ require('util/string');
 require('util/inflector');
 
 require('serializer/serializer');
-require('serializer/json');
+require('serializer/**/*');
 
 require('adapter/adapter');
 require('adapter/synchronous');

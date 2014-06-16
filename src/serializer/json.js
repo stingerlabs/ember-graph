@@ -448,11 +448,11 @@ EG.JSONSerializer = EG.Serializer.extend({
 					name: name,
 					value: map.call(value, function(id) {
 						switch (Em.typeOf(id)) {
-							case 'null':
 							case 'string':
 							case 'number':
 								return coerceId(id);
 							default:
+							case 'null':
 								error = { id: json.id, typeKey: model.typeKey, name: name, value: value };
 								throw new Error('Invalid hasMany relationship value: ' + JSON.stringify(error));
 						}

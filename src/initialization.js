@@ -1,5 +1,4 @@
 if (Em) {
-	// Remember, these are run AFTER the application becomes ready
 	Em.onLoad('Ember.Application', function(Application) {
 		Application.initializer({
 			name: 'injectStore',
@@ -20,9 +19,9 @@ if (Em) {
 				App.register('store:main', App.Store || EG.Store, { singleton: true });
 
 				App.register('adapter:rest', EG.RESTAdapter, { singleton: true });
-				App.register('adapter:fixture', EG.FixtureAdapter, { singleton: true });
-				App.register('adapter:localStorage', EG.LocalStorageAdapter, { singleton: true });
+
 				App.register('serializer:json', EG.JSONSerializer, { singleton: true });
+				App.register('serializer:ember_graph_database', EG.EmberGraphDatabaseSerializer, { singleton: true });
 
 				App.register('type:string', EG.StringType, { singleton: true });
 				App.register('type:number', EG.NumberType, { singleton: true });

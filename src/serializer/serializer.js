@@ -37,10 +37,9 @@ EG.Serializer = Em.Object.extend({
 	 * @param {Model} record The record to serialize
 	 * @param {Object} [options] Any options that were passed by the adapter
 	 * @return {JSON} JSON payload to send to server
+	 * @abstract
 	 */
-	serialize: function(record, options) {
-		throw methodMissing('serialize');
-	},
+	serialize: EG.required('serialize'),
 
 	/**
 	 * Takes a payload from the server and converts it into a normalized
@@ -101,8 +100,7 @@ EG.Serializer = Em.Object.extend({
 	 * @param {JSON} payload
 	 * @param {Object} [options] Any options that were passed by the adapter
 	 * @return {Object} Normalized JSON payload
+	 * @abstract
 	 */
-	deserialize: function(payload, options) {
-		throw methodMissing('deserialize');
-	}
+	deserialize: EG.required('deserialize')
 });

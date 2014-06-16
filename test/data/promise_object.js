@@ -44,34 +44,5 @@
 			strictEqual(modelPromise.get('name'), 'tag1');
 		});
 	});
-
-	asyncTest('Model promise array correctly reports the IDs', function() {
-		expect(4);
-
-		var ids = ['1', '2', '3', '4'];
-
-		var resolve = null;
-		var modelPromise = EG.ModelPromiseArray.create({
-			ids: ids,
-			promise: new Em.RSVP.Promise(function(r) {
-				resolve = r;
-			})
-		});
-
-		start();
-		deepEqual(modelPromise.mapBy('id'), ['1', '2', '3', '4']);
-		deepEqual(modelPromise.mapBy('name'), [undefined, undefined, undefined, undefined]);
-		stop();
-
-		resolve(ids.map(function(id) {
-			return store.getRecord('tag', id);
-		}));
-
-		modelPromise.then(function() {
-			start();
-			deepEqual(modelPromise.mapBy('id'), ['1', '2', '3', '4']);
-			deepEqual(modelPromise.mapBy('name'), ['tag1', 'tag2', 'tag3', 'tag4']);
-		});
-	});
 })();
 

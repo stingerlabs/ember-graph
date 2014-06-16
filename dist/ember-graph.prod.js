@@ -25,7 +25,6 @@ if (Ember.libraries) {
 (function() {
 
 if (Em) {
-	// Remember, these are run AFTER the application becomes ready
 	Em.onLoad('Ember.Application', function(Application) {
 		Application.initializer({
 			name: 'injectStore',
@@ -46,9 +45,9 @@ if (Em) {
 				App.register('store:main', App.Store || EG.Store, { singleton: true });
 
 				App.register('adapter:rest', EG.RESTAdapter, { singleton: true });
-				App.register('adapter:fixture', EG.FixtureAdapter, { singleton: true });
-				App.register('adapter:localStorage', EG.LocalStorageAdapter, { singleton: true });
+
 				App.register('serializer:json', EG.JSONSerializer, { singleton: true });
+				App.register('serializer:ember_graph_database', EG.EmberGraphDatabaseSerializer, { singleton: true });
 
 				App.register('type:string', EG.StringType, { singleton: true });
 				App.register('type:number', EG.NumberType, { singleton: true });
@@ -74,21 +73,48 @@ if (Em) {
  *
  * ```js
  * var Shape = Ember.Object.extend({
- *     getNumberOfSides: EG.required('getNumberOfSides')
+ *     getNumberOfSides: EG.requiredMethod('getNumberOfSides')
  * });
  * ```
  *
- * @method required
+ * @method requiredMethod
  * @param {String} methodName
  * @return {Function}
  * @category top-level
  * @for EG
  */
-EG.required = function(methodName) {
+EG.requiredMethod = function(methodName) {
 	return function() {
 		throw new Error('You failed to implement the abstract `' + methodName + '` method.');
 	};
 };
+
+/**
+ * Denotes that a property must be overridden in a subclass.
+ * If it's not overridden, using it will throw an error.
+ *
+ * ```js
+ * var Shape = Ember.Object.extend({
+ *     name: EG.requiredProperty('name')
+ * });
+ * ```
+ *
+ * @method propertyName
+ * @param {String} propertyName
+ * @return {ComputedProperty}
+ * @category top-level
+ * @for EG
+ */
+EG.requiredProperty = function(propertyName) {
+	return Em.computed(function() {
+		throw new Error('You failed to override the abstract `' + propertyName + '` property.');
+	}).property();
+};
+
+/**
+ * @deprecated
+ */
+EG.required = EG.requiredMethod;
 
 /**
  * Generates a version 4 (random) UUID.
@@ -326,10 +352,9 @@ EG.Serializer = Em.Object.extend({
 	 * @param {Model} record The record to serialize
 	 * @param {Object} [options] Any options that were passed by the adapter
 	 * @return {JSON} JSON payload to send to server
+	 * @abstract
 	 */
-	serialize: function(record, options) {
-		throw methodMissing('serialize');
-	},
+	serialize: EG.required('serialize'),
 
 	/**
 	 * Takes a payload from the server and converts it into a normalized
@@ -367,13 +392,13 @@ EG.Serializer = Em.Object.extend({
 	 *     store as easily as you can add them. The format of this attribute
 	 *     can be seen in the example below:
 	 *
-	 * ```js
+	 * ```json
 	 * {
-	 *     deletedRecords: [
-	 *         { typeKey: 'user', id: '3' },
-	 *         { typeKey: 'post', id: '10' },
-	 *         { typeKey: 'post', id: '11' },
-	 *         { typeKey: 'tag', id: '674' }
+	 *     "deletedRecords": [
+	 *         { typeKey: "user", id: "3" },
+	 *         { typeKey: "post", id: "10" },
+	 *         { typeKey: "post", id: "11" },
+	 *         { typeKey: "tag", id: "674" }
 	 *     ]
 	 * }
 	 * ```
@@ -390,12 +415,79 @@ EG.Serializer = Em.Object.extend({
 	 * @param {JSON} payload
 	 * @param {Object} [options] Any options that were passed by the adapter
 	 * @return {Object} Normalized JSON payload
+	 * @abstract
 	 */
-	deserialize: function(payload, options) {
-		throw methodMissing('deserialize');
-	}
+	deserialize: EG.required('deserialize')
 });
 
+
+})();
+
+(function() {
+
+/**
+ * @class EmberGraphDatabaseSerializer
+ * @extends Serializer
+ * @constructor
+ */
+EG.EmberGraphDatabaseSerializer = EG.Serializer.extend({
+
+	/**
+	 * Converts a record to its JSON format. The JSON
+	 * contains only the ID and serialized attributes.
+	 *
+	 * @method serialize
+	 * @param {Model} record
+	 * @return {JSON}
+	 */
+	serialize: function(record) {
+		var json = {};
+
+		if (!record.get('isNew')) {
+			json.id = record.get('id');
+		}
+
+		var store = this.get('store');
+		record.constructor.eachAttribute(function(name, meta) {
+			var type = store.attributeTypeFor(meta.type);
+			json[name] = type.serialize(record.get(name));
+		});
+
+		return json;
+	},
+
+	/**
+	 * Deserializes the attributes in the given JSON.
+	 * Requires the `recordType` option.
+	 *
+	 * @method deserialize
+	 * @param {JSON} json
+	 * @param {Object} options
+	 * @return {Object}
+	 */
+	deserialize: function(json, options) {
+		var record = { id: json.id + '' };
+		var store = this.get('store');
+		var model = store.modelForType(options.recordType);
+
+		model.eachAttribute(function(name, meta) {
+			var type = store.attributeTypeFor(meta.type);
+
+			if (json[name] === undefined) {
+				if (meta.isRequired) {
+					var error = { id: json.id, typeKey: model.typeKey, name: name };
+					throw new Error('Attribute was missing: ' + JSON.stringify(error));
+				} else {
+					record[name] = (meta.defaultValue === undefined ? type.get('defaultValue') : meta.defaultValue);
+				}
+			} else {
+				record[name] = type.deserialize(json[name]);
+			}
+		});
+
+		return record;
+	}
+});
 
 })();
 
@@ -851,11 +943,11 @@ EG.JSONSerializer = EG.Serializer.extend({
 					name: name,
 					value: map.call(value, function(id) {
 						switch (Em.typeOf(id)) {
-							case 'null':
 							case 'string':
 							case 'number':
 								return coerceId(id);
 							default:
+							case 'null':
 								error = { id: json.id, typeKey: model.typeKey, name: name, value: value };
 								throw new Error('Invalid hasMany relationship value: ' + JSON.stringify(error));
 						}
@@ -1036,44 +1128,39 @@ EG.Adapter = Em.Object.extend({
 (function() {
 
 var Promise = Em.RSVP.Promise;
-var map = Em.ArrayPolyfills.map;
-var forEach = Em.ArrayPolyfills.forEach;
-var indexOf = Em.ArrayPolyfills.indexOf;
 
 /**
- * An abstract base class that allows easy integration of synchronous
- * data stores. Examples include in-memory, local storage and web SQL.
- * To extend this adapter, you must implement
- * {{link-to-method 'SynchronousAdapter' 'retrieveRecords'}} and
- * {{link-to-method 'SynchronousAdapter' 'modifyRecords'}}. You may
- * also override {{link-to-method 'SynchronousAdapter' 'generateId'}}
- * if you wish to customize the IDs that new records are assigned.
- *
- * If any operations fail (for any reason), throw an error and
- * the adapter will take care of rejecting the right promises.
- *
- * @class SynchronousAdapter
+ * @class EmberGraphDatabaseAdapter
  * @extends Adapter
  * @constructor
  */
-EG.SynchronousAdapter = EG.Adapter.extend({
+EG.EmberGraphDatabaseAdapter = EG.Adapter.extend({
+
+	/**
+	 * The database to store the records and relationships in.
+	 *
+	 * @property database
+	 * @type EmberGraphDatabase
+	 * @category abstract
+	 */
+	database: EG.requiredProperty('database'),
 
 	/**
 	 * This adapter requires the built-in JSON serializer to function properly.
 	 *
 	 * @property serializer
-	 * @type JSONSerializer
+	 * @type EmberGraphDatabaseSerializer
 	 * @final
 	 */
 	serializer: Em.computed(function() {
-		return this.get('container').lookup('serializer:json');
+		return this.get('container').lookup('serializer:ember_graph_database');
 	}).property().readOnly(),
 
 	createRecord: function(record) {
 		try {
 			var json = this.serverCreateRecord(record);
 			var payload = { meta: { newId: json.id } };
-			payload[EG.String.pluralize(record.typeKey)] = [json];
+			payload[record.typeKey] = [json];
 
 			return Promise.resolve(payload);
 		} catch (e) {
@@ -1085,10 +1172,10 @@ EG.SynchronousAdapter = EG.Adapter.extend({
 	findRecord: function(typeKey, id) {
 		try {
 			var json = this.retrieveRecord(typeKey, id);
-			var deserialized = this.deserialize(json, { recordType: typeKey, requestType: 'findRecord', id: id });
+			var deserialized = this.deserialize(json, { recordType: typeKey });
 
 			var payload = {};
-			payload[EG.String.pluralize(typeKey)] = [deserialized];
+			payload[typeKey] = [deserialized];
 
 			return Promise.resolve(payload);
 		} catch (e) {
@@ -1104,11 +1191,11 @@ EG.SynchronousAdapter = EG.Adapter.extend({
 			}, this);
 
 			var deserialized = map.call(json, function(record) {
-				return this.deserialize(record, { recordType: typeKey, requestType: 'findMany', ids: ids });
+				return this.deserialize(record, { recordType: typeKey });
 			}, this);
 
 			var payload = {};
-			payload[EG.String.pluralize(typeKey)] = deserialized;
+			payload[typeKey] = deserialized;
 
 			return Promise.resolve(payload);
 		} catch (e) {
@@ -1121,11 +1208,11 @@ EG.SynchronousAdapter = EG.Adapter.extend({
 		try {
 			var json = this.retrieveRecords(typeKey);
 			var deserialized = map.call(json, function(record) {
-				return this.deserialize(record, { recordType: typeKey, requestType: 'findRecord' });
+				return this.deserialize(record, { recordType: typeKey });
 			}, this);
 
 			var payload = {};
-			payload[EG.String.pluralize(typeKey)] = deserialized;
+			payload[typeKey] = deserialized;
 
 			return Promise.resolve(payload);
 		} catch (e) {
@@ -1138,11 +1225,11 @@ EG.SynchronousAdapter = EG.Adapter.extend({
 		try {
 			var json = this.retrieveRecords(typeKey, query);
 			var deserialized = map.call(json, function(record) {
-				return this.deserialize(record, { recordType: typeKey, requestType: 'findRecord' });
+				return this.deserialize(record, { recordType: typeKey });
 			}, this);
 
 			var payload = {};
-			payload[EG.String.pluralize(typeKey)] = deserialized;
+			payload[typeKey] = deserialized;
 
 			return Promise.resolve(payload);
 		} catch (e) {
@@ -1156,7 +1243,7 @@ EG.SynchronousAdapter = EG.Adapter.extend({
 			var json = this.serverUpdateRecord(record);
 
 			var payload = {};
-			payload[EG.String.pluralize(record.typeKey)] = [json];
+			payload[record.typeKey] = [json];
 
 			return Promise.resolve(payload);
 		} catch (e) {
@@ -1173,335 +1260,8 @@ EG.SynchronousAdapter = EG.Adapter.extend({
 			
 			return Promise.reject();
 		}
-	},
-
-	/**
-	 * Serializes a single record to its JSON format.
-	 *
-	 * @method serialize
-	 * @param {Model} record
-	 * @param {Object} options
-	 * @return {Object} Serialized record
-	 * @protected
-	 */
-	serialize: function(record, options) {
-		var payload = this.get('serializer').serialize(record, options);
-		return payload[EG.String.pluralize(record.typeKey)][0];
-	},
-
-	/**
-	 * Deserializes a single record from its JSON format.
-	 *
-	 * @method deserialize
-	 * @param {JSON} record
-	 * @param {Object} options
-	 * @return {Object} Normalized JSON payload
-	 * @protected
-	 */
-	deserialize: function(record, options) {
-		var payload = {};
-		payload[EG.String.pluralize(options.recordType)] = [record];
-		var deserializeOptions = { requestType: 'findRecord', recordType: options.recordType, id: record.id };
-		var deserialized = this.get('serializer').deserialize(payload, deserializeOptions);
-		return deserialized[options.recordType][0];
-	},
-
-	/**
-	 * Generates an ID for a newly created record.
-	 *
-	 * @method generateId
-	 * @param {Model} record
-	 * @return {String}
-	 * @protected
-	 */
-	generateId: function(record) {
-		return EG.generateUUID();
-	},
-
-	/**
-	 * Retrieves a single record from the data store.
-	 *
-	 * @method retrieveRecord
-	 * @param {String} typeKey
-	 * @param {String} id
-	 * @return {JSON}
-	 * @protected
-	 * @category abstract
-	 */
-	retrieveRecord: EG.required('retrieveRecord'),
-
-	/**
-	 * Retrieves records from the data store. If `query`
-	 * is `undefined`, it should return all records of
-	 * the given type. Otherwise it should only return
-	 * the records that match the given query.
-	 *
-	 * @method retrieveRecords
-	 * @param {String} typeKey
-	 * @param {Object} query
-	 * @return {JSON} Array of records
-	 * @protected
-	 * @category abstract
-	 */
-	retrieveRecords: EG.required('retrieveRecords'),
-
-	/**
-	 * Modifies a set of records. The records should be updated in a transaction.
-	 * Either all of the records are updated, or none of them. If the records
-	 * aren't updated together, corrupted data is possible.
-	 *
-	 * The `updates` parameter is a list of objects that have the following fields:
-	 *
-	 * - `typeKey`: The type of the record to modify.
-	 * - `id`: The ID of the record to modify.
-	 * - `data`: The data that represents the updated version of the record.
-	 *     If the value is `undefined`, the record should be removed from the store.
-	 *
-	 * @method modifyRecords
-	 * @param {Object[]} updates
-	 * @protected
-	 * @category abstract
-	 */
-	modifyRecords: EG.required('modifyRecords'),
-
-	/**
-	 * Creates the record as if it were the server. It serializes
-	 * the record, generates an ID, puts the record in the store
-	 * and connects any relationships it needs to.
-	 *
-	 * @method serverCreateRecord
-	 * @param {Model} record
-	 * @return {JSON} Created record
-	 * @protected
-	 */
-	serverCreateRecord: function(record) {
-		var HAS_MANY_KEY = EG.Model.HAS_MANY_KEY;
-		var HAS_ONE_KEY = EG.Model.HAS_ONE_KEY;
-
-		// A small cache that keeps records we've already retrieved and modified
-		var recordCache = {};
-		var getRecord = function(typeKey, id) {
-			if (!recordCache[typeKey + '.' + id]) {
-				recordCache[typeKey + '.' + id] = this.retrieveRecord(typeKey, id);
-			}
-
-			return recordCache[typeKey + '.' + id];
-		}.bind(this);
-
-		// Helper functions to (dis)connect new relationships
-		var store = this.get('store');
-		var connectRelationshipTo = function(typeKey, id, name, value) {
-			var model = store.modelForType(typeKey);
-			var meta = model.metaForRelationship(name);
-			var record = getRecord(typeKey, id);
-
-			if (meta.kind === HAS_MANY_KEY) {
-				record.links[name].push(value);
-			} else if (meta.kind === HAS_ONE_KEY) {
-				if (record.links[name] !== null) {
-					disconnectRelationshipFrom(typeKey, id, name, record.links[name]);
-				}
-
-				record.links[name] = value;
-			} else {
-				
-			}
-		};
-		var disconnectRelationshipFrom = function(typeKey, id, name, value) {
-			var model = store.modelForType(typeKey);
-			var meta = model.metaForRelationship(name);
-			var record = getRecord(typeKey, id);
-
-			if (meta.kind === HAS_MANY_KEY) {
-				record.links[name].splice(indexOf.call(record.links[name], value), 1);
-			} else if (meta.kind === HAS_ONE_KEY) {
-				if (record.links[name] === value) {
-					record.links[name] = null;
-				}
-			} else {
-				
-			}
-		};
-
-		// Serialize the created record and store it in the cache
-		var json = this.serialize(record, { requestType: 'createRecord' });
-		json.id = this.generateId(record);
-		recordCache[record.typeKey + '.' + json.id] = json;
-
-		// Connect all of the necessary relationships
-		record.constructor.eachRelationship(function(name, meta) {
-			if (!meta.inverse) {
-				return;
-			}
-
-			if (json.links[name] === null || (Em.isArray(json.links[name]) && json.links[name].length <= 0)) {
-				return;
-			}
-
-			var value = record.get('_' + name);
-
-			if (meta.kind === HAS_MANY_KEY) {
-				forEach.call(value, function(id) {
-					connectRelationshipTo(meta.relatedType, id, meta.inverse, json.id);
-				});
-			} else if (meta.kind === HAS_ONE_KEY) {
-				connectRelationshipTo(meta.relatedType, value, meta.inverse, json.id);
-			} else {
-				
-			}
-		}, this);
-
-		// Gather the modifications
-		//modifications.push({ typeKey: record.typeKey, id: json.id, data: json });
-
-		var modifications = map.call(Em.keys(recordCache), function(key) {
-			return {
-				typeKey: key.substring(0, key.indexOf('.')),
-				id: recordCache[key].id,
-				data: recordCache[key]
-			};
-		});
-
-		this.modifyRecords(modifications);
-
-		return json;
-	},
-
-	/**
-	 * Updates the record as if it were the server. It serializes
-	 * the record, puts the record in the store and connects any
-	 * relationships it needs to.
-	 *
-	 * @method serverUpdateRecord
-	 * @param {Model} record
-	 * @return {JSON} Updated version of record
-	 * @protected
-	 */
-	serverUpdateRecord: function(record) {
-
-	},
-
-	/**
-	 * Deletes the record and its relationships from the store.
-	 *
-	 * @method serverDeleteRecord
-	 * @param {Model} record
-	 * @protected
-	 */
-	serverDeleteRecord: function(record) {
-
 	}
 
-});
-
-})();
-
-(function() {
-
-EG.FixtureAdapter = EG.SynchronousAdapter.extend({
-
-});
-
-})();
-
-(function() {
-
-var forEach = Ember.ArrayPolyfills.forEach;
-
-/**
- * Provides a way to persist model data to the browser's local storage.
- *
- * @class LocalStorageAdapter
- * @extends SynchronousAdapter
- * @constructor
- */
-EG.LocalStorageAdapter = EG.SynchronousAdapter.extend({
-
-	/**
-	 * The value with which to prefix local storage keys.
-	 * This helps separate the local storage entries made
-	 * by this adapter from other data.
-	 *
-	 * @property keyPrefix
-	 * @type String
-	 * @default 'records'
-	 * @final
-	 */
-	keyPrefix: 'records',
-
-	retrieveRecord: function(typeKey, id) {
-		var json = JSON.parse(localStorage[this.get('keyPrefix') + '.' + typeKey + '.' + id] || 'null');
-
-		if (json) {
-			return json;
-		} else {
-			throw new Error('The record `' + typeKey + ':' + id + '` wasn\'t found in localStorage.');
-		}
-	},
-
-	retrieveRecords: function(typeKey, query) {
-		
-
-		var record;
-		var records = [];
-
-		for (var key in localStorage) {
-			if (localStorage.hasOwnProperty(key)) {
-				if (EG.String.startsWith(key, this.get('keyPrefix') + '.' + typeKey)) {
-					record = JSON.parse(localStorage[key] || 'null');
-
-					if (record) {
-						records.push(record);
-					}
-				}
-			}
-		}
-
-		return records;
-	},
-
-	modifyRecords: function(updates) {
-		var keyPrefix = this.get('keyPrefix');
-
-		forEach.call(updates, function(update) {
-			update.oldData = localStorage[keyPrefix +  '.' + update.typeKey + '.' + update.id];
-		});
-
-		try {
-			forEach.call(updates, function(update) {
-				if (update.data) {
-					localStorage[keyPrefix + '.' + update.typeKey + '.' + update.id] = JSON.stringify(update.data);
-				} else {
-					delete localStorage[keyPrefix + '.' + update.typeKey + '.' + update.id];
-				}
-			});
-		} catch (e) {
-			forEach.call(updates, function(update) {
-				localStorage[keyPrefix + '.' + update.typeKey + '.' + update.id] = '';
-			});
-
-			forEach.call(updates, function(update) {
-				localStorage[keyPrefix + '.' + update.typeKey + '.' + update.id] = update.oldData;
-			});
-
-			throw e;
-		}
-	},
-
-	/**
-	 * Clears all records from the local storage.
-	 *
-	 * @method clearData
-	 */
-	clearData: function() {
-		var keyPrefix = this.get('keyPrefix');
-
-		forEach.call(Em.keys(localStorage), function(key) {
-			if (EG.String.startsWith(key, keyPrefix)) {
-				delete localStorage[key];
-			}
-		});
-	}
 });
 
 })();
@@ -1618,12 +1378,12 @@ EG.RESTAdapter = EG.Adapter.extend({
 	 * changes serialized to JSON change operations. The change operations
 	 * use the path format described by the standard. See the example below:
 	 *
-	 * ```js
+	 * ```json
 	 * [
-	 *     { op: 'replace', path: '/title', value: 'Getting Started With Ember-Graph' },
-	 *     { op: 'replace', path: '/links/author', value: '24' },
-	 *     { op: 'add', path: '/links/tags/-', value: '73' },
-	 *     { op: 'remove', path: '/links/109' }
+	 *     { op: "replace", path: "/title", value: "Getting Started With Ember-Graph" },
+	 *     { op: "replace", path: "/links/author", value: "24" },
+	 *     { op: "add", path: "/links/tags/-", value: "73" },
+	 *     { op: "remove", path: "/links/109" }
 	 * ]
 	 * ```
 	 *
@@ -2217,19 +1977,19 @@ EG.Store = Em.Object.extend({
 	 *
 	 * A normalized JSON payload for these models might look like this:
 	 *
-	 * ```js
+	 * ```json
 	 * {
-	 *     post: [
-	 *         { id: '1', title: 'Introduction To Ember-Graph', tags: [] },
-	 *         { id: '2', title: 'Defining Models', tags: ['1', '3'] },
-	 *         { id: '3', title: 'Connecting to a REST API', tags: ['2'] }
+	 *     "post": [
+	 *         { id: "1", title: "Introduction To Ember-Graph", tags: [] },
+	 *         { id: "2", title: "Defining Models", tags: ["1", "3"] },
+	 *         { id: "3", title: "Connecting to a REST API", tags: ["2"] }
 	 *     ],
-	 *     tag: [
-	 *         { id: '1', name: 'relationship' },
-	 *         { id: '2', name: 'adapter' },
-	 *         { id: '3', name: 'store' }
+	 *     "tag": [
+	 *         { id: "1", name: "relationship" },
+	 *         { id: "2", name: "adapter" },
+	 *         { id: "3", name: "store" }
 	 *     ],
-	 *     meta: {}
+	 *     "meta": {}
 	 * }
 	 * ```
 	 *
@@ -2612,6 +2372,9 @@ EG.Store.reopen({
  * given promise when it resolves.
  *
  * @class PromiseObject
+ * @extends ObjectProxy
+ * @uses PromiseProxyMixin
+ * @constructor
  */
 EG.PromiseObject = Em.ObjectProxy.extend(Em.PromiseProxyMixin);
 
@@ -2621,6 +2384,9 @@ EG.PromiseObject = Em.ObjectProxy.extend(Em.PromiseProxyMixin);
  * given promise when it resolves.
  *
  * @class PromiseArray
+ * @extends ArrayProxy
+ * @uses PromiseProxyMixin
+ * @constructor
  */
 EG.PromiseArray = Em.ArrayProxy.extend(Em.PromiseProxyMixin);
 
@@ -2628,8 +2394,19 @@ EG.PromiseArray = Em.ArrayProxy.extend(Em.PromiseProxyMixin);
  * Acts just like `PromiseObject` only it's able to hold the
  * ID of a model before it's resolved completely.
  *
+ * ```js
+ * var user = EG.ModelPromiseObject.create({
+ *     promise: this.store.find('user', '52'),
+ *     id: '52'
+ * });
+ *
+ * user.get('isPending'); // true
+ * user.get('id'); // '52'
+ * ```
+ *
  * @class ModelPromiseObject
  * @extends PromiseObject
+ * @constructor
  */
 EG.ModelPromiseObject = EG.PromiseObject.extend({
 	__modelId: null,
@@ -2651,23 +2428,6 @@ EG.ModelPromiseObject = EG.PromiseObject.extend({
 			return this.get('__modelId');
 		}
 	}.property('__modelId', 'content.id')
-});
-
-/**
- * Acts just like `PromiseArray` only it's able to hold the
- * IDs of the models before they're resolved completely.
- *
- * @class ModelPromiseArray
- * @extends PromiseArray
- */
-EG.ModelPromiseArray = EG.PromiseArray.extend({
-	ids: function(key, value) {
-		this.set('content', (value || []).map(function(id) {
-			return {
-				id: id
-			};
-		}));
-	}.property()
 });
 
 })();
