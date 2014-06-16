@@ -21,10 +21,10 @@ after_success:
         git commit -m "Deployed to Github Pages";
         git push --force --quiet "https://${GH_TOKEN}@${GH_REF}" master:gh-pages > /dev/null 2>&1;
     - |
-        cd
-        grunt test
+        cd ~/ember-graph;
+        grunt test;
         npm install -g codeclimate-test-reporter;
-        CODECLIMATE_REPO_TOKEN=${CODECLIMATE_REPO_TOKEN} codeclimate < report/lcov.info
+        CODECLIMATE_REPO_TOKEN=${CODECLIMATE_REPO_TOKEN} codeclimate < report/lcov.info;
 notifications:
     email: false
 env:
