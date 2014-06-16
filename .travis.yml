@@ -12,6 +12,7 @@ script:
     - grunt release
 after_success:
     - |
+        cd ~/gordonkristan/ember-graph;
         grunt build_site;
         cd site_build;
         git init;
@@ -21,7 +22,7 @@ after_success:
         git commit -m "Deployed to Github Pages";
         git push --force --quiet "https://${GH_TOKEN}@${GH_REF}" master:gh-pages > /dev/null 2>&1;
     - |
-        cd ~/ember-graph;
+        cd ~/gordonkristan/ember-graph;
         grunt test;
         npm install -g codeclimate-test-reporter;
         CODECLIMATE_REPO_TOKEN=${CODECLIMATE_REPO_TOKEN} codeclimate < report/lcov.info;
