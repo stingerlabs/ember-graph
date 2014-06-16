@@ -50,13 +50,6 @@
 		}
 	});
 
-	test('The store initializes the adapter properly', function() {
-		expect(2);
-
-		ok(store.get('adapter') instanceof Adapter);
-		ok(store.get('adapter.store') === store);
-	});
-
 	test('The store can load records properly', function() {
 		expect(9);
 
@@ -169,5 +162,20 @@
 
 		store._loadRecord(typeKey, records[4]);
 		deepEqual(store.cachedRecordsFor(typeKey).mapBy('id').sort(), ['1', '2', '3', '4'].sort());
+	});
+
+	test('Look up per-type adapters', function() {
+		expect(3);
+
+		var container = store.get('container');
+
+		var UserAdapter = EG.Adapter.extend({});
+		var ForumAdminAdapter = EG.Adapter.extend({});
+		container.register('adapter:user', UserAdapter);
+		container.register('adapter:forum_admin', ForumAdminAdapter);
+
+		ok(UserAdapter.detectInstance(store.adapterFor('user')));
+		ok(ForumAdminAdapter.detectInstance(store.adapterFor('forum_admin')));
+		ok(Adapter.detectInstance(store.adapterFor('foobar')));
 	});
 })();

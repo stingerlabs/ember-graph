@@ -1533,15 +1533,6 @@ EG.RESTAdapter = EG.Adapter.extend({
 EG.Store = Em.Object.extend({
 
 	/**
-	 * The adapter to use if an application adapter is not found.
-	 *
-	 * @property defaultAdapter
-	 * @type String
-	 * @default 'rest'
-	 */
-	defaultAdapter: 'rest',
-
-	/**
 	 * The number of milliseconds after a record in the cache expires
 	 * and must be re-fetched from the server. Leave at Infinity for
 	 * now, as finite timeouts will likely cause a lot of bugs.
@@ -1561,23 +1552,14 @@ EG.Store = Em.Object.extend({
 	_records: {},
 
 	/**
-	 * The adapter used by the store to communicate with the server.
-	 * The adapter is found by looking for the application adapter.
-	 * If not found, defaults to the REST adapter.
+	 * Stores adapters as they're looked up in the container.
 	 *
-	 * @property adapter
-	 * @type Adapter
-	 * @default RESTAdapter
+	 * @property adapterCache
+	 * @type Object
+	 * @final
+	 * @private
 	 */
-	adapter: Em.computed(function() {
-		var container = this.get('container');
-		var adapter = container.lookup('adapter:application') ||
-			container.lookup('adapter:' + this.get('defaultAdapter'));
-
-		
-
-		return adapter;
-	}).property(),
+	adapterCache: {},
 
 	/**
 	 * Initializes all of the variables properly
@@ -1588,6 +1570,7 @@ EG.Store = Em.Object.extend({
 		this.set('_types', {});
 		this.set('_relationships', {});
 		this.set('_queuedRelationships', {});
+		this.set('adapterCache', {});
 	},
 
 	/**
@@ -1781,21 +1764,21 @@ EG.Store = Em.Object.extend({
 	/**
 	 * Gets a single record from the adapter as a PromiseObject.
 	 *
-	 * @param {String} type
+	 * @param {String} typeKey
 	 * @param {String} id
 	 * @return {PromiseObject}
 	 * @private
 	 */
-	_findSingle: function(type, id) {
-		var record = this.getRecord(type, id);
+	_findSingle: function(typeKey, id) {
+		var record = this.getRecord(typeKey, id);
 		var promise;
 
 		if (record) {
 			promise = Em.RSVP.Promise.resolve(record);
 		} else {
-			promise = this.get('adapter').findRecord(type, id).then(function(payload) {
+			promise = this.adapterFor(typeKey).findRecord(typeKey, id).then(function(payload) {
 				this.extractPayload(payload);
-				return this.getRecord(type, id);
+				return this.getRecord(typeKey, id);
 			}.bind(this));
 		}
 
@@ -1808,17 +1791,17 @@ EG.Store = Em.Object.extend({
 	/**
 	 * Gets many records from the adapter as a PromiseArray.
 	 *
-	 * @param {String} type
+	 * @param {String} typeKey
 	 * @param {String[]} ids
 	 * @return {PromiseArray}
 	 * @private
 	 */
-	_findMany: function(type, ids) {
+	_findMany: function(typeKey, ids) {
 		ids = ids || [];
 		var set = new Em.Set(ids);
 
 		ids.forEach(function(id) {
-			if (this.getRecord(type, id) !== null) {
+			if (this.getRecord(typeKey, id) !== null) {
 				set.removeObject(id);
 			}
 		}, this);
@@ -1827,14 +1810,14 @@ EG.Store = Em.Object.extend({
 
 		if (set.length === 0) {
 			promise = Em.RSVP.Promise.resolve(ids.map(function(id) {
-				return this.getRecord(type, id);
+				return this.getRecord(typeKey, id);
 			}, this));
 		} else {
-			promise = this.get('adapter').findMany(type, set.toArray()).then(function(payload) {
+			promise = this.adapterFor(typeKey).findMany(typeKey, set.toArray()).then(function(payload) {
 				this.extractPayload(payload);
 
 				return ids.map(function(id) {
-					return this.getRecord(type, id);
+					return this.getRecord(typeKey, id);
 				}, this).toArray();
 			}.bind(this));
 		}
@@ -1845,14 +1828,14 @@ EG.Store = Em.Object.extend({
 	/**
 	 * Gets all of the records of a type from the adapter as a PromiseArray.
 	 *
-	 * @param {String} type
+	 * @param {String} typeKey
 	 * @return {PromiseArray}
 	 * @private
 	 */
-	_findAll: function(type) {
-		var promise = this.get('adapter').findAll(type).then(function(payload) {
+	_findAll: function(typeKey) {
+		var promise = this.adapterFor(typeKey).findAll(typeKey).then(function(payload) {
 			this.extractPayload(payload);
-			return this.cachedRecordsFor(type);
+			return this.cachedRecordsFor(typeKey);
 		}.bind(this));
 
 		return EG.PromiseArray.create({ promise: promise });
@@ -1867,7 +1850,7 @@ EG.Store = Em.Object.extend({
 	 * @private
 	 */
 	_findQuery: function(typeKey, options) {
-		var promise = this.get('adapter').findQuery(typeKey, options).then(function(payload) {
+		var promise = this.adapterFor(typeKey).findQuery(typeKey, options).then(function(payload) {
 			var ids = payload.meta.ids;
 			this.extractPayload(payload);
 
@@ -1904,7 +1887,7 @@ EG.Store = Em.Object.extend({
 		var tempId = record.get('id');
 
 		if (isNew) {
-			return this.get('adapter').createRecord(record).then(function(payload) {
+			return this.adapterFor(record.typeKey).createRecord(record).then(function(payload) {
 				record.set('id', payload.meta.newId);
 
 				this._deleteRecord(type, tempId);
@@ -1914,7 +1897,7 @@ EG.Store = Em.Object.extend({
 				return record;
 			}.bind(this));
 		} else {
-			return this.get('adapter').updateRecord(record).then(function(payload) {
+			return this.adapterFor(record.typeKey).updateRecord(record).then(function(payload) {
 				this.extractPayload(payload);
 				return record;
 			}.bind(this));
@@ -1933,7 +1916,7 @@ EG.Store = Em.Object.extend({
 		var id = record.get('id');
 		var records = (this.get('_records.' + type) || {});
 
-		return this.get('adapter').deleteRecord(record).then(function(payload) {
+		return this.adapterFor(record.typeKey).deleteRecord(record).then(function(payload) {
 			this._deleteRelationshipsForRecord(type, id);
 			this.extractPayload(payload);
 			this._deleteRecord(type, id);
@@ -1950,7 +1933,7 @@ EG.Store = Em.Object.extend({
 	reloadRecord: function(record) {
 		
 
-		return this.get('adapter').findRecord(record.typeKey, record.get('id')).then(function(payload) {
+		return this.adapterFor(record.typeKey).findRecord(record.typeKey, record.get('id')).then(function(payload) {
 			this.extractPayload(payload);
 			return record;
 		}.bind(this));
@@ -2045,6 +2028,33 @@ EG.Store = Em.Object.extend({
 		var attributeType = this.get('container').lookup('type:' + typeName);
 		
 		return attributeType;
+	},
+
+	/**
+	 * Gets the adapter for the specified type. First, it looks for a type-specific
+	 * adapter. If one isn't found, it looks for the application adapter. If that
+	 * isn't found, it uses the default {{link-to-class 'RESTAdapter'}}.
+	 *
+	 * Note that this method will cache the results, so your adapter configuration
+	 * must be finalized before the app starts up.
+	 *
+	 * @method adapterFor
+	 * @param {String} typeKey
+	 * @return {Adapter}
+	 * @protected
+	 */
+	adapterFor: function(typeKey) {
+		var adapterCache = this.get('adapterCache');
+
+		if (!adapterCache[typeKey]) {
+			var container = this.get('container');
+
+			adapterCache[typeKey] = container.lookup('adapter:' + typeKey) ||
+				container.lookup('adapter:application') ||
+				container.lookup('adapter:rest');
+		}
+
+		return adapterCache[typeKey];
 	}
 });
 
