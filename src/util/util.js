@@ -4,17 +4,17 @@
  *
  * ```js
  * var Shape = Ember.Object.extend({
- *     getNumberOfSides: EG.requiredMethod('getNumberOfSides')
+ *     getNumberOfSides: EG.abstractMethod('getNumberOfSides')
  * });
  * ```
  *
- * @method requiredMethod
+ * @method abstractMethod
  * @param {String} methodName
  * @return {Function}
  * @category top-level
  * @for EG
  */
-EG.requiredMethod = function(methodName) {
+EG.abstractMethod = function(methodName) {
 	return function() {
 		throw new Error('You failed to implement the abstract `' + methodName + '` method.');
 	};
@@ -26,26 +26,21 @@ EG.requiredMethod = function(methodName) {
  *
  * ```js
  * var Shape = Ember.Object.extend({
- *     name: EG.requiredProperty('name')
+ *     name: EG.abstractProperty('name')
  * });
  * ```
  *
- * @method propertyName
+ * @method abstractProperty
  * @param {String} propertyName
  * @return {ComputedProperty}
  * @category top-level
  * @for EG
  */
-EG.requiredProperty = function(propertyName) {
+EG.abstractProperty = function(propertyName) {
 	return Em.computed(function() {
 		throw new Error('You failed to override the abstract `' + propertyName + '` property.');
 	}).property();
 };
-
-/**
- * @deprecated
- */
-EG.required = EG.requiredMethod;
 
 /**
  * Generates a version 4 (random) UUID.

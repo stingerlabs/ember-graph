@@ -39,7 +39,7 @@ EG.Serializer = Em.Object.extend({
 	 * @return {JSON} JSON payload to send to server
 	 * @abstract
 	 */
-	serialize: EG.required('serialize'),
+	serialize: EG.abstractMethod('serialize'),
 
 	/**
 	 * Takes a payload from the server and converts it into a normalized
@@ -102,5 +102,5 @@ EG.Serializer = Em.Object.extend({
 	 * @return {Object} Normalized JSON payload
 	 * @abstract
 	 */
-	deserialize: EG.required('deserialize')
+	deserialize: EG.abstractMethod('deserialize')
 });

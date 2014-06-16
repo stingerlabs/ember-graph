@@ -14,7 +14,7 @@ EG.EmberGraphDatabaseAdapter = EG.Adapter.extend({
 	 * @type EmberGraphDatabase
 	 * @category abstract
 	 */
-	database: EG.requiredProperty('database'),
+	database: EG.abstractProperty('database'),
 
 	/**
 	 * This adapter requires the built-in JSON serializer to function properly.

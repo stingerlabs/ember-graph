@@ -55,7 +55,7 @@ EG.EmberGraphDatabase = Em.Object.extend({
 	 * @param {String} id
 	 * @return {Promise}
 	 */
-	getRecord: EG.requiredMethod('getRecord'),
+	getRecord: EG.abstractMethod('getRecord'),
 
 	/**
 	 * Similar to {{link-to-method 'EmberGraphDatabase' 'getRecord'}},
@@ -66,7 +66,7 @@ EG.EmberGraphDatabase = Em.Object.extend({
 	 * @param {String[]} ids
 	 * @return {Promise}
 	 */
-	getRecords: EG.requiredMethod('getRecords'),
+	getRecords: EG.abstractMethod('getRecords'),
 
 	/**
 	 * Similar to {{link-to-method 'EmberGraphDatabase' 'getRecord'}},
@@ -77,7 +77,7 @@ EG.EmberGraphDatabase = Em.Object.extend({
 	 * @param {String} typeKey
 	 * @return {Promise}
 	 */
-	getRecordsOfType: EG.requiredMethod('getRecordsOfType'),
+	getRecordsOfType: EG.abstractMethod('getRecordsOfType'),
 
 	/**
 	 * Similar to {{link-to-method 'EmberGraphDatabase' 'getRecord'}},
@@ -89,7 +89,7 @@ EG.EmberGraphDatabase = Em.Object.extend({
 	 * @param {Object} query
 	 * @return {Promise}
 	 */
-	queryRecords: EG.requiredMethod('queryRecords'),
+	queryRecords: EG.abstractMethod('queryRecords'),
 
 	/**
 	 * Atomically applies a set of changes. Either all of the changes
@@ -115,6 +115,6 @@ EG.EmberGraphDatabase = Em.Object.extend({
 	 * @param {Object[]} relationshipChanges
 	 * @return {Promise}
 	 */
-	applyChanges: EG.requiredMethod('applyChanges')
+	applyChanges: EG.abstractMethod('applyChanges')
 
 });

@@ -61,7 +61,7 @@ EG.Adapter = Em.Object.extend({
 	 * @return {Promise} Resolves to the normalized JSON
 	 * @category abstract
 	 */
-	createRecord: EG.required('createRecord'),
+	createRecord: EG.abstractMethod('createRecord'),
 
 	/**
 	 * Fetch a record from the server.
@@ -72,7 +72,7 @@ EG.Adapter = Em.Object.extend({
 	 * @return {Promise} Resolves to the normalized JSON
 	 * @category abstract
 	 */
-	findRecord: EG.required('findRecord'),
+	findRecord: EG.abstractMethod('findRecord'),
 
 	/**
 	 * The same as find, only it should load several records.
@@ -83,7 +83,7 @@ EG.Adapter = Em.Object.extend({
 	 * @return {Promise} Resolves to the normalized JSON
 	 * @category abstract
 	 */
-	findMany: EG.required('findMany'),
+	findMany: EG.abstractMethod('findMany'),
 
 	/**
 	 * The same as find, only it should load all records of the given type.
@@ -93,7 +93,7 @@ EG.Adapter = Em.Object.extend({
 	 * @return {Promise} Resolves to the normalized JSON
 	 * @category abstract
 	 */
-	findAll: EG.required('findAll'),
+	findAll: EG.abstractMethod('findAll'),
 
 	/**
 	 * Queries the server for records of the given type. The resolved
@@ -106,7 +106,7 @@ EG.Adapter = Em.Object.extend({
 	 * @return {Promise} Resolves to the normalized JSON
 	 * @category abstract
 	 */
-	findQuery: EG.required('findQuery'),
+	findQuery: EG.abstractMethod('findQuery'),
 
 	/**
 	 * Saves the record's changes to the server.
@@ -116,7 +116,7 @@ EG.Adapter = Em.Object.extend({
 	 * @return {Promise} Resolves to the normalized JSON
 	 * @category abstract
 	 */
-	updateRecord: EG.required('updateRecord'),
+	updateRecord: EG.abstractMethod('updateRecord'),
 
 	/**
 	 * Deletes the record.
@@ -126,7 +126,7 @@ EG.Adapter = Em.Object.extend({
 	 * @return {Promise} Resolves to the normalized JSON
 	 * @category abstract
 	 */
-	deleteRecord: EG.required('deleteRecord'),
+	deleteRecord: EG.abstractMethod('deleteRecord'),
 
 	/**
 	 * Serializes the given record. By default, it defers to the serializer.

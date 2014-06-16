@@ -73,17 +73,17 @@ if (Em) {
  *
  * ```js
  * var Shape = Ember.Object.extend({
- *     getNumberOfSides: EG.requiredMethod('getNumberOfSides')
+ *     getNumberOfSides: EG.abstractMethod('getNumberOfSides')
  * });
  * ```
  *
- * @method requiredMethod
+ * @method abstractMethod
  * @param {String} methodName
  * @return {Function}
  * @category top-level
  * @for EG
  */
-EG.requiredMethod = function(methodName) {
+EG.abstractMethod = function(methodName) {
 	return function() {
 		throw new Error('You failed to implement the abstract `' + methodName + '` method.');
 	};
@@ -95,26 +95,21 @@ EG.requiredMethod = function(methodName) {
  *
  * ```js
  * var Shape = Ember.Object.extend({
- *     name: EG.requiredProperty('name')
+ *     name: EG.abstractProperty('name')
  * });
  * ```
  *
- * @method propertyName
+ * @method abstractProperty
  * @param {String} propertyName
  * @return {ComputedProperty}
  * @category top-level
  * @for EG
  */
-EG.requiredProperty = function(propertyName) {
+EG.abstractProperty = function(propertyName) {
 	return Em.computed(function() {
 		throw new Error('You failed to override the abstract `' + propertyName + '` property.');
 	}).property();
 };
-
-/**
- * @deprecated
- */
-EG.required = EG.requiredMethod;
 
 /**
  * Generates a version 4 (random) UUID.
@@ -354,7 +349,7 @@ EG.Serializer = Em.Object.extend({
 	 * @return {JSON} JSON payload to send to server
 	 * @abstract
 	 */
-	serialize: EG.required('serialize'),
+	serialize: EG.abstractMethod('serialize'),
 
 	/**
 	 * Takes a payload from the server and converts it into a normalized
@@ -417,7 +412,7 @@ EG.Serializer = Em.Object.extend({
 	 * @return {Object} Normalized JSON payload
 	 * @abstract
 	 */
-	deserialize: EG.required('deserialize')
+	deserialize: EG.abstractMethod('deserialize')
 });
 
 
@@ -1030,7 +1025,7 @@ EG.Adapter = Em.Object.extend({
 	 * @return {Promise} Resolves to the normalized JSON
 	 * @category abstract
 	 */
-	createRecord: EG.required('createRecord'),
+	createRecord: EG.abstractMethod('createRecord'),
 
 	/**
 	 * Fetch a record from the server.
@@ -1041,7 +1036,7 @@ EG.Adapter = Em.Object.extend({
 	 * @return {Promise} Resolves to the normalized JSON
 	 * @category abstract
 	 */
-	findRecord: EG.required('findRecord'),
+	findRecord: EG.abstractMethod('findRecord'),
 
 	/**
 	 * The same as find, only it should load several records.
@@ -1052,7 +1047,7 @@ EG.Adapter = Em.Object.extend({
 	 * @return {Promise} Resolves to the normalized JSON
 	 * @category abstract
 	 */
-	findMany: EG.required('findMany'),
+	findMany: EG.abstractMethod('findMany'),
 
 	/**
 	 * The same as find, only it should load all records of the given type.
@@ -1062,7 +1057,7 @@ EG.Adapter = Em.Object.extend({
 	 * @return {Promise} Resolves to the normalized JSON
 	 * @category abstract
 	 */
-	findAll: EG.required('findAll'),
+	findAll: EG.abstractMethod('findAll'),
 
 	/**
 	 * Queries the server for records of the given type. The resolved
@@ -1075,7 +1070,7 @@ EG.Adapter = Em.Object.extend({
 	 * @return {Promise} Resolves to the normalized JSON
 	 * @category abstract
 	 */
-	findQuery: EG.required('findQuery'),
+	findQuery: EG.abstractMethod('findQuery'),
 
 	/**
 	 * Saves the record's changes to the server.
@@ -1085,7 +1080,7 @@ EG.Adapter = Em.Object.extend({
 	 * @return {Promise} Resolves to the normalized JSON
 	 * @category abstract
 	 */
-	updateRecord: EG.required('updateRecord'),
+	updateRecord: EG.abstractMethod('updateRecord'),
 
 	/**
 	 * Deletes the record.
@@ -1095,7 +1090,7 @@ EG.Adapter = Em.Object.extend({
 	 * @return {Promise} Resolves to the normalized JSON
 	 * @category abstract
 	 */
-	deleteRecord: EG.required('deleteRecord'),
+	deleteRecord: EG.abstractMethod('deleteRecord'),
 
 	/**
 	 * Serializes the given record. By default, it defers to the serializer.
@@ -1145,7 +1140,7 @@ EG.EmberGraphDatabaseAdapter = EG.Adapter.extend({
 	 * @type EmberGraphDatabase
 	 * @category abstract
 	 */
-	database: EG.requiredProperty('database'),
+	database: EG.abstractProperty('database'),
 
 	/**
 	 * This adapter requires the built-in JSON serializer to function properly.
