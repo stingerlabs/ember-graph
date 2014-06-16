@@ -8,7 +8,7 @@
  * relationship integrity. Two good use cases are in memory and local
  * storage persistence. (Both of which come with Ember-Graph in the
  * {{link-to-class 'MemoryAdapter'}} and
- * {{link-to-class 'LocalStorageAdapter}}).
+ * {{link-to-class 'LocalStorageAdapter'}}).
  *
  * There are two JSON data types that the persistence engine must store and
  * retrieve: records and relationships. Records holds attributes and
