@@ -33,26 +33,19 @@ module.exports = function(grunt) {
 };
 
 function extractTopLevelMethods(json) {
-	return json.classitems.filter(function(item) {
-		return (item.itemtype === 'method' && (item.category || []).indexOf('top-level') >= 0);
-	}).map(function(item) {
-		// Make sure this method isn't detected later in the conversion
-		item.class = null;
-
-		return convertMethodItem(item);
-	}).sort(function(a, b) {
-		return (a.name < b.name ? -1 : 1);
-	});
+	return extractTopLevelItems(json, 'method');
 }
 
 function extractTopLevelProperties(json) {
-	return json.classitems.filter(function(item) {
-		return (item.itemtype === 'property' && (item.category || []).indexOf('top-level') >= 0);
-	}).map(function(item) {
-		// Make sure this property isn't detected later in the conversion
-		item.class = null;
+	return extractTopLevelItems(json, 'property');
+}
 
-		return convertPropertyItem(item);
+function extractTopLevelItems(json, type) {
+	return json.classitems.filter(function(item) {
+		return (item.itemtype === type && (item.category || []).indexOf('top-level') >= 0);
+	}).map(function(item) {
+		item.class = null;
+		return (type === 'method' ? convertMethodItem : convertPropertyItem)(item);
 	}).sort(function(a, b) {
 		return (a.name < b.name ? -1 : 1);
 	});
@@ -77,48 +70,31 @@ function getInheritanceChain(data, className) {
 }
 
 function extractClassMethods(data, classChain, methods) {
-	methods = methods || {};
-
-	if (classChain.length <= 0) {
-		return Object.keys(methods).sort().map(function(key) {
-			return methods[key];
-		});
-	}
-
-	var classItems = data.classitems.filter(function(item) {
-		return (item.itemtype === 'method' && item.class === classChain[0]);
-	});
-
-	classItems.forEach(function(item) {
-		methods[item.name] = convertMethodItem(item);
-	});
-
-	var chainMethods = extractClassMethods(data, classChain.slice(1), methods);
-	return chainMethods.filter(function(method) {
-		return (method.private === false || method.defined_in === classChain[classChain.length -1]);
-	});
+	return extractClassItems(data, classChain, 'method', {});
 }
 
-function extractClassProperties(data, classChain, properties) {
-	properties = properties || {};
+function extractClassProperties(data, classChain) {
+	return extractClassItems(data, classChain, 'property', {});
+}
 
+function extractClassItems(data, classChain, type, items) {
 	if (classChain.length <= 0) {
-		return Object.keys(properties).sort().map(function(key) {
-			return properties[key];
+		return Object.keys(items).sort().map(function(key) {
+			return items[key];
 		});
 	}
 
 	var classItems = data.classitems.filter(function(item) {
-		return (item.itemtype === 'property' && item.class === classChain[0]);
+		return (item.itemtype === type && item.class === classChain[0]);
 	});
 
 	classItems.forEach(function(item) {
-		properties[item.name] = convertPropertyItem(item);
+		items[item.name] = (type === 'method' ? convertMethodItem : convertPropertyItem)(item);
 	});
 
-	var chainProperties = extractClassProperties(data, classChain.slice(1), properties);
-	return chainProperties.filter(function(property) {
-		return (property.private === false || property.defined_in === classChain[classChain.length - 1]);
+	var chainItems = extractClassItems(data, classChain.slice(1), type, items);
+	return chainItems.filter(function(item) {
+		return (item.private === false || item.defined_in === classChain[classChain.length - 1]);
 	});
 }
 
