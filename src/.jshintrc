@@ -15,7 +15,6 @@
 	"curly": true,
 	"eqeqeq": true,
 	"forin": true,
-	"freeze": false,
 	"immed": false,
 	"latedef": false,
 	"newcap": true,
