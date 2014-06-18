@@ -55,7 +55,7 @@ EG.Model.reopen({
 	 * @type Boolean
 	 * @final
 	 */
-	isDirty: Em.computed.or('_areAttributesDirty', '_areRelationshipsDirty'),
+	isDirty: Em.computed.or('_areAttributesDirty', 'areRelationshipsDirty'),
 
 	/**
 	 * Denotes that the record is currently being saved to the server for the first time,

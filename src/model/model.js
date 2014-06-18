@@ -90,7 +90,7 @@ EG.Model = Em.Object.extend(Em.Evented, {
 			'while dirty with `reloadDirty` disabled.', !this.get('isDirty') || this.get('store.reloadDirty'));
 
 		this._loadAttributes(json);
-		this._loadRelationships(json);
+		this.loadRelationships(json);
 	},
 
 	/**
@@ -232,7 +232,7 @@ EG.Model.reopenClass({
 
 		var subclass = this._super.apply(this, args);
 		subclass._declareAttributes(attributes);
-		subclass._declareRelationships(relationships);
+		subclass.declareRelationships(relationships);
 		return subclass;
 	},
 
