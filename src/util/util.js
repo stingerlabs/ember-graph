@@ -59,3 +59,19 @@ EG.generateUUID = function() {
 		return v.toString(16);
 	});
 };
+
+/**
+ * Compares the contents of two arrays for equality. Uses
+ * Ember.Set to make the comparison, so the objects must
+ * be equal with `===`.
+ *
+ * @method arrayContentsEqual
+ * @param {Array} a
+ * @param {Array} b
+ * @returns {Boolean}
+ * @category top-level
+ * @for EG
+ */
+EG.arrayContentsEqual = function(a, b) {
+	return (a.length === b.length && (new Em.Set(a)).isEqual(b));
+};

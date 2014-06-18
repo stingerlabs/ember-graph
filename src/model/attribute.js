@@ -1,4 +1,4 @@
-var disallowedAttributeNames = new Em.Set(['id', 'type', 'content']);
+var disallowedAttributeNames = new Em.Set(['id', 'type', 'content', 'length']);
 
 var createAttribute = function(attributeName, options) {
 	var meta = {

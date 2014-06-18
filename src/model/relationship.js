@@ -1,15 +1,17 @@
+var map = Em.ArrayPolyfills.map;
+var forEach = Em.ArrayPolyfills.forEach;
+
 var HAS_ONE_KEY = EG.Model.HAS_ONE_KEY = 'hasOne';
 var HAS_MANY_KEY = EG.Model.HAS_MANY_KEY = 'hasMany';
 
-var disallowedRelationshipNames = new Em.Set(['id', 'type', 'content']);
+var disallowedRelationshipNames = new Em.Set(['id', 'type', 'content', 'length']);
 
 var createRelationship = function(name, kind, options) {
-	Em.assert('Your relationship must specify a relatedType.', Em.typeOf(options.relatedType) === 'string');
-	Em.assert('Your relationship must specify an inverse relationship.',
-		options.inverse === null || Em.typeOf(options.inverse) === 'string');
+	Em.assert('Invalid relatedType', Em.typeOf(options.relatedType) === 'string');
+	Em.assert('Invalid inverse', options.inverse === null || Em.typeOf(options.inverse) === 'string');
 
 	var meta = {
-		isRelationship: false,
+		isRelationship: false, // the 'real' relationship (without _) is the relationship
 		kind: kind,
 		isRequired: (options.hasOwnProperty('defaultValue') ? false : options.isRequired !== false),
 		defaultValue: options.defaultValue || (kind === HAS_MANY_KEY ? [] : null),
@@ -18,42 +20,22 @@ var createRelationship = function(name, kind, options) {
 		readOnly: options.readOnly === true
 	};
 
-	Em.assert('The default value for a hasOne relationship must be a string or null, and the default value' +
-			'for a hasMany relationship must be an array.',
-			(kind === HAS_MANY_KEY && Em.isArray(meta.defaultValue)) ||
-			(kind === HAS_ONE_KEY && (meta.defaultValue === null || Em.typeOf(meta.defaultValue) === 'string')));
+	Em.assert('defaultValue for hasMany must be an array.', meta.kind === HAS_ONE_KEY || Em.isArray(meta.defaultValue));
+	Em.assert('defaultValue for hasOne must be null or a string.',
+			meta.kind === HAS_MANY_KEY || meta.defaultValue === null || Em.typeOf(meta.defaultValue) === 'string');
 
-	return Em.computed(function(key) {
-		return undefined;
-	}).property().meta(meta).readOnly();
+	if (meta.kind === HAS_MANY_KEY) {
+		return Em.computed(function(key) {
+			return this.hasManyValue(key.substring(1), false);
+		}).property('relationships.client.' + name, 'relationships.deleted.' + name).meta(meta).readOnly();
+	} else {
+		return Em.computed(function(key) {
+			return this.hasOneValue(key.substring(1), false);
+		}).property('relationships.client.' + name, 'relationships.deleted.' + name).meta(meta).readOnly();
+	}
 };
 
 EG.Model.reopenClass({
-
-	/**
-	 * A set of all of the relationship names for this model.
-	 *
-	 * @property relationships
-	 * @for Model
-	 * @type Set
-	 * @static
-	 * @readOnly
-	 */
-	relationships: Em.computed(function() {
-		var relationships = new Em.Set();
-
-		this.eachComputedProperty(function(name, meta) {
-			if (meta.isRelationship) {
-				Em.assert('`' + name + '` cannot be used as a relationship name.',
-					!disallowedRelationshipNames.contains(name));
-				Em.assert('Relationship names must start with a lowercase letter.', name[0].match(/[a-z]/g));
-
-				relationships.addObject(name);
-			}
-		});
-
-		return relationships;
-	}).property(),
 
 	/**
 	 * Fetch the metadata for a relationship property.
@@ -99,20 +81,44 @@ EG.Model.reopenClass({
 	declareRelationships: function(relationships) {
 
 	}
+
 });
 
 EG.Model.reopen({
 
-	loadRelationships: function(json) {
-
-	},
-
 	areRelationshipsDirty: Em.computed(function() {
-		return false;
-	}).property(),
+		return this.get('relationships.client.size') > 0 || this.get('relationships.deleted.size' > 0);
+	}).property('relationships.client.length', 'relationships.deleted.length'),
 
 	changedRelationships: function() {
+		var changes = {};
 
+		this.constructor.eachRelationship(function(name, meta) {
+			var oldVal, newVal;
+
+			if (meta.kind === HAS_MANY_KEY) {
+				oldVal = map.call(this.hasManyValue(name, true), function(value) {
+					return value.type + '.' + value.id;
+				});
+
+				newVal = map.call(this.hasManyValue(name, false), function(value) {
+					return value.type + '.' + value.id;
+				});
+
+				if (!EG.arrayContentsEqual(oldVal, newVal)) {
+					changes[name] = [oldVal, newVal];
+				}
+			} else {
+				oldVal = this.hasOneValue(name, true);
+				newVal = this.hasOneValue(name, false);
+
+				if (oldVal !== newVal) {
+					changes[name] = [oldVal, newVal];
+				}
+			}
+		}, this);
+
+		return changes;
 	},
 
 	rollbackRelationships: function() {
@@ -134,4 +140,55 @@ EG.Model.reopen({
 	clearHasOneRelationship: function(relationshipName) {
 
 	}
+
+});
+
+EG.Model.reopen({
+
+	relationships: null,
+
+	initializeRelationships: Em.computed(function() {
+		this.set('relationships', new EG.RelationshipStore());
+	}).on('init'),
+
+	loadRelationships: function(json) {
+
+	},
+
+	hasOneValue: function(name, server) {
+		var relationships;
+
+		if (server) {
+			relationships = this.get('relationships').getServerRelationships(name);
+		} else {
+			relationships = this.get('relationships').getCurrentRelationships(name);
+		}
+
+		if (relationships.length <= 0) {
+			return null;
+		}
+
+		return {
+			id: relationships[0].otherId(this),
+			type: relationships[0].otherType(this)
+		};
+	},
+
+	hasManyValue: function(name, server) {
+		var relationships;
+
+		if (server) {
+			relationships = this.get('relationships').getServerRelationships(name);
+		} else {
+			relationships = this.get('relationships').getCurrentRelationships(name);
+		}
+
+		return map.call(relationships, function(relationship) {
+			return {
+				id: relationship.otherId(this),
+				type: relationship.otherType(this)
+			};
+		}, this);
+	}
+
 });

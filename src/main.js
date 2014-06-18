@@ -23,6 +23,7 @@ require('util/util');
 require('util/set');
 require('util/string');
 require('util/inflector');
+require('util/relationship_store');
 
 require('serializer/serializer');
 require('serializer/**/*');
