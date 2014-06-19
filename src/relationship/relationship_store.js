@@ -7,6 +7,12 @@ var CLIENT_STATE = EG.Relationship.CLIENT_STATE;
 var SERVER_STATE = EG.Relationship.SERVER_STATE;
 var DELETED_STATED = EG.Relationship.DELETED_STATED;
 
+var STATE_MAP = {
+	CLIENT_STATE: 'client',
+	SERVER_STATE: 'server',
+	DELETED_STATED: 'deleted'
+};
+
 var RelationshipMap = Em.Object.extend({
 
 	length: 0,
@@ -83,17 +89,7 @@ EG.RelationshipStore = Em.Object.extend({
 	}),
 
 	addRelationship: function(name, relationship) {
-		switch (relationship.get('state')) {
-			case SERVER_STATE:
-				this.get('server').addRelationship(name, relationship);
-				break;
-			case CLIENT_STATE:
-				this.get('client').addRelationship(name, relationship);
-				break;
-			case DELETED_STATED:
-				this.get('deleted').addRelationship(name, relationship);
-				break;
-		}
+		return this.get(STATE_MAP[relationship.get('state')]).addRelationship(name, relationship);
 	},
 
 	removeRelationship: function(id) {
@@ -118,5 +114,9 @@ EG.RelationshipStore = Em.Object.extend({
 
 	getCurrentRelationships: function(name) {
 		return this.get('server').getRelationships(name).concat(this.get('client').getRelationships(name));
+	},
+
+	getRelationshipsByState: function(name, state) {
+		return this.get(STATE_MAP[state]).getRelationships(name);
 	}
 });

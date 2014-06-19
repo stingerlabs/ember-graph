@@ -19,7 +19,8 @@ EG.Store.reopen({
 	 *
 	 * @property reloadDirty
 	 * @for Store
-	 * @type {Boolean}
+	 * @type Boolean
+	 * @final
 	 */
 	reloadDirty: true,
 
@@ -36,7 +37,8 @@ EG.Store.reopen({
 	 *
 	 * @property sideWithClientOnConflict
 	 * @for Store
-	 * @type {Boolean}
+	 * @type Boolean
+	 * @final
 	 */
 	sideWithClientOnConflict: true,
 
@@ -49,8 +51,39 @@ EG.Store.reopen({
 	 *
 	 * @property overwriteClientAttributes
 	 * @for Store
-	 * @type {Boolean}
+	 * @type Boolean
+	 * @final
 	 */
-	overwriteClientAttributes: false
+	overwriteClientAttributes: false,
+
+	createRelationship: function(type1, id1, name1, type2, id2, name2, state) { // jshint ignore:line
+
+	},
+
+	deleteRelationship: function(relationship) {
+
+	},
+
+	changeRelationshipState: function(relationship, newState) {
+
+	},
+
+	/**
+	 * @param {Model} record
+	 * @param {Relationship} relationship
+	 * @private
+	 */
+	connectRelationshipTo: function(record, relationship) {
+
+	},
+
+	/**
+	 * @param {Model} record
+	 * @param {Relationship} relationship
+	 * @private
+	 */
+	disconnectRelationshipFrom: function(record, relationship) {
+
+	}
 
 });

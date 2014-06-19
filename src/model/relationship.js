@@ -17,7 +17,8 @@ var createRelationship = function(name, kind, options) {
 		defaultValue: options.defaultValue || (kind === HAS_MANY_KEY ? [] : null),
 		relatedType: options.relatedType,
 		inverse: options.inverse,
-		readOnly: options.readOnly === true
+		isReadOnly: options.readOnly === true,
+		isPolymorphic: options.polymorphic === true
 	};
 
 	Em.assert('defaultValue for hasMany must be an array.', meta.kind === HAS_ONE_KEY || Em.isArray(meta.defaultValue));
@@ -26,11 +27,11 @@ var createRelationship = function(name, kind, options) {
 
 	if (meta.kind === HAS_MANY_KEY) {
 		return Em.computed(function(key) {
-			return this.hasManyValue(key.substring(1), false);
+			return this.getHasManyValue(key.substring(1), false);
 		}).property('relationships.client.' + name, 'relationships.deleted.' + name).meta(meta).readOnly();
 	} else {
 		return Em.computed(function(key) {
-			return this.hasOneValue(key.substring(1), false);
+			return this.getHasOneValue(key.substring(1), false);
 		}).property('relationships.client.' + name, 'relationships.deleted.' + name).meta(meta).readOnly();
 	}
 };
@@ -79,7 +80,21 @@ EG.Model.reopenClass({
 	},
 
 	declareRelationships: function(relationships) {
+		var obj = {};
 
+		forEach.call(Em.keys(relationships), function(name) {
+			obj['_' + name] = createRelationship(name, relationships[name].kind, relationships[name].options);
+
+			var relationship;
+
+			// TODO: 4 different possibilities based on polymorphic and kind
+
+			var meta = Em.copy(obj['_' + name].meta(), true);
+			meta.isRelationship = true;
+			obj[name] = Em.computed(relationship).property('_' + name).readOnly().meta(meta);
+		});
+
+		this.reopen(obj);
 	}
 
 });
@@ -122,29 +137,79 @@ EG.Model.reopen({
 	},
 
 	rollbackRelationships: function() {
+		var store = this.get('store');
+
+		var client = this.get('relationships').getRelationshipsByState(CLIENT_STATE);
+		forEach.call(client, store.deleteRelationship, store);
+
+		var deleted = this.get('relationships').getRelationshipsByState(DELETED_STATED);
+		forEach.call(deleted, store.changeRelationshipState, store);
+	},
+
+	addToRelationship: function(relationshipName, id, polymorphicType) {
 
 	},
 
-	addToRelationship: function(relationshipName, id) {
+	removeFromRelationship: function(relationshipName, id, polymorphicType) {
+		var meta = this.constructor.metaForRelationship(relationshipName);
+		if (meta.isReadOnly) {
+			Em.assert('Can\'t modify a read-only relationship.');
+			return;
+		}
 
+		if (Em.typeOf(id) !== 'string') {
+			polymorphicType = id.typeKey;
+			id = id.get('id');
+		} else if (Em.typeOf(polymorphicType) !== 'string') {
+			polymorphicType = meta.relatedType;
+		}
+
+		var relationships = this.getHasManyRelationships(relationshipName, false);
+		for (var i = 0; i < relationships.length; ++i) {
+			if (relationships[i].otherType(this) === polymorphicType && relationships[i].otherId(this) === id) {
+				if (relationships[i].get('state') === CLIENT_STATE) {
+					this.get('store').deleteRelationship(relationships[i]);
+				} else {
+					this.get('store').changeRelationshipState(relationships[i], DELETED_STATED);
+				}
+
+				break;
+			}
+		}
 	},
 
-	removeFromRelationship: function(relationshipName, id) {
-
-	},
-
-	setHasOneRelationship: function(relationshipName, id) {
-
+	setHasOneRelationship: function(relationshipName, id, polymorphicType) {
+		// Check to make sure the relationship we want isn't already in the 'deleted' state
 	},
 
 	clearHasOneRelationship: function(relationshipName) {
+		var meta = this.constructor.metaForRelationship(relationshipName);
+		if (meta.isReadOnly) {
+			Em.assert('Can\'t modify a read-only relationship.');
+			return;
+		}
 
+		var relationship = this.getHasOneRelationship(relationshipName, false);
+		if (relationship) {
+			if (relationship.get('state') === CLIENT_STATE) {
+				this.get('store').deleteRelationship(relationship);
+			} else {
+				this.get('store').changeRelationshipState(relationship, DELETED_STATED);
+			}
+		}
 	}
 
 });
 
 EG.Model.reopen({
 
+	/**
+	 * Stores all of the relationships currently connected to this record.
+	 * The model itself should only read from this object. All additions
+	 * and deletions are handled by the store (so they can be reciprocated).
+	 *
+	 * @type RelationshipMap
+	 */
 	relationships: null,
 
 	initializeRelationships: Em.on('init', function() {
@@ -155,7 +220,7 @@ EG.Model.reopen({
 
 	},
 
-	hasOneValue: function(name, server) {
+	getHasOneRelationship: function(name, server) {
 		var relationships;
 
 		if (server) {
@@ -166,27 +231,37 @@ EG.Model.reopen({
 
 		if (relationships.length <= 0) {
 			return null;
+		} else {
+			return relationships[0];
 		}
-
-		return {
-			id: relationships[0].otherId(this),
-			type: relationships[0].otherType(this)
-		};
 	},
 
-	hasManyValue: function(name, server) {
-		var relationships;
+	getHasOneValue: function(name, server) {
+		var relationship = this.getHasOneRelationship(name, server);
 
-		if (server) {
-			relationships = this.get('relationships').getServerRelationships(name);
+		if (relationship === null) {
+			return null;
 		} else {
-			relationships = this.get('relationships').getCurrentRelationships(name);
-		}
-
-		return map.call(relationships, function(relationship) {
 			return {
-				id: relationship.otherId(this),
-				type: relationship.otherType(this)
+				type: relationship.otherType(this),
+				id: relationship.otherId(this)
+			};
+		}
+	},
+
+	getHasManyRelationships: function(name, server) {
+		if (server) {
+			return this.get('relationships').getServerRelationships(name);
+		} else {
+			return this.get('relationships').getCurrentRelationships(name);
+		}
+	},
+
+	getHasManyValue: function(name, server) {
+		return map.call(this.getHasManyRelationships(name, server), function(relationship) {
+			return {
+				type: relationship.otherType(this),
+				id: relationship.otherId(this)
 			};
 		}, this);
 	}
