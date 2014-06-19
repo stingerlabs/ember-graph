@@ -147,9 +147,9 @@ EG.Model.reopen({
 
 	relationships: null,
 
-	initializeRelationships: Em.computed(function() {
+	initializeRelationships: Em.on('init', function() {
 		this.set('relationships', new EG.RelationshipStore());
-	}).on('init'),
+	}),
 
 	loadRelationships: function(json) {
 

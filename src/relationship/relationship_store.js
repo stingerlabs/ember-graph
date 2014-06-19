@@ -9,10 +9,7 @@ var DELETED_STATED = EG.Relationship.DELETED_STATED;
 
 var RelationshipMap = Em.Object.extend({
 
-	_length: 0,
-	length: Em.computed(function(key, value) {
-
-	}).property(),
+	length: 0,
 
 	addRelationship: function(name, relationship) {
 		if (this.hasOwnProperty(name)) {
@@ -23,11 +20,11 @@ var RelationshipMap = Em.Object.extend({
 			o.set(relationship.get('id'), relationship);
 			this.set(name, o);
 		}
+
+		this.incrementProperty('length');
 	},
 
-	removeRelationship: function(relationship) {
-		var id = relationship.get('id');
-
+	removeRelationship: function(id) {
 		forEach.call(Em.keys(this), function(key) {
 			if (key === 'length' || key === '_length') {
 				return;
@@ -37,6 +34,7 @@ var RelationshipMap = Em.Object.extend({
 			if (typeof o === 'object' && o.hasOwnProperty(id)) {
 				delete o[id];
 				this.notifyPropertyChange(key);
+				this.decrementProperty('length');
 			}
 		}, this);
 	},
@@ -51,6 +49,19 @@ var RelationshipMap = Em.Object.extend({
 
 	clearRelationships: function(name) {
 		this.set(name, new Em.Object());
+		this.recalculateLength();
+	},
+
+	recalculateLength: function() {
+		var length = 0;
+
+		forEach.call(Em.keys(this), function(key) {
+			if (key !== 'length') {
+				length += Em.keys(this[key]).length;
+			}
+		}, this);
+
+		this.set('length', length);
 	}
 
 });
@@ -63,13 +74,43 @@ EG.RelationshipStore = Em.Object.extend({
 
 	deleted: null,
 
-	initializeMaps: Em.computed(function() {
+	initializeMaps: Em.on('init', function() {
 		this.setProperties({
 			server: new RelationshipMap(),
 			client: new RelationshipMap(),
 			deleted: new RelationshipMap()
 		});
-	}).on('init'),
+	}),
+
+	addRelationship: function(name, relationship) {
+		switch (relationship.get('state')) {
+			case SERVER_STATE:
+				this.get('server').addRelationship(name, relationship);
+				break;
+			case CLIENT_STATE:
+				this.get('client').addRelationship(name, relationship);
+				break;
+			case DELETED_STATED:
+				this.get('deleted').addRelationship(name, relationship);
+				break;
+		}
+	},
+
+	removeRelationship: function(id) {
+		if (Em.typeOf(id) !== 'string') {
+			id = Em.get(id, 'id');
+		}
+
+		this.get('server').removeRelationship(id);
+		this.get('client').removeRelationship(id);
+		this.get('deleted').removeRelationship(id);
+	},
+
+	clearRelationships: function(name) {
+		this.get('server').clearRelationships(name);
+		this.get('client').clearRelationships(name);
+		this.get('deleted').clearRelationships(name);
+	},
 
 	getServerRelationships: function(name) {
 		return this.get('server').getRelationships(name).concat(this.get('deleted').getRelationships(name));

@@ -23,7 +23,6 @@ require('util/util');
 require('util/set');
 require('util/string');
 require('util/inflector');
-require('util/relationship_store');
 
 require('serializer/serializer');
 require('serializer/**/*');
@@ -38,6 +37,7 @@ require('store/relationship');
 require('data/promise_object');
 
 require('relationship/relationship');
+require('relationship/relationship_store');
 
 require('attribute_type/type');
 require('attribute_type/**/*');

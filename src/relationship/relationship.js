@@ -4,6 +4,26 @@ var DELETED_STATED = 'deleted';
 
 EG.Relationship = Em.Object.extend({
 
+	_state: CLIENT_STATE,
+	state: Em.computed(function(key, value) {
+		if (arguments.length > 1) {
+			switch (value) {
+				case CLIENT_STATE:
+				case SERVER_STATE:
+				case DELETED_STATED:
+					this.set('_state', value);
+					break;
+				default:
+					Em.assert('Invalid relationship state: ' + value);
+					break;
+			}
+		}
+
+		return this.get('_state');
+	}).property('_state'),
+
+	id: null,
+
 	typeKey1: null,
 
 	id1: null,
@@ -15,6 +35,24 @@ EG.Relationship = Em.Object.extend({
 	id2: null,
 
 	relationship2: null,
+
+	init: function(type1, id1, name1, type2, id2, name2, state) { // jshint ignore:line
+		Em.assert('Invalid type or ID', type1 && id1 && type2 && id2);
+		Em.assert('First relationship must have a name', name1);
+		Em.assert('Second relationship must have a name or be null', name2 === null || Em.typeOf(name2) === 'string');
+		Em.assert('Invalid state', state === CLIENT_STATE || state === SERVER_STATE || state === DELETED_STATED);
+
+		this.setProperties({
+			id: EG.generateUUID(),
+			type1: type1,
+			id1: id1,
+			relationship1: name1,
+			type2: type2,
+			id2: id2,
+			relationship2: name2,
+			state: state
+		});
+	},
 
 	otherType: function(record) {
 		if (this.get('id1') === record.get('id')) {
