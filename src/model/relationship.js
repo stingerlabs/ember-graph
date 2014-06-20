@@ -265,7 +265,7 @@ EG.Model.reopen({
 			// If all of that fails, create a new relationship (possibly queued)
 			store.createRelationship(this.typeKey, this.get('id'), relationshipName,
 				polymorphicType, id, meta.inverse, CLIENT_STATE);
-		});
+		}, this);
 	},
 
 	removeFromRelationship: function(relationshipName, id, polymorphicType) {
@@ -297,7 +297,7 @@ EG.Model.reopen({
 					break;
 				}
 			}
-		});
+		}, this);
 	},
 
 	setHasOneRelationship: function(relationshipName, id, polymorphicType) {
@@ -372,7 +372,7 @@ EG.Model.reopen({
 			// If all of that fails, create a new relationship (possibly queued)
 			store.createRelationship(this.typeKey, this.get('id'), relationshipName,
 				polymorphicType, id, meta.inverse, CLIENT_STATE);
-		});
+		}, this);
 	},
 
 	clearHasOneRelationship: function(relationshipName) {
@@ -391,7 +391,7 @@ EG.Model.reopen({
 					this.get('store').changeRelationshipState(relationship, DELETED_STATE);
 				}
 			}
-		});
+		}, this);
 	}
 
 });

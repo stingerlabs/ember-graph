@@ -2165,16 +2165,58 @@ EG.Store.reopen({
 	 */
 	overwriteClientAttributes: false,
 
-	createRelationship: function(type1, id1, name1, type2, id2, name2, state) { // jshint ignore:line
+	queuedRelationships: new Em.Object(),
 
+	initializeQueuedRelationships: Em.on('init', function() {
+		this.set('queuedRelationships', new Em.Object());
+	}),
+
+	createRelationship: function(type1, id1, name1, type2, id2, name2, state) { // jshint ignore:line
+		var relationship = new EG.Relationship(type1, id1, name1, type2, id2, name2, state);
+
+		var queuedRelationships = this.get('queuedRelationships');
+		var record1 = this.getRecord(type1, id1);
+		var record2 = this.getRecord(type2, id2);
+
+		if (record1) {
+			this.connectRelationshipTo(record1, relationship);
+		}
+
+		if (record2) {
+			this.connectRelationshipTo(record2, relationship);
+		}
+
+		if (!record1 || !record2) {
+			queuedRelationships[relationship.get('id')] = relationship;
+			this.notifyPropertyChange('queuedRelationships');
+		}
 	},
 
 	deleteRelationship: function(relationship) {
+		var record1 = this.getRecord(relationship.get('type1'), relationship.get('id1'));
+		var record2 = this.getRecord(relationship.get('type2'), relationship.get('id2'));
 
+		this.disconnectRelationshipFrom(record1, relationship);
+		this.disconnectRelationshipFrom(record2, relationship);
+
+		var queuedRelationships = this.get('queuedRelationships');
+		delete queuedRelationships[relationship.get('id')];
+		this.notifyPropertyChange('queuedRelationships');
+
+		relationship.destroy();
 	},
 
 	changeRelationshipState: function(relationship, newState) {
+		var record1 = this.getRecord(relationship.get('type1'), relationship.get('id1'));
+		var record2 = this.getRecord(relationship.get('type2'), relationship.get('id2'));
 
+		this.disconnectRelationshipFrom(record1, relationship);
+		this.disconnectRelationshipFrom(record2, relationship);
+
+		relationship.set('state', newState);
+
+		this.connectRelationshipTo(record1, relationship);
+		this.connectRelationshipTo(record2, relationship);
 	},
 
 	/**
@@ -2183,7 +2225,11 @@ EG.Store.reopen({
 	 * @private
 	 */
 	connectRelationshipTo: function(record, relationship) {
+		if (!record) {
+			return;
+		}
 
+		record.get('relationships').addRelationship(relationship.otherName(record), relationship);
 	},
 
 	/**
@@ -2192,7 +2238,11 @@ EG.Store.reopen({
 	 * @private
 	 */
 	disconnectRelationshipFrom: function(record, relationship) {
+		if (!record) {
+			return;
+		}
 
+		record.get('relationships').removeRelationship(relationship);
 	}
 
 });
@@ -2348,6 +2398,19 @@ EG.Relationship = Em.Object.extend({
 		} else {
 			return this.get('relationship1');
 		}
+	},
+
+	destroy: function() {
+		this.setProperties({
+			id: null,
+			type1: null,
+			id1: null,
+			relationship1: null,
+			type2: null,
+			id2: null,
+			relationship2: null,
+			state: null
+		});
 	}
 });
 
@@ -3942,7 +4005,7 @@ EG.Model.reopen({
 			// If all of that fails, create a new relationship (possibly queued)
 			store.createRelationship(this.typeKey, this.get('id'), relationshipName,
 				polymorphicType, id, meta.inverse, CLIENT_STATE);
-		});
+		}, this);
 	},
 
 	removeFromRelationship: function(relationshipName, id, polymorphicType) {
@@ -3974,7 +4037,7 @@ EG.Model.reopen({
 					break;
 				}
 			}
-		});
+		}, this);
 	},
 
 	setHasOneRelationship: function(relationshipName, id, polymorphicType) {
@@ -4049,7 +4112,7 @@ EG.Model.reopen({
 			// If all of that fails, create a new relationship (possibly queued)
 			store.createRelationship(this.typeKey, this.get('id'), relationshipName,
 				polymorphicType, id, meta.inverse, CLIENT_STATE);
-		});
+		}, this);
 	},
 
 	clearHasOneRelationship: function(relationshipName) {
@@ -4068,7 +4131,7 @@ EG.Model.reopen({
 					this.get('store').changeRelationshipState(relationship, DELETED_STATE);
 				}
 			}
-		});
+		}, this);
 	}
 
 });

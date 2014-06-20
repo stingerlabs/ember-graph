@@ -76,6 +76,19 @@ EG.Relationship = Em.Object.extend({
 		} else {
 			return this.get('relationship1');
 		}
+	},
+
+	destroy: function() {
+		this.setProperties({
+			id: null,
+			type1: null,
+			id1: null,
+			relationship1: null,
+			type2: null,
+			id2: null,
+			relationship2: null,
+			state: null
+		});
 	}
 });
 
