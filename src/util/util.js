@@ -1,3 +1,5 @@
+var reduce = Em.ArrayPolyfills.reduce;
+
 /**
  * Denotes that method must be implemented in a subclass.
  * If it's not overridden, calling it will throw an error.
@@ -72,4 +74,34 @@ EG.generateUUID = function() {
  */
 EG.arrayContentsEqual = function(a, b) {
 	return (a.length === b.length && (new Em.Set(a)).isEqual(b));
+};
+
+/**
+ * Takes a list of record objects (with `type` and `id`)
+ * and groups them into arrays based on their type.
+ *
+ * @method groupRecords
+ * @param {Object[]} records
+ * @return {Array[]}
+ * @category top-level
+ * @for EG
+ */
+EG.groupRecords = function(records) {
+	var groups = reduce.call(records, function(groups, record) {
+		if (groups[record.type]) {
+			groups[record.type].push(record);
+		} else {
+			groups[record.type] = [record];
+		}
+
+		return groups;
+	}, {});
+
+	return reduce.call(Em.keys(groups), function(array, key) {
+		if (groups[key].length > 0) {
+			array.push(groups[key]);
+		}
+
+		return array;
+	}, []);
 };

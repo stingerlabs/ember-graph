@@ -67,6 +67,8 @@ if (Em) {
 
 (function() {
 
+var reduce = Em.ArrayPolyfills.reduce;
+
 /**
  * Denotes that method must be implemented in a subclass.
  * If it's not overridden, calling it will throw an error.
@@ -141,6 +143,36 @@ EG.generateUUID = function() {
  */
 EG.arrayContentsEqual = function(a, b) {
 	return (a.length === b.length && (new Em.Set(a)).isEqual(b));
+};
+
+/**
+ * Takes a list of record objects (with `type` and `id`)
+ * and groups them into arrays based on their type.
+ *
+ * @method groupRecords
+ * @param {Object[]} records
+ * @return {Array[]}
+ * @category top-level
+ * @for EG
+ */
+EG.groupRecords = function(records) {
+	var groups = reduce.call(records, function(groups, record) {
+		if (groups[record.type]) {
+			groups[record.type].push(record);
+		} else {
+			groups[record.type] = [record];
+		}
+
+		return groups;
+	}, {});
+
+	return reduce.call(Em.keys(groups), function(array, key) {
+		if (groups[key].length > 0) {
+			array.push(groups[key]);
+		}
+
+		return array;
+	}, []);
 };
 
 })();
@@ -2336,12 +2368,12 @@ var forEach = Em.ArrayPolyfills.forEach;
 
 var CLIENT_STATE = EG.Relationship.CLIENT_STATE;
 var SERVER_STATE = EG.Relationship.SERVER_STATE;
-var DELETED_STATED = EG.Relationship.DELETED_STATED;
+var DELETED_STATE = EG.Relationship.DELETED_STATE;
 
 var STATE_MAP = {
 	CLIENT_STATE: 'client',
 	SERVER_STATE: 'server',
-	DELETED_STATED: 'deleted'
+	DELETED_STATE: 'deleted'
 };
 
 var RelationshipMap = Em.Object.extend({
@@ -3649,7 +3681,9 @@ var forEach = Em.ArrayPolyfills.forEach;
 var HAS_ONE_KEY = EG.Model.HAS_ONE_KEY = 'hasOne';
 var HAS_MANY_KEY = EG.Model.HAS_MANY_KEY = 'hasMany';
 
-var disallowedRelationshipNames = new Em.Set(['id', 'type', 'content', 'length']);
+var CLIENT_STATE = EG.Relationship.CLIENT_STATE;
+var SERVER_STATE = EG.Relationship.SERVER_STATE;
+var DELETED_STATE = EG.Relationship.DELETED_STATE;
 
 var createRelationship = function(name, kind, options) {
 	Em.assert('Invalid relatedType', Em.typeOf(options.relatedType) === 'string');
@@ -3727,14 +3761,56 @@ EG.Model.reopenClass({
 	declareRelationships: function(relationships) {
 		var obj = {};
 
+		Em.runInDebug(function() {
+			var disallowedNames = new Em.Set(['id', 'type', 'content', 'length', 'model']);
+
+			forEach.call(Em.keys(relationships), function(name) {
+				Em.assert('`' + name + '` cannot be used as a relationship name.', !disallowedNames.contains(name));
+				Em.assert('A relationship name cannot start with an underscore.', name.charAt(0) !== '_');
+				Em.assert('Relationship names must start with a lowercase letter.', name.charAt(0).match(/[a-z]/));
+			});
+		});
+
 		forEach.call(Em.keys(relationships), function(name) {
 			obj['_' + name] = createRelationship(name, relationships[name].kind, relationships[name].options);
+			var meta = Em.copy(obj['_' + name].meta(), true);
+			var relatedType = meta.relatedType;
 
 			var relationship;
 
-			// TODO: 4 different possibilities based on polymorphic and kind
+			// We're not going to close over many variables for the sake of speed
+			if (meta.kind === HAS_ONE_KEY) {
+				relationship = function(key) {
+					var value = this.getHasOneValue(key, false);
+					return (value ? this.get('store').find(value.type, value.id) : null);
+				};
+			} else if (!meta.isPolymorphic) {
+				relationship = function(key) {
+					var value = this.getHasManyValue(key, false);
+					var ids = Em.ArrayPolyfills.map.call(value, function(item) {
+						return item.id;
+					});
+					return this.get('store').find(relatedType, ids);
+				};
+			} else {
+				relationship = function(key) {
+					var store = this.get('store');
+					var value = this.getHasManyValue(key, false);
+					var groups = EG.groupRecords(value);
+					var promises = Em.ArrayPolyfills.map.call(groups, function(group) {
+						var ids = Em.ArrayPolyfills.map.call(group, function(item) {
+							return item.id;
+						});
+						return store.find(group[0].type, ids);
+					});
+					return Em.RSVP.Promise.all(promises).then(function(groups) {
+						return Em.ArrayPolyfills.reduce.call(groups, function(array, group) {
+							return array.concat(group);
+						}, []);
+					});
+				};
+			}
 
-			var meta = Em.copy(obj['_' + name].meta(), true);
 			meta.isRelationship = true;
 			obj[name] = Em.computed(relationship).property('_' + name).readOnly().meta(meta);
 		});
@@ -3787,7 +3863,7 @@ EG.Model.reopen({
 		var client = this.get('relationships').getRelationshipsByState(CLIENT_STATE);
 		forEach.call(client, store.deleteRelationship, store);
 
-		var deleted = this.get('relationships').getRelationshipsByState(DELETED_STATED);
+		var deleted = this.get('relationships').getRelationshipsByState(DELETED_STATE);
 		forEach.call(deleted, store.changeRelationshipState, store);
 	},
 
@@ -3815,7 +3891,7 @@ EG.Model.reopen({
 				if (relationships[i].get('state') === CLIENT_STATE) {
 					this.get('store').deleteRelationship(relationships[i]);
 				} else {
-					this.get('store').changeRelationshipState(relationships[i], DELETED_STATED);
+					this.get('store').changeRelationshipState(relationships[i], DELETED_STATE);
 				}
 
 				break;
@@ -3824,7 +3900,73 @@ EG.Model.reopen({
 	},
 
 	setHasOneRelationship: function(relationshipName, id, polymorphicType) {
-		// Check to make sure the relationship we want isn't already in the 'deleted' state
+		var store = this.get('store');
+
+		// Don't modify a read-only relationship
+		var meta = this.constructor.metaForRelationship(relationshipName);
+		if (meta.isReadOnly) {
+			Em.assert('Can\'t modify a read-only relationship.');
+			return;
+		}
+
+		// If the type wasn't provided, fill it in based on the inverse
+		if (Em.typeOf(id) !== 'string') {
+			polymorphicType = id.typeKey;
+			id = id.get('id');
+		} else if (Em.typeOf(polymorphicType) !== 'string') {
+			polymorphicType = meta.relatedType;
+		}
+
+		// If we're already connected to that record, return.
+		// If not, clear the current value for this record.
+		var currentValue = this.getHasOneRelationship(relationshipName, false);
+		if (currentValue.otherType(this) === polymorphicType && currentValue.otherId(this) === id) {
+			return;
+		} else {
+			if (currentValue.get('state') === CLIENT_STATE) {
+				store.deleteRelationship(currentValue);
+			} else {
+				store.changeRelationshipState(currentValue, DELETED_STATE);
+			}
+		}
+
+		// If there's a deleted relationship to connect these records, get it.
+		var deletedValue = this.getHasOneRelationship(name, true);
+
+		// If the inverse is null, we can create the relationship without conflict
+		if (meta.inverse === null) {
+			if (deletedValue) {
+				store.changeRelationshipState(deletedValue, SERVER_STATE);
+			} else {
+				store.createRelationship(this.typeKey, this.get('id'), relationshipName,
+					polymorphicType, id, null, CLIENT_STATE);
+			}
+
+			return;
+		}
+
+		// If the relationship isn't null, we have to disconnect any hasOne conflicts
+		var otherRecord = store.getRecord(polymorphicType, meta.inverse);
+		if (otherRecord) {
+			var conflict = otherRecord.getHasOneRelationship(meta.inverse, false);
+			if (conflict) {
+				if (conflict.get('state') === CLIENT_STATE) {
+					store.deleteRelationship(conflict);
+				} else {
+					store.changeRelationshipState(conflict);
+				}
+			}
+		}
+
+		// Now that everything is free from conflicts, connect the deleted relationship if we found one
+		if (deletedValue) {
+			store.changeRelationshipState(deletedValue, SERVER_STATE);
+			return;
+		}
+
+		// If all of that fails, create a new relationship (possibly queued)
+		store.createRelationship(this.typeKey, this.get('id'), relationshipName,
+			polymorphicType, id, meta.inverse, CLIENT_STATE);
 	},
 
 	clearHasOneRelationship: function(relationshipName) {
@@ -3839,7 +3981,7 @@ EG.Model.reopen({
 			if (relationship.get('state') === CLIENT_STATE) {
 				this.get('store').deleteRelationship(relationship);
 			} else {
-				this.get('store').changeRelationshipState(relationship, DELETED_STATED);
+				this.get('store').changeRelationshipState(relationship, DELETED_STATE);
 			}
 		}
 	}

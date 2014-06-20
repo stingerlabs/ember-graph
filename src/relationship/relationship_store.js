@@ -5,12 +5,12 @@ var forEach = Em.ArrayPolyfills.forEach;
 
 var CLIENT_STATE = EG.Relationship.CLIENT_STATE;
 var SERVER_STATE = EG.Relationship.SERVER_STATE;
-var DELETED_STATED = EG.Relationship.DELETED_STATED;
+var DELETED_STATE = EG.Relationship.DELETED_STATE;
 
 var STATE_MAP = {
 	CLIENT_STATE: 'client',
 	SERVER_STATE: 'server',
-	DELETED_STATED: 'deleted'
+	DELETED_STATE: 'deleted'
 };
 
 var RelationshipMap = Em.Object.extend({
