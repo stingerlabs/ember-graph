@@ -1,4 +1,5 @@
 var map = Em.ArrayPolyfills.map;
+var reduce = Em.ArrayPolyfills.reduce;
 var forEach = Em.ArrayPolyfills.forEach;
 
 var HAS_ONE_KEY = EG.Model.HAS_ONE_KEY = 'hasOne';
@@ -156,11 +157,11 @@ EG.Model.reopen({
 			var oldVal, newVal;
 
 			if (meta.kind === HAS_MANY_KEY) {
-				oldVal = map.call(this.hasManyValue(name, true), function(value) {
+				oldVal = map.call(this.getHasManyValue(name, true), function(value) {
 					return value.type + '.' + value.id;
 				});
 
-				newVal = map.call(this.hasManyValue(name, false), function(value) {
+				newVal = map.call(this.getHasManyValue(name, false), function(value) {
 					return value.type + '.' + value.id;
 				});
 
@@ -168,8 +169,8 @@ EG.Model.reopen({
 					changes[name] = [oldVal, newVal];
 				}
 			} else {
-				oldVal = this.hasOneValue(name, true);
-				newVal = this.hasOneValue(name, false);
+				oldVal = this.getHasOneValue(name, true);
+				newVal = this.getHasOneValue(name, false);
 
 				if (oldVal !== newVal) {
 					changes[name] = [oldVal, newVal];
@@ -191,122 +192,206 @@ EG.Model.reopen({
 	},
 
 	addToRelationship: function(relationshipName, id, polymorphicType) {
+		Em.changeProperties(function() {
+			var i, store = this.get('store');
 
+			// Don't modify a read-only relationship
+			var meta = this.constructor.metaForRelationship(relationshipName);
+			if (meta.isReadOnly) {
+				Em.assert('Can\'t modify a read-only relationship.');
+				return;
+			}
+
+			// If the type wasn't provided, fill it in based on the inverse
+			if (Em.typeOf(id) !== 'string') {
+				polymorphicType = id.typeKey;
+				id = id.get('id');
+			} else if (Em.typeOf(polymorphicType) !== 'string') {
+				polymorphicType = meta.relatedType;
+			}
+
+			// Check to see if the records are already connected
+			var currentValues = this.getHasManyRelationships(relationshipName, false);
+			for (i = 0; i < currentValues.length; ++i) {
+				if (currentValues[i].otherType(this) === polymorphicType && currentValues[i].otherId(this) === id) {
+					return;
+				}
+			}
+
+			// If there's a deleted relationship to connect these records, get it.
+			var serverValues = this.getHasManyRelationships(relationshipName, true);
+			var deletedValue = null;
+			for (i = 0; i < serverValues.length; ++i) {
+				if (serverValues[i].otherType(this) === polymorphicType && serverValues[i].otherId(this) === id) {
+					deletedValue = serverValues[i];
+					break;
+				}
+			}
+
+			// If the inverse is null, we can create the relationship without conflict
+			if (meta.inverse === null) {
+				if (deletedValue) {
+					store.changeRelationshipState(deletedValue, SERVER_STATE);
+				} else {
+					store.createRelationship(this.typeKey, this.get('id'), relationshipName,
+						polymorphicType, id, null, CLIENT_STATE);
+				}
+
+				return;
+			}
+
+			// If the inverse isn't null, we have to disconnect any hasOne conflicts
+			var otherMeta = store.modelForType(polymorphicType).metaForRelationship(meta.inverse).kind;
+			if (otherMeta.kind === HAS_ONE_KEY) {
+				var otherRecord = store.getRecord(polymorphicType, id);
+				if (otherRecord) {
+					var conflict = otherRecord.getHasOneRelationship(meta.inverse, false);
+					if (conflict) {
+						if (conflict.get('state') === CLIENT_STATE) {
+							store.deleteRelationship(conflict);
+						} else {
+							store.changeRelationshipState(conflict);
+						}
+					}
+				}
+			}
+
+			// Now that everything is free from conflicts, connect the deleted relationship if we found one
+			if (deletedValue) {
+				store.changeRelationshipState(deletedValue, SERVER_STATE);
+				return;
+			}
+
+			// If all of that fails, create a new relationship (possibly queued)
+			store.createRelationship(this.typeKey, this.get('id'), relationshipName,
+				polymorphicType, id, meta.inverse, CLIENT_STATE);
+		});
 	},
 
 	removeFromRelationship: function(relationshipName, id, polymorphicType) {
-		var meta = this.constructor.metaForRelationship(relationshipName);
-		if (meta.isReadOnly) {
-			Em.assert('Can\'t modify a read-only relationship.');
-			return;
-		}
-
-		if (Em.typeOf(id) !== 'string') {
-			polymorphicType = id.typeKey;
-			id = id.get('id');
-		} else if (Em.typeOf(polymorphicType) !== 'string') {
-			polymorphicType = meta.relatedType;
-		}
-
-		var relationships = this.getHasManyRelationships(relationshipName, false);
-		for (var i = 0; i < relationships.length; ++i) {
-			if (relationships[i].otherType(this) === polymorphicType && relationships[i].otherId(this) === id) {
-				if (relationships[i].get('state') === CLIENT_STATE) {
-					this.get('store').deleteRelationship(relationships[i]);
-				} else {
-					this.get('store').changeRelationshipState(relationships[i], DELETED_STATE);
-				}
-
-				break;
+		Em.changeProperties(function() {
+			// Don't modify a read-only relationship
+			var meta = this.constructor.metaForRelationship(relationshipName);
+			if (meta.isReadOnly) {
+				Em.assert('Can\'t modify a read-only relationship.');
+				return;
 			}
-		}
+
+			// If the type wasn't provided, fill it in based on the inverse
+			if (Em.typeOf(id) !== 'string') {
+				polymorphicType = id.typeKey;
+				id = id.get('id');
+			} else if (Em.typeOf(polymorphicType) !== 'string') {
+				polymorphicType = meta.relatedType;
+			}
+
+			var relationships = this.getHasManyRelationships(relationshipName, false);
+			for (var i = 0; i < relationships.length; ++i) {
+				if (relationships[i].otherType(this) === polymorphicType && relationships[i].otherId(this) === id) {
+					if (relationships[i].get('state') === CLIENT_STATE) {
+						this.get('store').deleteRelationship(relationships[i]);
+					} else {
+						this.get('store').changeRelationshipState(relationships[i], DELETED_STATE);
+					}
+
+					break;
+				}
+			}
+		});
 	},
 
 	setHasOneRelationship: function(relationshipName, id, polymorphicType) {
-		var store = this.get('store');
+		Em.changeProperties(function() {
+			var store = this.get('store');
 
-		// Don't modify a read-only relationship
-		var meta = this.constructor.metaForRelationship(relationshipName);
-		if (meta.isReadOnly) {
-			Em.assert('Can\'t modify a read-only relationship.');
-			return;
-		}
-
-		// If the type wasn't provided, fill it in based on the inverse
-		if (Em.typeOf(id) !== 'string') {
-			polymorphicType = id.typeKey;
-			id = id.get('id');
-		} else if (Em.typeOf(polymorphicType) !== 'string') {
-			polymorphicType = meta.relatedType;
-		}
-
-		// If we're already connected to that record, return.
-		// If not, clear the current value for this record.
-		var currentValue = this.getHasOneRelationship(relationshipName, false);
-		if (currentValue.otherType(this) === polymorphicType && currentValue.otherId(this) === id) {
-			return;
-		} else {
-			if (currentValue.get('state') === CLIENT_STATE) {
-				store.deleteRelationship(currentValue);
-			} else {
-				store.changeRelationshipState(currentValue, DELETED_STATE);
-			}
-		}
-
-		// If there's a deleted relationship to connect these records, get it.
-		var deletedValue = this.getHasOneRelationship(name, true);
-
-		// If the inverse is null, we can create the relationship without conflict
-		if (meta.inverse === null) {
-			if (deletedValue) {
-				store.changeRelationshipState(deletedValue, SERVER_STATE);
-			} else {
-				store.createRelationship(this.typeKey, this.get('id'), relationshipName,
-					polymorphicType, id, null, CLIENT_STATE);
+			// Don't modify a read-only relationship
+			var meta = this.constructor.metaForRelationship(relationshipName);
+			if (meta.isReadOnly) {
+				Em.assert('Can\'t modify a read-only relationship.');
+				return;
 			}
 
-			return;
-		}
+			// If the type wasn't provided, fill it in based on the inverse
+			if (Em.typeOf(id) !== 'string') {
+				polymorphicType = id.typeKey;
+				id = id.get('id');
+			} else if (Em.typeOf(polymorphicType) !== 'string') {
+				polymorphicType = meta.relatedType;
+			}
 
-		// If the relationship isn't null, we have to disconnect any hasOne conflicts
-		var otherRecord = store.getRecord(polymorphicType, meta.inverse);
-		if (otherRecord) {
-			var conflict = otherRecord.getHasOneRelationship(meta.inverse, false);
-			if (conflict) {
-				if (conflict.get('state') === CLIENT_STATE) {
-					store.deleteRelationship(conflict);
+			// If we're already connected to that record, return.
+			// If not, clear the current value for this record.
+			var currentValue = this.getHasOneRelationship(relationshipName, false);
+			if (currentValue.otherType(this) === polymorphicType && currentValue.otherId(this) === id) {
+				return;
+			} else {
+				if (currentValue.get('state') === CLIENT_STATE) {
+					store.deleteRelationship(currentValue);
 				} else {
-					store.changeRelationshipState(conflict);
+					store.changeRelationshipState(currentValue, DELETED_STATE);
 				}
 			}
-		}
 
-		// Now that everything is free from conflicts, connect the deleted relationship if we found one
-		if (deletedValue) {
-			store.changeRelationshipState(deletedValue, SERVER_STATE);
-			return;
-		}
+			// If there's a deleted relationship to connect these records, get it.
+			var deletedValue = this.getHasOneRelationship(relationshipName, true);
 
-		// If all of that fails, create a new relationship (possibly queued)
-		store.createRelationship(this.typeKey, this.get('id'), relationshipName,
-			polymorphicType, id, meta.inverse, CLIENT_STATE);
+			// If the inverse is null, we can create the relationship without conflict
+			if (meta.inverse === null) {
+				if (deletedValue) {
+					store.changeRelationshipState(deletedValue, SERVER_STATE);
+				} else {
+					store.createRelationship(this.typeKey, this.get('id'), relationshipName,
+						polymorphicType, id, null, CLIENT_STATE);
+				}
+
+				return;
+			}
+
+			// If the inverse isn't null, we have to disconnect any hasOne conflicts
+			var otherMeta = store.modelForType(polymorphicType).metaForRelationship(meta.inverse).kind;
+			if (otherMeta.kind === HAS_ONE_KEY) {
+				var otherRecord = store.getRecord(polymorphicType, id);
+				if (otherRecord) {
+					var conflict = otherRecord.getHasOneRelationship(meta.inverse, false);
+					if (conflict) {
+						if (conflict.get('state') === CLIENT_STATE) {
+							store.deleteRelationship(conflict);
+						} else {
+							store.changeRelationshipState(conflict);
+						}
+					}
+				}
+			}
+
+			// Now that everything is free from conflicts, connect the deleted relationship if we found one
+			if (deletedValue) {
+				store.changeRelationshipState(deletedValue, SERVER_STATE);
+				return;
+			}
+
+			// If all of that fails, create a new relationship (possibly queued)
+			store.createRelationship(this.typeKey, this.get('id'), relationshipName,
+				polymorphicType, id, meta.inverse, CLIENT_STATE);
+		});
 	},
 
 	clearHasOneRelationship: function(relationshipName) {
-		var meta = this.constructor.metaForRelationship(relationshipName);
-		if (meta.isReadOnly) {
-			Em.assert('Can\'t modify a read-only relationship.');
-			return;
-		}
-
-		var relationship = this.getHasOneRelationship(relationshipName, false);
-		if (relationship) {
-			if (relationship.get('state') === CLIENT_STATE) {
-				this.get('store').deleteRelationship(relationship);
-			} else {
-				this.get('store').changeRelationshipState(relationship, DELETED_STATE);
+		Em.changeProperties(function() {
+			var meta = this.constructor.metaForRelationship(relationshipName);
+			if (meta.isReadOnly) {
+				Em.assert('Can\'t modify a read-only relationship.');
+				return;
 			}
-		}
+
+			var relationship = this.getHasOneRelationship(relationshipName, false);
+			if (relationship) {
+				if (relationship.get('state') === CLIENT_STATE) {
+					this.get('store').deleteRelationship(relationship);
+				} else {
+					this.get('store').changeRelationshipState(relationship, DELETED_STATE);
+				}
+			}
+		});
 	}
 
 });
