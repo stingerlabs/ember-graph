@@ -50,7 +50,7 @@ EG.Store.reopen({
 
 		delete this.get('allRelationships')[relationship.get('id')];
 
-		relationship.destroy();
+		relationship.erase();
 	},
 
 	changeRelationshipState: function(relationship, newState) {
@@ -68,17 +68,18 @@ EG.Store.reopen({
 
 	connectQueuedRelationships: function(record) {
 		var queuedRelationships = this.get('queuedRelationships');
-		var filtered = filter.call(queuedRelationships, function(relationship) {
-			return relationship.isConnectedTo(record);
+		var filtered = filter.call(Em.keys(queuedRelationships), function(id) {
+			return queuedRelationships[id].isConnectedTo(record);
 		});
 
 		if (filtered.length <= 0) {
 			return;
 		}
 
-		forEach.call(filtered, function(relationship) {
+		forEach.call(filtered, function(id) {
+			var relationship = queuedRelationships[id];
 			this.connectRelationshipTo(record, relationship);
-			delete queuedRelationships[relationship.get('id')];
+			delete queuedRelationships[id];
 		}, this);
 
 		this.notifyPropertyChange('queuedRelationships');
@@ -88,13 +89,32 @@ EG.Store.reopen({
 		var data, filtered = [];
 		var all = this.get('allRelationships');
 
-		for (var i = 0; i < all.length; ++i) {
-			if (all[i].matchesOneSide(type, id, name)) {
-				filtered.push(all[i]);
+		for (var i in all) {
+			if (all.hasOwnProperty(i)) {
+				if (all[i].matchesOneSide(type, id, name)) {
+					filtered.push(all[i]);
+				}
 			}
 		}
 
 		return filtered;
+	},
+
+	deleteRelationshipsForRecord: function(type, id) {
+		var all = this.get('allRelationships');
+
+		for (var i in all) {
+			if (all.hasOwnProperty(i)) {
+				if (all[i].get('type1') === type && all[i].get('id1') === id) {
+					delete all[i];
+					continue;
+				}
+
+				if (all[i].get('type2') === type && all[i].get('id2') === id) {
+					delete all[i];
+				}
+			}
+		}
 	},
 
 	/**
@@ -107,7 +127,7 @@ EG.Store.reopen({
 			return;
 		}
 
-		record.get('relationships').addRelationship(relationship.otherName(record), relationship);
+		record.get('relationships').addRelationship(relationship.thisName(record), relationship);
 	},
 
 	/**

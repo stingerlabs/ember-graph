@@ -1,5 +1,3 @@
-// TODO: This NEEDS tests
-
 var map = Em.ArrayPolyfills.map;
 var forEach = Em.ArrayPolyfills.forEach;
 
@@ -7,11 +5,10 @@ var CLIENT_STATE = EG.Relationship.CLIENT_STATE;
 var SERVER_STATE = EG.Relationship.SERVER_STATE;
 var DELETED_STATE = EG.Relationship.DELETED_STATE;
 
-var STATE_MAP = {
-	CLIENT_STATE: 'client',
-	SERVER_STATE: 'server',
-	DELETED_STATE: 'deleted'
-};
+var STATE_MAP = {};
+STATE_MAP[CLIENT_STATE] = 'client';
+STATE_MAP[SERVER_STATE] = 'server';
+STATE_MAP[DELETED_STATE] = 'deleted';
 
 var RelationshipMap = Em.Object.extend({
 
@@ -32,7 +29,7 @@ var RelationshipMap = Em.Object.extend({
 
 	removeRelationship: function(id) {
 		forEach.call(Em.keys(this), function(key) {
-			if (key === 'length' || key === '_length') {
+			if (key === 'length') {
 				return;
 			}
 
@@ -51,6 +48,17 @@ var RelationshipMap = Em.Object.extend({
 		return map.call(Em.keys(relationships), function(key) {
 			return relationships[key];
 		});
+	},
+
+	getAllRelationships: function() {
+		var relationships = [];
+		var keys = new Em.Set(Em.keys(this)).without('length');
+
+		forEach.call(keys, function(key) {
+			relationships.concat(this.getRelationships(key));
+		}, this);
+
+		return relationships;
 	},
 
 	clearRelationships: function(name) {
@@ -89,6 +97,10 @@ EG.RelationshipStore = Em.Object.extend({
 	}),
 
 	addRelationship: function(name, relationship) {
+		if (name === null) {
+			return;
+		}
+
 		return this.get(STATE_MAP[relationship.get('state')]).addRelationship(name, relationship);
 	},
 
@@ -116,8 +128,8 @@ EG.RelationshipStore = Em.Object.extend({
 		return this.get('server').getRelationships(name).concat(this.get('client').getRelationships(name));
 	},
 
-	getRelationshipsByState: function(name, state) {
-		return this.get(STATE_MAP[state]).getRelationships(name);
+	getRelationshipsByState: function(state) {
+		return this.get(STATE_MAP[state]).getAllRelationships();
 	},
 
 	getRelationshipsByName: function(name) {

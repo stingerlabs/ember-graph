@@ -1,6 +1,7 @@
 var map = Em.ArrayPolyfills.map;
 var some = EG.ArrayPolyfills.some;
 var reduce = Em.ArrayPolyfills.reduce;
+var filter = Em.ArrayPolyfills.filter;
 var forEach = Em.ArrayPolyfills.forEach;
 
 var HAS_ONE_KEY = EG.Model.HAS_ONE_KEY = 'hasOne';
@@ -148,7 +149,7 @@ EG.Model.reopenClass({
 EG.Model.reopen({
 
 	areRelationshipsDirty: Em.computed(function() {
-		return this.get('relationships.client.length') > 0 || this.get('relationships.deleted.length' > 0);
+		return this.get('relationships.client.length') > 0 || this.get('relationships.deleted.length') > 0;
 	}).property('relationships.client.length', 'relationships.deleted.length'),
 
 	changedRelationships: function() {
@@ -320,21 +321,25 @@ EG.Model.reopen({
 				polymorphicType = meta.relatedType;
 			}
 
+			// If there's a deleted relationship to connect these records, get it.
+			var deletedValue = filter.call(this.getRelationshipsByName(relationshipName), function(relationship) {
+				return (relationship.otherType(this) === polymorphicType && relationship.otherId(this) === id);
+			}, this)[0];
+
 			// If we're already connected to that record, return.
 			// If not, clear the current value for this record.
 			var currentValue = this.getHasOneRelationship(relationshipName, false);
-			if (currentValue.otherType(this) === polymorphicType && currentValue.otherId(this) === id) {
-				return;
-			} else {
-				if (currentValue.get('state') === CLIENT_STATE) {
-					store.deleteRelationship(currentValue);
+			if (currentValue) {
+				if (currentValue.otherType(this) === polymorphicType && currentValue.otherId(this) === id) {
+					return;
 				} else {
-					store.changeRelationshipState(currentValue, DELETED_STATE);
+					if (currentValue.get('state') === CLIENT_STATE) {
+						store.deleteRelationship(currentValue);
+					} else {
+						store.changeRelationshipState(currentValue, DELETED_STATE);
+					}
 				}
 			}
-
-			// If there's a deleted relationship to connect these records, get it.
-			var deletedValue = this.getHasOneRelationship(relationshipName, true);
 
 			// If the inverse is null, we can create the relationship without conflict
 			if (meta.inverse === null) {
@@ -546,7 +551,7 @@ EG.Model.reopen({
 
 				forEach.call(serverNotInClient, function(v) {
 					var addState = SERVER_STATE;
-					var conflict = getHasOneConflict.call(v.type, v.id, name);
+					var conflict = getHasOneConflict.call(this, v.type, v.id, name);
 					if (conflict !== null) {
 						switch (conflict.get('state')) {
 							case DELETED_STATE:
@@ -573,7 +578,7 @@ EG.Model.reopen({
 				// There should only be one relationship in there
 				Em.assert('An unknown relationship error occurred.', client.length <= 1);
 
-				var conflict = getHasOneConflict.call(this, value.type, value.id, name);
+				var conflict = (value === null ? null : getHasOneConflict.call(this, value.type, value.id, name));
 
 				if (client.length === 1) {
 					if (client[0].otherType(this) === value.type && client[0].otherId(this) === value.id) {

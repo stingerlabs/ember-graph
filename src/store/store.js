@@ -446,7 +446,7 @@ EG.Store = Em.Object.extend({
 		var records = (this.get('_records.' + type) || {});
 
 		return this.adapterFor(record.typeKey).deleteRecord(record).then(function(payload) {
-			this._deleteRelationshipsForRecord(type, id);
+			this.deleteRelationshipsForRecord(type, id);
 			this.extractPayload(payload);
 			this._deleteRecord(type, id);
 		}.bind(this));

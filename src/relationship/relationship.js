@@ -1,6 +1,6 @@
 var CLIENT_STATE = 'client';
 var SERVER_STATE = 'server';
-var DELETED_STATED = 'deleted';
+var DELETED_STATE = 'deleted';
 
 EG.Relationship = Em.Object.extend({
 
@@ -10,7 +10,7 @@ EG.Relationship = Em.Object.extend({
 			switch (value) {
 				case CLIENT_STATE:
 				case SERVER_STATE:
-				case DELETED_STATED:
+				case DELETED_STATE:
 					this.set('_state', value);
 					break;
 				default:
@@ -40,7 +40,7 @@ EG.Relationship = Em.Object.extend({
 		Em.assert('Invalid type or ID', type1 && id1 && type2 && id2);
 		Em.assert('First relationship must have a name', name1);
 		Em.assert('Second relationship must have a name or be null', name2 === null || Em.typeOf(name2) === 'string');
-		Em.assert('Invalid state', state === CLIENT_STATE || state === SERVER_STATE || state === DELETED_STATED);
+		Em.assert('Invalid state', state === CLIENT_STATE || state === SERVER_STATE || state === DELETED_STATE);
 
 		this.setProperties({
 			id: EG.generateUUID(),
@@ -79,7 +79,8 @@ EG.Relationship = Em.Object.extend({
 	},
 
 	otherType: function(record) {
-		if (this.get('id1') === record.get('id')) {
+		// If they have the same type, it won't matter which branch is taken
+		if (this.get('type1') === record.typeKey) {
 			return this.get('type2');
 		} else {
 			return this.get('type1');
@@ -87,6 +88,7 @@ EG.Relationship = Em.Object.extend({
 	},
 
 	otherId: function(record) {
+		// If they have the same IDs, it won't matter which branch is taken
 		if (this.get('id1') === record.get('id')) {
 			return this.get('id2');
 		} else {
@@ -95,14 +97,22 @@ EG.Relationship = Em.Object.extend({
 	},
 
 	otherName: function(record) {
-		if (this.get('id1') === record.get('id')) {
+		if (this.get('id1') === record.get('id') && this.get('type1') === record.typeKey) {
 			return this.get('relationship2');
 		} else {
 			return this.get('relationship1');
 		}
 	},
 
-	destroy: function() {
+	thisName: function(record) {
+		if (this.get('id1') === record.get('id') && this.get('type1') === record.typeKey) {
+			return this.get('relationship1');
+		} else {
+			return this.get('relationship2');
+		}
+	},
+
+	erase: function() {
 		this.setProperties({
 			id: null,
 			type1: null,
@@ -111,7 +121,7 @@ EG.Relationship = Em.Object.extend({
 			type2: null,
 			id2: null,
 			relationship2: null,
-			state: null
+			_state: null
 		});
 	}
 });
@@ -119,5 +129,5 @@ EG.Relationship = Em.Object.extend({
 EG.Relationship.reopenClass({
 	CLIENT_STATE: CLIENT_STATE,
 	SERVER_STATE: SERVER_STATE,
-	DELETED_STATED: DELETED_STATED
+	DELETED_STATE: DELETED_STATE
 });

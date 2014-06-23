@@ -35,24 +35,36 @@
 				tag: EG.Model.extend()
 			});
 
-			store._loadRecord('user', { id: '1', posts: ['1', '2'] });
-			store._loadRecord('user', { id: '2', posts: ['3'] });
-			store._loadRecord('user', { id: '3', posts: ['4', '7'] });
-			store._loadRecord('user', { id: '4', posts: [] });
+			store.extractPayload({
+				user: [
+					{ id: '1', posts: [{ type: 'post', id: '1' }, { type: 'post', id: '2' }] },
+					{ id: '2', posts: [{ type: 'post', id: '3' }] },
+					{ id: '3', posts: [{ type: 'post', id: '4' }, { type: 'post', id: '7' }] },
+					{ id: '4', posts: [] }
+				],
+				post: [
+					{ id: '1', author: { type: 'user', id: '1' }, tags: [{ type: 'tag', id: '1' },
+						{ type: 'tag', id: '2' }, { type: 'tag', id: '3' }, { type: 'tag', id: '4' }] },
+					{ id: '2', author: { type: 'user', id: '1' }, tags: [{ type: 'tag', id: '2' },
+						{ type: 'tag', id: '3' }] },
+					{ id: '3', author: { type: 'user', id: '2' }, tags: [] },
+					{ id: '4', author: { type: 'user', id: '3' }, tags: [{ type: 'tag', id: '1' },
+						{ type: 'tag', id: '4' }, { type: 'tag', id: '5' }] },
+					{ id: '5', author: { type: 'user', id: '5'}, tags: [{ type: 'tag', id: '1' },
+						{ type: 'tag', id: '4' }, { type: 'tag', id: '5' }] },
+					{ id: '6', author: null, tags: [{ type: 'tag', id: '1' }, { type: 'tag', id: '2' },
+						{ type: 'tag', id: '5' }] },
+					// 7 is used as an unloaded record
+					{ id: '8', author: null, tags: [{ type: 'tag', id: '4' }] }
+				],
 
-			store._loadRecord('post', { id: '1', author: '1', tags: ['1', '2', '3', '4'] });
-			store._loadRecord('post', { id: '2', author: '1', tags: ['2', '3'] });
-			store._loadRecord('post', { id: '3', author: '2', tags: [] });
-			store._loadRecord('post', { id: '4', author: '3', tags: ['1', '4', '5'] });
-			store._loadRecord('post', { id: '5', author: '5', tags: ['1', '4', '5'] });
-			store._loadRecord('post', { id: '6', author: null, tags: ['1', '2', '5'] });
-			// 7 is used as an unloaded record
-			store._loadRecord('post', { id: '8', author: null, tags: ['4'] });
-
-			store._loadRecord('tag', { id: '1' });
-			store._loadRecord('tag', { id: '2' });
-			store._loadRecord('tag', { id: '3' });
-			store._loadRecord('tag', { id: '4' });
+				tag: [
+					{ id: '1' },
+					{ id: '2' },
+					{ id: '3' },
+					{ id: '4' }
+				]
+			});
 		}
 	});
 
@@ -66,84 +78,76 @@
 		var post5 = store.getRecord('post', '5');
 		var post6 = store.getRecord('post', '6');
 
-		ok(user1.get('_posts').isEqual(['1', '2']));
-		ok(user4.get('_posts.length') === 0);
+		deepEqual(user1.get('_posts').mapBy('id').sort(), ['1', '2'].sort());
+		strictEqual(user4.get('_posts.length'), 0);
 
-		ok(post1.get('_author') === '1');
-		ok(post1.get('_tags').isEqual(['1', '2', '3', '4']));
-		ok(post3.get('_author') === '2');
-		ok(post3.get('_tags.length') === 0);
-		ok(post5.get('_author') === '5');
-		ok(post5.get('_tags').isEqual(['1', '4', '5']));
-		ok(post6.get('_author') === null);
-		ok(post6.get('_tags').isEqual(['1', '2', '5']));
-	});
-
-	test('Relationship defaults are loaded correctly', function() {
-		expect(3);
-
-		var user = store.createRecord('user');
-		ok(user.get('_posts.length') === 0);
-
-		var post = store.createRecord('post');
-		ok(post.get('_author') === null);
-		ok(post.get('_tags').isEqual(['0']));
+		strictEqual(post1.get('_author').id, '1');
+		deepEqual(post1.get('_tags').mapBy('id').sort(), ['1', '2', '3', '4'].sort());
+		strictEqual(post3.get('_author').id, '2');
+		strictEqual(post3.get('_tags.length'), 0);
+		strictEqual(post5.get('_author').id, '5');
+		deepEqual(post5.get('_tags').mapBy('id').sort(), ['1', '4', '5'].sort());
+		strictEqual(post6.get('_author'), null);
+		deepEqual(post6.get('_tags').mapBy('id').sort(), ['1', '2', '5'].sort());
 	});
 
 	test('When a record is loaded, its pending relationships are attached', function() {
-		expect(4);
+		expect(5);
 
 		var user3 = store.getRecord('user', '3');
-		ok(user3.get('_posts').contains('7'));
+		ok(user3.get('_posts').mapBy('id').indexOf('7') >= 0);
 
 		var rid, relationship;
-		var queued = store.get('_queuedRelationships');
+		var queued = store.get('queuedRelationships');
 
-		for (rid in queued) {
-			if (queued.hasOwnProperty(rid)) {
-				relationship = queued[rid];
-				if (relationship.get('type2') === 'post' && relationship.get('object2') === '7') {
+		for (var i in queued) {
+			if (queued.hasOwnProperty(i)) {
+				if (queued[i].get('type2') === 'post' && queued[i].get('id2') === '7') {
+					rid = i;
+					relationship = queued[rid];
 					break;
 				}
 			}
 		}
 
-		var post = store._loadRecord('post', { id: '7', author: '3', tags: [] });
+		var post = store._loadRecord('post', { id: '7', author: { type: 'user', id: '3' }, tags: [] });
 
-		ok(queued[rid] === undefined);
-		ok(user3.get('_posts').contains('7'));
-		ok(post.get('_author') === '3');
+		strictEqual(typeof rid, 'string');
+		strictEqual(queued[rid], undefined);
+		ok(user3.get('_posts').mapBy('id').indexOf('7') >= 0);
+		strictEqual(post.get('_author').id, '3');
 	});
 
 	test('A new record attaches to current records correctly', function() {
 		expect(3);
 
 		var user = store.getRecord('user', '1');
-		var post = store.createRecord('post', { author: '1', tags: ['1', '2'] });
+		var post = store.createRecord('post',
+			{ author: { type: 'user', id: '1' }, tags: [ { type: 'tag', id: '1' }, { type: 'tag', id: '2' } ] });
 
-		ok(post.get('_author') === '1');
-		ok(post.get('_tags').isEqual(['1', '2']));
-		ok(user.get('_posts').contains(post.get('id')));
+		strictEqual(post.get('_author').id, '1');
+		deepEqual(post.get('_tags').mapBy('id').sort(), ['1', '2'].sort());
+		ok(user.get('_posts').mapBy('id').indexOf(post.get('id')) >= 0);
 	});
 
 	test('Removing from a hasMany saved to the server works', function() {
 		expect(2);
 
 		var post1 = store.getRecord('post', '1');
-		ok(post1.get('_tags').isEqual(['1', '2', '3', '4']));
+		deepEqual(post1.get('_tags').mapBy('id').sort(), ['1', '2', '3', '4'].sort());
 
 		post1.removeFromRelationship('tags', '2');
-		ok(post1.get('_tags').isEqual(['1', '3', '4']));
+		deepEqual(post1.get('_tags').mapBy('id').sort(), ['1', '3', '4'].sort());
 	});
 
 	test('Removing a non existent hasMany item has no effect', function() {
 		expect(1);
 
 		var user1 = store.getRecord('user', '1');
-		var current = user1.get('_posts').toArray();
+		var current = user1.get('_posts').mapBy('id').sort();
 
 		user1.removeFromRelationship('posts', '298133');
-		ok(user1.get('_posts').isEqual(current));
+		deepEqual(user1.get('_posts').mapBy('id').sort(), current);
 	});
 
 	test('Disconnecting a hasOne saved to the server works', function() {
@@ -152,22 +156,22 @@
 		var user1 = store.getRecord('user', '1');
 		var post1 = store.getRecord('post', '1');
 
-		ok(user1.get('_posts').contains('1'));
-		ok(post1.get('_author') === '1');
+		ok(user1.get('_posts').mapBy('id').indexOf('1') >= 0);
+		strictEqual(post1.get('_author').id, '1');
 
 		post1.clearHasOneRelationship('author');
 
-		ok(post1.get('_author') === null);
-		ok(!user1.get('_posts').contains('1'));
+		strictEqual(post1.get('_author'), null);
+		ok(user1.get('_posts').mapBy('id').indexOf('1') < 0);
 	});
 
 	test('Disconnecting a null hasOne has no effect', function() {
 		expect(2);
 
 		var post6 = store.getRecord('post', '6');
-		ok(post6.get('_author') === null);
+		strictEqual(post6.get('_author'), null);
 		post6.clearHasOneRelationship('author');
-		ok(post6.get('_author') === null);
+		strictEqual(post6.get('_author'), null);
 	});
 
 	test('Changing a hasOne from one record to another works', function() {
@@ -177,15 +181,15 @@
 		var user2 = store.getRecord('user', '2');
 		var post1 = store.getRecord('post', '1');
 
-		ok(user1.get('_posts').contains('1'));
-		ok(!user2.get('_posts').contains('1'));
-		ok(post1.get('_author') === '1');
+		ok(user1.get('_posts').mapBy('id').indexOf('1') >= 0);
+		ok(user2.get('_posts').mapBy('id').indexOf('1') < 0);
+		strictEqual(post1.get('_author').id, '1');
 
 		post1.setHasOneRelationship('author', '2');
 
-		ok(!user1.get('_posts').contains('1'));
-		ok(user2.get('_posts').contains('1'));
-		ok(post1.get('_author') === '2');
+		ok(user1.get('_posts').mapBy('id').indexOf('1') < 0);
+		ok(user2.get('_posts').mapBy('id').indexOf('1') >= 0);
+		strictEqual(post1.get('_author').id, '2');
 	});
 
 	test('Rolling back a record with no changes has no effect', function() {
@@ -193,21 +197,21 @@
 
 		var post1 = store.getRecord('post', '1');
 		var author = post1.get('_author');
-		var tags = post1.get('_tags').toArray();
+		var tags = post1.get('_tags');
 
 		post1.rollbackRelationships();
 
-		ok(post1.get('_author') === author);
-		ok(post1.get('_tags').isEqual(tags));
+		deepEqual(post1.get('_author').id, author.id);
+		deepEqual(post1.get('_tags').mapBy('id').sort(), tags.mapBy('id').sort());
 	});
 
 	test('Adding to a hasMany works properly', function() {
 		expect(2);
 
 		var post2 = store.getRecord('post', '2');
-		ok(!post2.get('_tags').contains('1'));
+		ok(post2.get('_tags').mapBy('id').indexOf('1') < 0);
 		post2.addToRelationship('tags', '1');
-		ok(post2.get('_tags').contains('1'));
+		ok(post2.get('_tags').mapBy('id').indexOf('1') >= 0);
 	});
 
 	test('Setting a hasOne works properly', function() {
@@ -216,13 +220,13 @@
 		var user1 = store.getRecord('user', '1');
 		var post6 = store.getRecord('post', '6');
 
-		ok(!user1.get('_posts').contains('6'));
-		ok(post6.get('_author') === null);
+		ok(user1.get('_posts').mapBy('id').indexOf('6') < 0);
+		strictEqual(post6.get('_author'), null);
 
 		post6.setHasOneRelationship('author', '1');
 
-		ok(user1.get('_posts').contains('6'));
-		ok(post6.get('_author') === '1');
+		ok(user1.get('_posts').mapBy('id').indexOf('6') >= 0);
+		strictEqual(post6.get('_author').id, '1');
 	});
 
 	test('Removing an item from a hasMany dirties both records', function() {
@@ -270,7 +274,7 @@
 		ok(post1.get('isDirty'));
 	});
 
-	test('Settings a hasOne dirties all three records (if applicable)', function() {
+	test('Setting a hasOne dirties all three records (if applicable)', function() {
 		expect(6);
 
 		var user1 = store.getRecord('user', '1');
@@ -340,7 +344,7 @@
 		expect(5);
 
 		var post1 = store.getRecord('post', '1');
-		var tags = post1.get('_tags').toArray();
+		var tags = post1.get('_tags');
 		var author = post1.get('_author');
 
 		ok(!post1.get('isDirty'));
@@ -354,8 +358,8 @@
 		post1.rollbackRelationships();
 
 		ok(!post1.get('isDirty'));
-		ok(post1.get('_tags').isEqual(tags));
-		ok(post1.get('_author') === author);
+		deepEqual(post1.get('_tags').mapBy('id').sort(), tags.mapBy('id').sort());
+		deepEqual(post1.get('_author'), author);
 	});
 
 	test('Changed attributes are detected correctly', function() {

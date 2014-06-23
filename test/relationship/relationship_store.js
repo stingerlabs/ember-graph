@@ -3,7 +3,7 @@
 
 	var CLIENT_STATE = EG.Relationship.CLIENT_STATE;
 	var SERVER_STATE = EG.Relationship.SERVER_STATE;
-	var DELETED_STATED = EG.Relationship.DELETED_STATED;
+	var DELETED_STATE = EG.Relationship.DELETED_STATE;
 
 	var Relationship = EG.Relationship;
 
@@ -29,7 +29,7 @@
 
 		var r1 = new Relationship('user', '1', 'posts', 'post', '1', 'author', SERVER_STATE);
 		var r2 = new Relationship('user', '1', 'posts', 'post', '2', 'author', SERVER_STATE);
-		var r3 = new Relationship('user', '1', 'posts', 'post', '3', 'author', DELETED_STATED);
+		var r3 = new Relationship('user', '1', 'posts', 'post', '3', 'author', DELETED_STATE);
 		var r4 = new Relationship('user', '1', 'posts', 'post', '4', 'author', CLIENT_STATE);
 		var r5 = new Relationship('user', '1', 'posts', 'post', '5', 'author', CLIENT_STATE);
 
@@ -54,7 +54,7 @@
 
 		var r1 = new Relationship('user', '1', 'posts', 'post', '1', 'author', SERVER_STATE);
 		var r2 = new Relationship('user', '1', 'posts', 'post', '2', 'author', SERVER_STATE);
-		var r3 = new Relationship('user', '1', 'posts', 'post', '3', 'author', DELETED_STATED);
+		var r3 = new Relationship('user', '1', 'posts', 'post', '3', 'author', DELETED_STATE);
 		var r4 = new Relationship('user', '1', 'posts', 'post', '4', 'author', CLIENT_STATE);
 		var r5 = new Relationship('user', '1', 'posts', 'post', '5', 'author', CLIENT_STATE);
 
