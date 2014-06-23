@@ -118,5 +118,13 @@ EG.RelationshipStore = Em.Object.extend({
 
 	getRelationshipsByState: function(name, state) {
 		return this.get(STATE_MAP[state]).getRelationships(name);
+	},
+
+	getRelationshipsByName: function(name) {
+		var server = this.get('server').getRelationships(name);
+		var client = this.get('client').getRelationships(name);
+		var deleted = this.get('deleted').getRelationships(name);
+
+		return server.concat(client).concat(deleted);
 	}
 });

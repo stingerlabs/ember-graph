@@ -21,6 +21,7 @@ require('initialization');
 
 require('util/util');
 require('util/set');
+require('util/array');
 require('util/string');
 require('util/inflector');
 

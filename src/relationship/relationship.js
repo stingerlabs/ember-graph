@@ -54,6 +54,30 @@ EG.Relationship = Em.Object.extend({
 		});
 	},
 
+	isConnectedTo: function(record) {
+		if (this.get('type1') === record.typeKey && this.get('id1') === record.get('id')) {
+			return true;
+		}
+
+		if (this.get('type2') === record.typeKey && this.get('id2') === record.get('id')) {
+			return true;
+		}
+
+		return false;
+	},
+
+	matchesOneSide: function(type, id, name) {
+		if (this.get('type1') === type && this.get('id1') === id && this.get('relationship1') === name) {
+			return true;
+		}
+
+		if (this.get('type2') === type && this.get('id2') === id && this.get('relationship2') === name) {
+			return true;
+		}
+
+		return false;
+	},
+
 	otherType: function(record) {
 		if (this.get('id1') === record.get('id')) {
 			return this.get('type2');
