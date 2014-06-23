@@ -159,11 +159,13 @@ EG.Model.reopen({
 			var oldVal, newVal;
 
 			if (meta.kind === HAS_MANY_KEY) {
-				oldVal = map.call(this.getHasManyValue(name, true), function(value) {
+				oldVal = this.getHasManyValue(name, true);
+				var oldValSet = map.call(oldVal, function(value) {
 					return value.type + '.' + value.id;
 				});
 
-				newVal = map.call(this.getHasManyValue(name, false), function(value) {
+				newVal = this.getHasManyValue(name, false);
+				var newValSet = map.call(newVal, function(value) {
 					return value.type + '.' + value.id;
 				});
 
@@ -184,13 +186,19 @@ EG.Model.reopen({
 	},
 
 	rollbackRelationships: function() {
-		var store = this.get('store');
+		Em.changeProperties(function() {
+			var store = this.get('store');
 
-		var client = this.get('relationships').getRelationshipsByState(CLIENT_STATE);
-		forEach.call(client, store.deleteRelationship, store);
+			var client = this.get('relationships').getRelationshipsByState(CLIENT_STATE);
+			forEach.call(client, function(relationship) {
+				store.deleteRelationship(relationship);
+			});
 
-		var deleted = this.get('relationships').getRelationshipsByState(DELETED_STATE);
-		forEach.call(deleted, store.changeRelationshipState, store);
+			var deleted = this.get('relationships').getRelationshipsByState(DELETED_STATE);
+			forEach.call(deleted, function(relationship) {
+				store.changeRelationshipState(relationship, SERVER_STATE);
+			});
+		}, this);
 	},
 
 	addToRelationship: function(relationshipName, id, polymorphicType) {
@@ -430,7 +438,7 @@ EG.Model.reopen({
 	 */
 	loadRelationships: function(json) {
 		var store = this.get('store');
-		var sideWithClient = this.get('sideWithClientOnConflict');
+		var sideWithClient = store.get('sideWithClientOnConflict');
 
 		var getHasOneConflict = function(type, id, name) {
 			if (id === null) {

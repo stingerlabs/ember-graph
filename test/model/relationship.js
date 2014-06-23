@@ -362,12 +362,12 @@
 		deepEqual(post1.get('_author'), author);
 	});
 
-	test('Changed attributes are detected correctly', function() {
+	test('Changed relationships are detected correctly', function() {
 		expect(4);
 
 		var post = store.getRecord('post', '8');
 		var author = post.get('_author');
-		var tags = post.get('_tags').toArray();
+		var tags = post.get('_tags');
 
 		post.setHasOneRelationship('author', '1');
 		post.addToRelationship('tags', '1');
@@ -376,81 +376,82 @@
 
 		var changed = post.changedRelationships();
 
-		ok(changed.author[0] === null);
-		ok(changed.author[1] === '1');
-		ok(new Em.Set(changed.tags[0]).isEqual(tags));
-		ok(new Em.Set(changed.tags[1]).isEqual(['1', '2']));
+		strictEqual(changed.author[0], null);
+		strictEqual(changed.author[1].id, '1');
+		deepEqual(changed.tags[0].mapBy('id').sort(), tags.mapBy('id').sort());
+		deepEqual(changed.tags[1].mapBy('id').sort(), ['1', '2'].sort());
 	});
 
 	test('Reloading a changed hasOne from the server works correctly (clean record)', function() {
 		expect(2);
 
 		var post = store.getRecord('post', '1');
-		post.loadData({
-			author: '50',
-			tags: post.get('_tags').toArray()
+
+		store.extractPayload({
+			post: [
+				{ id: '1', author: { type: 'user', id: '50' }, tags: post.get('_tags') }
+			]
 		});
 
-		ok(post.get('_author') === '50');
+		strictEqual(post.get('_author').id, '50');
 		var user = store.getRecord('user', '1');
-		ok(!user.get('_posts').contains('1'));
+		ok(user.get('_posts').mapBy('id').indexOf('1') < 0);
 	});
 
 	test('Reloading a cleared hasOne from the server works correctly (clean record)', function() {
 		expect(2);
 
 		var post = store.getRecord('post', '1');
-		post.loadData({
-			author: null,
-			tags: post.get('_tags').toArray()
+
+		store.extractPayload({
+			post: [
+				{ id: '1', author: null, tags: post.get('_tags') }
+			]
 		});
 
-		ok(post.get('_author') === null);
+		strictEqual(post.get('_author'), null);
 		var user = store.getRecord('user', '1');
-		ok(!user.get('_posts').contains('1'));
+		ok(user.get('_posts').mapBy('id').indexOf('1') < 0);
 	});
 
 	test('Reloading a changed hasMany from the server works correctly (clean record)', function() {
 		expect(3);
 
 		var user = store.getRecord('user', '1');
-		user.loadData({
-			posts: ['1', '50', '51']
+
+		store.extractPayload({
+			user: [
+				{ id: '1', posts: [{ type: 'post', id: '1' }, { type: 'post', id: '50' }, { type: 'post', id: '51' }]}
+			]
 		});
 
 		var post1 = store.getRecord('post', '1');
 		var post2 = store.getRecord('post', '2');
 
-		ok(user.get('_posts').isEqual(['1', '50', '51']));
-		ok(post1.get('_author') === '1');
-		ok(post2.get('_author') === null);
-	});
-
-	test('Reloading a record with missing relationships loads the defaults correctly', function() {
-		expect(3);
-
-		var post = store.getRecord('post', '1');
-		var user = store.getRecord('user', post.get('_author'));
-		post.loadData({});
-
-		ok(post.get('_author') === null);
-		ok(!user.get('_posts').contains('1'));
-		ok(post.get('_tags').isEqual(['0']));
+		deepEqual(user.get('_posts').mapBy('id').sort(), ['1', '50', '51'].sort());
+		strictEqual(post1.get('_author').id, '1');
+		strictEqual(post2.get('_author'), null);
 	});
 
 	test('Changing a record that isn\'t loaded yet will load changes on load' , function() {
 		expect(4);
 
 		var user = store.getRecord('user', '3');
-		ok(user.get('_posts').contains('7'));
+		ok(user.get('_posts').mapBy('id').indexOf('7') >= 0);
 		user.removeFromRelationship('posts', '7');
-		ok(!user.get('_posts').contains('7'));
+		ok(user.get('_posts').mapBy('id').indexOf('7') < 0);
 
-		var post = store._loadRecord('post', { id: '7', author: '3', tags: [] });
+		store.extractPayload({
+			post: [
+				{ id: '7', author: { type: 'user', id: '3' }, tags: []}
+			]
+		});
 
-		ok(post.get('_author') === null);
+		var post = store.getRecord('post', '7');
+
+		strictEqual(post.get('_author'), null);
 		post.rollbackRelationships();
-		ok(post.get('_author') === '3');
+		strictEqual(post.get('_author').id, '3');
 	});
 
 	test('A new permanent record loaded creates new server relationships', function() {

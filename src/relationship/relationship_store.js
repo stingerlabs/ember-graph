@@ -55,7 +55,7 @@ var RelationshipMap = Em.Object.extend({
 		var keys = new Em.Set(Em.keys(this)).without('length');
 
 		forEach.call(keys, function(key) {
-			relationships.concat(this.getRelationships(key));
+			relationships = relationships.concat(this.getRelationships(key));
 		}, this);
 
 		return relationships;
