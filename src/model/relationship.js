@@ -431,215 +431,274 @@ EG.Model.reopen({
 	 * are made automatically, while choices that come down to preference
 	 * are decided base on the configurable store properties.
 	 *
-	 * TODO: This still needs to be rewritten. But it works for now.
-	 *
 	 * @param {Object} json
 	 * @private
 	 */
 	loadRelationships: function(json) {
+		var thisId = this.get('id');
+		var thisType = this.typeKey;
 		var store = this.get('store');
 		var sideWithClient = store.get('sideWithClientOnConflict');
 
-		var getHasOneConflict = function(type, id, name) {
-			if (id === null) {
-				return null;
+		var connectHasOneToNull = function(name, meta, value) {
+			var all = this.getRelationshipsByName(name);
+			Em.assert('Invalid number of hasOne relationships.', all.length <= 2);
+
+			var client = filter.call(all, function(relationship) {
+				switch (relationship.get('state')) {
+					case SERVER_STATE:
+					case DELETED_STATE:
+						store.deleteRelationship(relationship);
+						return false;
+					case CLIENT_STATE:
+						return true;
+				}
+			});
+			Em.assert('Invalid number of client hasOne relationships.', client.length <= 1);
+
+			if (client.length === 0) {
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				return;
 			}
 
-			var meta = this.constructor.metaForRelationship(name);
-			if (meta.inverse === null) {
-				return null;
+			client = client[0];
+
+			if (client.otherType(this) === value.type && client.otherId(this) === value.id) {
+				store.changeRelationshipState(client, SERVER_STATE);
+				return;
 			}
 
-			var model = store.modelForType(meta.relatedType);
-			var otherMeta = model.metaForRelationship(meta.inverse);
-			if (otherMeta.kind !== HAS_ONE_KEY) {
-				return null;
+			if (sideWithClient) {
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				return;
 			}
 
-			// We need to detect unloaded records too
-			var record = store.getRecord(type, id);
-			if (record) {
-				var current = record.getHasOneRelationship(meta.inverse, false);
-				if (current === null ||
-					(current.otherType(record) === this.typeKey && current.otherId(record) === this.get('id'))) {
-					return null;
+			store.deleteRelationship(client);
+			store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+		};
+
+		var connectHasOneToHasOne = function(name, meta, value) {
+			var all = this.getRelationshipsByName(name);
+			Em.assert('Invalid number of hasOne relationships.', all.length <= 2);
+
+			var client = filter.call(all, function(relationship) {
+				switch (relationship.get('state')) {
+					case SERVER_STATE:
+					case DELETED_STATE:
+						store.deleteRelationship(relationship);
+						return false;
+					case CLIENT_STATE:
+						return true;
+				}
+			});
+			Em.assert('Invalid number of client hasOne relationships.', client.length <= 1);
+
+			var conflicts = store.relationshipsForRecord(value.type, value.id, meta.inverse);
+			Em.assert('Invalid number of hasOne relationships.', conflicts.length <= 2);
+
+			var conflict = filter.call(conflicts, function(relationship) {
+				switch (relationship.get('state')) {
+					case SERVER_STATE:
+					case DELETED_STATE:
+						store.deleteRelationship(relationship);
+						return false;
+					case CLIENT_STATE:
+						return true;
+				}
+			}, this);
+			Em.assert('Invalid number of client hasOne relationships.', conflict.length <= 1);
+
+			if (client.length === 0 && conflict.length === 0) {
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				return;
+			}
+
+			if (client.length === 0 && conflict.length > 0) {
+				if (conflict[0].otherType(this) === value.type && conflict[0].otherId(this) === value.id) {
+					store.changeRelationshipState(conflict[0], SERVER_STATE);
+					return;
 				}
 
-				return current;
-			} else {
-				var relationships = store.relationshipsForRecord(type, id, name);
-				if (relationships.length === 0) {
-					return null;
+				if (sideWithClient) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				} else {
+					store.deleteRelationship(conflict[0]);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
 				}
 
-				// It's a hasOne, so relationships can only have one NEW or SAVED relationship
-				relationships = filter.call(relationships, function(relationship) {
-					var state = relationship.get('state');
-					return (state === SERVER_STATE || state === CLIENT_STATE);
-				});
+				return;
+			}
 
-				Em.assert('An unknown relationship error occurred', relationships.length <= 1);
+			if (client.length > 0 && conflict.length === 0) {
+				if (client[0].otherType(this) === value.type && client[0].otherId(this) === value.id) {
+					store.changeRelationshipState(client[0], SERVER_STATE);
+					return;
+				}
 
-				return (relationships.length > 0 ? relationships[0] : null);
+				if (sideWithClient) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				} else {
+					store.deleteRelationship(client[0]);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
+
+				return;
+			}
+
+			if (client.length > 0 && conflict.length > 0) {
+				if (client[0].get('id') === conflict[0].get('id')) {
+					store.changeRelationshipState(client[0], SERVER_STATE);
+					return;
+				}
+
+				if (sideWithClient) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				} else {
+					store.deleteRelationship(client[0]);
+					store.deleteRelationship(conflict[0]);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
 			}
 		};
 
-		this.constructor.eachRelationship(function(name, meta) {
-			var value = json[name];
+		var connectHasOneToHasMany = connectHasOneToNull;
 
-			// Delete ALL server relationships with this name
+		var connectHasManyToNull = function(name, meta, values) {
 			var client = filter.call(this.getRelationshipsByName(name), function(relationship) {
-				// If a DELETED relationship is the same as one given by the server
-				// it's considered a conflict and has to be dealt with accordingly
-				var state = relationship.get('state');
-				if (state === DELETED_STATE) {
-					var otherType = relationship.otherType(this);
-					var otherId = relationship.otherId(this);
+				switch (relationship.get('state')) {
+					case SERVER_STATE:
+					case DELETED_STATE:
+						store.deleteRelationship(relationship);
+						return false;
+					case CLIENT_STATE:
+						return true;
+				}
+			});
 
-					if (meta.kind === HAS_MANY_KEY) {
-						var contains = some.call(value, function(v) {
-							return (v.type === otherType && v.id === otherId);
-						});
+			var valueSet = new Em.Set(map.call(values, function(value) {
+				return value.type + ':' + value.id;
+			}));
 
-						if (contains) {
-							if (sideWithClient) {
-								// Leave it alone
-							} else {
-								store.changeRelationshipState(relationship, SERVER_STATE);
-							}
-						}
-					} else {
-						if (value.type === otherType && value.id === otherId) {
-							if (sideWithClient) {
-								// Leave it alone
-							} else {
-								store.changeRelationshipState(relationship, SERVER_STATE);
-							}
-						}
-					}
+			var clientSet = new Em.Set();
 
-					return false;
+			client = forEach.call(client, function(relationship) {
+				var key = relationship.otherType(this) + ':' + relationship.otherId(this);
+				if (valueSet.contains(key)) {
+					store.changeRelationshipState(relationship, SERVER_STATE);
 				}
 
-				if (state === SERVER_STATE) {
-					store.deleteRelationship(relationship);
-					return false;
-				} else {
-					return true;
-				}
+				clientSet.addObject(key);
 			}, this);
 
-			if (meta.kind === HAS_MANY_KEY) {
-				var given  = new Em.Set(map.call(value, function(v) {
-					return v.type + ':' + v.id;
-				}));
+			forEach.call(values, function(value) {
+				if (!clientSet.contains(value.type + ':' + value.id)) {
+					return;
+				}
 
-				// Update client side relationships that have been saved
-				forEach.call(client, function(relationship) {
-					if (given.contains(relationship.otherType(this) + ':' + relationship.otherId(this))) {
-						store.changeRelationshipState(relationship, SERVER_STATE);
-					}
-				}, this);
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+			}, this);
+		};
 
-				var current = this.getHasManyValue(name, false);
-				// These are OK for now, because they're no in conflict
-				var clientNotOnServer = filter.call(current, function(c) {
-					return !given.contains(c.type + ':' + c.id);
-				});
-				// These have to be created
-				var serverNotInClient = filter.call(value, function(v) {
-					for (var i = 0; i < current.length; ++i) {
-						if (v.type === current[i].type && v.id === current[i].id) {
+		var connectHasManyToHasOne = function(name, meta, values) {
+			var client = filter.call(this.getRelationshipsByName(name), function(relationship) {
+				switch (relationship.get('state')) {
+					case SERVER_STATE:
+					case DELETED_STATE:
+						store.deleteRelationship(relationship);
+						return false;
+					case CLIENT_STATE:
+						return true;
+				}
+			});
+
+			var valueSet = new Em.Set(map.call(values, function(value) {
+				return value.type + ':' + value.id;
+			}));
+
+			var clientSet = new Em.Set();
+
+			client = forEach.call(client, function(relationship) {
+				var key = relationship.otherType(this) + ':' + relationship.otherId(this);
+				if (valueSet.contains(key)) {
+					store.changeRelationshipState(relationship, SERVER_STATE);
+				}
+
+				clientSet.addObject(key);
+			}, this);
+
+			forEach.call(values, function(value) {
+				if (!clientSet.contains(value.type + ':' + value.id)) {
+					return;
+				}
+
+				var conflicts = store.relationshipsForRecord(value.type, value.id, meta.inverse);
+				Em.assert('Invalid number of hasOne relationships.', conflicts.length <= 2);
+
+				var conflict = filter.call(conflicts, function(relationship) {
+					switch (relationship.get('state')) {
+						case SERVER_STATE:
+						case DELETED_STATE:
+							store.deleteRelationship(relationship);
 							return false;
-						}
+						case CLIENT_STATE:
+							return true;
 					}
-
-					return true;
-				});
-
-				forEach.call(serverNotInClient, function(v) {
-					var addState = SERVER_STATE;
-					var conflict = getHasOneConflict.call(this, v.type, v.id, name);
-					if (conflict !== null) {
-						switch (conflict.get('state')) {
-							case DELETED_STATE:
-							case SERVER_STATE:
-								// Delete it because the server says that relationship no longer exists.
-								// It is now occupied by another relationship
-								store.deleteRelationship(conflict);
-								break;
-							case CLIENT_STATE:
-								if (sideWithClient) {
-									// We have to side with the client, so leave it alone, add ours as deleted
-									addState = DELETED_STATE;
-								} else {
-									// We have to side with the server, so delete it
-									store.deleteRelationship(conflict);
-								}
-								break;
-						}
-					}
-
-					store.createRelationship(this.typeKey, this.get('id'), name, v.type, v.id, meta.inverse, addState);
 				}, this);
-			} else {
-				// There should only be one relationship in there
-				Em.assert('An unknown relationship error occurred.', client.length <= 1);
+				Em.assert('Invalid number of client hasOne relationships.', conflict.length <= 1);
 
-				var conflict = (value === null ? null : getHasOneConflict.call(this, value.type, value.id, name));
+				if (conflict.length === 0) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+					return;
+				}
 
-				if (client.length === 1) {
-					if (client[0].otherType(this) === value.type && client[0].otherId(this) === value.id) {
-						store.changeRelationshipState(client[0], SERVER_STATE);
-					} else {
-						// The server is in conflict with the client
-						if (sideWithClient) {
-							if (value !== null) {
-								if (conflict !== null) { // jshint ignore:line
-									switch (conflict.get('state')) {
-										case DELETED_STATE:
-										case SERVER_STATE:
-											// Delete it because the server says that relationship no longer exists.
-											// It is now occupied by another relationship
-											store.deleteRelationship(conflict);
-											break;
-										case CLIENT_STATE:
-											// We have to side with the client, so leave it alone
-											break;
-									}
-								}
+				conflict = conflict[0];
 
-								// Add the server relationship as deleted
-								store.createRelationship(this.typeKey, this.get('id'), name,
-									value.type, value.id, meta.inverse, DELETED_STATE);
-							}
-						} else {
-							// Delete the client side relationship
-							store.deleteRelationship(client[0]);
-							if (value !== null) {
-								if (conflict !== null) { // jshint ignore:line
-									// Delete it because the server says that relationship no longer exists.
-									// It is now occupied by another relationship
-									store.deleteRelationship(conflict);
-								}
+				if (conflict.otherType(this) === value.type && conflict.otherId(this) === value.id) {
+					store.changeRelationshipState(conflict, SERVER_STATE);
+					return;
+				}
 
-								store.createRelationship(this.typeKey, this.get('id'), name,
-									value.type, value.id, meta.inverse, SERVER_STATE);
-							}
-						}
-					}
+				if (sideWithClient) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
 				} else {
-					// We can simply create the server relationship
-					if (value !== null) {
-						// Delete it because the server says that relationship no longer exists.
-						// It is now occupied by another relationship
-						if (conflict !== null) {
-							store.deleteRelationship(conflict);
-						}
+					store.deleteRelationship(conflict);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
+			}, this);
+		};
 
-						store.createRelationship(this.typeKey, this.get('id'), name,
-							value.type, value.id,meta.inverse, SERVER_STATE);
-					}
+		var connectHasManyToHasMany = connectHasManyToNull;
+
+		this.constructor.eachRelationship(function(name, meta) {
+			var otherKind = null;
+
+			if (meta.inverse) {
+				otherKind = this.get('store').modelForType(meta.relatedType).metaForRelationship(meta.inverse).kind;
+			}
+
+			if (meta.kind === HAS_MANY_KEY) {
+				switch (otherKind) {
+					case HAS_ONE_KEY:
+						connectHasManyToHasOne.call(this, name, meta, json[name]);
+						break;
+					case HAS_MANY_KEY:
+						connectHasManyToHasMany.call(this, name, meta, json[name]);
+						break;
+					default:
+						connectHasManyToNull.call(this, name, meta, json[name]);
+						break;
+				}
+			} else {
+				switch (otherKind) {
+					case HAS_ONE_KEY:
+						connectHasOneToHasOne.call(this, name, meta, json[name]);
+						break;
+					case HAS_MANY_KEY:
+						connectHasOneToHasMany.call(this, name, meta, json[name]);
+						break;
+					default:
+						connectHasOneToNull.call(this, name, meta, json[name]);
+						break;
 				}
 			}
 		}, this);

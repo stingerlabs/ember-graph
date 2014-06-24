@@ -49,6 +49,7 @@ EG.Store.reopen({
 		this.notifyPropertyChange('queuedRelationships');
 
 		delete this.get('allRelationships')[relationship.get('id')];
+		delete this.get('queuedRelationships')[relationship.get('id')];
 
 		relationship.erase();
 	},
