@@ -4360,6 +4360,7 @@ EG.Model.reopen({
 var map = Em.ArrayPolyfills.map;
 var forEach = Em.ArrayPolyfills.forEach;
 
+// TODO: This can probably be moved into the store to be more model-agnostic
 EG.Model.reopen({
 
 	/**
