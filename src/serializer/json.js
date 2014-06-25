@@ -386,7 +386,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 				};
 			}
 		} else {
-			return { name: name, value: value };
+			return { name: name, value: type.deserialize(value) };
 		}
 	},
 

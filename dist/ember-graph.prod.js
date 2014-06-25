@@ -121,8 +121,10 @@ EG.abstractProperty = function(propertyName) {
  */
 EG.generateUUID = function() {
 	return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-		var r = Math.random()*16|0; // jshint ignore:line
-		var v = (c == 'x' ? r : (r&0x3|0x8)); // jshint ignore:line
+		/* jshint ignore:start */
+		var r = Math.random()*16|0;
+		var v = (c == 'x' ? r : (r&0x3|0x8));
+		/* jshint ignore:end */
 		return v.toString(16);
 	});
 };
@@ -876,7 +878,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 				};
 			}
 		} else {
-			return { name: name, value: value };
+			return { name: name, value: type.deserialize(value) };
 		}
 	},
 
