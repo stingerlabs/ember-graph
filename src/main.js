@@ -47,4 +47,5 @@ require('model/model');
 require('model/states');
 require('model/attribute');
 require('model/relationship');
+require('model/relationship_load');
 require('model/schema');
