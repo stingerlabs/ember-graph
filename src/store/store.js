@@ -468,6 +468,8 @@ EG.Store = Em.Object.extend({
 	 * @param {Object} payload
 	 */
 	extractPayload: function(payload) {
+		payload = payload || {};
+
 		Em.changeProperties(function() {
 			var reloadDirty = this.get('reloadDirty');
 
