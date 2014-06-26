@@ -1909,6 +1909,10 @@ EG.Store = Em.Object.extend({
 	 * @return {Promise}
 	 */
 	deleteRecord: function(record) {
+		if (record.get('isCreating')) {
+			return Em.RSVP.reject('Can\'t delete a record before it\'s created.');
+		}
+
 		var type = record.typeKey;
 		var id = record.get('id');
 		var records = (this.get('_records.' + type) || {});
