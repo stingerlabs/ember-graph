@@ -1915,12 +1915,18 @@ EG.Store = Em.Object.extend({
 
 		var type = record.typeKey;
 		var id = record.get('id');
-		var records = (this.get('_records.' + type) || {});
+
+		if (record.get('isNew')) {
+			this._deleteRelationshipsForRecord(type, id);
+			this._deleteRecord(type, id);
+			record.set('store', null);
+		}
 
 		return this.adapterFor(record.typeKey).deleteRecord(record).then(function(payload) {
 			this._deleteRelationshipsForRecord(type, id);
 			this.extractPayload(payload);
 			this._deleteRecord(type, id);
+			record.set('store', null);
 		}.bind(this));
 	},
 

@@ -70,4 +70,25 @@
 			strictEqual(post3.get('_author'), null);
 		});
 	});
+
+	asyncTest('Delete new record', function() {
+		expect(3);
+
+		var user = store.getRecord('user', '1');
+		var post = store.createRecord('post', {
+			author: '1'
+		});
+		var id = post.get('id');
+
+		start();
+		ok(user.get('_posts').toArray().indexOf(id) >= 0);
+		stop();
+
+		post.destroy().then(function() {
+			start();
+
+			strictEqual(post.get('store'), null);
+			ok(user.get('_posts').toArray().indexOf(id) < 0);
+		});
+	});
 })();
