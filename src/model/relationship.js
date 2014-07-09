@@ -7,6 +7,7 @@ var forEach = Em.ArrayPolyfills.forEach;
 var HAS_ONE_KEY = EG.Model.HAS_ONE_KEY = 'hasOne';
 var HAS_MANY_KEY = EG.Model.HAS_MANY_KEY = 'hasMany';
 
+// TODO: NEW_STATE, SAVED_STATE, DELETED_STATE
 var CLIENT_STATE = EG.Relationship.CLIENT_STATE;
 var SERVER_STATE = EG.Relationship.SERVER_STATE;
 var DELETED_STATE = EG.Relationship.DELETED_STATE;

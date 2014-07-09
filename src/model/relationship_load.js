@@ -65,12 +65,32 @@ EG.Model.reopen({
 
 	disconnectHasOneFromNull: Em.aliasMethod('disconnectHasOneFromHasMany'),
 
-	disconnectHasOneFromHasOne: function(name, meta) {
-
-	},
+	disconnectHasOneFromHasOne: Em.aliasMethod('disconnectHasOneFromHasMany'),
 
 	disconnectHasOneFromHasMany: function(name, meta) {
+		var store = this.get('store');
+		var relationships = this.sortHasOneRelationships(this.typeKey, this.get('id'), name);
 
+		if (relationships[DELETED_STATE].length > 0) {
+			forEach.call(relationships[DELETED_STATE], function (relationship) {
+				store.deleteRelationship(relationship);
+			}, this);
+		}
+
+		if (!relationships[SERVER_STATE] && !relationships[CLIENT_STATE]) {
+			return;
+		}
+
+		if (relationships[SERVER_STATE] && !relationships[CLIENT_STATE]) {
+			store.deleteRelationship(relationships[SERVER_STATE]);
+			return;
+		}
+
+		if (!relationships[SERVER_STATE] && relationships[CLIENT_STATE]) {
+			if (!store.get('sideWithClientOnConflict')) {
+				store.deleteRelationship(relationships[CLIENT_STATE]);
+			}
+		}
 	},
 
 	connectHasOneToNull: Em.aliasMethod('connectHasOneToHasMany'),
