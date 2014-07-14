@@ -20,12 +20,13 @@
 		}
 	});
 
-	asyncTest('Model promise object correctly reports the ID', function() {
-		expect(4);
+	asyncTest('Model promise object correctly reports the ID and typeKey', function() {
+		expect(6);
 
 		var resolve = null;
 		var modelPromise = EG.ModelPromiseObject.create({
 			id: '1',
+			typeKey: 'tag',
 			promise: new Em.RSVP.Promise(function(r) {
 				resolve = r;
 			})
@@ -33,6 +34,7 @@
 
 		start();
 		strictEqual(modelPromise.get('id'), '1');
+		strictEqual(modelPromise.get('typeKey'), 'tag');
 		strictEqual(modelPromise.get('name'), undefined);
 		stop();
 
@@ -41,6 +43,7 @@
 		modelPromise.then(function() {
 			start();
 			strictEqual(modelPromise.get('id'), '1');
+			strictEqual(modelPromise.get('typeKey'), 'tag');
 			strictEqual(modelPromise.get('name'), 'tag1');
 		});
 	});

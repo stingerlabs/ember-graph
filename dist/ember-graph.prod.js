@@ -1781,6 +1781,7 @@ EG.Store = Em.Object.extend({
 
 		return EG.ModelPromiseObject.create({
 			id: id,
+			typeKey: typeKey,
 			promise: promise
 		});
 	},
@@ -2414,16 +2415,18 @@ EG.PromiseArray = Em.ArrayProxy.extend(Em.PromiseProxyMixin);
 
 /**
  * Acts just like `PromiseObject` only it's able to hold the
- * ID of a model before it's resolved completely.
+ * ID and typeKey of a model before it's resolved completely.
  *
  * ```js
  * var user = EG.ModelPromiseObject.create({
  *     promise: this.store.find('user', '52'),
- *     id: '52'
+ *     id: '52',
+ *     typeKey: 'user'
  * });
  *
  * user.get('isPending'); // true
  * user.get('id'); // '52'
+ * user.get('typeKey'); // 'user'
  * ```
  *
  * @class ModelPromiseObject
@@ -2432,6 +2435,7 @@ EG.PromiseArray = Em.ArrayProxy.extend(Em.PromiseProxyMixin);
  */
 EG.ModelPromiseObject = EG.PromiseObject.extend({
 	__modelId: null,
+	__modelTypeKey: null,
 
 	id: function(key, value) {
 		var content = this.get('content');
@@ -2449,7 +2453,25 @@ EG.ModelPromiseObject = EG.PromiseObject.extend({
 		} else {
 			return this.get('__modelId');
 		}
-	}.property('__modelId', 'content.id')
+	}.property('__modelId', 'content.id'),
+
+	typeKey: function(key, value) {
+		var content = this.get('content');
+
+		if (arguments.length > 1) {
+			if (content && content.set) {
+				content.set('typeKey', value);
+			} else {
+				this.set('__modelTypeKey', value);
+			}
+		}
+
+		if (content && content.get) {
+			return content.get('typeKey');
+		} else {
+			return this.get('__modelTypeKey');
+		}
+	}.property('__modelTypeKey', 'content.typeKey')
 });
 
 })();

@@ -259,6 +259,7 @@ EG.Store = Em.Object.extend({
 
 		return EG.ModelPromiseObject.create({
 			id: id,
+			typeKey: typeKey,
 			promise: promise
 		});
 	},
