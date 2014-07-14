@@ -217,11 +217,13 @@ EG.JSONSerializer = EG.Serializer.extend({
 				var added = new Em.Set(values[1]).withoutAll(values[0]);
 				var removed = new Em.Set(values[0]).withoutAll(values[1]);
 
-				added.forEach(function(id) {
-					operations.push({ op: 'add', path: '/links/' + relationshipName + '/-', value: id });
+				forEach.call(added, function(id) {
+					if (!EG.Model.isTemporaryId(id)) {
+						operations.push({ op: 'add', path: '/links/' + relationshipName + '/-', value: id });
+					}
 				});
 
-				removed.forEach(function(id) {
+				forEach.call(removed, function(id) {
 					operations.push({ op: 'remove', path: '/links/' + relationshipName + '/' + id });
 				});
 			} else {

@@ -273,4 +273,15 @@
 
 		deepEqual(serializer.deserialize(payload), expected);
 	});
+
+	test('Temporary IDs aren\'t serialized in deltas', function() {
+		expect(1);
+
+		var user = store.getRecord('user', '1');
+		store.createRecord('post', { title: '', author: '1', tags: [] });
+		store.createRecord('post', { title: '', author: '1', tags: [] });
+		store.createRecord('post', { title: '', author: '1', tags: [] });
+
+		deepEqual(serializer.serializeDelta(user), []);
+	});
 })();
