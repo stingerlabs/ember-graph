@@ -1920,6 +1920,7 @@ EG.Store = Em.Object.extend({
 			this._deleteRelationshipsForRecord(type, id);
 			this._deleteRecord(type, id);
 			record.set('store', null);
+			return Em.RSVP.resolve();
 		}
 
 		return this.adapterFor(record.typeKey).deleteRecord(record).then(function(payload) {
