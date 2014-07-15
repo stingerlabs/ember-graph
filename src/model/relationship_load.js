@@ -4,6 +4,8 @@ var reduce = Em.ArrayPolyfills.reduce;
 var forEach = Em.ArrayPolyfills.forEach;
 
 // TODO: This can probably be moved into the store to be more model-agnostic
+// Idea: load attributes into records directly, but load relationships into store
+// Split the data apart in `extractPayload`
 EG.Model.reopen({
 
 	/**
@@ -247,33 +249,26 @@ EG.Model.reopen({
 		var thisType = this.typeKey;
 		var thisId = this.get('id');
 		var store = this.get('store');
+
 		var relationships = store.relationshipsForRecord(thisType, thisId, name);
 
-		var valueSet = new Em.Set(map.call(values, function(value) {
-			return value.type + ':' + value.id;
-		}));
-
-		// Upgrade any client relationships that match our values to server relationships
-		var alreadyCreated = new Em.Set();
 		forEach.call(relationships, function(relationship) {
-			var key = relationship.otherType(this) + ':' + relationship.otherId(this);
-			if (valueSet.contains(key)) {
-				// If it's a client relationship, upgrade it
-				// If it's a deleted relationship, but we're overriding the client, upgrade it
-				if (relationship.get('state') === CLIENT_STATE) {
-					store.changeRelationshipState(relationship, SERVER_STATE);
-				} else if (relationship.get('state') === DELETED_STATE && !store.get('sideWithClientOnConflict')) {
-					store.changeRelationshipState(relationship, SERVER_STATE);
-				}
-			}
+			store.deleteRelationship(relationship);
+		});
 
-			alreadyCreated.addObject(key);
-		}, this);
+		var clientRelationships = filter.call(relationships, function(relationship) {
+			return !!Em.get(relationship, 'state');
+		});
 
-		// Create the values that aren't already created
+		var clientMap = reduce.call(clientRelationships, function(map, relationship) {
+			map[relationship.otherType(this) + ':' + relationship.otherId(this)] = relationship;
+			return map;
+		}.bind(this), {});
+
 		forEach.call(values, function(value) {
-			var key = value.type + ':' + value.id;
-			if (!alreadyCreated.contains(key)) {
+			if (clientMap[value.type + ':' + value.id]) {
+				store.changeRelationshipState(clientMap[value.type + ':' + value.id], SERVER_STATE);
+			} else {
 				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
 			}
 		}, this);
