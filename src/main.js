@@ -19,9 +19,9 @@ if (Ember.libraries) {
 
 require('initialization');
 
+require('util/array');
 require('util/util');
 require('util/set');
-require('util/array');
 require('util/string');
 require('util/inflector');
 
