@@ -1,5 +1,6 @@
 var map = Em.ArrayPolyfills.map;
 var filter = Em.ArrayPolyfills.filter;
+var reduce = Em.ArrayPolyfills.reduce;
 var forEach = Em.ArrayPolyfills.forEach;
 
 // TODO: This can probably be moved into the store to be more model-agnostic
@@ -114,6 +115,7 @@ EG.Model.reopen({
 
 		if (relationships[CLIENT_STATE] && relationships[CLIENT_STATE].otherType(this) === value.type &&
 			relationships[CLIENT_STATE].otherId(this) === value.id) {
+			store.changeRelationshipState(relationships[CLIENT_STATE], SERVER_STATE);
 			return;
 		}
 
@@ -167,7 +169,78 @@ EG.Model.reopen({
 	connectHasManyToNull: Em.aliasMethod('connectHasManyToHasMany'),
 
 	connectHasManyToHasOne: function(name, meta, values) {
+		var thisType = this.typeKey;
+		var thisId = this.get('id');
+		var store = this.get('store');
 
+		var relationships = store.relationshipsForRecord(thisType, thisId, name);
+
+		forEach.call(relationships, function(relationship) {
+			store.deleteRelationship(relationship);
+		});
+
+		var clientRelationships = filter.call(relationships, function(relationship) {
+			return !!Em.get(relationship, 'state');
+		});
+
+		var clientMap = reduce.call(clientRelationships, function(map, relationship) {
+			map[relationship.otherType(this) + ':' + relationship.otherId(this)] = relationship;
+			return map;
+		}.bind(this), {});
+
+		forEach.call(values, function(value) {
+			if (clientMap[value.type + ':' + value.id]) {
+				store.changeRelationshipState(clientMap[value.type + ':' + value.id], SERVER_STATE);
+				return;
+			}
+
+			var conflicts = this.sortHasOneRelationships(value.type, value.id, meta.inverse);
+
+			if (!conflicts[SERVER_STATE] && !conflicts[CLIENT_STATE] && conflicts[DELETED_STATE].length <= 0) {
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				return;
+			}
+
+			if(conflicts[SERVER_STATE] && !conflicts[CLIENT_STATE] && conflicts[DELETED_STATE].length <= 0) {
+				store.deleteRelationship(conflicts[SERVER_STATE]);
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				return;
+			}
+
+			if(!conflicts[SERVER_STATE] && conflicts[CLIENT_STATE] && conflicts[DELETED_STATE].length <= 0) {
+				if (store.get('sideWithClientOnConflict')) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				} else {
+					store.deleteRelationship(conflicts[CLIENT_STATE]);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
+
+				return;
+			}
+
+			if(!conflicts[SERVER_STATE] && !conflicts[CLIENT_STATE] && conflicts[DELETED_STATE].length > 0) {
+				forEach.call(conflicts[DELETED_STATE], function(relationship) {
+					store.deleteRelationship(relationship);
+				});
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				return;
+			}
+
+			if(conflicts[SERVER_STATE] && conflicts[CLIENT_STATE] && conflicts[DELETED_STATE].length > 0) {
+				forEach.call(conflicts[DELETED_STATE], function(relationship) {
+					store.deleteRelationship(relationship);
+				});
+
+				if (store.get('sideWithClientOnConflict')) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				} else {
+					store.deleteRelationship(conflicts[CLIENT_STATE]);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
+
+				return;
+			}
+		}, this);
 	},
 
 	connectHasManyToHasMany: function(name, meta, values) {
