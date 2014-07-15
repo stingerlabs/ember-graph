@@ -3883,6 +3883,7 @@ var forEach = Em.ArrayPolyfills.forEach;
 var HAS_ONE_KEY = EG.Model.HAS_ONE_KEY = 'hasOne';
 var HAS_MANY_KEY = EG.Model.HAS_MANY_KEY = 'hasMany';
 
+// TODO: NEW_STATE, SAVED_STATE, DELETED_STATE
 var CLIENT_STATE = EG.Relationship.CLIENT_STATE;
 var SERVER_STATE = EG.Relationship.SERVER_STATE;
 var DELETED_STATE = EG.Relationship.DELETED_STATE;
@@ -4358,6 +4359,7 @@ EG.Model.reopen({
 (function() {
 
 var map = Em.ArrayPolyfills.map;
+var filter = Em.ArrayPolyfills.filter;
 var forEach = Em.ArrayPolyfills.forEach;
 
 // TODO: This can probably be moved into the store to be more model-agnostic
@@ -4367,7 +4369,7 @@ EG.Model.reopen({
 	 * Merges relationship data from the client into the relationships
 	 * already connected to this record. Any absolutely correct choices
 	 * are made automatically, while choices that come down to preference
-	 * are decided base on the configurable store properties.
+	 * are decided based on the configurable store properties.
 	 *
 	 * @param {Object} json
 	 * @private
@@ -4424,12 +4426,32 @@ EG.Model.reopen({
 
 	disconnectHasOneFromNull: Em.aliasMethod('disconnectHasOneFromHasMany'),
 
-	disconnectHasOneFromHasOne: function(name, meta) {
-
-	},
+	disconnectHasOneFromHasOne: Em.aliasMethod('disconnectHasOneFromHasMany'),
 
 	disconnectHasOneFromHasMany: function(name, meta) {
+		var store = this.get('store');
+		var relationships = this.sortHasOneRelationships(this.typeKey, this.get('id'), name);
 
+		if (relationships[DELETED_STATE].length > 0) {
+			forEach.call(relationships[DELETED_STATE], function (relationship) {
+				store.deleteRelationship(relationship);
+			}, this);
+		}
+
+		if (!relationships[SERVER_STATE] && !relationships[CLIENT_STATE]) {
+			return;
+		}
+
+		if (relationships[SERVER_STATE] && !relationships[CLIENT_STATE]) {
+			store.deleteRelationship(relationships[SERVER_STATE]);
+			return;
+		}
+
+		if (!relationships[SERVER_STATE] && relationships[CLIENT_STATE]) {
+			if (!store.get('sideWithClientOnConflict')) {
+				store.deleteRelationship(relationships[CLIENT_STATE]);
+			}
+		}
 	},
 
 	connectHasOneToNull: Em.aliasMethod('connectHasOneToHasMany'),
@@ -4439,7 +4461,67 @@ EG.Model.reopen({
 	},
 
 	connectHasOneToHasMany: function(name, meta, value) {
+		var thisType = this.typeKey;
+		var thisId = this.get('id');
+		var store = this.get('store');
+		var relationships = this.sortHasOneRelationships(thisType, thisId, name);
 
+		// TODO: Make it right, then make it good
+		if (relationships[SERVER_STATE] && relationships[SERVER_STATE].otherType(this) === value.type &&
+			relationships[SERVER_STATE].otherId(this) === value.id) {
+			return;
+		}
+
+		if (relationships[CLIENT_STATE] && relationships[CLIENT_STATE].otherType(this) === value.type &&
+			relationships[CLIENT_STATE].otherId(this) === value.id) {
+			return;
+		}
+
+		if (!relationships[SERVER_STATE] && !relationships[CLIENT_STATE] && relationships[DELETED_STATE].length <= 0) {
+			store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+			return;
+		}
+
+		if (relationships[SERVER_STATE] && !relationships[CLIENT_STATE] && relationships[DELETED_STATE].length <= 0) {
+			store.deleteRelationship(relationships[SERVER_STATE]);
+			store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+			return;
+		}
+
+		if (!relationships[SERVER_STATE] && relationships[CLIENT_STATE] && relationships[DELETED_STATE].length <= 0) {
+			if (store.get('sideWithClientOnConflict')) {
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+			} else {
+				store.deleteRelationship(relationships[CLIENT_STATE]);
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+			}
+
+			return;
+		}
+
+		if (!relationships[SERVER_STATE] && !relationships[CLIENT_STATE] && relationships[DELETED_STATE].length >= 0) {
+			forEach.call(relationships[DELETED_STATE], function(relationship) {
+				store.deleteRelationship(relationship);
+			});
+
+			store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+			return;
+		}
+
+		if (!relationships[SERVER_STATE] && relationships[CLIENT_STATE] && relationships[DELETED_STATE].length >= 0) {
+			forEach.call(relationships[DELETED_STATE], function(relationship) {
+				store.deleteRelationship(relationship);
+			});
+
+			if (store.get('sideWithClientOnConflict')) {
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+			} else {
+				store.deleteRelationship(relationships[CLIENT_STATE]);
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+			}
+
+			return;
+		}
 	},
 
 	connectHasManyToNull: Em.aliasMethod('connectHasManyToHasMany'),
