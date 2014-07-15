@@ -1,4 +1,4 @@
-var reduce = Em.ArrayPolyfills.reduce;
+var reduce = EG.ArrayPolyfills.reduce;
 
 /**
  * Denotes that method must be implemented in a subclass.
@@ -104,4 +104,20 @@ EG.groupRecords = function(records) {
 
 		return array;
 	}, []);
+};
+
+/**
+ * Calls `callback` once for each value of the given object.
+ * The callback receives `key` and `value` parameters.
+ *
+ * @param {Object} obj
+ * @param {Function} callback
+ * @param {Any} [thisArg=undefined]
+ */
+EG.values = function(obj, callback, thisArg) {
+	for (var key in obj) {
+		if (obj.hasOwnProperty(key)) {
+			callback.call(thisArg, key, obj[key]);
+		}
+	}
 };

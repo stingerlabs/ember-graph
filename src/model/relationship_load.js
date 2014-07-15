@@ -297,28 +297,55 @@ EG.Model.reopen({
 		var thisType = this.typeKey;
 		var thisId = this.get('id');
 		var store = this.get('store');
+		var sideWithClientOnConflict = store.get('sideWithClientOnConflict');
+
+		var valueMap = reduce.call(values, function(map, value) {
+			map[value.type + ':' + value.id] = value;
+			return map;
+		}, {});
 
 		var relationships = store.relationshipsForRecord(thisType, thisId, name);
 
 		forEach.call(relationships, function(relationship) {
-			store.deleteRelationship(relationship);
-		});
+			var valueKey = relationship.otherType(this) + ':' + relationship.otherId(this);
 
-		var clientRelationships = filter.call(relationships, function(relationship) {
-			return !!Em.get(relationship, 'state');
-		});
-
-		var clientMap = reduce.call(clientRelationships, function(map, relationship) {
-			map[relationship.otherType(this) + ':' + relationship.otherId(this)] = relationship;
-			return map;
-		}.bind(this), {});
-
-		forEach.call(values, function(value) {
-			if (clientMap[value.type + ':' + value.id]) {
-				store.changeRelationshipState(clientMap[value.type + ':' + value.id], SERVER_STATE);
-				return;
+			if (valueMap[valueKey]) {
+				switch (relationship.get('state')) {
+					case SERVER_STATE:
+						// NOOP
+						break;
+					case DELETED_STATE:
+						if (sideWithClientOnConflict) {
+							// NOOP
+						} else {
+							store.changeRelationshipState(relationship, SERVER_STATE);
+						}
+						break;
+					case CLIENT_STATE:
+						store.changeRelationshipState(relationship, SERVER_STATE);
+						break;
+				}
+			} else {
+				switch (relationship.get('state')) {
+					case SERVER_STATE:
+					case DELETED_STATE:
+						store.deleteRelationship(relationship);
+						break;
+					case CLIENT_STATE:
+						if (sideWithClientOnConflict) {
+							// NOOP
+						} else {
+							store.deleteRelationship(relationship);
+						}
+						break;
+				}
 			}
 
+			delete valueMap[valueKey];
+		}, this);
+
+		// We've narrowed it down to relationships that have to be created from scratch. (Possibly with conflicts.)
+		EG.values(valueMap, function(key, value) {
 			var conflicts = this.sortHasOneRelationships(value.type, value.id, meta.inverse);
 
 			if (!conflicts[SERVER_STATE] && !conflicts[CLIENT_STATE] && conflicts[DELETED_STATE].length <= 0) {
@@ -326,43 +353,42 @@ EG.Model.reopen({
 				return;
 			}
 
-			if(conflicts[SERVER_STATE] && !conflicts[CLIENT_STATE] && conflicts[DELETED_STATE].length <= 0) {
+			if (conflicts[SERVER_STATE] && !conflicts[CLIENT_STATE] && conflicts[DELETED_STATE].length <= 0) {
 				store.deleteRelationship(conflicts[SERVER_STATE]);
 				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
 				return;
 			}
 
-			if(!conflicts[SERVER_STATE] && conflicts[CLIENT_STATE] && conflicts[DELETED_STATE].length <= 0) {
-				if (store.get('sideWithClientOnConflict')) {
+			if (!conflicts[SERVER_STATE] && conflicts[CLIENT_STATE] && conflicts[DELETED_STATE].length <= 0) {
+				if (sideWithClientOnConflict) {
 					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
 				} else {
 					store.deleteRelationship(conflicts[CLIENT_STATE]);
 					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
 				}
-
 				return;
 			}
 
-			if(!conflicts[SERVER_STATE] && !conflicts[CLIENT_STATE] && conflicts[DELETED_STATE].length > 0) {
+			if (!conflicts[SERVER_STATE] && !conflicts[CLIENT_STATE] && conflicts[DELETED_STATE].length > 0) {
 				forEach.call(conflicts[DELETED_STATE], function(relationship) {
 					store.deleteRelationship(relationship);
 				});
+
 				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
 				return;
 			}
 
-			if(conflicts[SERVER_STATE] && conflicts[CLIENT_STATE] && conflicts[DELETED_STATE].length > 0) {
+			if (!conflicts[SERVER_STATE] && conflicts[CLIENT_STATE] && conflicts[DELETED_STATE].length > 0) {
 				forEach.call(conflicts[DELETED_STATE], function(relationship) {
 					store.deleteRelationship(relationship);
 				});
 
-				if (store.get('sideWithClientOnConflict')) {
+				if (sideWithClientOnConflict) {
 					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
 				} else {
 					store.deleteRelationship(conflicts[CLIENT_STATE]);
 					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
 				}
-
 				return;
 			}
 		}, this);
@@ -419,13 +445,10 @@ EG.Model.reopen({
 			delete valueMap[valueKey];
 		}, this);
 
-		var value = null;
-		for (var key in valueMap) {
-			if (valueMap.hasOwnProperty(key)) {
-				value = valueMap[key];
-				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
-			}
-		}
+		// We've narrowed it down to relationships that have to be created from scratch.
+		EG.values(valueMap, function(key, value) {
+			store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+		});
 	},
 
 	sortHasOneRelationships: function(type, id, name) {
