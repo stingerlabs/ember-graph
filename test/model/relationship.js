@@ -28,7 +28,7 @@
 						relatedType: 'tag',
 						inverse: null,
 						isRequired: false,
-						defaultValue: ['0']
+						defaultValue: [{ type: 'tag', id: '0' }]
 					})
 				}),
 
@@ -457,7 +457,7 @@
 	test('A new permanent record loaded creates new server relationships', function() {
 		expect(3);
 
-		var post = store._loadRecord('post', { id: '50', author: '1' });
+		var post = store._loadRecord('post', { id: '50', author: { type: 'user', id: '1' } });
 		ok(post.get('_author') === '1');
 		var user = store.getRecord('user', '1');
 		ok(user.get('_posts').contains('50'));
