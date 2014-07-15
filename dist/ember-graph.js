@@ -198,20 +198,64 @@ Em.Set.reopen({
 
 (function() {
 
+// This function taken from Ember
+var isNativeFunction = function(fn) {
+	return fn && Function.prototype.toString.call(fn).indexOf('[native code]') >= 0;
+};
+
 EG.ArrayPolyfills = {
-	some: function(array, callback, thisArg) {
-		for (var i = 0; i < array.length; ++i) {
-			if (callback.call(thisArg, array[i], i, array)) {
+	some: isNativeFunction(Array.prototype.some) ? Array.prototype.some : function(predicate, thisArg) {
+		if (this === void 0 || this === null) {
+			throw new TypeError('Array.prototype.some called on null or undefined');
+		}
+
+		if (typeof predicate !== 'function') {
+			throw new TypeError('predicate must be a function');
+		}
+
+		var list = Object(this);
+		var length = list.length >>> 0;
+
+		for (var i = 0; i < length; ++i) {
+			if (i in list && predicate.call(thisArg, list[i], i, list)) {
 				return true;
 			}
 		}
+
+		return false;
+	},
+
+	reduce: isNativeFunction(Array.prototype.reduce) ? Array.prototype.reduce : function(predicate, initialValue) {
+		if (this === void 0 || this === null) {
+			throw new TypeError('Array.prototype.reduce called on null or undefined');
+		}
+
+		if (typeof predicate !== 'function') {
+			throw new TypeError('predicate must be a function');
+		}
+
+		var list = Object(this);
+		var length = list.length >>> 0;
+		var value = initialValue;
+
+		if (length <= 0 && arguments.length < 2) {
+			throw new TypeError('Reduce of empty array with no initial value');
+		}
+
+		for (var i = 0; i < length; ++i) {
+			if (i in list) {
+				value = callback(value, list[i], i, list);
+			}
+		}
+
+		return value;
 	}
 };
 
 if (Em.SHIM_ES5) {
-	Array.prototype.some = Array.prototype.some || function(callback, thisArg) {
-		return EG.ArrayPolyfills.some(this, callback, thisArg);
-	};
+	Array.prototype.some = Array.prototype.some || EG.ArrayPolyfills.some;
+
+	Array.prototype.reduce = Array.prototype.reduce || EG.ArrayPolyfills.reduce;
 }
 
 })();
@@ -2238,6 +2282,10 @@ EG.Store.reopen({
 	},
 
 	changeRelationshipState: function(relationship, newState) {
+		if (relationship.get('state') === newState) {
+			return;
+		}
+
 		var record1 = this.getRecord(relationship.get('type1'), relationship.get('id1'));
 		var record2 = this.getRecord(relationship.get('type2'), relationship.get('id2'));
 
@@ -2531,6 +2579,7 @@ EG.Relationship = Em.Object.extend({
 });
 
 EG.Relationship.reopenClass({
+	// TODO: NEW_STATE, SAVED_STATE, DELETED_STATE
 	CLIENT_STATE: CLIENT_STATE,
 	SERVER_STATE: SERVER_STATE,
 	DELETED_STATE: DELETED_STATE
@@ -3875,7 +3924,6 @@ EG.Model.reopen({
 (function() {
 
 var map = Em.ArrayPolyfills.map;
-var some = EG.ArrayPolyfills.some;
 var reduce = Em.ArrayPolyfills.reduce;
 var filter = Em.ArrayPolyfills.filter;
 var forEach = Em.ArrayPolyfills.forEach;
@@ -3883,7 +3931,6 @@ var forEach = Em.ArrayPolyfills.forEach;
 var HAS_ONE_KEY = EG.Model.HAS_ONE_KEY = 'hasOne';
 var HAS_MANY_KEY = EG.Model.HAS_MANY_KEY = 'hasMany';
 
-// TODO: NEW_STATE, SAVED_STATE, DELETED_STATE
 var CLIENT_STATE = EG.Relationship.CLIENT_STATE;
 var SERVER_STATE = EG.Relationship.SERVER_STATE;
 var DELETED_STATE = EG.Relationship.DELETED_STATE;
@@ -4360,9 +4407,19 @@ EG.Model.reopen({
 
 var map = Em.ArrayPolyfills.map;
 var filter = Em.ArrayPolyfills.filter;
+var reduce = EG.ArrayPolyfills.reduce;
 var forEach = Em.ArrayPolyfills.forEach;
 
+var HAS_ONE_KEY = EG.Model.HAS_ONE_KEY;
+var HAS_MANY_KEY = EG.Model.HAS_MANY_KEY;
+
+var CLIENT_STATE = EG.Relationship.CLIENT_STATE;
+var SERVER_STATE = EG.Relationship.SERVER_STATE;
+var DELETED_STATE = EG.Relationship.DELETED_STATE;
+
 // TODO: This can probably be moved into the store to be more model-agnostic
+// Idea: load attributes into records directly, but load relationships into store
+// Split the data apart in `extractPayload`
 EG.Model.reopen({
 
 	/**
@@ -4380,6 +4437,12 @@ EG.Model.reopen({
 
 			if (meta.inverse) {
 				otherKind = this.get('store').modelForType(meta.relatedType).metaForRelationship(meta.inverse).kind;
+			}
+
+			// TODO: I don't much like this here. Same for the attributes one.
+			Em.assert('Your JSON is missing a required relationship.', !meta.isRequired || json.hasOwnProperty(name));
+			if (!json.hasOwnProperty(name)) {
+				json[name] = meta.defaultValue;
 			}
 
 			if (meta.kind === HAS_MANY_KEY) {
@@ -4457,7 +4520,117 @@ EG.Model.reopen({
 	connectHasOneToNull: Em.aliasMethod('connectHasOneToHasMany'),
 
 	connectHasOneToHasOne: function(name, meta, value) {
+		// TODO: This is going to be LONG. But make it right, then make it good
+		var thisType = this.typeKey;
+		var thisId = this.get('id');
+		var store = this.get('store');
+		var sideWithClientOnConflict = store.get('sideWithClientOnConflict');
 
+		var theseValues = this.sortHasOneRelationships(thisType, thisId, name);
+		var otherValues = this.sortHasOneRelationships(value.type, value.id, meta.inverse);
+
+		var thisCurrent = theseValues[SERVER_STATE] || theseValues[CLIENT_STATE] || null;
+		var otherCurrent = otherValues[SERVER_STATE] || otherValues[CLIENT_STATE] || null;
+		if (thisCurrent === otherCurrent) {
+			store.changeRelationshipState(thisCurrent, SERVER_STATE);
+			return;
+		}
+
+		forEach.call(theseValues[DELETED_STATE], function(relationship) {
+			store.deleteRelationship(relationship);
+		}, this);
+
+		forEach.call(otherValues[DELETED_STATE], function(relationship) {
+			store.deleteRelationship(relationship);
+		}, this);
+
+		if (!theseValues[SERVER_STATE] && !theseValues[CLIENT_STATE]) {
+			if (!otherValues[SERVER_STATE] && !otherValues[CLIENT_STATE]) {
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				return;
+			}
+
+			if (otherValues[SERVER_STATE] && !otherValues[CLIENT_STATE]) {
+				store.deleteRelationship(otherValues[SERVER_STATE]);
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				return;
+			}
+
+			if (!otherValues[SERVER_STATE] && otherValues[CLIENT_STATE]) {
+				if (sideWithClientOnConflict) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				} else {
+					store.deleteRelationship(otherValues[CLIENT_STATE]);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
+
+				return;
+			}
+		}
+
+		if (theseValues[SERVER_STATE] && !theseValues[CLIENT_STATE]) {
+			if (!otherValues[SERVER_STATE] && !otherValues[CLIENT_STATE]) {
+				store.deleteRelationship(theseValues[SERVER_STATE]);
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				return;
+			}
+
+			if (otherValues[SERVER_STATE] && !otherValues[CLIENT_STATE]) {
+				store.deleteRelationship(theseValues[SERVER_STATE]);
+				store.deleteRelationship(otherValues[SERVER_STATE]);
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				return;
+			}
+
+			if (!otherValues[SERVER_STATE] && otherValues[CLIENT_STATE]) {
+				if (sideWithClientOnConflict) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				} else {
+					store.deleteRelationship(theseValues[SERVER_STATE]);
+					store.deleteRelationship(otherValues[CLIENT_STATE]);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
+
+				return;
+			}
+		}
+
+		if (!theseValues[SERVER_STATE] && theseValues[CLIENT_STATE]) {
+			if (!otherValues[SERVER_STATE] && !otherValues[CLIENT_STATE]) {
+				if (sideWithClientOnConflict) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				} else {
+					store.deleteRelationship(theseValues[CLIENT_STATE]);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
+
+				return;
+			}
+
+			if (otherValues[SERVER_STATE] && !otherValues[CLIENT_STATE]) {
+				if (sideWithClientOnConflict) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				} else {
+					store.deleteRelationship(theseValues[CLIENT_STATE]);
+					store.deleteRelationship(otherValues[SERVER_STATE]);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
+
+				return;
+			}
+
+			if (!otherValues[SERVER_STATE] && otherValues[CLIENT_STATE]) {
+				if (sideWithClientOnConflict) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				} else {
+					store.deleteRelationship(theseValues[CLIENT_STATE]);
+					store.deleteRelationship(otherValues[CLIENT_STATE]);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
+
+				return;
+			}
+		}
 	},
 
 	connectHasOneToHasMany: function(name, meta, value) {
@@ -4474,6 +4647,7 @@ EG.Model.reopen({
 
 		if (relationships[CLIENT_STATE] && relationships[CLIENT_STATE].otherType(this) === value.type &&
 			relationships[CLIENT_STATE].otherId(this) === value.id) {
+			store.changeRelationshipState(relationships[CLIENT_STATE], SERVER_STATE);
 			return;
 		}
 
@@ -4527,40 +4701,104 @@ EG.Model.reopen({
 	connectHasManyToNull: Em.aliasMethod('connectHasManyToHasMany'),
 
 	connectHasManyToHasOne: function(name, meta, values) {
+		var thisType = this.typeKey;
+		var thisId = this.get('id');
+		var store = this.get('store');
 
+		var relationships = store.relationshipsForRecord(thisType, thisId, name);
+
+		forEach.call(relationships, function(relationship) {
+			store.deleteRelationship(relationship);
+		});
+
+		var clientRelationships = filter.call(relationships, function(relationship) {
+			return !!Em.get(relationship, 'state');
+		});
+
+		var clientMap = reduce.call(clientRelationships, function(map, relationship) {
+			map[relationship.otherType(this) + ':' + relationship.otherId(this)] = relationship;
+			return map;
+		}.bind(this), {});
+
+		forEach.call(values, function(value) {
+			if (clientMap[value.type + ':' + value.id]) {
+				store.changeRelationshipState(clientMap[value.type + ':' + value.id], SERVER_STATE);
+				return;
+			}
+
+			var conflicts = this.sortHasOneRelationships(value.type, value.id, meta.inverse);
+
+			if (!conflicts[SERVER_STATE] && !conflicts[CLIENT_STATE] && conflicts[DELETED_STATE].length <= 0) {
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				return;
+			}
+
+			if(conflicts[SERVER_STATE] && !conflicts[CLIENT_STATE] && conflicts[DELETED_STATE].length <= 0) {
+				store.deleteRelationship(conflicts[SERVER_STATE]);
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				return;
+			}
+
+			if(!conflicts[SERVER_STATE] && conflicts[CLIENT_STATE] && conflicts[DELETED_STATE].length <= 0) {
+				if (store.get('sideWithClientOnConflict')) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				} else {
+					store.deleteRelationship(conflicts[CLIENT_STATE]);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
+
+				return;
+			}
+
+			if(!conflicts[SERVER_STATE] && !conflicts[CLIENT_STATE] && conflicts[DELETED_STATE].length > 0) {
+				forEach.call(conflicts[DELETED_STATE], function(relationship) {
+					store.deleteRelationship(relationship);
+				});
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				return;
+			}
+
+			if(conflicts[SERVER_STATE] && conflicts[CLIENT_STATE] && conflicts[DELETED_STATE].length > 0) {
+				forEach.call(conflicts[DELETED_STATE], function(relationship) {
+					store.deleteRelationship(relationship);
+				});
+
+				if (store.get('sideWithClientOnConflict')) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				} else {
+					store.deleteRelationship(conflicts[CLIENT_STATE]);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
+
+				return;
+			}
+		}, this);
 	},
 
 	connectHasManyToHasMany: function(name, meta, values) {
 		var thisType = this.typeKey;
 		var thisId = this.get('id');
 		var store = this.get('store');
+
 		var relationships = store.relationshipsForRecord(thisType, thisId, name);
 
-		var valueSet = new Em.Set(map.call(values, function(value) {
-			return value.type + ':' + value.id;
-		}));
-
-		// Upgrade any client relationships that match our values to server relationships
-		var alreadyCreated = new Em.Set();
 		forEach.call(relationships, function(relationship) {
-			var key = relationship.otherType(this) + ':' + relationship.otherId(this);
-			if (valueSet.contains(key)) {
-				// If it's a client relationship, upgrade it
-				// If it's a deleted relationship, but we're overriding the client, upgrade it
-				if (relationship.get('state') === CLIENT_STATE) {
-					store.changeRelationshipState(relationship, SERVER_STATE);
-				} else if (relationship.get('state') === DELETED_STATE && !store.get('sideWithClientOnConflict')) {
-					store.changeRelationshipState(relationship, SERVER_STATE);
-				}
-			}
+			store.deleteRelationship(relationship);
+		});
 
-			alreadyCreated.addObject(key);
-		}, this);
+		var clientRelationships = filter.call(relationships, function(relationship) {
+			return !!Em.get(relationship, 'state');
+		});
 
-		// Create the values that aren't already created
+		var clientMap = reduce.call(clientRelationships, function(map, relationship) {
+			map[relationship.otherType(this) + ':' + relationship.otherId(this)] = relationship;
+			return map;
+		}.bind(this), {});
+
 		forEach.call(values, function(value) {
-			var key = value.type + ':' + value.id;
-			if (!alreadyCreated.contains(key)) {
+			if (clientMap[value.type + ':' + value.id]) {
+				store.changeRelationshipState(clientMap[value.type + ':' + value.id], SERVER_STATE);
+			} else {
 				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
 			}
 		}, this);

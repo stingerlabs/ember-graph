@@ -1,7 +1,14 @@
 var map = Em.ArrayPolyfills.map;
 var filter = Em.ArrayPolyfills.filter;
-var reduce = Em.ArrayPolyfills.reduce;
+var reduce = EG.ArrayPolyfills.reduce;
 var forEach = Em.ArrayPolyfills.forEach;
+
+var HAS_ONE_KEY = EG.Model.HAS_ONE_KEY;
+var HAS_MANY_KEY = EG.Model.HAS_MANY_KEY;
+
+var CLIENT_STATE = EG.Relationship.CLIENT_STATE;
+var SERVER_STATE = EG.Relationship.SERVER_STATE;
+var DELETED_STATE = EG.Relationship.DELETED_STATE;
 
 // TODO: This can probably be moved into the store to be more model-agnostic
 // Idea: load attributes into records directly, but load relationships into store
@@ -23,6 +30,12 @@ EG.Model.reopen({
 
 			if (meta.inverse) {
 				otherKind = this.get('store').modelForType(meta.relatedType).metaForRelationship(meta.inverse).kind;
+			}
+
+			// TODO: I don't much like this here. Same for the attributes one.
+			Em.assert('Your JSON is missing a required relationship.', !meta.isRequired || json.hasOwnProperty(name));
+			if (!json.hasOwnProperty(name)) {
+				json[name] = meta.defaultValue;
 			}
 
 			if (meta.kind === HAS_MANY_KEY) {
