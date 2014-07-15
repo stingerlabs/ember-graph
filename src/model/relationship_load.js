@@ -372,29 +372,60 @@ EG.Model.reopen({
 		var thisType = this.typeKey;
 		var thisId = this.get('id');
 		var store = this.get('store');
+		var sideWithClientOnConflict = store.get('sideWithClientOnConflict');
+
+		var valueMap = reduce.call(values, function(map, value) {
+			map[value.type + ':' + value.id] = value;
+			return map;
+		}, {});
 
 		var relationships = store.relationshipsForRecord(thisType, thisId, name);
 
 		forEach.call(relationships, function(relationship) {
-			store.deleteRelationship(relationship);
-		});
+			var valueKey = relationship.otherType(this) + ':' + relationship.otherId(this);
 
-		var clientRelationships = filter.call(relationships, function(relationship) {
-			return !!Em.get(relationship, 'state');
-		});
-
-		var clientMap = reduce.call(clientRelationships, function(map, relationship) {
-			map[relationship.otherType(this) + ':' + relationship.otherId(this)] = relationship;
-			return map;
-		}.bind(this), {});
-
-		forEach.call(values, function(value) {
-			if (clientMap[value.type + ':' + value.id]) {
-				store.changeRelationshipState(clientMap[value.type + ':' + value.id], SERVER_STATE);
+			if (valueMap[valueKey]) {
+				switch (relationship.get('state')) {
+					case SERVER_STATE:
+						// NOOP
+						break;
+					case DELETED_STATE:
+						if (sideWithClientOnConflict) {
+							// NOOP
+						} else {
+							store.changeRelationshipState(relationship, SERVER_STATE);
+						}
+						break;
+					case CLIENT_STATE:
+						store.changeRelationshipState(relationship, SERVER_STATE);
+						break;
+				}
 			} else {
+				switch (relationship.get('state')) {
+					case SERVER_STATE:
+					case DELETED_STATE:
+						store.deleteRelationship(relationship);
+						break;
+					case CLIENT_STATE:
+						if (sideWithClientOnConflict) {
+							// NOOP
+						} else {
+							store.deleteRelationship(relationship);
+						}
+						break;
+				}
+			}
+
+			delete valueMap[valueKey];
+		}, this);
+
+		var value = null;
+		for (var key in valueMap) {
+			if (valueMap.hasOwnProperty(key)) {
+				value = valueMap[key];
 				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
 			}
-		}, this);
+		}
 	},
 
 	sortHasOneRelationships: function(type, id, name) {
