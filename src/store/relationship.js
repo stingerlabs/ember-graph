@@ -55,6 +55,10 @@ EG.Store.reopen({
 	},
 
 	changeRelationshipState: function(relationship, newState) {
+		if (relationship.get('state') === newState) {
+			return;
+		}
+
 		var record1 = this.getRecord(relationship.get('type1'), relationship.get('id1'));
 		var record2 = this.getRecord(relationship.get('type2'), relationship.get('id2'));
 
