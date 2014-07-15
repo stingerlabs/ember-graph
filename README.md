@@ -142,3 +142,16 @@ maintains state for the relationships. So at any point in time, a relationship c
 persisted but scheduled for deletion, or persisted and unchanged. And the best part is that these relationships can be
 updated at _any_ time, even if the record is dirty. Ember-Graph provides options for refreshing dirty records so that
 you can _always_ have the most up-to-date information.
+
+## Building Ember-Graph
+
+Building Ember-Graph is fairly easy. You'll first want to clone the repository. After that, install the needed packages, including the global ones.
+
+```
+npm install -g grunt-cli
+npm install -g bower
+npm install
+bower install
+```
+
+After that, you can either build it using `grunt release` or run development mode use `grunt develop`. In development mode, the source and test files are recompiled as they're changed, and the test page is served at [http://localhost:8000/test/index.html](http://localhost:8000/test/index.html).
