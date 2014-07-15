@@ -1,5 +1,4 @@
 var map = Em.ArrayPolyfills.map;
-var some = EG.ArrayPolyfills.some;
 var reduce = Em.ArrayPolyfills.reduce;
 var filter = Em.ArrayPolyfills.filter;
 var forEach = Em.ArrayPolyfills.forEach;
