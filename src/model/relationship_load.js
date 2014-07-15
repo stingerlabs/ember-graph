@@ -231,6 +231,7 @@ EG.Model.reopen({
 		var thisId = this.get('id');
 		var store = this.get('store');
 		var relationships = this.sortHasOneRelationships(thisType, thisId, name);
+		var sideWithClientOnConflict = store.get('sideWithClientOnConflict');
 
 		// TODO: Make it right, then make it good
 		if (relationships[SERVER_STATE] && relationships[SERVER_STATE].otherType(this) === value.type &&
@@ -256,7 +257,7 @@ EG.Model.reopen({
 		}
 
 		if (!relationships[SERVER_STATE] && relationships[CLIENT_STATE] && relationships[DELETED_STATE].length <= 0) {
-			if (store.get('sideWithClientOnConflict')) {
+			if (sideWithClientOnConflict) {
 				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
 			} else {
 				store.deleteRelationship(relationships[CLIENT_STATE]);
@@ -266,25 +267,57 @@ EG.Model.reopen({
 			return;
 		}
 
-		if (!relationships[SERVER_STATE] && !relationships[CLIENT_STATE] && relationships[DELETED_STATE].length >= 0) {
-			forEach.call(relationships[DELETED_STATE], function(relationship) {
-				store.deleteRelationship(relationship);
-			});
+		var handled;
 
-			store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+		if (!relationships[SERVER_STATE] && !relationships[CLIENT_STATE] && relationships[DELETED_STATE].length >= 0) {
+			handled = false;
+
+			forEach.call(relationships[DELETED_STATE], function(relationship) {
+				if (relationship.otherType(this) === value.type && relationship.otherId(this) === value.id) {
+					if (sideWithClientOnConflict) {
+						// NOOP
+					} else {
+						store.changeRelationshipState(relationship, SERVER_STATE);
+					}
+
+					handled = true;
+				} else {
+					store.deleteRelationship(relationship);
+				}
+			}, this);
+
+			if (!handled) {
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+			}
+
 			return;
 		}
 
 		if (!relationships[SERVER_STATE] && relationships[CLIENT_STATE] && relationships[DELETED_STATE].length >= 0) {
-			forEach.call(relationships[DELETED_STATE], function(relationship) {
-				store.deleteRelationship(relationship);
-			});
+			handled = false;
 
-			if (store.get('sideWithClientOnConflict')) {
-				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
-			} else {
-				store.deleteRelationship(relationships[CLIENT_STATE]);
-				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+			forEach.call(relationships[DELETED_STATE], function(relationship) {
+				if (relationship.otherType(this) === value.type && relationship.otherId(this) === value.id) {
+					if (sideWithClientOnConflict) {
+						// NOOP
+					} else {
+						store.deleteRelationship(relationships[CLIENT_STATE]);
+						store.changeRelationshipState(relationship, SERVER_STATE);
+					}
+
+					handled = true;
+				} else {
+					store.deleteRelationship(relationship);
+				}
+			}, this);
+
+			if (!handled) {
+				if (sideWithClientOnConflict) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				} else {
+					store.deleteRelationship(relationships[CLIENT_STATE]);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
 			}
 
 			return;
