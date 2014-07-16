@@ -26,10 +26,16 @@ EG.Model.reopen({
 
 			if (meta.kind === HAS_MANY_KEY) {
 				forEach.call(value, function(v) {
-					if (Em.typeOf(v) === 'string') {
-						this.addToRelationship(name, v);
-					} else {
-						this.addToRelationship(name, v.id, v.type);
+					switch (Em.typeOf(v)) {
+						case 'string':
+							this.addToRelationship(name, v);
+							break;
+						case 'instance':
+							this.addToRelationship(name, v.get('id'), v.get('typeKey'));
+							break;
+						default:
+							this.addToRelationship(name, v.id, v.type);
+							break;
 					}
 				}, this);
 			} else {
@@ -39,6 +45,9 @@ EG.Model.reopen({
 						break;
 					case 'null':
 						this.clearHasOneRelationship(name);
+						break;
+					case 'instance':
+						this.setHasOneRelationship(name, value.get('id'), value.get('typeKey'));
 						break;
 					default:
 						this.setHasOneRelationship(name, value.id, value.type);

@@ -535,15 +535,15 @@
 		var user2 = store.getRecord('user', '2');
 		var post = store.getRecord('post', '1');
 
-		ok(user1.get('_posts').contains('1'));
-		ok(!user2.get('_posts').contains('1'));
-		ok(post.get('_author') === '1');
+		ok(user1.get('_posts').mapBy('id').indexOf('1') >= 0);
+		ok(user2.get('_posts').mapBy('id').indexOf('1') < 0);
+		deepEqual(post.get('_author'), { type: 'user', id: '1' });
 
 		user2.addToRelationship('posts', '1');
 
-		ok(!user1.get('_posts').contains('1'));
-		ok(user2.get('_posts').contains('1'));
-		ok(post.get('_author') === '2');
+		ok(user1.get('_posts').mapBy('id').indexOf('1') < 0);
+		ok(user2.get('_posts').mapBy('id').indexOf('1') >= 0);
+		deepEqual(post.get('_author'), { type: 'user', id: '2' });
 	});
 
 	test('A server side relationship on a non-loaded record can be overridden by a client side one', function() {
@@ -551,15 +551,27 @@
 
 		var user1 = store.getRecord('user', '1');
 		var user3 = store.getRecord('user', '3');
-		ok(!user1.get('_posts').contains('7'));
-		ok(user3.get('_posts').contains('7'));
+
+		ok(user1.get('_posts').mapBy('id').indexOf('7') < 0);
+		ok(user3.get('_posts').mapBy('id').indexOf('7') >= 0);
+
 		user1.addToRelationship('posts', '7');
-		ok(user1.get('_posts').contains('7'));
-		ok(!user3.get('_posts').contains('7'));
-		var post7 = store._loadRecord('post', { id: '7', author: '3', tags: ['1', '2'] });
-		ok(user1.get('_posts').contains('7'));
-		ok(!user3.get('_posts').contains('7'));
-		ok(post7.get('_author') === '1');
+
+		ok(user1.get('_posts').mapBy('id').indexOf('7') >= 0);
+		ok(user3.get('_posts').mapBy('id').indexOf('7') < 0);
+
+		store.extractPayload({
+			post: [{
+				id: '7',
+				author: { type: 'user', id: '3' },
+				tags: [{ type: 'tag', id: '1' }, { type: 'tag', id: '2' }]
+			}]
+		});
+		var post7 = store.getRecord('post', '7');
+
+		ok(user1.get('_posts').mapBy('id').indexOf('7') >= 0);
+		ok(user3.get('_posts').mapBy('id').indexOf('7') < 0);
+		deepEqual(post7.get('_author'), { type: 'user', id: '1' });
 	});
 
 	test('Observers aren\'t fired until after the relationship operations are done', function() {
@@ -567,10 +579,10 @@
 		expect(3);
 
 		var post = store.getRecord('post', '1');
-		strictEqual(post.get('_author'), '1');
+		deepEqual(post.get('_author'), { type: 'user', id: '1' });
 
 		var observer = function(obj, prop) {
-			if (Em.get(obj, prop) !== '2') {
+			if (Em.get(obj, prop).id !== '2') {
 				throw new Error();
 			}
 		};
@@ -578,12 +590,12 @@
 
 		Em.changeProperties(function() {
 			post.setHasOneRelationship('author', '2');
-			strictEqual(post.get('_author'), '2');
+			deepEqual(post.get('_author'), { type: 'user', id: '2' });
 			post.removeObserver('_author', observer);
 		});
 
 		observer = function(obj, prop) {
-			if (Em.get(obj, prop) !== '1') {
+			if (Em.get(obj, prop).id !== '1') {
 				throw new Error();
 			}
 		};
@@ -591,7 +603,7 @@
 		Em.changeProperties(function() {
 			post.addObserver('_author', observer);
 			post.rollbackRelationships();
-			strictEqual(post.get('_author'), '1');
+			deepEqual(post.get('_author'), { type: 'user', id: '1' });
 			post.removeObserver('_author', observer);
 		});
 	});
@@ -607,15 +619,15 @@
 
 		strictEqual(post6.get('_author'), null);
 		post6.setHasOneRelationship('author', user);
-		strictEqual(post6.get('_author'), '1');
+		deepEqual(post6.get('_author'), { type: 'user', id: '1' });
 
-		ok(post1.get('_tags').contains('1'));
+		ok(post1.get('_tags').mapBy('id').indexOf('1') >= 0);
 		post1.removeFromRelationship('tags', tag1);
-		ok(!post1.get('_tags').contains('1'));
+		ok(post1.get('_tags').mapBy('id').indexOf('1') < 0);
 
-		ok(!post6.get('_tags').contains('3'));
+		ok(post6.get('_tags').mapBy('id').indexOf('3') < 0);
 		post6.addToRelationship('tags', '3');
-		ok(post6.get('_tags').contains('3'));
+		ok(post6.get('_tags').mapBy('id').indexOf('3') >= 0);
 	});
 
 	test('Creating records with relationships works with records and not just IDs', function() {
@@ -630,7 +642,7 @@
 			tags: [tag1, tag3]
 		});
 
-		strictEqual(post.get('_author'), '1');
-		deepEqual(post.get('_tags').toArray().sort(), ['1', '3'].sort());
+		deepEqual(post.get('_author'), { type: 'user', id: '1' });
+		deepEqual(post.get('_tags').toArray().mapBy('id').sort(), ['1', '3'].sort());
 	});
 })();
