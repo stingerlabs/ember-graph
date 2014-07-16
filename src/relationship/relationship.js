@@ -24,13 +24,13 @@ EG.Relationship = Em.Object.extend({
 
 	id: null,
 
-	typeKey1: null,
+	type1: null,
 
 	id1: null,
 
 	relationship1: null,
 
-	typeKey2: null,
+	type2: null,
 
 	id2: null,
 

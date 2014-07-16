@@ -110,20 +110,20 @@ EG.Store.reopen({
 	},
 
 	deleteRelationshipsForRecord: function(type, id) {
-		var all = this.get('allRelationships');
+		Em.changeProperties(function() {
+			var all = this.get('allRelationships');
+			var keys = Em.keys(all);
 
-		for (var i in all) {
-			if (all.hasOwnProperty(i)) {
-				if (all[i].get('type1') === type && all[i].get('id1') === id) {
-					delete all[i];
-					continue;
-				}
+			forEach.call(keys, function(key) {
+				var relationship = all[key];
 
-				if (all[i].get('type2') === type && all[i].get('id2') === id) {
-					delete all[i];
+				if (relationship.get('type1') === type && relationship.get('id1') === id) {
+					this.deleteRelationship(relationship);
+				} else if (relationship.get('type2') === type && relationship.get('id2') === id) {
+					this.deleteRelationship(relationship);
 				}
-			}
-		}
+			}, this);
+		}, this);
 	},
 
 	/**

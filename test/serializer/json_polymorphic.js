@@ -9,7 +9,7 @@
 		return (JSON.stringify(a) < JSON.stringify(b) ? -1 : 1);
 	};
 
-	module('JSON Serializer Test (Non-Polymorphic)', {
+	module('JSON Serializer Test (Polymorphic)', {
 		setup: function() {
 			store = setupStore({
 				user: EG.Model.extend({
@@ -61,7 +61,7 @@
 				})
 			});
 
-			serializer = EG.JSONSerializer.create({ store: store });
+			serializer = EG.JSONSerializer.create({ store: store, polymorphicRelationships: true });
 
 			store.extractPayload({
 				user: [{
@@ -97,8 +97,23 @@
 
 		var payload = {
 			posts: [
-				{ id: 3, title: 'Test Post 3', links: { author: 1, tags: [1, 3] } },
-				{ id: 4, title: 'Test Post 4', body: 'Body4', links: { author: '1', tags: ['2', '4'] } }
+				{
+					id: 3,
+					title: 'Test Post 3',
+					links: {
+						author: { type: 'user', id: 1 },
+						tags: [{ type: 'tag', id: 1 }, { type: 'tag', id: 3 }]
+					}
+				},
+				{
+					id: 4,
+					title: 'Test Post 4',
+					body: 'Body4',
+					links: {
+						author: { type: 'user', id: '1' },
+						tags: [{ type: 'tag', id: '2' }, { type: 'tag', id: '4' }]
+					}
+				}
 			],
 			linked: {
 				tags: [
@@ -143,7 +158,14 @@
 		expect(1);
 
 		var payload = {
-			posts: [{ id: 200, title: '', links: { author: 1, tags: [] } }]
+			posts: [{
+				id: 200,
+				title: '',
+				links: {
+					author: { type: 'user', id: 1 },
+					tags: []
+				}
+			}]
 		};
 
 		var expected = {
@@ -172,10 +194,10 @@
 
 		var payload = {
 			posts: [
-				{ id: 158, title: '', links: { author: 1, tags: [] } },
-				{ id: 98, title: '', links: { author: 1, tags: [] } },
-				{ id: 262, title: '', links: { author: 1, tags: [] } },
-				{ id: 0, title: '', links: { author: 1, tags: [] } }
+				{ id: 158, title: '', links: { author: { type: 'user', id: 1 }, tags: [] } },
+				{ id: 98, title: '', links: { author: { type: 'user', id: 1 }, tags: [] } },
+				{ id: 262, title: '', links: { author: { type: 'user', id: 1 }, tags: [] } },
+				{ id: 0, title: '', links: { author: { type: 'user', id: 1 }, tags: [] } }
 			]
 		};
 
@@ -204,23 +226,65 @@
 		var options = { requestType: 'findRecord', recordType: 'post' };
 
 		throws(function() {
-			serializer.deserialize({ posts: [{ title: '', links: { author: 1, tags: [] } }] }, options);
+			serializer.deserialize({
+				posts: [{
+					title: '',
+					links: {
+						author: { type: 'user', id: 1 },
+						tags: []
+					}
+				}]
+			}, options);
 		}, /missing an id/i,  'Missing ID');
 
 		throws(function() {
-			serializer.deserialize({ posts: [{ id: {}, title: '', links: { author: 1, tags: [] } }] }, options);
+			serializer.deserialize({
+				posts: [{
+					id: {},
+					title: '',
+					links: {
+						author: { type: 'user', id: 1 },
+						tags: []
+					}
+				}]
+			}, options);
 		}, /invalid id/i, 'Invalid ID');
 
 		throws(function() {
-			serializer.deserialize({ posts: [{ id: 0, links: { author: 1, tags: [] } }] }, options);
+			serializer.deserialize({
+				posts: [{
+					id: 0,
+					links: {
+						author: { type: 'user', id: 1 },
+						tags: []
+					}
+				}]
+			}, options);
 		}, /attribute was missing/i ,'Missing attribute');
 
 		throws(function() {
-			serializer.deserialize({ posts: [{ id: 0, title: '', links: { author: 1 } }] }, options);
+			serializer.deserialize({
+				posts: [{
+					id: 0,
+					title: '',
+					links: {
+						author: { type: 'user', id: 1 }
+					}
+				}]
+			}, options);
 		}, /relationship was missing/i, 'Missing relationship');
 
 		throws(function() {
-			serializer.deserialize({ posts: [{ id: 0, title: '', links: { author: 1, tags: null } }] }, options);
+			serializer.deserialize({
+				posts: [{
+					id: 0,
+					title: '',
+					links: {
+						author: { type: 'user', id: 1 },
+						tags: null
+					}
+				}]
+			}, options);
 		}, /invalid hasmany/i, 'Invalid relationship');
 	});
 
@@ -239,7 +303,7 @@
 				title: 'title',
 				body: 'body',
 				links: {
-					author: '1',
+					author: { type: 'user', id: '1' },
 					tags: []
 				}
 			}]
@@ -261,8 +325,8 @@
 		post.set('body', null);
 
 		var expected = [
-			{ op: 'remove', path: '/links/tags/2' },
-			{ op: 'add', path: '/links/tags', value: '7' },
+			{ op: 'remove', path: '/links/tags/2', value: { type: 'tag', id: '2' } },
+			{ op: 'add', path: '/links/tags', value: { type: 'tag', id: '7' } },
 			{ op: 'replace', path: '/links/author', value: null },
 			{ op: 'replace', path: '/body', value: null }
 		];
@@ -277,10 +341,10 @@
 
 		var payload = {
 			posts: [
-				{ id: 158, title: '', links: { author: 1, tags: [] } },
-				{ id: 98, title: '', links: { author: 1, tags: [10] } },
-				{ id: 26, title: '', links: { author: 1, tags: [11] } },
-				{ id: 0, title: '', links: { author: 1, tags: [] } }
+				{ id: 158, title: '', links: { author: { type: 'user', id: 1 }, tags: [] } },
+				{ id: 98, title: '', links: { author: { type: 'user', id: 1 }, tags: [{ type: 'tag', id: 10 }] } },
+				{ id: 26, title: '', links: { author: { type: 'user', id: 1 }, tags: [{ type: 'tag', id: 11 }] } },
+				{ id: 0, title: '', links: { author: { type: 'user', id: 1 }, tags: [] } }
 			],
 			tags: [
 				{ id: 10, name: '10' },

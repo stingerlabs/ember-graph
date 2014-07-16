@@ -32,11 +32,15 @@ var createRelationship = function(name, kind, options) {
 	if (meta.kind === HAS_MANY_KEY) {
 		return Em.computed(function(key) {
 			return this.getHasManyValue(key.substring(1), false);
-		}).property('relationships.client.' + name, 'relationships.deleted.' + name).meta(meta).readOnly();
+		}).property('relationships.client.' + name,
+				'relationships.deleted.' + name,
+				'relationships.server.' + name).meta(meta).readOnly();
 	} else {
 		return Em.computed(function(key) {
 			return this.getHasOneValue(key.substring(1), false);
-		}).property('relationships.client.' + name, 'relationships.deleted.' + name).meta(meta).readOnly();
+		}).property('relationships.client.' + name,
+				'relationships.deleted.' + name,
+				'relationships.server.' + name).meta(meta).readOnly();
 	}
 };
 
