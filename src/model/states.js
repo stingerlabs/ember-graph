@@ -50,12 +50,13 @@ EG.Model.reopen({
 
 	/**
 	 * Denotes that the record has attribute or relationship changes that have not been saved to the server yet.
+	 * Note: A new record is always dirty.
 	 *
 	 * @property isDirty
 	 * @type Boolean
 	 * @final
 	 */
-	isDirty: Em.computed.or('_areAttributesDirty', 'areRelationshipsDirty'),
+	isDirty: Em.computed.or('_areAttributesDirty', 'areRelationshipsDirty', 'isNew'),
 
 	/**
 	 * Denotes that the record is currently being saved to the server for the first time,
