@@ -1,4 +1,4 @@
-var disallowedAttributeNames = new Em.Set(['id', 'type', 'content']);
+var disallowedAttributeNames = new Em.Set(['id', 'type', 'content', 'length']);
 
 var createAttribute = function(attributeName, options) {
 	var meta = {
@@ -12,11 +12,16 @@ var createAttribute = function(attributeName, options) {
 		isEqual: options.isEqual
 	};
 
-	var attribute = Em.computed(function(key, value) {
+	return Em.computed(function(key, value) {
 		var meta = this.constructor.metaForAttribute(key);
 		var server = this.get('_serverAttributes.' + key);
 		var client = this.get('_clientAttributes.' + key);
 		var current = (client === undefined ? server : client);
+
+		// If it's currently undefined, we're setting it for the first time, so that's OK.
+		if (arguments.length > 1 && meta.readOnly && current !== undefined) {
+			throw new Em.Error('Cannot set read-only property "' + key + '" on object: ' + this);
+		}
 
 		Em.runInDebug(function() {
 			if (arguments.length > 1 && value === undefined) {
@@ -40,8 +45,6 @@ var createAttribute = function(attributeName, options) {
 
 		return current;
 	}).property('_clientAttributes.' + attributeName, '_serverAttributes.' + attributeName).meta(meta);
-
-	return (options.readOnly ? attribute.readOnly() : attribute);
 };
 
 EG.Model.reopenClass({
@@ -221,5 +224,18 @@ EG.Model.reopen({
 			delete this.get('_clientAttributes')[name];
 			this.notifyPropertyChange('_clientAttributes');
 		}
+	},
+
+	/**
+	 * Sets up attributes given to the constructor for this record.
+	 * Equivalent to setting the attribute values individually.
+	 */
+	loadAttributesFromClient: function(json) {
+		this.constructor.eachAttribute(function(name, meta) {
+			Em.assert('Your are missing the `' + name + '` property.', !meta.isRequired || json.hasOwnProperty(name));
+
+			var value = (json[name] !== undefined ? json[name] : meta.defaultValue);
+			this.set(name, value);
+		}, this);
 	}
 });

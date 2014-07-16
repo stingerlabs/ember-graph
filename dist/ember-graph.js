@@ -67,6 +67,8 @@ if (Em) {
 
 (function() {
 
+var reduce = Em.ArrayPolyfills.reduce;
+
 /**
  * Denotes that method must be implemented in a subclass.
  * If it's not overridden, calling it will throw an error.
@@ -129,6 +131,52 @@ EG.generateUUID = function() {
 	});
 };
 
+/**
+ * Compares the contents of two arrays for equality. Uses
+ * Ember.Set to make the comparison, so the objects must
+ * be equal with `===`.
+ *
+ * @method arrayContentsEqual
+ * @param {Array} a
+ * @param {Array} b
+ * @returns {Boolean}
+ * @category top-level
+ * @for EG
+ */
+EG.arrayContentsEqual = function(a, b) {
+	return (a.length === b.length && (new Em.Set(a)).isEqual(b));
+};
+
+/**
+ * Takes a list of record objects (with `type` and `id`)
+ * and groups them into arrays based on their type.
+ *
+ * @method groupRecords
+ * @param {Object[]} records
+ * @return {Array[]}
+ * @category top-level
+ * @for EG
+ */
+EG.groupRecords = function(records) {
+	var groups = reduce.call(records, function(groups, record) {
+		if (groups[record.type]) {
+			groups[record.type].push(record);
+		} else {
+			groups[record.type] = [record];
+		}
+
+		return groups;
+	}, {});
+
+	return reduce.call(Em.keys(groups), function(array, key) {
+		if (groups[key].length > 0) {
+			array.push(groups[key]);
+		}
+
+		return array;
+	}, []);
+};
+
 })();
 
 (function() {
@@ -147,6 +195,70 @@ Em.Set.reopen({
 		return ret;
 	}
 });
+
+})();
+
+(function() {
+
+// This function taken from Ember
+var isNativeFunction = function(fn) {
+	return fn && Function.prototype.toString.call(fn).indexOf('[native code]') >= 0;
+};
+
+EG.ArrayPolyfills = {
+	some: isNativeFunction(Array.prototype.some) ? Array.prototype.some : function(predicate, thisArg) {
+		if (this === void 0 || this === null) {
+			throw new TypeError('Array.prototype.some called on null or undefined');
+		}
+
+		if (typeof predicate !== 'function') {
+			throw new TypeError('predicate must be a function');
+		}
+
+		var list = Object(this);
+		var length = list.length >>> 0;
+
+		for (var i = 0; i < length; ++i) {
+			if (i in list && predicate.call(thisArg, list[i], i, list)) {
+				return true;
+			}
+		}
+
+		return false;
+	},
+
+	reduce: isNativeFunction(Array.prototype.reduce) ? Array.prototype.reduce : function(predicate, initialValue) {
+		if (this === void 0 || this === null) {
+			throw new TypeError('Array.prototype.reduce called on null or undefined');
+		}
+
+		if (typeof predicate !== 'function') {
+			throw new TypeError('predicate must be a function');
+		}
+
+		var list = Object(this);
+		var length = list.length >>> 0;
+		var value = initialValue;
+
+		if (length <= 0 && arguments.length < 2) {
+			throw new TypeError('Reduce of empty array with no initial value');
+		}
+
+		for (var i = 0; i < length; ++i) {
+			if (i in list) {
+				value = callback(value, list[i], i, list);
+			}
+		}
+
+		return value;
+	}
+};
+
+if (Em.SHIM_ES5) {
+	Array.prototype.some = Array.prototype.some || EG.ArrayPolyfills.some;
+
+	Array.prototype.reduce = Array.prototype.reduce || EG.ArrayPolyfills.reduce;
+}
 
 })();
 
@@ -1543,6 +1655,62 @@ EG.Store = Em.Object.extend({
 	cacheTimeout: Infinity,
 
 	/**
+	 * A boolean for whether or not to reload dirty records. If this is
+	 * true, data from the server will be merged with the data on the
+	 * client according to the other options defined on this class.
+	 * If it's false, calling reload on a dirty record will throw an
+	 * error, and any side loaded data from the server will be discarded.
+	 *
+	 * Note: If this is turned off, no relationship can be reloaded if
+	 * either of the records is dirty. So if the server says that
+	 * record 1 is connected to record 2, and you reload record 1, which
+	 * is clean, Ember-Graph will abort the reload if record 2 is dirty.
+	 * This is a particularly annoying corner case that can be mostly
+	 * avoided in two ways: either enable reloadDirty, or ensure that
+	 * records are changed and then saved or rollback back in the same
+	 * 'action'. (Don't let users perform different modifications at
+	 * the same time.)
+	 *
+	 * @property reloadDirty
+	 * @for Store
+	 * @type Boolean
+	 * @final
+	 */
+	reloadDirty: true,
+
+	/**
+	 * If reloadDirty is true, this determines which side the store will
+	 * settle conflicts for. If true, new client side relationships always
+	 * take precedence over server side relationships loaded when the
+	 * record is dirty. If false, server side relationships will overwrite
+	 * any temporary client side relationships on reload.
+	 *
+	 * Note: This only affects relationships. Attributes aren't as tricky,
+	 * so the server data can be loaded without affecting the client data.
+	 * To have the server overwrite client data, use the option below.
+	 *
+	 * @property sideWithClientOnConflict
+	 * @for Store
+	 * @type Boolean
+	 * @final
+	 */
+	sideWithClientOnConflict: true,
+
+	/**
+	 * If reloadDirty is true, this will overwrite client attributes on
+	 * reload. Because of the more simplistic nature of attributes, it is
+	 * recommended to keep this false. The server data will still be loaded
+	 * into the record and can be activated at any time by rolling back
+	 * attribute changes on the record.
+	 *
+	 * @property overwriteClientAttributes
+	 * @for Store
+	 * @type Boolean
+	 * @final
+	 */
+	overwriteClientAttributes: false,
+
+	/**
 	 * Contains the records cached in the store. The keys are type names,
 	 * and the values are nested objects keyed at the ID of the record.
 	 *
@@ -1674,9 +1842,7 @@ EG.Store = Em.Object.extend({
 
 		this._setRecord(typeKey, record);
 
-		if (this._hasQueuedRelationships(typeKey, json.id)) {
-			this._connectQueuedRelationships(record);
-		}
+		this.connectQueuedRelationships(record);
 
 		record.loadData(json);
 
@@ -1927,7 +2093,7 @@ EG.Store = Em.Object.extend({
 		}
 
 		return this.adapterFor(record.typeKey).deleteRecord(record).then(function(payload) {
-			this._deleteRelationshipsForRecord(type, id);
+			this.deleteRelationshipsForRecord(type, id);
 			this.extractPayload(payload);
 			this._deleteRecord(type, id);
 			record.set('store', null);
@@ -2077,314 +2243,156 @@ EG.Store = Em.Object.extend({
 
 (function() {
 
+var filter = Em.ArrayPolyfills.filter;
+var forEach = Em.ArrayPolyfills.forEach;
+
 EG.Store.reopen({
 
-	/**
-	 * A boolean for whether or not to reload dirty records. If this is
-	 * true, data from the server will be merged with the data on the
-	 * client according to the other options defined on this class.
-	 * If it's false, calling reload on a dirty record will throw an
-	 * error, and any side loaded data from the server will be discarded.
-	 *
-	 * Note: If this is turned off, no relationship can be reloaded if
-	 * either of the records is dirty. So if the server says that
-	 * record 1 is connected to record 2, and you reload record 1, which
-	 * is clean, Ember-Graph will abort the reload if record 2 is dirty.
-	 * This is a particularly annoying corner case that can be mostly
-	 * avoided in two ways: either enable reloadDirty, or ensure that
-	 * records are changed and then saved or rollback back in the same
-	 * 'action'. (Don't let users perform different modifications at
-	 * the same time.)
-	 *
-	 * @property reloadDirty
-	 * @for Store
-	 * @type {Boolean}
-	 */
-	reloadDirty: true,
+	allRelationships: new Em.Object(),
 
-	/**
-	 * If reloadDirty is true, this determines which side the store will
-	 * settle conflicts for. If true, new client side relationships always
-	 * take precedence over server side relationships loaded when the
-	 * record is dirty. If false, server side relationships will overwrite
-	 * any temporary client side relationships on reload.
-	 *
-	 * Note: This only affects relationships. Attributes aren't as tricky,
-	 * so the server data can be loaded without affecting the client data.
-	 * To have the server overwrite client data, use the option below.
-	 *
-	 * @property sideWithClientOnConflict
-	 * @for Store
-	 * @type {Boolean}
-	 */
-	sideWithClientOnConflict: true,
+	queuedRelationships: new Em.Object(),
 
-	/**
-	 * If reloadDirty is true, this will overwrite client attributes on
-	 * reload. Because of the more simplistic nature of attributes, it is
-	 * recommended to keep this false. The server data will still be loaded
-	 * into the record and can be activated at any time by rolling back
-	 * attribute changes on the record.
-	 *
-	 * @property overwriteClientAttributes
-	 * @for Store
-	 * @type {Boolean}
-	 */
-	overwriteClientAttributes: false,
-
-	/**
-	 * Stores all of the relationships created so far.
-	 *
-	 * @type {Object.<String, Relationship>}
-	 */
-	_relationships: {},
-
-	/**
-	 * Holds all of the relationships that are waiting to be connected to a record
-	 * when it gets loaded into the store. (relationship ID -> relationship)
-	 *
-	 * @type {Object.<String, Relationship>}
-	 */
-	_queuedRelationships: null,
-
-	/**
-	 * @param {String} typeKey
-	 * @param {String} id
-	 * @returns {Boolean}
-	 */
-	_hasQueuedRelationships: function(typeKey, id) {
-		var qid, relationship;
-		var queuedRelationships = this.get('_queuedRelationships');
-
-		for (qid in queuedRelationships) {
-			if (queuedRelationships.hasOwnProperty(qid)) {
-				if (queuedRelationships[qid].get('type2') === typeKey &&
-					queuedRelationships[qid].get('object2') === id) {
-					return true;
-				}
-			}
-		}
-
-		return false;
-	},
-
-	/**
-	 * Will connect all queued relationships to the given record.
-	 *
-	 * @param {Model} record
-	 */
-	_connectQueuedRelationships: function(record) {
-		var queued = this.get('_queuedRelationships');
-		var toConnect = this._queuedRelationshipsFor(record.typeKey, record.get('id'));
-
-		toConnect.forEach(function(relationship) {
-			record._connectRelationship(relationship);
-			relationship.set('object2', record);
-			delete queued[relationship.get('id')];
+	initializeRelationships: Em.on('init', function() {
+		this.setProperties({
+			allRelationships: new Em.Object(),
+			queuedRelationships: new Em.Object()
 		});
+	}),
 
-		this.notifyPropertyChange('_queuedRelationships');
-	},
+	createRelationship: function(type1, id1, name1, type2, id2, name2, state) { // jshint ignore:line
+		var relationship = new EG.Relationship(type1, id1, name1, type2, id2, name2, state);
 
-	/**
-	 * Gets all of the relationships that are queued to be connected to the given record.
-	 * Does not deleted the relationships from the queue, just fetches them.
-	 *
-	 * @param {String} typeKey
-	 * @param {String} id
-	 * @returns {Relationship[]}
-	 * @private
-	 */
-	_queuedRelationshipsFor: function(typeKey, id) {
-		var current, relationships = [];
-		var queued = this.get('_queuedRelationships');
-
-		for (var relationshipId in queued) {
-			if (queued.hasOwnProperty(relationshipId)) {
-				current = queued[relationshipId];
-				if (current.get('type2') === typeKey && current.get('object2') === id) {
-					relationships.push(current);
-				}
-			}
-		}
-
-		return relationships;
-	},
-
-	/**
-	 * Creates a new relationship and connects the two records,
-	 * queueing the relationship if necessary.
-	 *
-	 * @param {String} type1
-	 * @param {String} relationship1
-	 * @param {String} id1
-	 * @param {String} type2
-	 * @param {String} relationship2
-	 * @param {String} id2
-	 * @param {String} state The state of the relationship
-	 */
-	_createRelationship: function(type1, relationship1, id1, type2, relationship2, id2, state) { // jshint ignore:line
+		var queuedRelationships = this.get('queuedRelationships');
 		var record1 = this.getRecord(type1, id1);
 		var record2 = this.getRecord(type2, id2);
 
-		if (record1 === null && record2 === null) {
+		if (record1) {
+			this.connectRelationshipTo(record1, relationship);
+		}
+
+		if (record2) {
+			this.connectRelationshipTo(record2, relationship);
+		}
+
+		if (!record1 || !record2) {
+			queuedRelationships[relationship.get('id')] = relationship;
+			this.notifyPropertyChange('queuedRelationships');
+		}
+
+		this.get('allRelationships')[relationship.get('id')] = relationship;
+	},
+
+	deleteRelationship: function(relationship) {
+		var record1 = this.getRecord(relationship.get('type1'), relationship.get('id1'));
+		var record2 = this.getRecord(relationship.get('type2'), relationship.get('id2'));
+
+		this.disconnectRelationshipFrom(record1, relationship);
+		this.disconnectRelationshipFrom(record2, relationship);
+
+		var queuedRelationships = this.get('queuedRelationships');
+		delete queuedRelationships[relationship.get('id')];
+		this.notifyPropertyChange('queuedRelationships');
+
+		delete this.get('allRelationships')[relationship.get('id')];
+		delete this.get('queuedRelationships')[relationship.get('id')];
+
+		relationship.erase();
+	},
+
+	changeRelationshipState: function(relationship, newState) {
+		if (relationship.get('state') === newState) {
 			return;
 		}
 
-		if (record1 === null) {
-			var temp = record1;
-			record1 = record2;
-			record2 = temp;
+		var record1 = this.getRecord(relationship.get('type1'), relationship.get('id1'));
+		var record2 = this.getRecord(relationship.get('type2'), relationship.get('id2'));
 
-			temp = id1;
-			id1 = id2;
-			id2 = id1;
+		this.disconnectRelationshipFrom(record1, relationship);
+		this.disconnectRelationshipFrom(record2, relationship);
 
-			temp = relationship1;
-			relationship1 = relationship2;
-			relationship2 = temp;
-		}
+		relationship.set('state', newState);
 
-		if (relationship1 === null) {
-			return;
-		}
+		this.connectRelationshipTo(record1, relationship);
+		this.connectRelationshipTo(record2, relationship);
+	},
 
-		if (record1._isLinkedTo(relationship1, id2)) {
-			// TODO: Do we need to check both sides, or can we assume consistency?
-			return;
-		}
-
-		var relationship = EG.Relationship.create({
-			object1: record1,
-			relationship1: relationship1,
-			object2: (record2 === null ? id2 : record2),
-			relationship2: relationship2,
-			state: state
+	connectQueuedRelationships: function(record) {
+		var queuedRelationships = this.get('queuedRelationships');
+		var filtered = filter.call(Em.keys(queuedRelationships), function(id) {
+			return queuedRelationships[id].isConnectedTo(record);
 		});
 
-		this.get('_relationships')[relationship.get('id')] = relationship;
-
-		record1._connectRelationship(relationship);
-
-		if (record2 !== null) {
-			record2._connectRelationship(relationship);
-		} else {
-			this.set('_queuedRelationships.' + relationship.get('id'), relationship);
-			this.notifyPropertyChange('_queuedRelationships');
-		}
-	},
-
-	/**
-	 * Deletes the given relationship. Disconnects from both records,
-	 * then destroys, all references to the relationship.
-	 *
-	 * @param {String} id
-	 */
-	_deleteRelationship: function(id) {
-		var relationship = this.get('_relationships')[id];
-		if (Em.isNone(relationship)) {
+		if (filtered.length <= 0) {
 			return;
 		}
 
-		var object1 = relationship.get('object1');
-		var object2 = relationship.get('object2');
+		forEach.call(filtered, function(id) {
+			var relationship = queuedRelationships[id];
+			this.connectRelationshipTo(record, relationship);
+			delete queuedRelationships[id];
+		}, this);
 
-		object1._disconnectRelationship(relationship);
-		if (EG.Model.detectInstance(object2)) {
-			object2._disconnectRelationship(relationship);
-		} else {
-			delete this.get('_queuedRelationships')[id];
-			this.notifyPropertyChange('_queuedRelationships');
-		}
-
-		delete this.get('_relationships')[id];
+		this.notifyPropertyChange('queuedRelationships');
 	},
 
-	/**
-	 * @param {String} id
-	 * @param {String} state
-	 */
-	_changeRelationshipState: function(id, state) {
-		var relationship = this.get('_relationships')[id];
-		if (Em.isNone(relationship) || relationship.get('state') === state) {
-			return;
+	relationshipsForRecord: function(type, id, name) {
+		var data, filtered = [];
+		var all = this.get('allRelationships');
+
+		for (var i in all) {
+			if (all.hasOwnProperty(i)) {
+				if (all[i].matchesOneSide(type, id, name)) {
+					filtered.push(all[i]);
+				}
+			}
 		}
 
-		var object1 = relationship.get('object1');
-		var object2 = relationship.get('object2');
-
-		var oldHash = EG.Relationship.stateToHash(relationship.get('state'));
-		var newHash = EG.Relationship.stateToHash(state);
-
-		relationship.set('state', state);
-
-		object1.set(newHash + '.' + id, object1.get(oldHash + '.' + id));
-		delete object1.get(oldHash)[id];
-		object1.notifyPropertyChange(oldHash);
-		object1.notifyPropertyChange(newHash);
-
-		if (EG.Model.detectInstance(object2)) {
-			object2.set(newHash + '.' + id, object2.get(oldHash + '.' + id));
-			delete object2.get(oldHash)[id];
-			object2.notifyPropertyChange(oldHash);
-			object2.notifyPropertyChange(newHash);
-		}
+		return filtered;
 	},
 
-	/**
-	 * Gets all relationships related to the given record.
-	 *
-	 * @param {String} typeKey
-	 * @param {String} name
-	 * @param {String} id
-	 * @returns {Relationship[]}
-	 */
-	_relationshipsForRecord: function(typeKey, name, id) {
-		var rid, relationship, object2;
-		var all = [];
-		var relationships = this.get('_relationships');
+	deleteRelationshipsForRecord: function(type, id) {
+		var all = this.get('allRelationships');
 
-		for (rid in relationships) {
-			if (relationships.hasOwnProperty(rid)) {
-				relationship = relationships[rid];
-
-				if (relationship.get('type1') === typeKey && relationship.get('id') === id &&
-					relationship.get('relationship1') === name) {
-					all.push(relationship);
+		for (var i in all) {
+			if (all.hasOwnProperty(i)) {
+				if (all[i].get('type1') === type && all[i].get('id1') === id) {
+					delete all[i];
 					continue;
 				}
 
-				if (relationship.get('type2') === typeKey && relationship.get('relationship2') === name) {
-					object2 = relationship.get('object2');
-
-					if (Em.typeOf(object2) === 'string') {
-						if (object2 === id) {
-							all.push(relationship);
-							continue;
-						}
-					} else if (object2.get('id') === id) {
-						all.push(relationship);
-						continue;
-					}
+				if (all[i].get('type2') === type && all[i].get('id2') === id) {
+					delete all[i];
 				}
 			}
 		}
-
-		return all;
 	},
 
-	_deleteRelationshipsForRecord: function(typeKey, id) {
-		var current;
-		var relationships = this.get('_relationships');
-		for (var i in relationships) {
-			if (relationships.hasOwnProperty(i)) {
-				current = relationships[i];
-				if (current.isConnectedTo(typeKey, id)) {
-					this._deleteRelationship(Em.get(current, 'id'));
-				}
-			}
+	/**
+	 * @param {Model} record
+	 * @param {Relationship} relationship
+	 * @private
+	 */
+	connectRelationshipTo: function(record, relationship) {
+		if (!record) {
+			return;
 		}
+
+		record.get('relationships').addRelationship(relationship.thisName(record), relationship);
+	},
+
+	/**
+	 * @param {Model} record
+	 * @param {Relationship} relationship
+	 * @private
+	 */
+	disconnectRelationshipFrom: function(record, relationship) {
+		if (!record) {
+			return;
+		}
+
+		record.get('relationships').removeRelationship(relationship);
 	}
+
 });
 
 
@@ -2481,282 +2489,285 @@ EG.ModelPromiseObject = EG.PromiseObject.extend({
 
 (function() {
 
-var NEW_STATE = 'new';
-var SAVED_STATE = 'saved';
+var CLIENT_STATE = 'client';
+var SERVER_STATE = 'server';
 var DELETED_STATE = 'deleted';
 
 EG.Relationship = Em.Object.extend({
 
-	/**
-	 * The ID of this relationship. Has no significance and isn't used
-	 * by the records, it's just used for quick indexing.
-	 *
-	 * @type {String}
-	 */
+	_state: CLIENT_STATE,
+	state: Em.computed(function(key, value) {
+		if (arguments.length > 1) {
+			switch (value) {
+				case CLIENT_STATE:
+				case SERVER_STATE:
+				case DELETED_STATE:
+					this.set('_state', value);
+					break;
+				default:
+					Em.assert('Invalid relationship state: ' + value);
+					break;
+			}
+		}
+
+		return this.get('_state');
+	}).property('_state'),
+
 	id: null,
 
-	/**
-	 * The state of the relationship. One of the following:
-	 * new - client side relationship that hasn't been saved
-	 * saved - server side relationship
-	 * deleted - server side relationship scheduled for deletion
-	 *
-	 * @type {String}
-	 */
-	state: (function() {
-		var state = NEW_STATE;
+	typeKey1: null,
 
-		return function(key, value) {
-			if (arguments.length > 1) {
-				if (value === NEW_STATE || value === SAVED_STATE || value === DELETED_STATE) {
-					state = value;
-				} else {
-					throw new Error('\'' + value + '\' is an invalid relationship state.');
-				}
-			}
+	id1: null,
 
-			return state;
-		};
-	})(),
-
-	/**
-	 * The first object of this relationship. This object must always
-	 * be a record. If the relationship is only one way, this must be
-	 * the object on which the relationship is declared.
-	 *
-	 * @type {Model}
-	 */
-	object1: null,
-
-	/**
-	 * The name of the relationship on object1 that contains this relationship.
-	 *
-	 * @type {String}
-	 */
 	relationship1: null,
 
-	/**
-	 * Holds the type of the second object (populated automatically)
-	 *
-	 * @type {String}
-	 */
-	type1: null,
+	typeKey2: null,
 
-	/**
-	 * The second object of the relationship. This object may be a
-	 * string ID if the record isn't loaded yet, although it must
-	 * be a permanent ID. If the relationship is one way, the
-	 * other side of this relationship for this object will always
-	 * be null.
-	 *
-	 * @type {Model|String}
-	 */
-	object2: null,
+	id2: null,
 
-	/**
-	 * The name of the relationship on object1 that contains this relationship.
-	 * Can be null if the object is a one way relationship.
-	 *
-	 * @type {String}
-	 */
 	relationship2: null,
 
-	/**
-	 * Holds the type of the second object (populated automatically)
-	 *
-	 * @type {String}
-	 */
-	type2: null,
+	init: function(type1, id1, name1, type2, id2, name2, state) { // jshint ignore:line
+		Em.assert('Invalid type or ID', type1 && id1 && type2 && id2);
+		Em.assert('First relationship must have a name', name1);
+		Em.assert('Second relationship must have a name or be null', name2 === null || Em.typeOf(name2) === 'string');
+		Em.assert('Invalid state', state === CLIENT_STATE || state === SERVER_STATE || state === DELETED_STATE);
 
-	/**
-	 * Signifies that this relationship goes from object1 to object2, but not vice-versa.
-	 *
-	 * @type {Boolean}
-	 */
-	oneWay: Em.computed(function() {
-		return this.get('relationship2') === null;
-	}).property('relationship2'),
-
-	/**
-	 * Initializes the relationship with a unique ID.
-	 */
-	init: function() {
-		this.set('id', Em.generateGuid(null, 'relationship'));
+		this.setProperties({
+			id: EG.generateUUID(),
+			type1: type1,
+			id1: id1,
+			relationship1: name1,
+			type2: type2,
+			id2: id2,
+			relationship2: name2,
+			state: state
+		});
 	},
 
-	/**
-	 * Signals that this relationship has been created on the client,
-	 * and won't become permanent until the next save.
-	 *
-	 * @returns {Boolean}
-	 */
-	isNew: function() {
-		return this.get('state') === NEW_STATE;
-	},
-
-	/**
-	 * Signals that this relationship has been saved to the server
-	 * and currently has no pending changes to it.
-	 *
-	 * @returns {Boolean}
-	 */
-	isSaved: function() {
-		return this.get('state') === SAVED_STATE;
-	},
-
-	/**
-	 * Signals that this relationship has been saved to the server,
-	 * but is scheduled for deletion on the next record save.
-	 *
-	 * @returns {Boolean}
-	 */
-	isDeleted: function() {
-		return this.get('state') === DELETED_STATE;
-	},
-
-	/**
-	 * Given one side, returns the ID for the other side.
-	 *
-	 * @param {Model} record
-	 * @returns {String|undefined}
-	 */
-	otherId: function(record) {
-		Em.assert('Record must be an instance of `EG.Model`.', EG.Model.detectInstance(record));
-
-		if (this.get('object1') === record) {
-			var object2 = this.get('object2');
-			return (Em.typeOf(object2) === 'string' ? object2 : object2.get('id'));
-		} else {
-			return this.get('object1.id');
-		}
-	},
-
-	/**
-	 * Returns the opposite record of the one given. If object2 is an ID, then
-	 * it will attempt to find the record. If it can't find the record, it
-	 * will return null. Do NOT call this with a record that isn't attached.
-	 *
-	 * @param {Model} record
-	 * @returns {Model|null}
-	 */
-	otherRecord: function(record) {
-		Em.assert('Record must be an instance of `EG.Model`.', EG.Model.detectInstance(record));
-
-		var object1 = this.get('object1');
-		if (object1 === record) {
-			var object2 = this.get('object2');
-
-			if (Em.typeOf(object2) === 'string') {
-				var inverse = object1.constructor.metaForRelationship(this.get('relationship1')).relatedType;
-				return object1.get('store').getRecord(inverse, object2);
-			} else {
-				return object2;
-			}
-		} else {
-			return object1;
-		}
-	},
-
-	/**
-	 * Given a record, returns the relationship name that belongs to that record.
-	 *
-	 * @param {Model} record
-	 * @return {String} Relationship name
-	 */
-	relationshipName: function(record) {
-		if (this.get('object1') === record) {
-			return this.get('relationship1');
-		} else if (this.get('object2') === record) {
-			return this.get('relationship2');
-		} else {
-			return undefined;
-		}
-	},
-
-	/**
-	 * Determines if this relationship is connected to the given record on either side.
-	 *
-	 * @param {String} typeKey
-	 * @param {String} id
-	 * @returns {Boolean}
-	 */
-	isConnectedTo: function(typeKey, id) {
-		if (this.get('type1') === typeKey && this.get('object1.id') === id) {
+	isConnectedTo: function(record) {
+		if (this.get('type1') === record.typeKey && this.get('id1') === record.get('id')) {
 			return true;
 		}
 
-		if (this.get('type2') === typeKey) {
-			var object2 = this.get('object2');
-
-			if (Em.typeOf(object2) === 'string') {
-				return (object2 === id);
-			} else {
-				return (Em.get(object2, 'id') === id);
-			}
+		if (this.get('type2') === record.typeKey && this.get('id2') === record.get('id')) {
+			return true;
 		}
 
 		return false;
+	},
+
+	matchesOneSide: function(type, id, name) {
+		if (this.get('type1') === type && this.get('id1') === id && this.get('relationship1') === name) {
+			return true;
+		}
+
+		if (this.get('type2') === type && this.get('id2') === id && this.get('relationship2') === name) {
+			return true;
+		}
+
+		return false;
+	},
+
+	otherType: function(record) {
+		// If they have the same type, it won't matter which branch is taken
+		if (this.get('type1') === record.typeKey) {
+			return this.get('type2');
+		} else {
+			return this.get('type1');
+		}
+	},
+
+	otherId: function(record) {
+		// If they have the same IDs, it won't matter which branch is taken
+		if (this.get('id1') === record.get('id')) {
+			return this.get('id2');
+		} else {
+			return this.get('id1');
+		}
+	},
+
+	otherName: function(record) {
+		if (this.get('id1') === record.get('id') && this.get('type1') === record.typeKey) {
+			return this.get('relationship2');
+		} else {
+			return this.get('relationship1');
+		}
+	},
+
+	thisName: function(record) {
+		if (this.get('id1') === record.get('id') && this.get('type1') === record.typeKey) {
+			return this.get('relationship1');
+		} else {
+			return this.get('relationship2');
+		}
+	},
+
+	erase: function() {
+		this.setProperties({
+			id: null,
+			type1: null,
+			id1: null,
+			relationship1: null,
+			type2: null,
+			id2: null,
+			relationship2: null,
+			_state: null
+		});
 	}
 });
 
 EG.Relationship.reopenClass({
+	// TODO: NEW_STATE, SAVED_STATE, DELETED_STATE
+	CLIENT_STATE: CLIENT_STATE,
+	SERVER_STATE: SERVER_STATE,
+	DELETED_STATE: DELETED_STATE
+});
 
-	NEW_STATE: NEW_STATE,
-	SAVED_STATE: SAVED_STATE,
-	DELETED_STATE: DELETED_STATE,
+})();
 
-	/**
-	 * Overrides the create method so the object properties
-	 * can be included in the parameters like a constructor.
-	 *
-	 * @param {Object} properties
-	 * @returns {Relationship}
-	 */
-	create: function(properties) {
-		var relationship = this._super();
+(function() {
 
-		Em.assert('Possible state values are new, deleted or saved.',
-			properties.state === NEW_STATE || properties.state === DELETED_STATE || properties.state === SAVED_STATE);
-		Em.assert('The first object must always be a record.', EG.Model.detectInstance(properties.object1));
-		Em.assert('You must include a relationship name for the first object.',
-			Em.typeOf(properties.relationship1) === 'string');
-		Em.assert('The second object must either be a record, or a permanent ID.',
-			EG.Model.detectInstance(properties.object2) || (Em.typeOf(properties.object2) === 'string' &&
-			!EG.String.startsWith(properties.object2, EG.Model.temporaryIdPrefix)));
-		Em.assert('You must include a relationship name for the second object.',
-			Em.typeOf(properties.relationship1) === 'string' || properties.relationship1 === null);
-		relationship.setProperties(properties);
+var map = Em.ArrayPolyfills.map;
+var forEach = Em.ArrayPolyfills.forEach;
 
-		relationship.set('type1', properties.object1.typeKey);
+var CLIENT_STATE = EG.Relationship.CLIENT_STATE;
+var SERVER_STATE = EG.Relationship.SERVER_STATE;
+var DELETED_STATE = EG.Relationship.DELETED_STATE;
 
-		if (EG.Model.detectInstance(properties.object2)) {
-			relationship.set('type2', properties.object2.typeKey);
+var STATE_MAP = {};
+STATE_MAP[CLIENT_STATE] = 'client';
+STATE_MAP[SERVER_STATE] = 'server';
+STATE_MAP[DELETED_STATE] = 'deleted';
+
+var RelationshipMap = Em.Object.extend({
+
+	length: 0,
+
+	addRelationship: function(name, relationship) {
+		if (this.hasOwnProperty(name)) {
+			this.set(name + '.' + relationship.get('id'), relationship);
+			this.notifyPropertyChange(name);
 		} else {
-			relationship.set('type2',
-				properties.object1.constructor.metaForRelationship(properties.relationship1).relatedType);
+			var o = new Em.Object();
+			o.set(relationship.get('id'), relationship);
+			this.set(name, o);
 		}
 
-		return relationship;
+		this.incrementProperty('length');
 	},
 
-	/**
-	 * Given a relationship state, determines which hash in the model the relationship should be in.
-	 *
-	 * @param {String} state
-	 * @returns {String}
-	 */
-	stateToHash: function(state) {
-		switch (state) {
-			case NEW_STATE:
-				return '_clientRelationships';
-			case SAVED_STATE:
-				return '_serverRelationships';
-			case DELETED_STATE:
-				return '_deletedRelationships';
-			default:
-				Em.assert('The given state was invalid.');
-				return '';
+	removeRelationship: function(id) {
+		forEach.call(Em.keys(this), function(key) {
+			if (key === 'length') {
+				return;
+			}
+
+			var o = this.get(key);
+			if (typeof o === 'object' && o.hasOwnProperty(id)) {
+				delete o[id];
+				this.notifyPropertyChange(key);
+				this.decrementProperty('length');
+			}
+		}, this);
+	},
+
+	getRelationships: function(name) {
+		var relationships = this.get(name) || {};
+
+		return map.call(Em.keys(relationships), function(key) {
+			return relationships[key];
+		});
+	},
+
+	getAllRelationships: function() {
+		var relationships = [];
+		var keys = new Em.Set(Em.keys(this)).without('length');
+
+		forEach.call(keys, function(key) {
+			relationships = relationships.concat(this.getRelationships(key));
+		}, this);
+
+		return relationships;
+	},
+
+	clearRelationships: function(name) {
+		this.set(name, new Em.Object());
+		this.recalculateLength();
+	},
+
+	recalculateLength: function() {
+		var length = 0;
+
+		forEach.call(Em.keys(this), function(key) {
+			if (key !== 'length') {
+				length += Em.keys(this[key]).length;
+			}
+		}, this);
+
+		this.set('length', length);
+	}
+
+});
+
+EG.RelationshipStore = Em.Object.extend({
+
+	server: null,
+
+	client: null,
+
+	deleted: null,
+
+	initializeMaps: Em.on('init', function() {
+		this.setProperties({
+			server: new RelationshipMap(),
+			client: new RelationshipMap(),
+			deleted: new RelationshipMap()
+		});
+	}),
+
+	addRelationship: function(name, relationship) {
+		if (name === null) {
+			return;
 		}
+
+		return this.get(STATE_MAP[relationship.get('state')]).addRelationship(name, relationship);
+	},
+
+	removeRelationship: function(id) {
+		if (Em.typeOf(id) !== 'string') {
+			id = Em.get(id, 'id');
+		}
+
+		this.get('server').removeRelationship(id);
+		this.get('client').removeRelationship(id);
+		this.get('deleted').removeRelationship(id);
+	},
+
+	clearRelationships: function(name) {
+		this.get('server').clearRelationships(name);
+		this.get('client').clearRelationships(name);
+		this.get('deleted').clearRelationships(name);
+	},
+
+	getServerRelationships: function(name) {
+		return this.get('server').getRelationships(name).concat(this.get('deleted').getRelationships(name));
+	},
+
+	getCurrentRelationships: function(name) {
+		return this.get('server').getRelationships(name).concat(this.get('client').getRelationships(name));
+	},
+
+	getRelationshipsByState: function(state) {
+		return this.get(STATE_MAP[state]).getAllRelationships();
+	},
+
+	getRelationshipsByName: function(name) {
+		var server = this.get('server').getRelationships(name);
+		var client = this.get('client').getRelationships(name);
+		var deleted = this.get('deleted').getRelationships(name);
+
+		return server.concat(client).concat(deleted);
 	}
 });
 
@@ -3441,7 +3452,7 @@ EG.Model = Em.Object.extend(Em.Evented, {
 			'while dirty with `reloadDirty` disabled.', !this.get('isDirty') || this.get('store.reloadDirty'));
 
 		this._loadAttributes(json);
-		this._loadRelationships(json);
+		this.loadRelationships(json);
 	},
 
 	/**
@@ -3583,7 +3594,7 @@ EG.Model.reopenClass({
 
 		var subclass = this._super.apply(this, args);
 		subclass._declareAttributes(attributes);
-		subclass._declareRelationships(relationships);
+		subclass.declareRelationships(relationships);
 		return subclass;
 	},
 
@@ -3683,7 +3694,7 @@ EG.Model.reopen({
 	 * @type Boolean
 	 * @final
 	 */
-	isDirty: Em.computed.or('_areAttributesDirty', '_areRelationshipsDirty'),
+	isDirty: Em.computed.or('_areAttributesDirty', 'areRelationshipsDirty'),
 
 	/**
 	 * Denotes that the record is currently being saved to the server for the first time,
@@ -3721,7 +3732,7 @@ EG.Model.reopen({
 
 (function() {
 
-var disallowedAttributeNames = new Em.Set(['id', 'type', 'content']);
+var disallowedAttributeNames = new Em.Set(['id', 'type', 'content', 'length']);
 
 var createAttribute = function(attributeName, options) {
 	var meta = {
@@ -3951,122 +3962,52 @@ EG.Model.reopen({
 
 (function() {
 
+var map = Em.ArrayPolyfills.map;
+var reduce = Em.ArrayPolyfills.reduce;
+var filter = Em.ArrayPolyfills.filter;
+var forEach = Em.ArrayPolyfills.forEach;
+
 var HAS_ONE_KEY = EG.Model.HAS_ONE_KEY = 'hasOne';
 var HAS_MANY_KEY = EG.Model.HAS_MANY_KEY = 'hasMany';
 
-var NEW_STATE = EG.Relationship.NEW_STATE;
-var SAVED_STATE = EG.Relationship.SAVED_STATE;
+var CLIENT_STATE = EG.Relationship.CLIENT_STATE;
+var SERVER_STATE = EG.Relationship.SERVER_STATE;
 var DELETED_STATE = EG.Relationship.DELETED_STATE;
 
-var disallowedRelationshipNames = new Em.Set(['id', 'type', 'content']);
-
 var createRelationship = function(name, kind, options) {
-	Em.assert('Your relationship must specify a relatedType.', Em.typeOf(options.relatedType) === 'string');
-	Em.assert('Your relationship must specify an inverse relationship.',
-		options.inverse === null || Em.typeOf(options.inverse) === 'string');
+	Em.assert('Invalid relatedType', Em.typeOf(options.relatedType) === 'string');
+	Em.assert('Invalid inverse', options.inverse === null || Em.typeOf(options.inverse) === 'string');
 
 	var meta = {
-		isRelationship: false,
+		isRelationship: false, // the 'real' relationship (without _) is the relationship
 		kind: kind,
 		isRequired: (options.hasOwnProperty('defaultValue') ? false : options.isRequired !== false),
 		defaultValue: options.defaultValue || (kind === HAS_MANY_KEY ? [] : null),
 		relatedType: options.relatedType,
 		inverse: options.inverse,
-		readOnly: options.readOnly === true
+		isReadOnly: options.readOnly === true,
+		isPolymorphic: options.polymorphic === true
 	};
 
-	Em.assert('The default value for a hasOne relationship must be a string or null, and the default value' +
-			'for a hasMany relationship must be an array.',
-			(kind === HAS_MANY_KEY && Em.isArray(meta.defaultValue)) ||
-			(kind === HAS_ONE_KEY && (meta.defaultValue === null || Em.typeOf(meta.defaultValue) === 'string')));
+	Em.assert('defaultValue for hasMany must be an array.', meta.kind === HAS_ONE_KEY || Em.isArray(meta.defaultValue));
+	Em.assert('defaultValue for hasOne must be null or a string.',
+			meta.kind === HAS_MANY_KEY || meta.defaultValue === null || Em.typeOf(meta.defaultValue) === 'string');
 
-	if (kind === HAS_MANY_KEY) {
+	if (meta.kind === HAS_MANY_KEY) {
 		return Em.computed(function(key) {
-			return this._hasManyValue(key.substring(1));
-		}).property('_serverRelationships.' + name, '_clientRelationships.' + name).meta(meta).readOnly();
+			return this.getHasManyValue(key.substring(1), false);
+		}).property('relationships.client.' + name, 'relationships.deleted.' + name).meta(meta).readOnly();
 	} else {
 		return Em.computed(function(key) {
-			return this._hasOneValue(key.substring(1));
-		}).property('_serverRelationships.' + name, '_clientRelationships.' + name).meta(meta).readOnly();
+			return this.getHasOneValue(key.substring(1), false);
+		}).property('relationships.client.' + name, 'relationships.deleted.' + name).meta(meta).readOnly();
 	}
 };
 
 EG.Model.reopenClass({
 
 	/**
-	 * Goes through the subclass and declares an additional property for
-	 * each relationship. The properties will be capitalized and then prefixed
-	 * with 'loaded'. So rather than 'projects', use 'loadedProjects'.
-	 * This will return the relationship as a promise rather than in ID form.
-	 */
-	_declareRelationships: function(relationships) {
-		var obj = {};
-
-		Em.keys(relationships).forEach(function(name) {
-			var kind = relationships[name].kind;
-			var options = relationships[name].options;
-			var relatedType = options.relatedType;
-
-			var relationship;
-
-			if (kind === HAS_MANY_KEY) {
-				relationship = function() {
-					return this.get('store').find(relatedType, this.get('_' + name).toArray());
-				};
-			} else {
-				relationship = function() {
-					var id = this.get('_' + name);
-					return (id === null ? null : this.get('store').find(relatedType, id));
-				};
-			}
-
-			obj['_' + name] = createRelationship(name, kind, options);
-			var meta = Em.copy(obj['_' + name].meta(), true);
-			meta.isRelationship = true;
-			obj[name] = Em.computed(relationship).property('_' + name).meta(meta).readOnly();
-		});
-
-		this.reopen(obj);
-	},
-
-	/**
-	 * A set of all of the relationship names for this model.
-	 *
-	 * @property relationships
-	 * @for Model
-	 * @type Set
-	 * @static
-	 * @readOnly
-	 */
-	relationships: Em.computed(function() {
-		var relationships = new Em.Set();
-
-		this.eachComputedProperty(function(name, meta) {
-			if (meta.isRelationship) {
-				Em.assert('`' + name + '` cannot be used as a relationship name.',
-					!disallowedRelationshipNames.contains(name));
-				Em.assert('Relationship names must start with a lowercase letter.', name[0].match(/[a-z]/g));
-
-				relationships.addObject(name);
-			}
-		});
-
-		return relationships;
-	}).property(),
-
-	/**
-	 * @method isRelationship
-	 * @for Model
-	 * @param {String} propertyName
-	 * @return {Boolean}
-	 * @static
-	 */
-	isRelationship: function(propertyName) {
-		return Em.get(this, 'relationships').contains(propertyName);
-	},
-
-	/**
-	 * Just a more semantic alias for `metaForProperty`
+	 * Fetch the metadata for a relationship property.
 	 *
 	 * @method metaForRelationship
 	 * @for Model
@@ -4104,704 +4045,838 @@ EG.Model.reopenClass({
 				callback.call(binding, name, meta);
 			}
 		});
+	},
+
+	declareRelationships: function(relationships) {
+		var obj = {};
+
+		Em.runInDebug(function() {
+			var disallowedNames = new Em.Set(['id', 'type', 'content', 'length', 'model']);
+
+			forEach.call(Em.keys(relationships), function(name) {
+				Em.assert('`' + name + '` cannot be used as a relationship name.', !disallowedNames.contains(name));
+				Em.assert('A relationship name cannot start with an underscore.', name.charAt(0) !== '_');
+				Em.assert('Relationship names must start with a lowercase letter.', name.charAt(0).match(/[a-z]/));
+			});
+		});
+
+		forEach.call(Em.keys(relationships), function(name) {
+			obj['_' + name] = createRelationship(name, relationships[name].kind, relationships[name].options);
+			var meta = Em.copy(obj['_' + name].meta(), true);
+			var relatedType = meta.relatedType;
+
+			var relationship;
+
+			// We're not going to close over many variables for the sake of speed
+			if (meta.kind === HAS_ONE_KEY) {
+				relationship = function(key) {
+					var value = this.getHasOneValue(key, false);
+					return (value ? this.get('store').find(value.type, value.id) : null);
+				};
+			} else if (!meta.isPolymorphic) {
+				relationship = function(key) {
+					var value = this.getHasManyValue(key, false);
+					var ids = Em.ArrayPolyfills.map.call(value, function(item) {
+						return item.id;
+					});
+					return this.get('store').find(relatedType, ids);
+				};
+			} else {
+				relationship = function(key) {
+					var store = this.get('store');
+					var value = this.getHasManyValue(key, false);
+					var groups = EG.groupRecords(value);
+					var promises = Em.ArrayPolyfills.map.call(groups, function(group) {
+						var ids = Em.ArrayPolyfills.map.call(group, function(item) {
+							return item.id;
+						});
+						return store.find(group[0].type, ids);
+					});
+					return Em.RSVP.Promise.all(promises).then(function(groups) {
+						return Em.ArrayPolyfills.reduce.call(groups, function(array, group) {
+							return array.concat(group);
+						}, []);
+					});
+				};
+			}
+
+			meta.isRelationship = true;
+			obj[name] = Em.computed(relationship).property('_' + name).readOnly().meta(meta);
+		});
+
+		this.reopen(obj);
 	}
+
 });
 
 EG.Model.reopen({
 
-	/**
-	 * Relationships that have been saved to the server
-	 * that are currently connected to this record.
-	 *
-	 * @type {Object.<String, Relationship>}
-	 */
-	_serverRelationships: null,
+	areRelationshipsDirty: Em.computed(function() {
+		return this.get('relationships.client.length') > 0 || this.get('relationships.deleted.length') > 0;
+	}).property('relationships.client.length', 'relationships.deleted.length'),
 
-	/**
-	 * Relationships that have been saved to the server, but aren't currently
-	 * connected to this record and are scheduled for deletion on the next save.
-	 *
-	 * @type {Object.<String, Relationship>}
-	 */
-	_deletedRelationships: null,
-
-	/**
-	 * Relationships that have been created on the client and haven't been
-	 * saved to the server yet. Relationships from here that are disconnected
-	 * are deleted completely rather than queued for deletion.
-	 *
-	 * @type {Object.<String, Relationship>}
-	 */
-	_clientRelationships: null,
-
-	_initializeRelationships: function() {
-		this.set('_serverRelationships', Em.Object.create());
-		this.set('_clientRelationships', Em.Object.create());
-		this.set('_deletedRelationships', Em.Object.create());
-	}.on('init'),
-
-	/**
-	 * Determines the value of a hasOne relationship, either the
-	 * original value sent from the server, or the current client value.
-	 *
-	 * @param {String} relationship
-	 * @param {Boolean} server True for original value, false for client value
-	 * @returns {String}
-	 * @private
-	 */
-	_hasOneValue: function(relationship, server) {
-		var id;
-
-		var serverRelationships = this.get('_serverRelationships');
-		for (id in serverRelationships) {
-			if (serverRelationships.hasOwnProperty(id)) {
-				if (serverRelationships[id].relationshipName(this) === relationship) {
-					return serverRelationships[id].otherId(this);
-				}
-			}
-		}
-
-		var otherRelationships = this.get((server ? '_deleted' : '_client') + 'Relationships');
-		for (id in otherRelationships) {
-			if (otherRelationships.hasOwnProperty(id)) {
-				if (otherRelationships[id].relationshipName(this) === relationship) {
-					return otherRelationships[id].otherId(this);
-				}
-			}
-		}
-
-		return null;
-	},
-
-	/**
-	 * Determines the value of a hasMany relationship, either the
-	 * original value sent from the server, or the current client value.
-	 *
-	 * @param {String} relationship
-	 * @param {Boolean} server True for original value, false for client value
-	 * @returns {Set}
-	 * @private
-	 */
-	_hasManyValue: function(relationship, server) {
-		var id;
-		var found = [];
-
-		var serverRelationships = this.get('_serverRelationships');
-		for (id in serverRelationships) {
-			if (serverRelationships.hasOwnProperty(id)) {
-				if (serverRelationships[id].relationshipName(this) === relationship) {
-					found.push(serverRelationships[id].otherId(this));
-				}
-			}
-		}
-
-		var otherRelationships = this.get((server ? '_deleted' : '_client') + 'Relationships');
-		for (id in otherRelationships) {
-			if (otherRelationships.hasOwnProperty(id)) {
-				if (otherRelationships[id].relationshipName(this) === relationship) {
-					found.push(otherRelationships[id].otherId(this));
-				}
-			}
-		}
-
-		return new Em.Set(found);
-	},
-
-	/**
-	 * Watches the client side attributes for changes and detects if there are
-	 * any dirty attributes based on how many client attributes differ from
-	 * the server attributes.
-	 */
-	_areRelationshipsDirty: Em.computed(function() {
-		var client = Em.keys(this.get('_clientRelationships')).length > 0;
-		var deleted = Em.keys(this.get('_deletedRelationships')).length > 0;
-
-		return client || deleted;
-	}).property('_clientRelationships', '_deletedRelationships'),
-
-	/**
-	 * Gets all relationships currently linked to this record.
-	 *
-	 * @returns {Relationship[]}
-	 * @private
-	 */
-	_getAllRelationships: function() {
-		var id;
-		var all = [];
-
-		var serverRelationships = this.get('_serverRelationships');
-		for (id in serverRelationships) {
-			if (serverRelationships.hasOwnProperty(id)) {
-				all.push(serverRelationships[id]);
-			}
-		}
-
-		var clientRelationships = this.get('_clientRelationships');
-		for (id in clientRelationships) {
-			if (clientRelationships.hasOwnProperty(id)) {
-				all.push(clientRelationships[id]);
-			}
-		}
-
-		var deletedRelationships = this.get('_deletedRelationships');
-		for (id in deletedRelationships) {
-			if (deletedRelationships.hasOwnProperty(id)) {
-				all.push(deletedRelationships[id]);
-			}
-		}
-
-		return all;
-	},
-
-	/**
-	 * Loads relationships from the server. Completely replaces
-	 * the current relationships with the given ones.
-	 *
-	 * TODO: Clean this shit up yo...
-	 *
-	 * @param json The JSON with properties to load
-	 * @private
-	 */
-	_loadRelationships: function(json) {
-		var store = this.get('store');
-		var sideWithClient = store.get('sideWithClientOnConflict');
-
-		this.constructor.eachRelationship(function(name, meta) {
-			if (meta.isRequired && !json.hasOwnProperty(name)) {
-				throw new Error('You left out the required \'' + name + '\' relationship.');
-			}
-
-			var value = json[name] || meta.defaultValue;
-
-			if (meta.kind === HAS_MANY_KEY) {
-				value = value.map(function(id) {
-					if (Em.typeOf(id) === 'string') {
-						return id;
-					} else if (EG.Model.detectInstance(id)) {
-						return id.get('id');
-					} else {
-						throw new Error('When creating records, relationships must be either records or IDs.');
-					}
-				});
-			} else {
-				if (EG.Model.detectInstance(value)) {
-					value = value.get('id');
-				} else if (Em.typeOf(value) !== 'string' && value !== null) {
-					throw new Error('When creating records, relationships must be either records or IDs.');
-				}
-			}
-
-			// Delete ALL server relationships with this name
-			var client = this._relationshipsForName(name).filter(function(relationship) {
-				// If a DELETED relationship is the same as one given by the server
-				// it's considered a conflict and has to be dealt with accordingly
-				var state = relationship.get('state');
-				if (state === DELETED_STATE) {
-					var otherId = relationship.otherId(this);
-
-					if (meta.kind === HAS_MANY_KEY) {
-						if (new Em.Set(value).contains(otherId)) {
-							if (sideWithClient) {
-								// Leave it alone
-							} else {
-								store._changeRelationshipState(relationship.get('id'), SAVED_STATE);
-							}
-						}
-					} else {
-						if (value === otherId) {
-							if (sideWithClient) {
-								// Leave it alone
-							} else {
-								store._changeRelationshipState(relationship.get('id'), SAVED_STATE);
-							}
-						}
-					}
-
-					return false;
-				}
-
-				if (state === SAVED_STATE) {
-					store._deleteRelationship(relationship.get('id'));
-					return false;
-				} else {
-					return true;
-				}
-			}, this);
-
-			if (meta.kind === HAS_MANY_KEY) {
-				var given = new Em.Set(value);
-
-				// Update client side relationships that have been saved
-				client.forEach(function(relationship) {
-					if (given.contains(relationship.otherId(this))) {
-						store._changeRelationshipState(relationship.get('id'), SAVED_STATE);
-					}
-				}, this);
-
-				var current = this._hasManyValue(name);
-				// These are OK for now, because they're not in conflict
-				var clientNotOnServer = current.without(given);
-				// These have to be created
-				var serverNotInClient = given.without(current);
-				serverNotInClient.forEach(function(id) {
-					var addState = SAVED_STATE;
-					var conflict = this._hasOneConflict(name, id);
-					if (conflict !== null) {
-						switch (conflict.get('state')) {
-							case DELETED_STATE:
-							case SAVED_STATE:
-								// Delete it because the server says that relationship no longer exists.
-								// It is now occupied by another relationship
-								store._deleteRelationship(conflict.get('id'));
-								break;
-							case NEW_STATE:
-								if (sideWithClient) {
-									// We have to side with the client, so leave it alone, add ours as deleted
-									addState = DELETED_STATE;
-								} else {
-									// We have to side with the server, so delete it
-									store._deleteRelationship(conflict.get('id'));
-								}
-								break;
-						}
-					}
-
-					store._createRelationship(this.typeKey, name, this.get('id'),
-						meta.relatedType, meta.inverse, id, addState);
-				}, this);
-			} else {
-				// There should only be one relationship in there
-				Em.assert('An unknown relationship error occurred.', client.length <= 1);
-
-				var conflict = this._hasOneConflict(name, value);
-
-				// Update client side relationships that have been saved
-				if (client.length === 1) {
-					if (client[0].otherId(this) === value) {
-						store._changeRelationshipState(client[0].get('id'), SAVED_STATE);
-					} else {
-						// The server is in conflict with the client
-						if (sideWithClient) {
-							if (value !== null) {
-								if (conflict !== null) { // jshint ignore:line
-									switch (conflict.get('state')) {
-										case DELETED_STATE:
-										case SAVED_STATE:
-											// Delete it because the server says that relationship no longer exists.
-											// It is now occupied by another relationship
-											store._deleteRelationship(conflict.get('id'));
-											break;
-										case NEW_STATE:
-											// We have to side with the client, so leave it alone
-											break;
-									}
-								}
-
-								// Add the server relationship as deleted
-								store._createRelationship(this.typeKey, name, this.get('id'),
-									meta.relatedType, meta.inverse, value, DELETED_STATE);
-							}
-						} else {
-							// Delete the client side relationship
-							store._deleteRelationship(client[0].get('id'));
-							if (value !== null) {
-								if (conflict !== null) { // jshint ignore:line
-									// Delete it because the server says that relationship no longer exists.
-									// It is now occupied by another relationship
-									store._deleteRelationship(conflict.get('id'));
-								}
-
-								store._createRelationship(this.typeKey, name, this.get('id'),
-									meta.relatedType, meta.inverse, value, SAVED_STATE);
-							}
-						}
-					}
-				} else if (client.length === 0) {
-					// We can simply create the server relationship
-					if (value !== null) {
-						if (conflict !== null) { // jshint ignore:line
-							// Delete it because the server says that relationship no longer exists.
-							// It is now occupied by another relationship
-							store._deleteRelationship(conflict.get('id'));
-						}
-
-						store._createRelationship(this.typeKey, name, this.get('id'),
-							meta.relatedType, meta.inverse, value, SAVED_STATE);
-					}
-				} else {
-					// TODO: This should really never happen in production.
-					// What should we do? Can we guarantee this never happens?
-				}
-			}
-		}, this);
-	},
-
-	/**
-	 * This method is used to determine if adding a relationship will create
-	 * a conflict on the other side of the relationship with a hasOne
-	 * relationship. If there is a conflict on the other record, this will
-	 * return the relationship that is in conflict.
-	 *
-	 * @param {String} relationship Relationship on this side that goes to the other record
-	 * @param {String} id ID of the other record
-	 * @returns {Relationship}
-	 * @private
-	 */
-	_hasOneConflict: function(relationship, id) {
-		if (id === null) {
-			return null;
-		}
-
-		var meta = this.constructor.metaForRelationship(relationship);
-		if (meta.inverse === null) {
-			return null;
-		}
-
-		var model = this.get('store').modelForType(meta.relatedType);
-		var otherMeta = model.metaForRelationship(meta.inverse);
-		if (otherMeta.kind !== HAS_ONE_KEY) {
-			return null;
-		}
-
-		// We need to detect unloaded records too
-		var record = this.get('store').getRecord(meta.relatedType, id);
-		if (record) {
-			var current = record._hasOneValue(meta.inverse);
-			if (current === null || current === this.get('id')) {
-				return null;
-			}
-
-			return record._findLinkTo(meta.inverse, current);
-		} else {
-			var relationships = this.get('store')._relationshipsForRecord(meta.relatedType, meta.inverse, id);
-			if (relationships.length === 0) {
-				return null;
-			}
-
-			// It's a hasOne, so relationships can only have one NEW or SAVED relationship
-			relationships = relationships.filter(function(relationship) {
-				var state = relationship.get('state');
-				return (state === SAVED_STATE || state === NEW_STATE);
-			});
-
-			Em.assert('An unknown relationship error occurred', relationships.length <= 1);
-
-			return (relationships.length > 0 ? relationships[0] : null);
-		}
-	},
-
-	/**
-	 * Returns an object that contains every relationship
-	 * that has been changed since the last save.
-	 *
-	 * @method changedRelationships
-	 * @for Model
-	 * @return {Object} Keys are relationship names, values are arrays with [oldVal, newVal]
-	 */
 	changedRelationships: function() {
-		var changed = {};
+		var changes = {};
 
 		this.constructor.eachRelationship(function(name, meta) {
 			var oldVal, newVal;
 
 			if (meta.kind === HAS_MANY_KEY) {
-				oldVal = this._hasManyValue(name, true);
-				newVal = this._hasManyValue(name, false);
+				oldVal = this.getHasManyValue(name, true);
+				var oldValSet = map.call(oldVal, function(value) {
+					return value.type + '.' + value.id;
+				});
 
-				if (!oldVal.isEqual(newVal)) {
-					changed[name] = [oldVal, newVal];
+				newVal = this.getHasManyValue(name, false);
+				var newValSet = map.call(newVal, function(value) {
+					return value.type + '.' + value.id;
+				});
+
+				if (!EG.arrayContentsEqual(oldVal, newVal)) {
+					changes[name] = [oldVal, newVal];
 				}
 			} else {
-				oldVal = this._hasOneValue(name, true);
-				newVal = this._hasOneValue(name, false);
+				oldVal = this.getHasOneValue(name, true);
+				newVal = this.getHasOneValue(name, false);
 
 				if (oldVal !== newVal) {
-					changed[name] = [oldVal, newVal];
+					changes[name] = [oldVal, newVal];
 				}
 			}
 		}, this);
 
-		return changed;
+		return changes;
 	},
 
-	/**
-	 * Resets all attribute changes to last known server attributes.
-	 *
-	 * @method rollbackRelationships
-	 * @for Model
-	 */
 	rollbackRelationships: function() {
-		var store = this.get('store');
+		Em.changeProperties(function() {
+			var store = this.get('store');
 
-		this._getAllRelationships().forEach(function(relationship) {
-			switch (relationship.get('state')) {
-				case NEW_STATE:
-					store._deleteRelationship(relationship.get('id'));
-					break;
-				case SAVED_STATE:
-					// NOP
-					break;
-				case DELETED_STATE:
-					store._changeRelationshipState(relationship.get('id'), SAVED_STATE);
-					break;
-			}
+			var client = this.get('relationships').getRelationshipsByState(CLIENT_STATE);
+			forEach.call(client, function(relationship) {
+				store.deleteRelationship(relationship);
+			});
+
+			var deleted = this.get('relationships').getRelationshipsByState(DELETED_STATE);
+			forEach.call(deleted, function(relationship) {
+				store.changeRelationshipState(relationship, SERVER_STATE);
+			});
 		}, this);
 	},
 
-	/**
-	 * A convenience method to add an item to a hasMany relationship. This will
-	 * ensure that all of the proper observers are notified of the change.
-	 *
-	 * @method addToRelationship
-	 * @for Model
-	 * @param {String} relationshipName
-	 * @param {String|Record} id
-	 */
-	addToRelationship: function(relationshipName, id) {
-		if (EG.Model.detectInstance(id)) {
-			id = id.get('id');
-		}
+	addToRelationship: function(relationshipName, id, polymorphicType) {
+		Em.changeProperties(function() {
+			var i, store = this.get('store');
 
-		var store = this.get('store');
-		var meta = this.constructor.metaForRelationship(relationshipName);
-		Em.assert('Cannot modify a read-only relationship', meta.readOnly === false);
-		if (meta.readOnly) {
-			return;
-		}
-
-		var link = this._findLinkTo(relationshipName, id);
-		if (link && (link.get('state') === NEW_STATE || link.get('state') === SAVED_STATE)) {
-			return;
-		}
-
-		if (link && link.get('state') === DELETED_STATE) {
-			this.get('store')._changeRelationshipState(link.get('id'), SAVED_STATE);
-			return;
-		}
-
-		var conflict = this._hasOneConflict(relationshipName, id);
-		if (conflict !== null) {
-			switch (conflict.get('state')) {
-				case DELETED_STATE:
-					// NOP
-					break;
-				case SAVED_STATE:
-					store._changeRelationshipState(conflict.get('id'), DELETED_STATE);
-					break;
-				case NEW_STATE:
-					store._deleteRelationship(conflict.get('id'));
-					break;
+			// Don't modify a read-only relationship
+			var meta = this.constructor.metaForRelationship(relationshipName);
+			if (meta.isReadOnly) {
+				Em.assert('Can\'t modify a read-only relationship.');
+				return;
 			}
-		}
 
-		store._createRelationship(this.typeKey, relationshipName,
-			this.get('id'), meta.relatedType, meta.inverse, id, NEW_STATE);
-	},
-
-	/**
-	 * A convenience method to remove an item from a hasMany relationship. This will
-	 * ensure that all of the proper observers are notified of the change.
-	 *
-	 * @method removeFromRelationship
-	 * @for Model
-	 * @param {String} relationshipName
-	 * @param {String|Record} id
-	 */
-	removeFromRelationship: function(relationshipName, id) {
-		if (EG.Model.detectInstance(id)) {
-			id = id.get('id');
-		}
-
-		var meta = this.constructor.metaForRelationship(relationshipName);
-		Em.assert('Cannot modify a read-only relationship', meta.readOnly === false);
-		if (meta.readOnly) {
-			return;
-		}
-
-		var r = this._findLinkTo(relationshipName, id);
-
-		if (r !== null) {
-			switch (r.get('state')) {
-				case NEW_STATE:
-					this.get('store')._deleteRelationship(r.get('id'));
-					break;
-				case SAVED_STATE:
-					this.get('store')._changeRelationshipState(r.get('id'), DELETED_STATE);
-					break;
-				case DELETED_STATE:
-					// NOP?
-					break;
+			// If the type wasn't provided, fill it in based on the inverse
+			if (Em.typeOf(id) !== 'string') {
+				polymorphicType = id.typeKey;
+				id = id.get('id');
+			} else if (Em.typeOf(polymorphicType) !== 'string') {
+				polymorphicType = meta.relatedType;
 			}
-		}
-	},
 
-	/**
-	 * Sets the value of a hasOne relationship to the given ID.
-	 *
-	 * @method setHasOneRelationship
-	 * @for Model
-	 * @param {String} relationshipName
-	 * @param {String|Record} id
-	 */
-	setHasOneRelationship: function(relationshipName, id) {
-		if (EG.Model.detectInstance(id)) {
-			id = id.get('id');
-		}
-
-		var meta = this.constructor.metaForRelationship(relationshipName);
-		Em.assert('Cannot modify a read-only relationship', meta.readOnly === false);
-		if (meta.readOnly) {
-			return;
-		}
-
-		var link = this._findLinkTo(relationshipName, id);
-		if (link && (link.get('state') === NEW_STATE || link.get('state') === SAVED_STATE)) {
-			return;
-		}
-
-		if (link && link.get('state') === DELETED_STATE) {
-			this.get('store')._changeRelationshipState(link.get('id'), SAVED_STATE);
-			return;
-		}
-
-		if (id === null) {
-			return;
-		}
-
-		if (id === null) {
-			this.clearHasOneRelationship(relationshipName);
-			return;
-		}
-
-		this.clearHasOneRelationship(relationshipName, true);
-
-		var store = this.get('store');
-		var conflict = this._hasOneConflict(relationshipName, id);
-		if (conflict !== null) {
-			switch (conflict.get('state')) {
-				case DELETED_STATE:
-					// NOP
-					break;
-				case SAVED_STATE:
-					store._changeRelationshipState(conflict.get('id'), DELETED_STATE);
-					break;
-				case NEW_STATE:
-					store._deleteRelationship(conflict.get('id'));
-					break;
-			}
-		}
-
-		store._createRelationship(this.typeKey, relationshipName,
-			this.get('id'), meta.relatedType, meta.inverse, id, NEW_STATE);
-	},
-
-	/**
-	 * Sets the value of a hasOne relationship to `null`.
-	 *
-	 * @method clearHasOneRelationship
-	 * @for Model
-	 * @param {String} relationshipName
-	 */
-	clearHasOneRelationship: function(relationshipName) {
-		var meta = this.constructor.metaForRelationship(relationshipName);
-		Em.assert('Cannot modify a read-only relationship', meta.readOnly === false);
-		if (meta.readOnly) {
-			return;
-		}
-
-		var current = this._hasOneValue(relationshipName);
-
-		if (current !== null) {
-			var r = this._findLinkTo(relationshipName, current);
-
-			if (r !== null) {
-				switch (r.get('state')) {
-					case NEW_STATE:
-						this.get('store')._deleteRelationship(r.get('id'));
-						break;
-					case SAVED_STATE:
-						this.get('store')._changeRelationshipState(r.get('id'), DELETED_STATE);
-						break;
-					case DELETED_STATE:
-						// NOP?
-						break;
+			// Check to see if the records are already connected
+			var currentValues = this.getHasManyRelationships(relationshipName, false);
+			for (i = 0; i < currentValues.length; ++i) {
+				if (currentValues[i].otherType(this) === polymorphicType && currentValues[i].otherId(this) === id) {
+					return;
 				}
 			}
-		}
-	},
 
-	/**
-	 * If this record is linked to the given record via the given ID, this returns
-	 * the relationship that links the two. If they aren't linked, it returns null.
-	 *
-	 * @param {String} relationship
-	 * @param {String} id
-	 * @returns {Relationship}
-	 * @private
-	 */
-	_findLinkTo: function(relationship, id) {
-		var relationships = this._getAllRelationships();
-		for (var i = 0; i < relationships.length; i = i + 1) {
-			if (relationships[i].relationshipName(this) === relationship && relationships[i].otherId(this) === id) {
-				return relationships[i];
+			// If there's a deleted relationship to connect these records, get it.
+			var serverValues = this.getHasManyRelationships(relationshipName, true);
+			var deletedValue = null;
+			for (i = 0; i < serverValues.length; ++i) {
+				if (serverValues[i].otherType(this) === polymorphicType && serverValues[i].otherId(this) === id) {
+					deletedValue = serverValues[i];
+					break;
+				}
 			}
-		}
 
-		return null;
-	},
+			// If the inverse is null, we can create the relationship without conflict
+			if (meta.inverse === null) {
+				if (deletedValue) {
+					store.changeRelationshipState(deletedValue, SERVER_STATE);
+				} else {
+					store.createRelationship(this.typeKey, this.get('id'), relationshipName,
+						polymorphicType, id, null, CLIENT_STATE);
+				}
 
-	/**
-	 * Determines if this record is linked to the given ID via the given relationship.
-	 * This will search all relationships: saved, deleted and new
-	 *
-	 * @param {String} relationship
-	 * @param {String} id
-	 * @returns {Boolean}
-	 */
-	_isLinkedTo: function(relationship, id) {
-		return this._findLinkTo(relationship, id) !== null;
-	},
+				return;
+			}
 
-	/**
-	 * Given a relationship name, returns all current relationships associated with that name.
-	 *
-	 * @param {String} relationship
-	 * @returns {Relationship[]}
-	 * @private
-	 */
-	_relationshipsForName: function(relationship) {
-		var current = this._getAllRelationships();
+			// If the inverse isn't null, we have to disconnect any hasOne conflicts
+			var otherMeta = store.modelForType(polymorphicType).metaForRelationship(meta.inverse).kind;
+			if (otherMeta.kind === HAS_ONE_KEY) {
+				var otherRecord = store.getRecord(polymorphicType, id);
+				if (otherRecord) {
+					var conflict = otherRecord.getHasOneRelationship(meta.inverse, false);
+					if (conflict) {
+						if (conflict.get('state') === CLIENT_STATE) {
+							store.deleteRelationship(conflict);
+						} else {
+							store.changeRelationshipState(conflict);
+						}
+					}
+				}
+			}
 
-		return current.filter(function(r) {
-			return (r.relationshipName(this) === relationship);
+			// Now that everything is free from conflicts, connect the deleted relationship if we found one
+			if (deletedValue) {
+				store.changeRelationshipState(deletedValue, SERVER_STATE);
+				return;
+			}
+
+			// If all of that fails, create a new relationship (possibly queued)
+			store.createRelationship(this.typeKey, this.get('id'), relationshipName,
+				polymorphicType, id, meta.inverse, CLIENT_STATE);
 		}, this);
 	},
 
-	/**
-	 * Connects the given relationship blindly. Will not check to see if the
-	 * relationship is already connected, that should have done beforehand.
-	 * Relies on the relationship state to find the relationship.
-	 *
-	 * @param {Relationship} relationship
-	 * @returns {Object} The objects to alert of changes, along with the corresponding property
-	 */
-	_connectRelationship: function(relationship) {
-		var hash = EG.Relationship.stateToHash(relationship.get('state'));
-		this.set(hash + '.' + relationship.get('id'), relationship);
-		this.notifyPropertyChange(hash);
+	removeFromRelationship: function(relationshipName, id, polymorphicType) {
+		Em.changeProperties(function() {
+			// Don't modify a read-only relationship
+			var meta = this.constructor.metaForRelationship(relationshipName);
+			if (meta.isReadOnly) {
+				Em.assert('Can\'t modify a read-only relationship.');
+				return;
+			}
+
+			// If the type wasn't provided, fill it in based on the inverse
+			if (Em.typeOf(id) !== 'string') {
+				polymorphicType = id.typeKey;
+				id = id.get('id');
+			} else if (Em.typeOf(polymorphicType) !== 'string') {
+				polymorphicType = meta.relatedType;
+			}
+
+			var relationships = this.getHasManyRelationships(relationshipName, false);
+			for (var i = 0; i < relationships.length; ++i) {
+				if (relationships[i].otherType(this) === polymorphicType && relationships[i].otherId(this) === id) {
+					if (relationships[i].get('state') === CLIENT_STATE) {
+						this.get('store').deleteRelationship(relationships[i]);
+					} else {
+						this.get('store').changeRelationshipState(relationships[i], DELETED_STATE);
+					}
+
+					break;
+				}
+			}
+		}, this);
 	},
 
+	setHasOneRelationship: function(relationshipName, id, polymorphicType) {
+		Em.changeProperties(function() {
+			var store = this.get('store');
+
+			// Don't modify a read-only relationship
+			var meta = this.constructor.metaForRelationship(relationshipName);
+			if (meta.isReadOnly) {
+				Em.assert('Can\'t modify a read-only relationship.');
+				return;
+			}
+
+			// If the type wasn't provided, fill it in based on the inverse
+			if (Em.typeOf(id) !== 'string') {
+				polymorphicType = id.typeKey;
+				id = id.get('id');
+			} else if (Em.typeOf(polymorphicType) !== 'string') {
+				polymorphicType = meta.relatedType;
+			}
+
+			// If there's a deleted relationship to connect these records, get it.
+			var deletedValue = filter.call(this.getRelationshipsByName(relationshipName), function(relationship) {
+				return (relationship.otherType(this) === polymorphicType && relationship.otherId(this) === id);
+			}, this)[0];
+
+			// If we're already connected to that record, return.
+			// If not, clear the current value for this record.
+			var currentValue = this.getHasOneRelationship(relationshipName, false);
+			if (currentValue) {
+				if (currentValue.otherType(this) === polymorphicType && currentValue.otherId(this) === id) {
+					return;
+				} else {
+					if (currentValue.get('state') === CLIENT_STATE) {
+						store.deleteRelationship(currentValue);
+					} else {
+						store.changeRelationshipState(currentValue, DELETED_STATE);
+					}
+				}
+			}
+
+			// If the inverse is null, we can create the relationship without conflict
+			if (meta.inverse === null) {
+				if (deletedValue) {
+					store.changeRelationshipState(deletedValue, SERVER_STATE);
+				} else {
+					store.createRelationship(this.typeKey, this.get('id'), relationshipName,
+						polymorphicType, id, null, CLIENT_STATE);
+				}
+
+				return;
+			}
+
+			// If the inverse isn't null, we have to disconnect any hasOne conflicts
+			var otherMeta = store.modelForType(polymorphicType).metaForRelationship(meta.inverse).kind;
+			if (otherMeta.kind === HAS_ONE_KEY) {
+				var otherRecord = store.getRecord(polymorphicType, id);
+				if (otherRecord) {
+					var conflict = otherRecord.getHasOneRelationship(meta.inverse, false);
+					if (conflict) {
+						if (conflict.get('state') === CLIENT_STATE) {
+							store.deleteRelationship(conflict);
+						} else {
+							store.changeRelationshipState(conflict);
+						}
+					}
+				}
+			}
+
+			// Now that everything is free from conflicts, connect the deleted relationship if we found one
+			if (deletedValue) {
+				store.changeRelationshipState(deletedValue, SERVER_STATE);
+				return;
+			}
+
+			// If all of that fails, create a new relationship (possibly queued)
+			store.createRelationship(this.typeKey, this.get('id'), relationshipName,
+				polymorphicType, id, meta.inverse, CLIENT_STATE);
+		}, this);
+	},
+
+	clearHasOneRelationship: function(relationshipName) {
+		Em.changeProperties(function() {
+			var meta = this.constructor.metaForRelationship(relationshipName);
+			if (meta.isReadOnly) {
+				Em.assert('Can\'t modify a read-only relationship.');
+				return;
+			}
+
+			var relationship = this.getHasOneRelationship(relationshipName, false);
+			if (relationship) {
+				if (relationship.get('state') === CLIENT_STATE) {
+					this.get('store').deleteRelationship(relationship);
+				} else {
+					this.get('store').changeRelationshipState(relationship, DELETED_STATE);
+				}
+			}
+		}, this);
+	}
+
+});
+
+EG.Model.reopen({
+
 	/**
-	 * Disconnects the relationship from this record.
-	 * Relies on the relationship state to find the relationship.
+	 * Stores all of the relationships currently connected to this record.
+	 * The model itself should only read from this object. All additions
+	 * and deletions are handled by the store (so they can be reciprocated).
 	 *
-	 * @param {Relationship} relationship
-	 * @returns {Object} The object to alert of changes, along with the corresponding property
+	 * @type RelationshipMap
 	 */
-	_disconnectRelationship: function(relationship) {
-		var hash = EG.Relationship.stateToHash(relationship.get('state'));
-		delete this.get(hash)[relationship.get('id')];
-		this.notifyPropertyChange(hash);
+	relationships: null,
+
+	initializeRelationships: Em.on('init', function() {
+		this.set('relationships', new EG.RelationshipStore());
+	}),
+
+	getHasOneRelationship: function(name, server) {
+		var relationships;
+
+		if (server) {
+			relationships = this.get('relationships').getServerRelationships(name);
+		} else {
+			relationships = this.get('relationships').getCurrentRelationships(name);
+		}
+
+		if (relationships.length <= 0) {
+			return null;
+		} else {
+			return relationships[0];
+		}
+	},
+
+	getHasOneValue: function(name, server) {
+		var relationship = this.getHasOneRelationship(name, server);
+
+		if (relationship === null) {
+			return null;
+		} else {
+			return {
+				type: relationship.otherType(this),
+				id: relationship.otherId(this)
+			};
+		}
+	},
+
+	getHasManyRelationships: function(name, server) {
+		if (server) {
+			return this.get('relationships').getServerRelationships(name);
+		} else {
+			return this.get('relationships').getCurrentRelationships(name);
+		}
+	},
+
+	getHasManyValue: function(name, server) {
+		return map.call(this.getHasManyRelationships(name, server), function(relationship) {
+			return {
+				type: relationship.otherType(this),
+				id: relationship.otherId(this)
+			};
+		}, this);
+	},
+
+	getRelationshipsByName: function(name) {
+		return this.get('relationships').getRelationshipsByName(name);
+	}
+
+});
+
+})();
+
+(function() {
+
+var map = Em.ArrayPolyfills.map;
+var filter = Em.ArrayPolyfills.filter;
+var reduce = EG.ArrayPolyfills.reduce;
+var forEach = Em.ArrayPolyfills.forEach;
+
+var HAS_ONE_KEY = EG.Model.HAS_ONE_KEY;
+var HAS_MANY_KEY = EG.Model.HAS_MANY_KEY;
+
+var CLIENT_STATE = EG.Relationship.CLIENT_STATE;
+var SERVER_STATE = EG.Relationship.SERVER_STATE;
+var DELETED_STATE = EG.Relationship.DELETED_STATE;
+
+// TODO: This can probably be moved into the store to be more model-agnostic
+// Idea: load attributes into records directly, but load relationships into store
+// Split the data apart in `extractPayload`
+EG.Model.reopen({
+
+	/**
+	 * Merges relationship data from the client into the relationships
+	 * already connected to this record. Any absolutely correct choices
+	 * are made automatically, while choices that come down to preference
+	 * are decided based on the configurable store properties.
+	 *
+	 * @param {Object} json
+	 * @private
+	 */
+	loadRelationships: function(json) {
+		this.constructor.eachRelationship(function(name, meta) {
+			var otherKind = null;
+
+			if (meta.inverse) {
+				otherKind = this.get('store').modelForType(meta.relatedType).metaForRelationship(meta.inverse).kind;
+			}
+
+			// TODO: I don't much like this here. Same for the attributes one.
+			Em.assert('Your JSON is missing a required relationship.', !meta.isRequired || json.hasOwnProperty(name));
+			if (!json.hasOwnProperty(name)) {
+				json[name] = meta.defaultValue;
+			}
+
+			if (meta.kind === HAS_MANY_KEY) {
+				switch (otherKind) {
+					case HAS_ONE_KEY:
+						this.connectHasManyToHasOne(name, meta, json[name]);
+						break;
+					case HAS_MANY_KEY:
+						this.connectHasManyToHasMany(name, meta, json[name]);
+						break;
+					default:
+						this.connectHasManyToNull(name, meta, json[name]);
+						break;
+				}
+			} else {
+				if (json[name]) {
+					switch (otherKind) {
+						case HAS_ONE_KEY:
+							this.connectHasOneToHasOne(name, meta, json[name]);
+							break;
+						case HAS_MANY_KEY:
+							this.connectHasOneToHasMany(name, meta, json[name]);
+							break;
+						default:
+							this.connectHasOneToNull(name, meta, json[name]);
+							break;
+					}
+				} else {
+					switch (otherKind) {
+						case HAS_ONE_KEY:
+							this.disconnectHasOneFromHasOne(name, meta);
+							break;
+						case HAS_MANY_KEY:
+							this.disconnectHasOneFromHasMany(name, meta);
+							break;
+						default:
+							this.disconnectHasOneFromNull(name, meta);
+							break;
+					}
+				}
+			}
+		}, this);
+	},
+
+	disconnectHasOneFromNull: Em.aliasMethod('disconnectHasOneFromHasMany'),
+
+	disconnectHasOneFromHasOne: Em.aliasMethod('disconnectHasOneFromHasMany'),
+
+	disconnectHasOneFromHasMany: function(name, meta) {
+		var store = this.get('store');
+		var relationships = this.sortHasOneRelationships(this.typeKey, this.get('id'), name);
+
+		if (relationships[DELETED_STATE].length > 0) {
+			forEach.call(relationships[DELETED_STATE], function (relationship) {
+				store.deleteRelationship(relationship);
+			}, this);
+		}
+
+		if (!relationships[SERVER_STATE] && !relationships[CLIENT_STATE]) {
+			return;
+		}
+
+		if (relationships[SERVER_STATE] && !relationships[CLIENT_STATE]) {
+			store.deleteRelationship(relationships[SERVER_STATE]);
+			return;
+		}
+
+		if (!relationships[SERVER_STATE] && relationships[CLIENT_STATE]) {
+			if (!store.get('sideWithClientOnConflict')) {
+				store.deleteRelationship(relationships[CLIENT_STATE]);
+			}
+		}
+	},
+
+	connectHasOneToNull: Em.aliasMethod('connectHasOneToHasMany'),
+
+	connectHasOneToHasOne: function(name, meta, value) {
+		// TODO: This is going to be LONG. But make it right, then make it good
+		var thisType = this.typeKey;
+		var thisId = this.get('id');
+		var store = this.get('store');
+		var sideWithClientOnConflict = store.get('sideWithClientOnConflict');
+
+		var theseValues = this.sortHasOneRelationships(thisType, thisId, name);
+		var otherValues = this.sortHasOneRelationships(value.type, value.id, meta.inverse);
+
+		var thisCurrent = theseValues[SERVER_STATE] || theseValues[CLIENT_STATE] || null;
+		var otherCurrent = otherValues[SERVER_STATE] || otherValues[CLIENT_STATE] || null;
+		if (thisCurrent === otherCurrent) {
+			store.changeRelationshipState(thisCurrent, SERVER_STATE);
+			return;
+		}
+
+		forEach.call(theseValues[DELETED_STATE], function(relationship) {
+			store.deleteRelationship(relationship);
+		}, this);
+
+		forEach.call(otherValues[DELETED_STATE], function(relationship) {
+			store.deleteRelationship(relationship);
+		}, this);
+
+		if (!theseValues[SERVER_STATE] && !theseValues[CLIENT_STATE]) {
+			if (!otherValues[SERVER_STATE] && !otherValues[CLIENT_STATE]) {
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				return;
+			}
+
+			if (otherValues[SERVER_STATE] && !otherValues[CLIENT_STATE]) {
+				store.deleteRelationship(otherValues[SERVER_STATE]);
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				return;
+			}
+
+			if (!otherValues[SERVER_STATE] && otherValues[CLIENT_STATE]) {
+				if (sideWithClientOnConflict) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				} else {
+					store.deleteRelationship(otherValues[CLIENT_STATE]);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
+
+				return;
+			}
+		}
+
+		if (theseValues[SERVER_STATE] && !theseValues[CLIENT_STATE]) {
+			if (!otherValues[SERVER_STATE] && !otherValues[CLIENT_STATE]) {
+				store.deleteRelationship(theseValues[SERVER_STATE]);
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				return;
+			}
+
+			if (otherValues[SERVER_STATE] && !otherValues[CLIENT_STATE]) {
+				store.deleteRelationship(theseValues[SERVER_STATE]);
+				store.deleteRelationship(otherValues[SERVER_STATE]);
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				return;
+			}
+
+			if (!otherValues[SERVER_STATE] && otherValues[CLIENT_STATE]) {
+				if (sideWithClientOnConflict) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				} else {
+					store.deleteRelationship(theseValues[SERVER_STATE]);
+					store.deleteRelationship(otherValues[CLIENT_STATE]);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
+
+				return;
+			}
+		}
+
+		if (!theseValues[SERVER_STATE] && theseValues[CLIENT_STATE]) {
+			if (!otherValues[SERVER_STATE] && !otherValues[CLIENT_STATE]) {
+				if (sideWithClientOnConflict) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				} else {
+					store.deleteRelationship(theseValues[CLIENT_STATE]);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
+
+				return;
+			}
+
+			if (otherValues[SERVER_STATE] && !otherValues[CLIENT_STATE]) {
+				if (sideWithClientOnConflict) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				} else {
+					store.deleteRelationship(theseValues[CLIENT_STATE]);
+					store.deleteRelationship(otherValues[SERVER_STATE]);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
+
+				return;
+			}
+
+			if (!otherValues[SERVER_STATE] && otherValues[CLIENT_STATE]) {
+				if (sideWithClientOnConflict) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				} else {
+					store.deleteRelationship(theseValues[CLIENT_STATE]);
+					store.deleteRelationship(otherValues[CLIENT_STATE]);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
+
+				return;
+			}
+		}
+	},
+
+	connectHasOneToHasMany: function(name, meta, value) {
+		var thisType = this.typeKey;
+		var thisId = this.get('id');
+		var store = this.get('store');
+		var relationships = this.sortHasOneRelationships(thisType, thisId, name);
+
+		// TODO: Make it right, then make it good
+		if (relationships[SERVER_STATE] && relationships[SERVER_STATE].otherType(this) === value.type &&
+			relationships[SERVER_STATE].otherId(this) === value.id) {
+			return;
+		}
+
+		if (relationships[CLIENT_STATE] && relationships[CLIENT_STATE].otherType(this) === value.type &&
+			relationships[CLIENT_STATE].otherId(this) === value.id) {
+			store.changeRelationshipState(relationships[CLIENT_STATE], SERVER_STATE);
+			return;
+		}
+
+		if (!relationships[SERVER_STATE] && !relationships[CLIENT_STATE] && relationships[DELETED_STATE].length <= 0) {
+			store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+			return;
+		}
+
+		if (relationships[SERVER_STATE] && !relationships[CLIENT_STATE] && relationships[DELETED_STATE].length <= 0) {
+			store.deleteRelationship(relationships[SERVER_STATE]);
+			store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+			return;
+		}
+
+		if (!relationships[SERVER_STATE] && relationships[CLIENT_STATE] && relationships[DELETED_STATE].length <= 0) {
+			if (store.get('sideWithClientOnConflict')) {
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+			} else {
+				store.deleteRelationship(relationships[CLIENT_STATE]);
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+			}
+
+			return;
+		}
+
+		if (!relationships[SERVER_STATE] && !relationships[CLIENT_STATE] && relationships[DELETED_STATE].length >= 0) {
+			forEach.call(relationships[DELETED_STATE], function(relationship) {
+				store.deleteRelationship(relationship);
+			});
+
+			store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+			return;
+		}
+
+		if (!relationships[SERVER_STATE] && relationships[CLIENT_STATE] && relationships[DELETED_STATE].length >= 0) {
+			forEach.call(relationships[DELETED_STATE], function(relationship) {
+				store.deleteRelationship(relationship);
+			});
+
+			if (store.get('sideWithClientOnConflict')) {
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+			} else {
+				store.deleteRelationship(relationships[CLIENT_STATE]);
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+			}
+
+			return;
+		}
+	},
+
+	connectHasManyToNull: Em.aliasMethod('connectHasManyToHasMany'),
+
+	connectHasManyToHasOne: function(name, meta, values) {
+		var thisType = this.typeKey;
+		var thisId = this.get('id');
+		var store = this.get('store');
+
+		var relationships = store.relationshipsForRecord(thisType, thisId, name);
+
+		forEach.call(relationships, function(relationship) {
+			store.deleteRelationship(relationship);
+		});
+
+		var clientRelationships = filter.call(relationships, function(relationship) {
+			return !!Em.get(relationship, 'state');
+		});
+
+		var clientMap = reduce.call(clientRelationships, function(map, relationship) {
+			map[relationship.otherType(this) + ':' + relationship.otherId(this)] = relationship;
+			return map;
+		}.bind(this), {});
+
+		forEach.call(values, function(value) {
+			if (clientMap[value.type + ':' + value.id]) {
+				store.changeRelationshipState(clientMap[value.type + ':' + value.id], SERVER_STATE);
+				return;
+			}
+
+			var conflicts = this.sortHasOneRelationships(value.type, value.id, meta.inverse);
+
+			if (!conflicts[SERVER_STATE] && !conflicts[CLIENT_STATE] && conflicts[DELETED_STATE].length <= 0) {
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				return;
+			}
+
+			if(conflicts[SERVER_STATE] && !conflicts[CLIENT_STATE] && conflicts[DELETED_STATE].length <= 0) {
+				store.deleteRelationship(conflicts[SERVER_STATE]);
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				return;
+			}
+
+			if(!conflicts[SERVER_STATE] && conflicts[CLIENT_STATE] && conflicts[DELETED_STATE].length <= 0) {
+				if (store.get('sideWithClientOnConflict')) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				} else {
+					store.deleteRelationship(conflicts[CLIENT_STATE]);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
+
+				return;
+			}
+
+			if(!conflicts[SERVER_STATE] && !conflicts[CLIENT_STATE] && conflicts[DELETED_STATE].length > 0) {
+				forEach.call(conflicts[DELETED_STATE], function(relationship) {
+					store.deleteRelationship(relationship);
+				});
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				return;
+			}
+
+			if(conflicts[SERVER_STATE] && conflicts[CLIENT_STATE] && conflicts[DELETED_STATE].length > 0) {
+				forEach.call(conflicts[DELETED_STATE], function(relationship) {
+					store.deleteRelationship(relationship);
+				});
+
+				if (store.get('sideWithClientOnConflict')) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				} else {
+					store.deleteRelationship(conflicts[CLIENT_STATE]);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
+
+				return;
+			}
+		}, this);
+	},
+
+	connectHasManyToHasMany: function(name, meta, values) {
+		var thisType = this.typeKey;
+		var thisId = this.get('id');
+		var store = this.get('store');
+
+		var relationships = store.relationshipsForRecord(thisType, thisId, name);
+
+		forEach.call(relationships, function(relationship) {
+			store.deleteRelationship(relationship);
+		});
+
+		var clientRelationships = filter.call(relationships, function(relationship) {
+			return !!Em.get(relationship, 'state');
+		});
+
+		var clientMap = reduce.call(clientRelationships, function(map, relationship) {
+			map[relationship.otherType(this) + ':' + relationship.otherId(this)] = relationship;
+			return map;
+		}.bind(this), {});
+
+		forEach.call(values, function(value) {
+			if (clientMap[value.type + ':' + value.id]) {
+				store.changeRelationshipState(clientMap[value.type + ':' + value.id], SERVER_STATE);
+			} else {
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+			}
+		}, this);
+	},
+
+	sortHasOneRelationships: function(type, id, name) {
+		var values = {};
+		var relationships = this.get('store').relationshipsForRecord(type, id, name);
+
+		values[SERVER_STATE] = filter.call(relationships, function(relationship) {
+			return relationship.get('state') === SERVER_STATE;
+		})[0] || null;
+
+		values[DELETED_STATE] = filter.call(relationships, function(relationship) {
+			return relationship.get('state') === DELETED_STATE;
+		});
+
+		values[CLIENT_STATE] = filter.call(relationships, function(relationship) {
+			return relationship.get('state') === CLIENT_STATE;
+		})[0] || null;
+
+		Em.runInDebug(function() {
+			/* jshint ignore:start */
+			// No relationships at all
+			if (!values[SERVER_STATE] && values[DELETED_STATE].length <= 0 && !values[CLIENT_STATE]) return;
+			// One server relationship, nothing else
+			if (values[SERVER_STATE] && values[DELETED_STATE].length <= 0 && !values[CLIENT_STATE]) return;
+			// One client relationship, nothing else
+			if (!values[SERVER_STATE] && values[DELETED_STATE].length <= 0 && values[CLIENT_STATE]) return;
+			// One client relationship and some deleted relationships
+			if (!values[SERVER_STATE] && values[DELETED_STATE].length > 0 && values[CLIENT_STATE]) return;
+			// Some deleted relationships, nothing else
+			if (!values[SERVER_STATE] && values[DELETED_STATE].length > 0 && !values[CLIENT_STATE]) return;
+			// Everything else is invalid
+			Em.assert('Invalid hasOne relationship values.');
+			/* jshint ignore:end */
+		});
+
+		return values;
 	}
 });
 

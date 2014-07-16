@@ -19,10 +19,14 @@ if (Ember.libraries) {
 
 require('initialization');
 
+require('util/array');
 require('util/util');
 require('util/set');
 require('util/string');
 require('util/inflector');
+
+require('relationship/relationship');
+require('relationship/relationship_store');
 
 require('serializer/serializer');
 require('serializer/**/*');
@@ -36,8 +40,6 @@ require('store/relationship');
 
 require('data/promise_object');
 
-require('relationship/relationship');
-
 require('attribute_type/type');
 require('attribute_type/**/*');
 
@@ -45,4 +47,5 @@ require('model/model');
 require('model/states');
 require('model/attribute');
 require('model/relationship');
+require('model/relationship_load');
 require('model/schema');

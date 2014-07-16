@@ -41,20 +41,26 @@
 				})
 			});
 
-			store._loadRecord('user', { id: '1', posts: ['1', '2', '3'] });
-
-			store._loadRecord('post', { id: '1', author: '1', tags: [] });
-			store._loadRecord('post', { id: '2', author: '1', tags: [] });
-			store._loadRecord('post', { id: '3', author: '1', tags: [] });
+			store.extractPayload({
+				user: [
+					{ id: '1', posts: [{ type: 'post', id: '1'}, { type: 'post', id: '2'}, { type: 'post', id: '3'}]}
+				],
+				post: [
+					{ id: '1', author: { type: 'use', id: '1' }, tags: [] },
+					{ id: '1', author: { type: 'use', id: '1' }, tags: [] },
+					{ id: '1', author: { type: 'use', id: '1' }, tags: [] }
+				]
+			});
 		}
 	});
 
 	test('The same model compares correctly', function() {
-		expect(2);
+		expect(3);
 
 		var user = store.getRecord('user', '1');
 
-		ok(user.isEqual(user, user));
+		ok(user.isEqual(user));
+		ok(EG.Model.isEqual(user, user));
 		ok(Em.isEqual(user, user));
 	});
 
@@ -66,15 +72,6 @@
 		ok(!user.isEqual());
 		ok(!user.isEqual(null));
 		ok(!user.isEqual(''));
-	});
-
-	test('The same record loaded twice compares equally', function() {
-		expect(1);
-
-		var user1 = store._loadRecord('user', { id: '555' });
-		var user2 = store._loadRecord('user', { id: '555' });
-
-		ok(user1.isEqual(user2));
 	});
 
 	asyncTest('A proxy is equal to the real record', function() {

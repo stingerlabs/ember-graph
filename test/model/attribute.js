@@ -138,47 +138,59 @@
 		expect(4);
 
 		var birthday = new Date();
-		var model = store.createRecord('test', {
-			name: 'Bob',
-			birthday: birthday
+		store.extractPayload({
+			test: [{
+				id: '500',
+				name: 'Bob',
+				birthday: birthday
+			}]
 		});
+		var model = store.getRecord('test', '500');
 
 		model.set('posts', 25);
 		model.set('birthday', null);
 
 		var changed = model.changedAttributes();
 
-		ok(changed.posts[0] === 0);
-		ok(changed.posts[1] === 25);
-		ok(changed.birthday[0].getTime() === birthday.getTime());
-		ok(changed.birthday[1] === null);
+		strictEqual(changed.posts[0], 0);
+		strictEqual(changed.posts[1], 25);
+		strictEqual(changed.birthday[0].getTime(), birthday.getTime());
+		strictEqual(changed.birthday[1], null);
 	});
 
 	test('Getting changed attributes doesn\'t include extra values', function() {
 		expect(3);
 
 		var birthday = new Date();
-		var model = store.createRecord('test', {
-			name: 'Bob',
-			birthday: birthday
+		store.extractPayload({
+			test: [{
+				id: '500',
+				name: 'Bob',
+				birthday: birthday
+			}]
 		});
+		var model = store.getRecord('test', '500');
 
 		model.set('posts', 25);
 
 		var changed = model.changedAttributes();
 
-		ok(Em.keys(changed).length === 1);
-		ok(changed.posts[0] === 0);
-		ok(changed.posts[1] === 25);
+		deepEqual(Em.keys(changed), ['posts']);
+		strictEqual(changed.posts[0], 0);
+		strictEqual(changed.posts[1], 25);
 	});
 
 	test('Rolling back attributes works correctly', function() {
 		expect(3);
 
-		var model = store.createRecord('test', {
-			name: 'Bob',
-			birthday: null
+		store.extractPayload({
+			test: [{
+				id: '500',
+				name: 'Bob',
+				birthday: null
+			}]
 		});
+		var model = store.getRecord('test', '500');
 
 		model.set('posts', 25);
 		model.set('birthday', new Date());
@@ -186,9 +198,9 @@
 
 		var changed = model.changedAttributes();
 
-		ok(Em.keys(changed).length === 0);
-		ok(model.get('posts') === 0);
-		ok(model.get('birthday') === null);
+		deepEqual(Em.keys(changed), []);
+		strictEqual(model.get('posts'), 0);
+		strictEqual(model.get('birthday'), null);
 	});
 
 	test('metaForAttribute returns the correct metadata', function() {
@@ -197,44 +209,52 @@
 		var TestModel = store.modelForType('test');
 		var meta = TestModel.metaForRelationship('name');
 
-		ok(meta.isAttribute === true);
-		ok(meta.isRequired === true);
+		strictEqual(meta.isAttribute, true);
+		strictEqual(meta.isRequired, true);
 	});
 
-	test('Setting attributes dirties the record', function() {
+	test('Setting attributes dirties the record (old record)', function() {
 		expect(2);
 
-		var model = store.createRecord('test', {
-			name: 'Bob',
-			birthday: new Date()
+		store.extractPayload({
+			test: [{
+				id: '500',
+				name: 'Bob',
+				birthday: null
+			}]
 		});
+		var model = store.getRecord('test', '500');
 
-		ok(model.get('isDirty') === false);
+		strictEqual(model.get('isDirty'), false);
 
 		model.set('posts', 42);
 		model.set('birthday', null);
 
-		ok(model.get('isDirty') === true);
+		strictEqual(model.get('isDirty'), true);
 	});
 
 	test('Rolling back attributes cleans the record', function() {
 		expect(3);
 
-		var model = store.createRecord('test', {
-			name: 'Bob',
-			birthday: new Date()
+		store.extractPayload({
+			test: [{
+				id: '500',
+				name: 'Bob',
+				birthday: new Date()
+			}]
 		});
+		var model = store.getRecord('test', '500');
 
-		ok(model.get('isDirty') === false);
+		strictEqual(model.get('isDirty'), false);
 
 		model.set('posts', 42);
 		model.set('birthday', null);
 
-		ok(model.get('isDirty') === true);
+		strictEqual(model.get('isDirty'), true);
 
 		model.rollbackAttributes();
 
-		ok(model.get('isDirty') === false);
+		strictEqual(model.get('isDirty'), false);
 	});
 })();
 

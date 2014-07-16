@@ -41,11 +41,21 @@
 				})
 			});
 
-			store._loadRecord('user', { id: '1', posts: ['1', '2', '3'] });
-
-			store._loadRecord('post', { id: '1', author: '1', tags: [] });
-			store._loadRecord('post', { id: '2', author: '1', tags: [] });
-			store._loadRecord('post', { id: '3', author: '1', tags: [] });
+			store.extractPayload({
+				user: [{
+					id: '1',
+					posts: [
+						{ type: 'post', id: '1' },
+						{ type: 'post', id: '2' },
+						{ type: 'post', id: '3' }
+					]
+				}],
+				post: [
+					{ id: '1', author: { type: 'user', id: '1' }, tags: [] },
+					{ id: '2', author: { type: 'user', id: '1' }, tags: [] },
+					{ id: '3', author: { type: 'user', id: '1' }, tags: [] }
+				]
+			});
 		}
 	});
 
@@ -57,9 +67,9 @@
 		var post3 = store.getRecord('post', '3');
 
 		start();
-		strictEqual(post1.get('_author'), '1');
-		strictEqual(post2.get('_author'), '1');
-		strictEqual(post3.get('_author'), '1');
+		deepEqual(post1.get('_author'), { type: 'user', id: '1' });
+		deepEqual(post2.get('_author'), { type: 'user', id: '1' });
+		deepEqual(post3.get('_author'), { type: 'user', id: '1' });
 		stop();
 
 		store.getRecord('user', '1').destroy().then(function() {

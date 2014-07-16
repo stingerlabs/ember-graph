@@ -19,10 +19,15 @@
 					},
 
 					createRecord: function(record) {
+						var id = EG.generateUUID();
+
 						return Em.RSVP.Promise.resolve({
 							meta: {
-								newId: EG.generateUUID()
-							}
+								newId: id
+							},
+							tag: [{
+								id: id, name: record.get('name')
+							}]
 						});
 					},
 
@@ -59,7 +64,7 @@
 		ok(!tag.get('isSaving'));
 		ok(!tag.get('isReloading'));
 		ok(tag.get('isLoaded'));
-		ok(!tag.get('isDirty'));
+		ok(tag.get('isDirty'));
 		ok(!tag.get('isCreating'));
 		ok(tag.get('isNew'));
 		ok(!tag.get('isInTransit'));
@@ -83,7 +88,7 @@
 		ok(!tag.get('isSaving'));
 		ok(!tag.get('isReloading'));
 		ok(tag.get('isLoaded'));
-		ok(!tag.get('isDirty'));
+		ok(tag.get('isDirty'));
 		ok(tag.get('isCreating'));
 		ok(tag.get('isNew'));
 		ok(tag.get('isInTransit'));

@@ -11,7 +11,7 @@
 						relatedType: 'vertex',
 						isRequired: false,
 						inverse: 'owner',
-						defaultValue: ['0']
+						defaultValue: [{ type: 'vertex', id: '0' }]
 					})
 				}),
 
@@ -33,54 +33,77 @@
 				tag: EG.Model.extend()
 			});
 
-			store._loadRecord('user', { id: '1', vertices: ['1', '2', '3'] });
-			store._loadRecord('user', { id: '2' });
-
-			store._loadRecord('vertex', { id: '1', owner: '1', tags: ['1', '3', '5']});
-			store._loadRecord('vertex', { id: '2', owner: '1', tags: ['2', '4', '6']});
-			store._loadRecord('vertex', { id: '4', owner: '3' });
+			store.extractPayload({
+				user: [
+					{
+						id: '1',
+						vertices: [
+							{ type: 'vertex', id: '1' },
+							{ type: 'vertex', id: '2' },
+							{ type: 'vertex', id: '3' },
+							{ type: 'vertex', id: '4' }
+						]
+					},
+					{
+						id: '2'
+					}
+				],
+				vertex: [
+					{
+						id: '1',
+						owner: { type: 'user', id: '1' },
+						tags: [
+							{ type: 'tag', id: '1' },
+							{ type: 'tag', id: '3' },
+							{ type: 'tag', id: '5' }
+						]
+					},
+					{
+						id: '2',
+						owner: { type: 'user', id: '1' },
+						tags: [
+							{ type: 'tag', id: '2' },
+							{ type: 'tag', id: '4' },
+							{ type: 'tag', id: '6' }
+						]
+					},
+					{
+						id: '4',
+						owner: { type: 'user', id: '3' }
+					}
+				]
+			});
 		}
-	});
-
-	test('Declared relationships are discovered properly', function() {
-		expect(3);
-
-		var user = store.modelForType('user');
-		ok(Em.get(user, 'relationships').isEqual(['vertices']));
-
-		var vertex = store.modelForType('vertex');
-		ok(Em.get(vertex, 'relationships').isEqual(['owner', 'tags']));
-
-		var tag = store.modelForType('tag');
-		ok(Em.get(tag, 'relationships').isEqual([]));
 	});
 
 	test('Loading a record with relationships works properly', function() {
 		expect(3);
 
 		var user = store.getRecord('user', '1');
-		ok(user.get('_vertices').isEqual(['1', '3', '2']));
+		deepEqual(user.get('_vertices').mapBy('id').sort(), ['1', '2', '3'].sort());
 
 		var vertex = store.getRecord('vertex', '2');
-		ok(vertex.get('_tags').isEqual(['6', '4' ,'2']));
-		strictEqual(vertex.get('_owner'), '1');
+		deepEqual(vertex.get('_tags').mapBy('id').sort(), ['2', '4', '6'].sort());
+		deepEqual(vertex.get('_owner'), { type: 'user', id: '1' });
 	});
 
 	test('Default relationship values are populated properly', function() {
 		expect(2);
 
 		var user = store.getRecord('user', '2');
-		ok(user.get('_vertices').isEqual(['0']));
+		deepEqual(user.get('_vertices'), [{ type: 'vertex', id: '0' }]);
 
 		var vertex = store.getRecord('vertex', '4');
-		ok(vertex.get('_tags').isEqual([]));
+		deepEqual(vertex.get('_tags'), []);
 	});
 
 	test('Leaving out a required relationship causes an exception', function() {
 		expect(1);
 
 		throws(function() {
-			store._loadRecord('vertex', { id: '-1' });
+			store.extractPayload({
+				vertex: [{ id: '-1' }]
+			});
 		});
 	});
 
