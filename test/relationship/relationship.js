@@ -3,177 +3,57 @@
 
 	var store;
 
+	var CLIENT_STATE = EG.Relationship.CLIENT_STATE;
+	var SERVER_STATE = EG.Relationship.SERVER_STATE;
+	var DELETED_STATE = EG.Relationship.DELETED_STATE;
+
 	module('Relationship Object Test', {
 		setup: function() {
 			store = setupStore({
-				test1: EG.Model.extend({
-					children: EG.hasMany({
-						relatedType: 'test2',
-						inverse: 'parent',
-						isRequired: false
-					}),
-
-					link: EG.hasOne({
-						relatedType: 'test2',
-						inverse: null,
-						isRequired: false
+				user: EG.Model.extend({
+					posts: EG.hasMany({
+						relatedType: 'post',
+						inverse: 'author'
 					})
 				}),
-
-				test2: EG.Model.extend({
-					parent: EG.hasOne({
-						relatedType: 'test1',
-						inverse: 'children',
-						isRequired: false
-					}),
-
-					links: EG.hasMany({
-						relatedType: 'test1',
-						inverse: null,
-						isRequired: false
+				post: EG.Model.extend({
+					author: EG.hasOne({
+						relatedType: 'user',
+						inverse: 'posts'
 					})
 				})
+			});
+
+			store.extractPayload({
+				user: [{ id: '1', posts: [] }],
+				post: [{ id: '1', author: null }, { id: '2', author: null }]
 			});
 		}
 	});
 
-	test('A relationship object is created properly', function() {
-		expect(6);
+	test('Relation testing', function() {
+		expect(15);
 
-		var temp1 = store.createRecord('test1');
-		var temp2 = store.createRecord('test2');
+		var user = store.getRecord('user', '1');
+		var post = store.getRecord('post', '2');
+		var other = store.getRecord('post', '1');
 
-		var relationship = EG.Relationship.create({
-			object1: temp1,
-			relationship1: 'children',
-			object2: temp2,
-			relationship2: 'parent',
-			state: 'new'
-		});
+		var relationship = new EG.Relationship('user', '1', 'posts', 'post', '2', 'author', CLIENT_STATE);
 
-		ok(relationship.otherId(temp1) === temp2.get('id'));
-		ok(relationship.otherId(temp2) === temp1.get('id'));
-
-		ok(relationship.get('oneWay') === false);
-
-		ok(relationship.isNew());
-		ok(!relationship.isSaved());
-		ok(!relationship.isDeleted());
-	});
-
-	test('An ID works for object 2', function() {
-		expect(1);
-
-		var temp = store.createRecord('test1');
-
-		var relationship = EG.Relationship.create({
-			object1: temp,
-			relationship1: 'children',
-			object2: 'permanent-id',
-			relationship2: 'parent',
-			state: 'new'
-		});
-
-		ok(relationship.otherId(temp) === 'permanent-id');
-	});
-
-	test('An ID for object 1 throws', function() {
-		expect(1);
-
-		throws(function() {
-			EG.Relationship.create({
-				object1: 'foo',
-				relationship1: 'children',
-				object2: 'bar',
-				relationship2: 'parent',
-				state: 'new'
-			});
-		});
-	});
-
-	if (window.DEBUG_MODE === true) {
-		test('A temporary ID for object 2 throws', function() {
-			expect(1);
-
-			var temp = store.createRecord('test1');
-
-			throws(function() {
-				EG.Relationship.create({
-					object1: temp,
-					relationship1: 'children',
-					object2: EG.Model.temporaryIdPrefix + 'foo',
-					relationship2: 'parent',
-					state: 'new'
-				});
-			});
-		});
-	}
-
-	test('relationship2 can be null', function() {
-		expect(1);
-
-		var temp = store.createRecord('test1');
-
-		var relationship = EG.Relationship.create({
-			object1: temp,
-			relationship1: 'children',
-			object2: 'permanent-id',
-			relationship2: null,
-			state: 'new'
-		});
-
-		ok(relationship.get('oneWay') === true);
-	});
-
-	test('The other record is found if it\'s an ID that has been loaded', function() {
-		expect(2);
-
-		var temp1 = store._loadRecord('test1', { id: 'temp1_id' });
-		var temp2 = store._loadRecord('test2', { id: 'temp2_id' });
-
-		var relationship = EG.Relationship.create({
-			object1: temp1,
-			relationship1: 'children',
-			object2: temp2.get('id'),
-			relationship2: 'parent',
-			state: 'new'
-		});
-
-		ok(relationship.otherId(temp1) === temp2.get('id'));
-		ok(relationship.otherRecord(temp1) === temp2);
-	});
-
-	test('The other record is null if it hasn\'t been loaded', function() {
-		expect(2);
-
-		var temp1 = store.createRecord('test1', { id: 'temp1_id' });
-
-		var relationship = EG.Relationship.create({
-			object1: temp1,
-			relationship1: 'children',
-			object2: 'foo_id',
-			relationship2: 'parent',
-			state: 'new'
-		});
-
-		ok(relationship.otherId(temp1) === 'foo_id');
-		ok(relationship.otherRecord(temp1) === null);
-	});
-
-	test('The other record is still found if the relationship is oneWay', function() {
-		expect(2);
-
-		var temp1 = store.createRecord('test1', { id: 'temp1_id' });
-
-		var relationship = EG.Relationship.create({
-			object1: temp1,
-			relationship1: 'link',
-			object2: 'foo_id',
-			relationship2: null,
-			state: 'new'
-		});
-
-		ok(relationship.otherId(temp1) === 'foo_id');
-		ok(relationship.otherRecord(temp1) === null);
+		strictEqual(relationship.otherType(user), 'post');
+		strictEqual(relationship.otherType(post), 'user');
+		strictEqual(relationship.otherId(user), '2');
+		strictEqual(relationship.otherId(post), '1');
+		strictEqual(relationship.otherName(user), 'author');
+		strictEqual(relationship.otherName(post), 'posts');
+		strictEqual(relationship.thisName(user), 'posts');
+		strictEqual(relationship.thisName(post), 'author');
+		strictEqual(relationship.isConnectedTo(user), true);
+		strictEqual(relationship.isConnectedTo(post), true);
+		strictEqual(relationship.isConnectedTo(other), false);
+		strictEqual(relationship.matchesOneSide('user', '1', 'posts'), true);
+		strictEqual(relationship.matchesOneSide('post', '2', 'author'), true);
+		strictEqual(relationship.matchesOneSide('user', '1', 'author'), false);
+		strictEqual(relationship.matchesOneSide('test', 'foo', 'bar'), false);
 	});
 })();
