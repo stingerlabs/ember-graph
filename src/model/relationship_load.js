@@ -21,7 +21,10 @@ EG.Model.reopen({
 	 */
 	loadRelationshipsFromClient: function(json) {
 		this.constructor.eachRelationship(function(name, meta) {
-			Em.assert('Your JSON is missing a required relationship.', !meta.isRequired || json.hasOwnProperty(name));
+			if (meta.isRequired && json[name] === undefined) {
+				throw new Em.Error('Your JSON is missing the required `' + name + '` relationship.');
+			}
+
 			var value = json[name] || meta.defaultValue;
 
 			if (meta.kind === HAS_MANY_KEY) {
@@ -75,7 +78,10 @@ EG.Model.reopen({
 			}
 
 			// TODO: I don't much like this here. Same for the attributes one.
-			Em.assert('Your JSON is missing a required relationship.', !meta.isRequired || json.hasOwnProperty(name));
+			if (meta.isRequired && json[name] === undefined) {
+				throw new Em.Error('Your JSON is missing the required `' + name + '` relationship.');
+			}
+
 			if (!json.hasOwnProperty(name)) {
 				json[name] = meta.defaultValue;
 			}

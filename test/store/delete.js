@@ -91,7 +91,7 @@
 		var id = post.get('id');
 
 		start();
-		ok(user.get('_posts').toArray().indexOf(id) >= 0);
+		ok(user.get('_posts').toArray().mapBy('id').indexOf(id) >= 0);
 		stop();
 
 		post.destroy().then(function() {

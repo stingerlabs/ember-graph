@@ -440,7 +440,7 @@ EG.Store = Em.Object.extend({
 		var id = record.get('id');
 
 		if (record.get('isNew')) {
-			this._deleteRelationshipsForRecord(type, id);
+			this.deleteRelationshipsForRecord(type, id);
 			this._deleteRecord(type, id);
 			record.set('store', null);
 			return Em.RSVP.resolve();

@@ -67,7 +67,71 @@ if (Em) {
 
 (function() {
 
-var reduce = Em.ArrayPolyfills.reduce;
+// This function taken from Ember
+var isNativeFunction = function(fn) {
+	return fn && Function.prototype.toString.call(fn).indexOf('[native code]') >= 0;
+};
+
+EG.ArrayPolyfills = {
+	some: isNativeFunction(Array.prototype.some) ? Array.prototype.some : function(predicate, thisArg) {
+		if (this === void 0 || this === null) {
+			throw new TypeError('Array.prototype.some called on null or undefined');
+		}
+
+		if (typeof predicate !== 'function') {
+			throw new TypeError('predicate must be a function');
+		}
+
+		var list = Object(this);
+		var length = list.length >>> 0;
+
+		for (var i = 0; i < length; ++i) {
+			if (i in list && predicate.call(thisArg, list[i], i, list)) {
+				return true;
+			}
+		}
+
+		return false;
+	},
+
+	reduce: isNativeFunction(Array.prototype.reduce) ? Array.prototype.reduce : function(predicate, initialValue) {
+		if (this === void 0 || this === null) {
+			throw new TypeError('Array.prototype.reduce called on null or undefined');
+		}
+
+		if (typeof predicate !== 'function') {
+			throw new TypeError('predicate must be a function');
+		}
+
+		var list = Object(this);
+		var length = list.length >>> 0;
+		var value = initialValue;
+
+		if (length <= 0 && arguments.length < 2) {
+			throw new TypeError('Reduce of empty array with no initial value');
+		}
+
+		for (var i = 0; i < length; ++i) {
+			if (i in list) {
+				value = callback(value, list[i], i, list);
+			}
+		}
+
+		return value;
+	}
+};
+
+if (Em.SHIM_ES5) {
+	Array.prototype.some = Array.prototype.some || EG.ArrayPolyfills.some;
+
+	Array.prototype.reduce = Array.prototype.reduce || EG.ArrayPolyfills.reduce;
+}
+
+})();
+
+(function() {
+
+var reduce = EG.ArrayPolyfills.reduce;
 
 /**
  * Denotes that method must be implemented in a subclass.
@@ -123,10 +187,8 @@ EG.abstractProperty = function(propertyName) {
  */
 EG.generateUUID = function() {
 	return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-		/* jshint ignore:start */
-		var r = Math.random()*16|0;
-		var v = (c == 'x' ? r : (r&0x3|0x8));
-		/* jshint ignore:end */
+		var r = Math.random()*16|0; // jshint ignore:line
+		var v = (c == 'x' ? r : (r&0x3|0x8)); // jshint ignore:line
 		return v.toString(16);
 	});
 };
@@ -177,6 +239,22 @@ EG.groupRecords = function(records) {
 	}, []);
 };
 
+/**
+ * Calls `callback` once for each value of the given object.
+ * The callback receives `key` and `value` parameters.
+ *
+ * @param {Object} obj
+ * @param {Function} callback
+ * @param {Any} [thisArg=undefined]
+ */
+EG.values = function(obj, callback, thisArg) {
+	for (var key in obj) {
+		if (obj.hasOwnProperty(key)) {
+			callback.call(thisArg, key, obj[key]);
+		}
+	}
+};
+
 })();
 
 (function() {
@@ -195,26 +273,6 @@ Em.Set.reopen({
 		return ret;
 	}
 });
-
-})();
-
-(function() {
-
-EG.ArrayPolyfills = {
-	some: function(array, callback, thisArg) {
-		for (var i = 0; i < array.length; ++i) {
-			if (callback.call(thisArg, array[i], i, array)) {
-				return true;
-			}
-		}
-	}
-};
-
-if (Em.SHIM_ES5) {
-	Array.prototype.some = Array.prototype.some || function(callback, thisArg) {
-		return EG.ArrayPolyfills.some(this, callback, thisArg);
-	};
-}
 
 })();
 
@@ -373,6 +431,292 @@ if (Em.EXTEND_PROTOTYPES === true || Em.EXTEND_PROTOTYPES.String) {
 		return EG.String.singularize(this);
 	};
 }
+
+})();
+
+(function() {
+
+var CLIENT_STATE = 'client';
+var SERVER_STATE = 'server';
+var DELETED_STATE = 'deleted';
+
+EG.Relationship = Em.Object.extend({
+
+	_state: CLIENT_STATE,
+	state: Em.computed(function(key, value) {
+		if (arguments.length > 1) {
+			switch (value) {
+				case CLIENT_STATE:
+				case SERVER_STATE:
+				case DELETED_STATE:
+					this.set('_state', value);
+					break;
+				default:
+					
+					break;
+			}
+		}
+
+		return this.get('_state');
+	}).property('_state'),
+
+	id: null,
+
+	type1: null,
+
+	id1: null,
+
+	relationship1: null,
+
+	type2: null,
+
+	id2: null,
+
+	relationship2: null,
+
+	init: function(type1, id1, name1, type2, id2, name2, state) { // jshint ignore:line
+		
+		
+		
+		
+
+		this.setProperties({
+			id: EG.generateUUID(),
+			type1: type1,
+			id1: id1,
+			relationship1: name1,
+			type2: type2,
+			id2: id2,
+			relationship2: name2,
+			state: state
+		});
+	},
+
+	isConnectedTo: function(record) {
+		if (this.get('type1') === record.typeKey && this.get('id1') === record.get('id')) {
+			return true;
+		}
+
+		if (this.get('type2') === record.typeKey && this.get('id2') === record.get('id')) {
+			return true;
+		}
+
+		return false;
+	},
+
+	matchesOneSide: function(type, id, name) {
+		if (this.get('type1') === type && this.get('id1') === id && this.get('relationship1') === name) {
+			return true;
+		}
+
+		if (this.get('type2') === type && this.get('id2') === id && this.get('relationship2') === name) {
+			return true;
+		}
+
+		return false;
+	},
+
+	otherType: function(record) {
+		// If they have the same type, it won't matter which branch is taken
+		if (this.get('type1') === record.typeKey) {
+			return this.get('type2');
+		} else {
+			return this.get('type1');
+		}
+	},
+
+	otherId: function(record) {
+		// If they have the same IDs, it won't matter which branch is taken
+		if (this.get('id1') === record.get('id')) {
+			return this.get('id2');
+		} else {
+			return this.get('id1');
+		}
+	},
+
+	otherName: function(record) {
+		if (this.get('id1') === record.get('id') && this.get('type1') === record.typeKey) {
+			return this.get('relationship2');
+		} else {
+			return this.get('relationship1');
+		}
+	},
+
+	thisName: function(record) {
+		if (this.get('id1') === record.get('id') && this.get('type1') === record.typeKey) {
+			return this.get('relationship1');
+		} else {
+			return this.get('relationship2');
+		}
+	},
+
+	erase: function() {
+		this.setProperties({
+			id: null,
+			type1: null,
+			id1: null,
+			relationship1: null,
+			type2: null,
+			id2: null,
+			relationship2: null,
+			_state: null
+		});
+	}
+});
+
+EG.Relationship.reopenClass({
+	// TODO: NEW_STATE, SAVED_STATE, DELETED_STATE
+	CLIENT_STATE: CLIENT_STATE,
+	SERVER_STATE: SERVER_STATE,
+	DELETED_STATE: DELETED_STATE
+});
+
+})();
+
+(function() {
+
+var map = Em.ArrayPolyfills.map;
+var forEach = Em.ArrayPolyfills.forEach;
+
+var CLIENT_STATE = EG.Relationship.CLIENT_STATE;
+var SERVER_STATE = EG.Relationship.SERVER_STATE;
+var DELETED_STATE = EG.Relationship.DELETED_STATE;
+
+var STATE_MAP = {};
+STATE_MAP[CLIENT_STATE] = 'client';
+STATE_MAP[SERVER_STATE] = 'server';
+STATE_MAP[DELETED_STATE] = 'deleted';
+
+var RelationshipMap = Em.Object.extend({
+
+	length: 0,
+
+	addRelationship: function(name, relationship) {
+		if (this.hasOwnProperty(name)) {
+			this.set(name + '.' + relationship.get('id'), relationship);
+			this.notifyPropertyChange(name);
+		} else {
+			var o = new Em.Object();
+			o.set(relationship.get('id'), relationship);
+			this.set(name, o);
+		}
+
+		this.incrementProperty('length');
+	},
+
+	removeRelationship: function(id) {
+		forEach.call(Em.keys(this), function(key) {
+			if (key === 'length') {
+				return;
+			}
+
+			var o = this.get(key);
+			if (typeof o === 'object' && o.hasOwnProperty(id)) {
+				delete o[id];
+				this.notifyPropertyChange(key);
+				this.decrementProperty('length');
+			}
+		}, this);
+	},
+
+	getRelationships: function(name) {
+		var relationships = this.get(name) || {};
+
+		return map.call(Em.keys(relationships), function(key) {
+			return relationships[key];
+		});
+	},
+
+	getAllRelationships: function() {
+		var relationships = [];
+		var keys = new Em.Set(Em.keys(this)).without('length');
+
+		forEach.call(keys, function(key) {
+			relationships = relationships.concat(this.getRelationships(key));
+		}, this);
+
+		return relationships;
+	},
+
+	clearRelationships: function(name) {
+		this.set(name, new Em.Object());
+		this.recalculateLength();
+	},
+
+	recalculateLength: function() {
+		var length = 0;
+
+		forEach.call(Em.keys(this), function(key) {
+			if (key !== 'length') {
+				length += Em.keys(this[key]).length;
+			}
+		}, this);
+
+		this.set('length', length);
+	}
+
+});
+
+EG.RelationshipStore = Em.Object.extend({
+
+	server: null,
+
+	client: null,
+
+	deleted: null,
+
+	initializeMaps: Em.on('init', function() {
+		this.setProperties({
+			server: new RelationshipMap(),
+			client: new RelationshipMap(),
+			deleted: new RelationshipMap()
+		});
+	}),
+
+	addRelationship: function(name, relationship) {
+		if (name === null) {
+			return;
+		}
+
+		return this.get(STATE_MAP[relationship.get('state')]).addRelationship(name, relationship);
+	},
+
+	removeRelationship: function(id) {
+		if (Em.typeOf(id) !== 'string') {
+			id = Em.get(id, 'id');
+		}
+
+		this.get('server').removeRelationship(id);
+		this.get('client').removeRelationship(id);
+		this.get('deleted').removeRelationship(id);
+	},
+
+	clearRelationships: function(name) {
+		this.get('server').clearRelationships(name);
+		this.get('client').clearRelationships(name);
+		this.get('deleted').clearRelationships(name);
+	},
+
+	getServerRelationships: function(name) {
+		return this.get('server').getRelationships(name).concat(this.get('deleted').getRelationships(name));
+	},
+
+	getCurrentRelationships: function(name) {
+		return this.get('server').getRelationships(name).concat(this.get('client').getRelationships(name));
+	},
+
+	getRelationshipsByState: function(state) {
+		return this.get(STATE_MAP[state]).getAllRelationships();
+	},
+
+	getRelationshipsByName: function(name) {
+		var server = this.get('server').getRelationships(name);
+		var client = this.get('client').getRelationships(name);
+		var deleted = this.get('deleted').getRelationships(name);
+
+		return server.concat(client).concat(deleted);
+	}
+});
 
 })();
 
@@ -580,6 +924,17 @@ var coerceId = function(id) {
  */
 EG.JSONSerializer = EG.Serializer.extend({
 
+	/**
+	 * This property can be overridden if you're using polymorphic relationships
+	 * in your models. Instead of strings for IDs, the serializer will use objects
+	 * for IDs. Each object will contain a `type` and `id` property.
+	 *
+	 * @property polymorphicRelationships
+	 * @type Boolean
+	 * @default false
+	 */
+	polymorphicRelationships: false,
+
 	serialize: function(record, options) {
 		switch (options.requestType) {
 			case 'updateRecord':
@@ -681,16 +1036,31 @@ EG.JSONSerializer = EG.Serializer.extend({
 		var value = record.get('_' + name);
 
 		if (meta.kind === EG.Model.HAS_ONE_KEY) {
-			if (value === null || EG.Model.isTemporaryId(value)) {
+			if (value === null || EG.Model.isTemporaryId(value.id)) {
 				value = null;
 			}
-		} else if (meta.kind === EG.Model.HAS_MANY_KEY) {
-			value = filter.call(value, function(id) {
-				return !EG.Model.isTemporaryId(id);
-			});
-		}
 
-		return { name: name, value: value };
+			if (this.get('polymorphicRelationships')) {
+				return { name: name, value: value };
+			} else {
+				return { name: name, value: value.id };
+			}
+		} else {
+			value = filter.call(value, function(v) {
+				return !EG.Model.isTemporaryId(v.id);
+			});
+
+			if (this.get('polymorphicRelationships')) {
+				return { name: name, value: value };
+			} else {
+				return {
+					name: name,
+					value: map.call(value, function(v) {
+						return v.id;
+					})
+				};
+			}
+		}
 	},
 
 	/**
@@ -766,25 +1136,53 @@ EG.JSONSerializer = EG.Serializer.extend({
 	serializeRelationshipDelta: function(record) {
 		var operations = [];
 		var changes = record.changedRelationships();
+		var polymorphicRelationships = this.get('polymorphicRelationships');
 
 		forEach.call(Em.keys(changes), function(relationshipName) {
 			var values = changes[relationshipName];
 			var meta = record.constructor.metaForRelationship(relationshipName);
 
 			if (meta.kind === EG.Model.HAS_ONE_KEY) {
-				operations.push({ op: 'replace', path: '/links/' + relationshipName, value: values[1] });
+				if (polymorphicRelationships) {
+					operations.push({ op: 'replace', path: '/links/' + relationshipName, value: values[1] });
+				} else {
+					operations.push({
+						op: 'replace',
+						path: '/links/' + relationshipName,
+						value: (values[1] === null ? null : values[1].id)
+					});
+				}
 			} else if (meta.kind === EG.Model.HAS_MANY_KEY) {
-				var added = new Em.Set(values[1]).withoutAll(values[0]);
-				var removed = new Em.Set(values[0]).withoutAll(values[1]);
+				var originalSet = new Em.Set(map.call(values[0], function(value) {
+					return value.type + ':' + value.id;
+				}));
 
-				forEach.call(added, function(id) {
-					if (!EG.Model.isTemporaryId(id)) {
-						operations.push({ op: 'add', path: '/links/' + relationshipName + '/-', value: id });
+				var currentSet = new Em.Set(map.call(values[1], function(value) {
+					return value.type + ':' + value.id;
+				}));
+
+				forEach.call(values[1], function(value) {
+					if (!originalSet.contains(value.type + ':' + value.id) && !EG.Model.isTemporaryId(value.id)) {
+						if (polymorphicRelationships) {
+							operations.push({ op: 'add', path: '/links/' + relationshipName, value: value });
+						} else {
+							operations.push({ op: 'add', path: '/links/' + relationshipName, value: value.id });
+						}
 					}
 				});
 
-				forEach.call(removed, function(id) {
-					operations.push({ op: 'remove', path: '/links/' + relationshipName + '/' + id });
+				forEach.call(values[0], function(value) {
+					if (!currentSet.contains(value.type + ':' + value.id)  && !EG.Model.isTemporaryId(value.id)) {
+						if (polymorphicRelationships) {
+							operations.push({
+								op: 'remove',
+								path: '/links/' + relationshipName + '/' + value.id,
+								value: value
+							});
+						} else {
+							operations.push({ op: 'remove', path: '/links/' + relationshipName + '/' + value.id });
+						}
+					}
 				});
 			} else {
 				
@@ -980,6 +1378,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * @return {Object}
 	 */
 	deserializeRelationship: function(model, json, name) {
+		var polymorphicRelationships = this.get('polymorphicRelationships');
 		var meta = model.metaForRelationship(name);
 		var value = json.links[name];
 		var error;
@@ -989,20 +1388,10 @@ EG.JSONSerializer = EG.Serializer.extend({
 				error = { id: json.id, typeKey: model.typeKey, name: name };
 				throw new Error('Relationship was missing: ' + JSON.stringify(error));
 			} else {
-				return { name: name, value: value };
+				return { name: name, value: meta.defautlValue };
 			}
 		} else {
-			if (meta.kind === EG.Model.HAS_ONE_KEY) {
-				switch (Em.typeOf(value)) {
-					case 'null':
-					case 'string':
-					case 'number':
-						return { name: name, value: coerceId(value) };
-					default:
-						error = { id: json.id, typeKey: model.typeKey, name: name, value: value };
-						throw new Error('Invalid hasOne relationship value: ' + JSON.stringify(error));
-				}
-			} else if (meta.kind === EG.Model.HAS_MANY_KEY) {
+			if (meta.kind === EG.Model.HAS_MANY_KEY) {
 				if (!isArray(value)) {
 					error = { id: json.id, typeKey: model.typeKey, name: name, value: value };
 					throw new Error('Invalid hasMany relationship value: ' + JSON.stringify(error));
@@ -1010,21 +1399,54 @@ EG.JSONSerializer = EG.Serializer.extend({
 
 				return {
 					name: name,
-					value: map.call(value, function(id) {
-						switch (Em.typeOf(id)) {
-							case 'string':
-							case 'number':
-								return coerceId(id);
-							default:
-							case 'null':
-								error = { id: json.id, typeKey: model.typeKey, name: name, value: value };
-								throw new Error('Invalid hasMany relationship value: ' + JSON.stringify(error));
+					value: map.call(value, function(v) {
+						if (polymorphicRelationships) {
+							switch (Em.typeOf(v.id)) {
+								case 'string':
+								case 'number':
+									v.id = coerceId(v.id);
+									return v;
+								default:
+									error = { id: json.id, typeKey: model.typeKey, name: name };
+									throw new Error('Invalid hasMany relationship value: ' + JSON.stringify(error));
+							}
+						} else {
+							switch (Em.typeOf(v)) {
+								case 'string':
+								case 'number':
+									return { type: meta.relatedType, id: coerceId(v) };
+								default:
+									error = { id: json.id, typeKey: model.typeKey, name: name };
+									throw new Error('Invalid hasMany relationship value: ' + JSON.stringify(error));
+							}
 						}
 					})
 				};
 			} else {
-				
-				return null;
+				if (value === null) {
+					return { name: name, value: null };
+				}
+
+				if (polymorphicRelationships) {
+					switch (Em.typeOf(value.id)) {
+						case 'number':
+						case 'string':
+							value.id = coerceId(value.id);
+							return { name: name, value: value };
+						default:
+							error = { id: json.id, typeKey: model.typeKey, name: name };
+							throw new Error('Invalid hasOne relationship value: ' + JSON.stringify(error));
+					}
+				} else {
+					switch (Em.typeOf(value)) {
+						case 'string':
+						case 'number':
+							return { name: name, value: { type: meta.relatedType, id: coerceId(value) } };
+						default:
+							error = { id: json.id, typeKey: model.typeKey, name: name };
+							throw new Error('Invalid hasOne relationship value: ' + JSON.stringify(error));
+					}
+				}
 			}
 		}
 	}
@@ -1778,31 +2200,21 @@ EG.Store = Em.Object.extend({
 
 		this._setRecord(typeKey, record);
 
-		record.loadData(json);
+		record.loadDataFromClient(json);
 
 		return record;
 	},
 
 	/**
-	 * Loads an already created record into the store. This method
-	 * should probably only be used by the store or adapter.
-	 *
-	 * @param typeKey
-	 * @param json
 	 * @deprecated Use `extractPayload` instead
 	 */
 	_loadRecord: function(typeKey, json) {
-		var record = this.modelForType(typeKey)._create();
-		record.set('store', this);
-		record.set('id', json.id);
+		var id = json.id;
+		var payload = {};
+		payload[typeKey] = [json];
+		this.extractPayload(payload);
 
-		this._setRecord(typeKey, record);
-
-		this.connectQueuedRelationships(record);
-
-		record.loadData(json);
-
-		return record;
+		return this.getRecord(typeKey, id);
 	},
 
 	/**
@@ -2042,7 +2454,7 @@ EG.Store = Em.Object.extend({
 		var id = record.get('id');
 
 		if (record.get('isNew')) {
-			this._deleteRelationshipsForRecord(type, id);
+			this.deleteRelationshipsForRecord(type, id);
 			this._deleteRecord(type, id);
 			record.set('store', null);
 			return Em.RSVP.resolve();
@@ -2142,10 +2554,16 @@ EG.Store = Em.Object.extend({
 
 					if (record) {
 						if (!record.get('isDirty') || reloadDirty) {
-							record.loadData(json);
+							record.loadDataFromServer(json);
 						}
 					} else {
-						this._loadRecord(typeKey, json);
+						record = this.modelForType(typeKey)._create();
+						record.set('store', this);
+						record.set('id', json.id);
+
+						this._setRecord(typeKey, record);
+						this.connectQueuedRelationships(record);
+						record.loadDataFromServer(json);
 					}
 				}, this);
 			}, this);
@@ -2201,6 +2619,10 @@ EG.Store = Em.Object.extend({
 var filter = Em.ArrayPolyfills.filter;
 var forEach = Em.ArrayPolyfills.forEach;
 
+var CLIENT_STATE = EG.Relationship.CLIENT_STATE;
+var SERVER_STATE = EG.Relationship.SERVER_STATE;
+var DELETED_STATE = EG.Relationship.DELETED_STATE;
+
 EG.Store.reopen({
 
 	allRelationships: new Em.Object(),
@@ -2255,6 +2677,10 @@ EG.Store.reopen({
 	},
 
 	changeRelationshipState: function(relationship, newState) {
+		if (relationship.get('state') === newState) {
+			return;
+		}
+
 		var record1 = this.getRecord(relationship.get('type1'), relationship.get('id1'));
 		var record2 = this.getRecord(relationship.get('type2'), relationship.get('id2'));
 
@@ -2302,20 +2728,20 @@ EG.Store.reopen({
 	},
 
 	deleteRelationshipsForRecord: function(type, id) {
-		var all = this.get('allRelationships');
+		Em.changeProperties(function() {
+			var all = this.get('allRelationships');
+			var keys = Em.keys(all);
 
-		for (var i in all) {
-			if (all.hasOwnProperty(i)) {
-				if (all[i].get('type1') === type && all[i].get('id1') === id) {
-					delete all[i];
-					continue;
-				}
+			forEach.call(keys, function(key) {
+				var relationship = all[key];
 
-				if (all[i].get('type2') === type && all[i].get('id2') === id) {
-					delete all[i];
+				if (relationship.get('type1') === type && relationship.get('id1') === id) {
+					this.deleteRelationship(relationship);
+				} else if (relationship.get('type2') === type && relationship.get('id2') === id) {
+					this.deleteRelationship(relationship);
 				}
-			}
-		}
+			}, this);
+		}, this);
 	},
 
 	/**
@@ -2342,6 +2768,53 @@ EG.Store.reopen({
 		}
 
 		record.get('relationships').removeRelationship(relationship);
+	},
+
+	/**
+	 * Takes the relationships for a hasOne relationship, and sorts them in
+	 * an object that is easy to manipulate. The object returned contains
+	 * the following properties:
+	 *
+	 * - `[SERVER_STATE]` - A single relationship or `null`
+	 * - `[CLIENT_STATE]` - A single relationship or `null`
+	 * - `[DELETED_STATE]` - An array of relationships
+	 *
+	 * There are 5 valid configurations for a hasOne relationship at any
+	 * given time:
+	 *
+	 * 1. No relationships connected
+	 * 2. A single server relationship is connected
+	 * 3. A single client relationship is connected
+	 * 4. One or more delete relationships is connected
+	 * 5. A single client relationship, along with one or more deleted relationships
+	 *
+	 * This function will make assertions to ensure that the relationship
+	 * exists in one of these 5 states.
+	 *
+	 * @param {String} type
+	 * @param {String} id
+	 * @param {String} name
+	 * @returns {Object}
+	 */
+	sortHasOneRelationships: function(type, id, name) {
+		var values = {};
+		var relationships = this.relationshipsForRecord(type, id, name);
+
+		values[SERVER_STATE] = filter.call(relationships, function(relationship) {
+			return relationship.get('state') === SERVER_STATE;
+		})[0] || null;
+
+		values[DELETED_STATE] = filter.call(relationships, function(relationship) {
+			return relationship.get('state') === DELETED_STATE;
+		});
+
+		values[CLIENT_STATE] = filter.call(relationships, function(relationship) {
+			return relationship.get('state') === CLIENT_STATE;
+		})[0] || null;
+
+		
+
+		return values;
 	}
 
 });
@@ -2434,291 +2907,6 @@ EG.ModelPromiseObject = EG.PromiseObject.extend({
 			return this.get('__modelTypeKey');
 		}
 	}.property('__modelTypeKey', 'content.typeKey')
-});
-
-})();
-
-(function() {
-
-var CLIENT_STATE = 'client';
-var SERVER_STATE = 'server';
-var DELETED_STATE = 'deleted';
-
-EG.Relationship = Em.Object.extend({
-
-	_state: CLIENT_STATE,
-	state: Em.computed(function(key, value) {
-		if (arguments.length > 1) {
-			switch (value) {
-				case CLIENT_STATE:
-				case SERVER_STATE:
-				case DELETED_STATE:
-					this.set('_state', value);
-					break;
-				default:
-					
-					break;
-			}
-		}
-
-		return this.get('_state');
-	}).property('_state'),
-
-	id: null,
-
-	typeKey1: null,
-
-	id1: null,
-
-	relationship1: null,
-
-	typeKey2: null,
-
-	id2: null,
-
-	relationship2: null,
-
-	init: function(type1, id1, name1, type2, id2, name2, state) { // jshint ignore:line
-		
-		
-		
-		
-
-		this.setProperties({
-			id: EG.generateUUID(),
-			type1: type1,
-			id1: id1,
-			relationship1: name1,
-			type2: type2,
-			id2: id2,
-			relationship2: name2,
-			state: state
-		});
-	},
-
-	isConnectedTo: function(record) {
-		if (this.get('type1') === record.typeKey && this.get('id1') === record.get('id')) {
-			return true;
-		}
-
-		if (this.get('type2') === record.typeKey && this.get('id2') === record.get('id')) {
-			return true;
-		}
-
-		return false;
-	},
-
-	matchesOneSide: function(type, id, name) {
-		if (this.get('type1') === type && this.get('id1') === id && this.get('relationship1') === name) {
-			return true;
-		}
-
-		if (this.get('type2') === type && this.get('id2') === id && this.get('relationship2') === name) {
-			return true;
-		}
-
-		return false;
-	},
-
-	otherType: function(record) {
-		// If they have the same type, it won't matter which branch is taken
-		if (this.get('type1') === record.typeKey) {
-			return this.get('type2');
-		} else {
-			return this.get('type1');
-		}
-	},
-
-	otherId: function(record) {
-		// If they have the same IDs, it won't matter which branch is taken
-		if (this.get('id1') === record.get('id')) {
-			return this.get('id2');
-		} else {
-			return this.get('id1');
-		}
-	},
-
-	otherName: function(record) {
-		if (this.get('id1') === record.get('id') && this.get('type1') === record.typeKey) {
-			return this.get('relationship2');
-		} else {
-			return this.get('relationship1');
-		}
-	},
-
-	thisName: function(record) {
-		if (this.get('id1') === record.get('id') && this.get('type1') === record.typeKey) {
-			return this.get('relationship1');
-		} else {
-			return this.get('relationship2');
-		}
-	},
-
-	erase: function() {
-		this.setProperties({
-			id: null,
-			type1: null,
-			id1: null,
-			relationship1: null,
-			type2: null,
-			id2: null,
-			relationship2: null,
-			_state: null
-		});
-	}
-});
-
-EG.Relationship.reopenClass({
-	CLIENT_STATE: CLIENT_STATE,
-	SERVER_STATE: SERVER_STATE,
-	DELETED_STATE: DELETED_STATE
-});
-
-})();
-
-(function() {
-
-var map = Em.ArrayPolyfills.map;
-var forEach = Em.ArrayPolyfills.forEach;
-
-var CLIENT_STATE = EG.Relationship.CLIENT_STATE;
-var SERVER_STATE = EG.Relationship.SERVER_STATE;
-var DELETED_STATE = EG.Relationship.DELETED_STATE;
-
-var STATE_MAP = {};
-STATE_MAP[CLIENT_STATE] = 'client';
-STATE_MAP[SERVER_STATE] = 'server';
-STATE_MAP[DELETED_STATE] = 'deleted';
-
-var RelationshipMap = Em.Object.extend({
-
-	length: 0,
-
-	addRelationship: function(name, relationship) {
-		if (this.hasOwnProperty(name)) {
-			this.set(name + '.' + relationship.get('id'), relationship);
-			this.notifyPropertyChange(name);
-		} else {
-			var o = new Em.Object();
-			o.set(relationship.get('id'), relationship);
-			this.set(name, o);
-		}
-
-		this.incrementProperty('length');
-	},
-
-	removeRelationship: function(id) {
-		forEach.call(Em.keys(this), function(key) {
-			if (key === 'length') {
-				return;
-			}
-
-			var o = this.get(key);
-			if (typeof o === 'object' && o.hasOwnProperty(id)) {
-				delete o[id];
-				this.notifyPropertyChange(key);
-				this.decrementProperty('length');
-			}
-		}, this);
-	},
-
-	getRelationships: function(name) {
-		var relationships = this.get(name) || {};
-
-		return map.call(Em.keys(relationships), function(key) {
-			return relationships[key];
-		});
-	},
-
-	getAllRelationships: function() {
-		var relationships = [];
-		var keys = new Em.Set(Em.keys(this)).without('length');
-
-		forEach.call(keys, function(key) {
-			relationships = relationships.concat(this.getRelationships(key));
-		}, this);
-
-		return relationships;
-	},
-
-	clearRelationships: function(name) {
-		this.set(name, new Em.Object());
-		this.recalculateLength();
-	},
-
-	recalculateLength: function() {
-		var length = 0;
-
-		forEach.call(Em.keys(this), function(key) {
-			if (key !== 'length') {
-				length += Em.keys(this[key]).length;
-			}
-		}, this);
-
-		this.set('length', length);
-	}
-
-});
-
-EG.RelationshipStore = Em.Object.extend({
-
-	server: null,
-
-	client: null,
-
-	deleted: null,
-
-	initializeMaps: Em.on('init', function() {
-		this.setProperties({
-			server: new RelationshipMap(),
-			client: new RelationshipMap(),
-			deleted: new RelationshipMap()
-		});
-	}),
-
-	addRelationship: function(name, relationship) {
-		if (name === null) {
-			return;
-		}
-
-		return this.get(STATE_MAP[relationship.get('state')]).addRelationship(name, relationship);
-	},
-
-	removeRelationship: function(id) {
-		if (Em.typeOf(id) !== 'string') {
-			id = Em.get(id, 'id');
-		}
-
-		this.get('server').removeRelationship(id);
-		this.get('client').removeRelationship(id);
-		this.get('deleted').removeRelationship(id);
-	},
-
-	clearRelationships: function(name) {
-		this.get('server').clearRelationships(name);
-		this.get('client').clearRelationships(name);
-		this.get('deleted').clearRelationships(name);
-	},
-
-	getServerRelationships: function(name) {
-		return this.get('server').getRelationships(name).concat(this.get('deleted').getRelationships(name));
-	},
-
-	getCurrentRelationships: function(name) {
-		return this.get('server').getRelationships(name).concat(this.get('client').getRelationships(name));
-	},
-
-	getRelationshipsByState: function(state) {
-		return this.get(STATE_MAP[state]).getAllRelationships();
-	},
-
-	getRelationshipsByName: function(name) {
-		var server = this.get('server').getRelationships(name);
-		var client = this.get('client').getRelationships(name);
-		var deleted = this.get('deleted').getRelationships(name);
-
-		return server.concat(client).concat(deleted);
-	}
 });
 
 })();
@@ -3395,13 +3583,41 @@ EG.Model = Em.Object.extend(Em.Evented, {
 	 *
 	 * @method loadData
 	 * @param {Object} json
+	 * @deprecated Use `loadDataFromServer` instead
 	 */
-	loadData: function(json) {
+	loadData: Em.aliasMethod('loadDataFromServer'),
+
+	/**
+	 * Takes a payload from the server and merges the data into the current data.
+	 * This is generally only called by the store, but it may be useful to
+	 * override it if you're looking to intercept and modify server data before
+	 * it's loaded into the record.
+	 *
+	 * @method loadDataFromServer
+	 * @param {Object} json
+	 */
+	loadDataFromServer: function(json) {
 		json = json || {};
 		
 
 		this._loadAttributes(json);
-		this.loadRelationships(json);
+		this.loadRelationshipsFromServer(json);
+	},
+
+	/**
+	 * Takes the data passed to the store's {{link-to-method 'Store' 'createRecord'}}
+	 * method and loads it into the newly created record by calling the model's
+	 * public API methods for manipulating records. This should really only be
+	 * called by the store and when a record is brand new.
+	 *
+	 * @method loadDataFromClient
+	 * @param {Object} json
+	 */
+	loadDataFromClient: function(json) {
+		json = json || {};
+
+		this.loadAttributesFromClient(json);
+		this.loadRelationshipsFromClient(json);
 	},
 
 	/**
@@ -3638,12 +3854,13 @@ EG.Model.reopen({
 
 	/**
 	 * Denotes that the record has attribute or relationship changes that have not been saved to the server yet.
+	 * Note: A new record is always dirty.
 	 *
 	 * @property isDirty
 	 * @type Boolean
 	 * @final
 	 */
-	isDirty: Em.computed.or('_areAttributesDirty', 'areRelationshipsDirty'),
+	isDirty: Em.computed.or('_areAttributesDirty', 'areRelationshipsDirty', 'isNew'),
 
 	/**
 	 * Denotes that the record is currently being saved to the server for the first time,
@@ -3695,11 +3912,16 @@ var createAttribute = function(attributeName, options) {
 		isEqual: options.isEqual
 	};
 
-	var attribute = Em.computed(function(key, value) {
+	return Em.computed(function(key, value) {
 		var meta = this.constructor.metaForAttribute(key);
 		var server = this.get('_serverAttributes.' + key);
 		var client = this.get('_clientAttributes.' + key);
 		var current = (client === undefined ? server : client);
+
+		// If it's currently undefined, we're setting it for the first time, so that's OK.
+		if (arguments.length > 1 && meta.readOnly && current !== undefined) {
+			throw new Em.Error('Cannot set read-only property "' + key + '" on object: ' + this);
+		}
 
 		
 
@@ -3719,8 +3941,6 @@ var createAttribute = function(attributeName, options) {
 
 		return current;
 	}).property('_clientAttributes.' + attributeName, '_serverAttributes.' + attributeName).meta(meta);
-
-	return (options.readOnly ? attribute.readOnly() : attribute);
 };
 
 EG.Model.reopenClass({
@@ -3898,6 +4118,19 @@ EG.Model.reopen({
 			delete this.get('_clientAttributes')[name];
 			this.notifyPropertyChange('_clientAttributes');
 		}
+	},
+
+	/**
+	 * Sets up attributes given to the constructor for this record.
+	 * Equivalent to setting the attribute values individually.
+	 */
+	loadAttributesFromClient: function(json) {
+		this.constructor.eachAttribute(function(name, meta) {
+			
+
+			var value = (json[name] !== undefined ? json[name] : meta.defaultValue);
+			this.set(name, value);
+		}, this);
 	}
 });
 
@@ -3906,7 +4139,6 @@ EG.Model.reopen({
 (function() {
 
 var map = Em.ArrayPolyfills.map;
-var some = EG.ArrayPolyfills.some;
 var reduce = Em.ArrayPolyfills.reduce;
 var filter = Em.ArrayPolyfills.filter;
 var forEach = Em.ArrayPolyfills.forEach;
@@ -3914,7 +4146,6 @@ var forEach = Em.ArrayPolyfills.forEach;
 var HAS_ONE_KEY = EG.Model.HAS_ONE_KEY = 'hasOne';
 var HAS_MANY_KEY = EG.Model.HAS_MANY_KEY = 'hasMany';
 
-// TODO: NEW_STATE, SAVED_STATE, DELETED_STATE
 var CLIENT_STATE = EG.Relationship.CLIENT_STATE;
 var SERVER_STATE = EG.Relationship.SERVER_STATE;
 var DELETED_STATE = EG.Relationship.DELETED_STATE;
@@ -3940,11 +4171,15 @@ var createRelationship = function(name, kind, options) {
 	if (meta.kind === HAS_MANY_KEY) {
 		return Em.computed(function(key) {
 			return this.getHasManyValue(key.substring(1), false);
-		}).property('relationships.client.' + name, 'relationships.deleted.' + name).meta(meta).readOnly();
+		}).property('relationships.client.' + name,
+				'relationships.deleted.' + name,
+				'relationships.server.' + name).meta(meta).readOnly();
 	} else {
 		return Em.computed(function(key) {
 			return this.getHasOneValue(key.substring(1), false);
-		}).property('relationships.client.' + name, 'relationships.deleted.' + name).meta(meta).readOnly();
+		}).property('relationships.client.' + name,
+				'relationships.deleted.' + name,
+				'relationships.server.' + name).meta(meta).readOnly();
 	}
 };
 
@@ -4113,65 +4348,57 @@ EG.Model.reopen({
 
 			// If the type wasn't provided, fill it in based on the inverse
 			if (Em.typeOf(id) !== 'string') {
-				polymorphicType = id.typeKey;
-				id = id.get('id');
+				polymorphicType = Em.get(id, 'typeKey');
+				id = Em.get(id, 'id');
 			} else if (Em.typeOf(polymorphicType) !== 'string') {
 				polymorphicType = meta.relatedType;
 			}
 
-			// Check to see if the records are already connected
+			var otherModel = store.modelForType(polymorphicType);
+			var otherMeta = (meta.inverse === null ? null : otherModel.metaForRelationship(meta.inverse));
 			var currentValues = this.getHasManyRelationships(relationshipName, false);
+			var serverValues = this.getHasManyRelationships(relationshipName, true);
+
+			// Check to see if the records are already connected
 			for (i = 0; i < currentValues.length; ++i) {
 				if (currentValues[i].otherType(this) === polymorphicType && currentValues[i].otherId(this) === id) {
 					return;
 				}
 			}
 
-			// If there's a deleted relationship to connect these records, get it.
-			var serverValues = this.getHasManyRelationships(relationshipName, true);
-			var deletedValue = null;
-			for (i = 0; i < serverValues.length; ++i) {
-				if (serverValues[i].otherType(this) === polymorphicType && serverValues[i].otherId(this) === id) {
-					deletedValue = serverValues[i];
-					break;
-				}
-			}
-
-			// If the inverse is null, we can create the relationship without conflict
-			if (meta.inverse === null) {
-				if (deletedValue) {
-					store.changeRelationshipState(deletedValue, SERVER_STATE);
-				} else {
-					store.createRelationship(this.typeKey, this.get('id'), relationshipName,
-						polymorphicType, id, null, CLIENT_STATE);
-				}
-
-				return;
-			}
-
-			// If the inverse isn't null, we have to disconnect any hasOne conflicts
-			var otherMeta = store.modelForType(polymorphicType).metaForRelationship(meta.inverse).kind;
-			if (otherMeta.kind === HAS_ONE_KEY) {
-				var otherRecord = store.getRecord(polymorphicType, id);
-				if (otherRecord) {
-					var conflict = otherRecord.getHasOneRelationship(meta.inverse, false);
-					if (conflict) {
-						if (conflict.get('state') === CLIENT_STATE) {
-							store.deleteRelationship(conflict);
-						} else {
-							store.changeRelationshipState(conflict);
-						}
+			// If the inverse is null or a hasMany, we can create the relationship without conflict
+			if (meta.inverse === null || otherMeta.kind === HAS_MANY_KEY) {
+				// Check for delete relationships first
+				for (i = 0; i < serverValues.length; ++i) {
+					if (serverValues[i].otherType(this) === polymorphicType && serverValues[i].otherId(this) === id) {
+						store.changeRelationshipState(serverValues[i], SERVER_STATE);
+						return;
 					}
 				}
-			}
 
-			// Now that everything is free from conflicts, connect the deleted relationship if we found one
-			if (deletedValue) {
-				store.changeRelationshipState(deletedValue, SERVER_STATE);
+				store.createRelationship(this.typeKey, this.get('id'), relationshipName,
+					polymorphicType, id, null, CLIENT_STATE);
+
 				return;
 			}
 
-			// If all of that fails, create a new relationship (possibly queued)
+			// Make sure there are no conflicts on the other side since it's a hasOne
+			var otherValues = store.sortHasOneRelationships(polymorphicType, id, meta.inverse);
+			if (otherValues[SERVER_STATE]) {
+				store.changeRelationshipState(otherValues[SERVER_STATE], DELETED_STATE);
+			} else if (otherValues[CLIENT_STATE]) {
+				store.deleteRelationship(otherValues[CLIENT_STATE]);
+			}
+
+			// Check for any deleted relationships that match the one we need
+			for (i = 0; i < serverValues.length; ++i) {
+				if (serverValues[i].otherType(this) === polymorphicType && serverValues[i].otherId(this) === id) {
+					store.changeRelationshipState(serverValues[i], SERVER_STATE);
+					return;
+				}
+			}
+
+			// If all else fails, create a relationship
 			store.createRelationship(this.typeKey, this.get('id'), relationshipName,
 				polymorphicType, id, meta.inverse, CLIENT_STATE);
 		}, this);
@@ -4188,8 +4415,8 @@ EG.Model.reopen({
 
 			// If the type wasn't provided, fill it in based on the inverse
 			if (Em.typeOf(id) !== 'string') {
-				polymorphicType = id.typeKey;
-				id = id.get('id');
+				polymorphicType = Em.get(id, 'typeKey');
+				id = Em.get(id, 'id');
 			} else if (Em.typeOf(polymorphicType) !== 'string') {
 				polymorphicType = meta.relatedType;
 			}
@@ -4228,61 +4455,68 @@ EG.Model.reopen({
 				polymorphicType = meta.relatedType;
 			}
 
-			// If there's a deleted relationship to connect these records, get it.
-			var deletedValue = filter.call(this.getRelationshipsByName(relationshipName), function(relationship) {
-				return (relationship.otherType(this) === polymorphicType && relationship.otherId(this) === id);
-			}, this)[0];
+			var otherModel = store.modelForType(polymorphicType);
+			var otherMeta = (meta.inverse === null ? null : otherModel.metaForRelationship(meta.inverse));
+			var currentRelationships = store.sortHasOneRelationships(this.typeKey, this.get('id'), relationshipName);
 
-			// If we're already connected to that record, return.
-			// If not, clear the current value for this record.
-			var currentValue = this.getHasOneRelationship(relationshipName, false);
-			if (currentValue) {
-				if (currentValue.otherType(this) === polymorphicType && currentValue.otherId(this) === id) {
+			// First make sure they're not already connected
+			if (currentRelationships[SERVER_STATE] &&
+				currentRelationships[SERVER_STATE].otherType(this) === polymorphicType &&
+				currentRelationships[SERVER_STATE].otherId(this) === id) {
+				return;
+			}
+
+			if (currentRelationships[CLIENT_STATE] &&
+				currentRelationships[CLIENT_STATE].otherType(this) === polymorphicType &&
+				currentRelationships[CLIENT_STATE].otherId(this) === id) {
+				return;
+			}
+
+			// They're not connected, so we definitely have to get rid of the current value
+			if (currentRelationships[SERVER_STATE]) {
+				store.changeRelationshipState(currentRelationships[SERVER_STATE], DELETED_STATE);
+			} else if (currentRelationships[CLIENT_STATE]) {
+				store.deleteRelationship(currentRelationships[CLIENT_STATE]);
+			}
+
+			// If the inverse is null or a hasMany, we can just create the relationship
+			if (meta.inverse === null || otherMeta.kind === HAS_MANY_KEY) {
+				var temp1;
+				// Check for a deleted relationship first
+				for (var i = 0; i < currentRelationships[DELETED_STATE].length; ++i) {
+					temp1 = currentRelationships[DELETED_STATE][i];
+					if (temp1.otherType(this) === polymorphicType && temp1.otherId(this) === id) {
+						store.changeRelationshipState(temp1, SERVER_STATE);
+						return;
+					}
+				}
+
+				// If we can't find one, just create a new relationship
+				store.createRelationship(this.typeKey, this.get('id'), relationshipName,
+					polymorphicType, id, meta.inverse, CLIENT_STATE);
+
+				return;
+			}
+
+			// We have to make sure there are no conflicts on the other side, since it's also a hasOne
+			var otherRelationships = store.sortHasOneRelationships(polymorphicType, id, meta.inverse);
+			if (otherRelationships[SERVER_STATE]) {
+				store.changeRelationshipState(otherRelationships[SERVER_STATE], DELETED_STATE);
+			} else if (otherRelationships[CLIENT_STATE]) {
+				store.deleteRelationship(otherRelationships[CLIENT_STATE]);
+			}
+
+			// Finally, check for a deleted relationship between the two
+			var temp2;
+			for (var j = 0; j < currentRelationships[DELETED_STATE].length; ++j) {
+				temp2 = currentRelationships[DELETED_STATE][j];
+				if (temp2.otherType(this) === polymorphicType && temp2.otherId(this) === id) {
+					store.changeRelationshipState(temp2, SERVER_STATE);
 					return;
-				} else {
-					if (currentValue.get('state') === CLIENT_STATE) {
-						store.deleteRelationship(currentValue);
-					} else {
-						store.changeRelationshipState(currentValue, DELETED_STATE);
-					}
 				}
 			}
 
-			// If the inverse is null, we can create the relationship without conflict
-			if (meta.inverse === null) {
-				if (deletedValue) {
-					store.changeRelationshipState(deletedValue, SERVER_STATE);
-				} else {
-					store.createRelationship(this.typeKey, this.get('id'), relationshipName,
-						polymorphicType, id, null, CLIENT_STATE);
-				}
-
-				return;
-			}
-
-			// If the inverse isn't null, we have to disconnect any hasOne conflicts
-			var otherMeta = store.modelForType(polymorphicType).metaForRelationship(meta.inverse).kind;
-			if (otherMeta.kind === HAS_ONE_KEY) {
-				var otherRecord = store.getRecord(polymorphicType, id);
-				if (otherRecord) {
-					var conflict = otherRecord.getHasOneRelationship(meta.inverse, false);
-					if (conflict) {
-						if (conflict.get('state') === CLIENT_STATE) {
-							store.deleteRelationship(conflict);
-						} else {
-							store.changeRelationshipState(conflict);
-						}
-					}
-				}
-			}
-
-			// Now that everything is free from conflicts, connect the deleted relationship if we found one
-			if (deletedValue) {
-				store.changeRelationshipState(deletedValue, SERVER_STATE);
-				return;
-			}
-
-			// If all of that fails, create a new relationship (possibly queued)
+			// If all else fails, create a relationship
 			store.createRelationship(this.typeKey, this.get('id'), relationshipName,
 				polymorphicType, id, meta.inverse, CLIENT_STATE);
 		}, this);
@@ -4382,13 +4616,68 @@ EG.Model.reopen({
 
 var map = Em.ArrayPolyfills.map;
 var filter = Em.ArrayPolyfills.filter;
+var reduce = EG.ArrayPolyfills.reduce;
 var forEach = Em.ArrayPolyfills.forEach;
 
+var HAS_ONE_KEY = EG.Model.HAS_ONE_KEY;
+var HAS_MANY_KEY = EG.Model.HAS_MANY_KEY;
+
+var CLIENT_STATE = EG.Relationship.CLIENT_STATE;
+var SERVER_STATE = EG.Relationship.SERVER_STATE;
+var DELETED_STATE = EG.Relationship.DELETED_STATE;
+
 // TODO: This can probably be moved into the store to be more model-agnostic
+// Idea: load attributes into records directly, but load relationships into store
+// Split the data apart in `extractPayload`
 EG.Model.reopen({
 
 	/**
-	 * Merges relationship data from the client into the relationships
+	 * Sets up relationships given to the constructor for this record.
+	 * Equivalent to calling the relationship functions individually.
+	 */
+	loadRelationshipsFromClient: function(json) {
+		this.constructor.eachRelationship(function(name, meta) {
+			if (meta.isRequired && json[name] === undefined) {
+				throw new Em.Error('Your JSON is missing the required `' + name + '` relationship.');
+			}
+
+			var value = json[name] || meta.defaultValue;
+
+			if (meta.kind === HAS_MANY_KEY) {
+				forEach.call(value, function(v) {
+					switch (Em.typeOf(v)) {
+						case 'string':
+							this.addToRelationship(name, v);
+							break;
+						case 'instance':
+							this.addToRelationship(name, v.get('id'), v.get('typeKey'));
+							break;
+						default:
+							this.addToRelationship(name, v.id, v.type);
+							break;
+					}
+				}, this);
+			} else {
+				switch (Em.typeOf(value)) {
+					case 'string':
+						this.setHasOneRelationship(name, value);
+						break;
+					case 'null':
+						this.clearHasOneRelationship(name);
+						break;
+					case 'instance':
+						this.setHasOneRelationship(name, value.get('id'), value.get('typeKey'));
+						break;
+					default:
+						this.setHasOneRelationship(name, value.id, value.type);
+						break;
+				}
+			}
+		}, this);
+	},
+
+	/**
+	 * Merges relationship data from the server into the relationships
 	 * already connected to this record. Any absolutely correct choices
 	 * are made automatically, while choices that come down to preference
 	 * are decided based on the configurable store properties.
@@ -4396,12 +4685,21 @@ EG.Model.reopen({
 	 * @param {Object} json
 	 * @private
 	 */
-	loadRelationships: function(json) {
+	loadRelationshipsFromServer: function(json) {
 		this.constructor.eachRelationship(function(name, meta) {
 			var otherKind = null;
 
 			if (meta.inverse) {
 				otherKind = this.get('store').modelForType(meta.relatedType).metaForRelationship(meta.inverse).kind;
+			}
+
+			// TODO: I don't much like this here. Same for the attributes one.
+			if (meta.isRequired && json[name] === undefined) {
+				throw new Em.Error('Your JSON is missing the required `' + name + '` relationship.');
+			}
+
+			if (!json.hasOwnProperty(name)) {
+				json[name] = meta.defaultValue;
 			}
 
 			if (meta.kind === HAS_MANY_KEY) {
@@ -4452,7 +4750,7 @@ EG.Model.reopen({
 
 	disconnectHasOneFromHasMany: function(name, meta) {
 		var store = this.get('store');
-		var relationships = this.sortHasOneRelationships(this.typeKey, this.get('id'), name);
+		var relationships = store.sortHasOneRelationships(this.typeKey, this.get('id'), name);
 
 		if (relationships[DELETED_STATE].length > 0) {
 			forEach.call(relationships[DELETED_STATE], function (relationship) {
@@ -4479,14 +4777,442 @@ EG.Model.reopen({
 	connectHasOneToNull: Em.aliasMethod('connectHasOneToHasMany'),
 
 	connectHasOneToHasOne: function(name, meta, value) {
+		// TODO: This is going to be LONG. But make it right, then make it good
+		var thisType = this.typeKey;
+		var thisId = this.get('id');
+		var store = this.get('store');
+		var sideWithClientOnConflict = store.get('sideWithClientOnConflict');
 
+		var theseValues = store.sortHasOneRelationships(thisType, thisId, name);
+		var otherValues = store.sortHasOneRelationships(value.type, value.id, meta.inverse);
+
+		var thisCurrent = theseValues[SERVER_STATE] || theseValues[CLIENT_STATE] || null;
+		var otherCurrent = otherValues[SERVER_STATE] || otherValues[CLIENT_STATE] || null;
+		if (thisCurrent === otherCurrent) {
+			store.changeRelationshipState(thisCurrent, SERVER_STATE);
+			return;
+		}
+
+		// Hehe, I'm going to look back on this one day...
+
+		/* jshint ignore:start */
+		var handled;
+
+		if (!theseValues[SERVER_STATE] && !theseValues[CLIENT_STATE] && theseValues[DELETED_STATE].length <= 0) {
+			if (!otherValues[SERVER_STATE] && !otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length <= 0) {
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				return;
+			}
+
+			if (otherValues[SERVER_STATE] && !otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length <= 0) {
+				store.deleteRelationship(otherValues[SERVER_STATE]);
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				return;
+			}
+
+			if (!otherValues[SERVER_STATE] && otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length <= 0) {
+				if (sideWithClientOnConflict) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				} else {
+					store.deleteRelationship(otherValues[CLIENT_STATE]);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
+				return;
+			}
+
+			if (!otherValues[SERVER_STATE] && !otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length > 0) {
+				handled = false;
+
+				forEach.call(otherValues[DELETED_STATE], function(relationship) {
+					if (relationship.otherType(this) === value.type && relationship.otherId(this) === value.id) {
+						if (sideWithClientOnConflict) {
+							// NOOP
+						} else {
+							store.changeRelationshipState(relationship, SERVER_STATE);
+						}
+
+						handled = true;
+					} else {
+						store.deleteRelationship(relationship);
+					}
+				}, this);
+
+				if (!handled) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
+
+				return;
+			}
+
+			if (!otherValues[SERVER_STATE] && otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length > 0) {
+				handled = false;
+
+				forEach.call(otherValues[DELETED_STATE], function(relationship) {
+					if (relationship.otherType(this) === value.type && relationship.otherId(this) === value.id) {
+						if (sideWithClientOnConflict) {
+							// NOOP
+						} else {
+							store.deleteRelationship(otherValues[CLIENT_STATE]);
+							store.changeRelationshipState(relationship, SERVER_STATE);
+						}
+
+						handled = true;
+					} else {
+						store.deleteRelationship(relationship);
+					}
+				}, this);
+
+				if (!handled) {
+					if (sideWithClientOnConflict) {
+						store.createRelationship(thisType, thisId, name,
+							value.type, value.id, meta.inverse, DELETED_STATE);
+					} else {
+						store.deleteRelationship(otherValues[CLIENT_STATE]);
+						store.createRelationship(thisType, thisId, name,
+							value.type, value.id, meta.inverse, SERVER_STATE);
+					}
+				}
+
+				return;
+			}
+		}
+
+		if (theseValues[SERVER_STATE] && !theseValues[CLIENT_STATE] && theseValues[DELETED_STATE].length <= 0) {
+			store.deleteRelationship(theseValues[SERVER_STATE]);
+
+			if (!otherValues[SERVER_STATE] && !otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length <= 0) {
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				return;
+			}
+
+			if (otherValues[SERVER_STATE] && !otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length <= 0) {
+				store.deleteRelationship(otherValues[SERVER_STATE]);
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				return;
+			}
+
+			if (!otherValues[SERVER_STATE] && otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length <= 0) {
+				if (sideWithClientOnConflict) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				} else {
+					store.deleteRelationship(otherValues[CLIENT_STATE]);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
+
+				return;
+			}
+
+			if (!otherValues[SERVER_STATE] && !otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length > 0) {
+				handled = false;
+
+				forEach.call(otherValues[DELETED_STATE], function(relationship) {
+					if (relationship.otherType(this) === value.type && relationship.otherId(this) === value.id) {
+						if (sideWithClientOnConflict) {
+							// NOOP
+						} else {
+							store.changeRelationshipState(relationship, SERVER_STATE);
+						}
+
+						handled = true;
+					} else {
+						store.deleteRelationship(relationship);
+					}
+				}, this);
+
+				if (!handled) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
+
+				return;
+			}
+
+			if (!otherValues[SERVER_STATE] && otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length > 0) {
+				handled = false;
+
+				forEach.call(otherValues[DELETED_STATE], function(relationship) {
+					if (relationship.otherType(this) === value.type && relationship.otherId(this) === value.id) {
+						if (sideWithClientOnConflict) {
+							// NOOP
+						} else {
+							store.deleteRelationship(otherValues[CLIENT_STATE]);
+							store.changeRelationshipState(relationship, SERVER_STATE);
+						}
+
+						handled = true;
+					} else {
+						store.deleteRelationship(relationship);
+					}
+				}, this);
+
+				if (!handled) {
+					if (sideWithClientOnConflict) {
+						store.createRelationship(thisType, thisId, name,
+							value.type, value.id, meta.inverse, DELETED_STATE);
+					} else {
+						store.deleteRelationship(otherValues[CLIENT_STATE]);
+						store.createRelationship(thisType, thisId, name,
+							value.type, value.id, meta.inverse, SERVER_STATE);
+					}
+				}
+
+				return;
+			}
+		}
+
+		if (!theseValues[SERVER_STATE] && theseValues[CLIENT_STATE] && theseValues[DELETED_STATE].length <= 0) {
+			if (!otherValues[SERVER_STATE] && !otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length <= 0) {
+				if (sideWithClientOnConflict) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				} else {
+					store.deleteRelationship(theseValues[CLIENT_STATE]);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
+
+				return;
+			}
+
+			if (otherValues[SERVER_STATE] && !otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length <= 0) {
+				store.deleteRelationship(otherValues[SERVER_STATE]);
+
+				if (sideWithClientOnConflict) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				} else {
+					store.deleteRelationship(theseValues[CLIENT_STATE]);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
+
+				return;
+			}
+
+			if (!otherValues[SERVER_STATE] && otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length <= 0) {
+				if (sideWithClientOnConflict) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				} else {
+					store.deleteRelationship(theseValues[CLIENT_STATE]);
+					store.deleteRelationship(otherValues[CLIENT_STATE]);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
+
+				return;
+			}
+
+			if (!otherValues[SERVER_STATE] && !otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length > 0) {
+				forEach.call(otherValues[DELETED_STATE], function(relationship) {
+					store.deleteRelationship(relationship);
+				});
+
+				if (sideWithClientOnConflict) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				} else {
+					store.deleteRelationship(theseValues[CLIENT_STATE]);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
+
+				return;
+			}
+
+			if (!otherValues[SERVER_STATE] && otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length > 0) {
+				forEach.call(otherValues[DELETED_STATE], function(relationship) {
+					store.deleteRelationship(relationship);
+				});
+
+				if (sideWithClientOnConflict) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				} else {
+					store.deleteRelationship(theseValues[CLIENT_STATE]);
+					store.deleteRelationship(otherValues[CLIENT_STATE]);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
+
+				return;
+			}
+		}
+
+		if (!theseValues[SERVER_STATE] && !theseValues[CLIENT_STATE] && theseValues[DELETED_STATE].length > 0) {
+			if (!otherValues[SERVER_STATE] && !otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length <= 0) {
+				forEach.call(theseValues[DELETED_STATE], function(relationship) {
+					store.deleteRelationship(relationship);
+				});
+
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				return;
+			}
+
+			if (otherValues[SERVER_STATE] && !otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length <= 0) {
+				forEach.call(theseValues[DELETED_STATE], function(relationship) {
+					store.deleteRelationship(relationship);
+				});
+
+				store.deleteRelationship(otherValues[SERVER_STATE]);
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				return;
+			}
+
+			if (!otherValues[SERVER_STATE] && otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length <= 0) {
+				forEach.call(theseValues[DELETED_STATE], function(relationship) {
+					store.deleteRelationship(relationship);
+				});
+
+				if (sideWithClientOnConflict) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				} else {
+					store.deleteRelationship(otherValues[CLIENT_STATE]);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
+
+				return;
+			}
+
+			if (!otherValues[SERVER_STATE] && !otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length > 0) {
+				handled = null;
+
+				forEach.call(theseValues[DELETED_STATE], function(relationship) {
+					if (relationship.otherType(this) === value.type && relationship.otherId(this) === value.id) {
+						if (sideWithClientOnConflict) {
+							// NOOP
+						} else {
+							store.changeRelationshipState(relationship, SERVER_STATE);
+						}
+
+						handled = relationship;
+					} else {
+						store.deleteRelationship(relationship);
+					}
+				}, this);
+
+				forEach.call(theseValues[DELETED_STATE], function(relationship) {
+					if (relationship !== handled) {
+						store.deleteRelationship(relationship);
+					}
+				});
+
+				if (handled === null) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
+
+				return;
+			}
+
+			if (!otherValues[SERVER_STATE] && otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length > 0) {
+				handled = null;
+
+				forEach.call(theseValues[DELETED_STATE], function(relationship) {
+					if (relationship.otherType(this) === value.type && relationship.otherId(this) === value.id) {
+						if (sideWithClientOnConflict) {
+							// NOOP
+						} else {
+							store.deleteRelationship(otherValues[CLIENT_STATE]);
+							store.changeRelationshipState(relationship, SERVER_STATE);
+						}
+
+						handled = relationship;
+					} else {
+						store.deleteRelationship(relationship);
+					}
+				}, this);
+
+				forEach.call(theseValues[DELETED_STATE], function(relationship) {
+					if (relationship !== handled) {
+						store.deleteRelationship(relationship);
+					}
+				});
+
+				if (handled === null) {
+					if (sideWithClientOnConflict) {
+						store.createRelationship(thisType, thisId, name,
+							value.type, value.id, meta.inverse, DELETED_STATE);
+					} else {
+						store.deleteRelationship(otherValues[CLIENT_STATE]);
+						store.createRelationship(thisType, thisId, name,
+							value.type, value.id, meta.inverse, SERVER_STATE);
+					}
+				}
+
+				return;
+			}
+		}
+
+		if (!theseValues[SERVER_STATE] && theseValues[CLIENT_STATE] && theseValues[DELETED_STATE].length > 0) {
+			forEach.call(theseValues[DELETED_STATE], function(relationship) {
+				store.deleteRelationship(relationship);
+			});
+
+			if (!otherValues[SERVER_STATE] && !otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length <= 0) {
+				if (sideWithClientOnConflict) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				} else {
+					store.deleteRelationship(theseValues[CLIENT_STATE]);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
+
+				return;
+			}
+
+			if (otherValues[SERVER_STATE] && !otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length <= 0) {
+				store.deleteRelationship(otherValues[SERVER_STATE]);
+
+				if (sideWithClientOnConflict) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				} else {
+					store.deleteRelationship(theseValues[CLIENT_STATE]);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
+
+				return;
+			}
+
+			if (!otherValues[SERVER_STATE] && otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length <= 0) {
+				if (sideWithClientOnConflict) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				} else {
+					store.deleteRelationship(theseValues[CLIENT_STATE]);
+					store.deleteRelationship(otherValues[CLIENT_STATE]);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
+
+				return;
+			}
+
+			if (!otherValues[SERVER_STATE] && !otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length > 0) {
+				forEach.call(otherValues[DELETED_STATE], function(relationship) {
+					store.deleteRelationship(relationship);
+				});
+
+				if (sideWithClientOnConflict) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				} else {
+					store.deleteRelationship(theseValues[CLIENT_STATE]);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
+
+				return;
+			}
+
+			if (!otherValues[SERVER_STATE] && otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length > 0) {
+				forEach.call(otherValues[DELETED_STATE], function(relationship) {
+					store.deleteRelationship(relationship);
+				});
+
+				if (sideWithClientOnConflict) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				} else {
+					store.deleteRelationship(theseValues[CLIENT_STATE]);
+					store.deleteRelationship(otherValues[CLIENT_STATE]);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
+
+				return;
+			}
+		}
+		/* jshint ignore:end */
 	},
 
 	connectHasOneToHasMany: function(name, meta, value) {
 		var thisType = this.typeKey;
 		var thisId = this.get('id');
 		var store = this.get('store');
-		var relationships = this.sortHasOneRelationships(thisType, thisId, name);
+		var relationships = store.sortHasOneRelationships(thisType, thisId, name);
+		var sideWithClientOnConflict = store.get('sideWithClientOnConflict');
 
 		// TODO: Make it right, then make it good
 		if (relationships[SERVER_STATE] && relationships[SERVER_STATE].otherType(this) === value.type &&
@@ -4496,6 +5222,7 @@ EG.Model.reopen({
 
 		if (relationships[CLIENT_STATE] && relationships[CLIENT_STATE].otherType(this) === value.type &&
 			relationships[CLIENT_STATE].otherId(this) === value.id) {
+			store.changeRelationshipState(relationships[CLIENT_STATE], SERVER_STATE);
 			return;
 		}
 
@@ -4511,7 +5238,7 @@ EG.Model.reopen({
 		}
 
 		if (!relationships[SERVER_STATE] && relationships[CLIENT_STATE] && relationships[DELETED_STATE].length <= 0) {
-			if (store.get('sideWithClientOnConflict')) {
+			if (sideWithClientOnConflict) {
 				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
 			} else {
 				store.deleteRelationship(relationships[CLIENT_STATE]);
@@ -4521,25 +5248,57 @@ EG.Model.reopen({
 			return;
 		}
 
-		if (!relationships[SERVER_STATE] && !relationships[CLIENT_STATE] && relationships[DELETED_STATE].length >= 0) {
-			forEach.call(relationships[DELETED_STATE], function(relationship) {
-				store.deleteRelationship(relationship);
-			});
+		var handled;
 
-			store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+		if (!relationships[SERVER_STATE] && !relationships[CLIENT_STATE] && relationships[DELETED_STATE].length >= 0) {
+			handled = false;
+
+			forEach.call(relationships[DELETED_STATE], function(relationship) {
+				if (relationship.otherType(this) === value.type && relationship.otherId(this) === value.id) {
+					if (sideWithClientOnConflict) {
+						// NOOP
+					} else {
+						store.changeRelationshipState(relationship, SERVER_STATE);
+					}
+
+					handled = true;
+				} else {
+					store.deleteRelationship(relationship);
+				}
+			}, this);
+
+			if (!handled) {
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+			}
+
 			return;
 		}
 
 		if (!relationships[SERVER_STATE] && relationships[CLIENT_STATE] && relationships[DELETED_STATE].length >= 0) {
-			forEach.call(relationships[DELETED_STATE], function(relationship) {
-				store.deleteRelationship(relationship);
-			});
+			handled = false;
 
-			if (store.get('sideWithClientOnConflict')) {
-				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
-			} else {
-				store.deleteRelationship(relationships[CLIENT_STATE]);
-				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+			forEach.call(relationships[DELETED_STATE], function(relationship) {
+				if (relationship.otherType(this) === value.type && relationship.otherId(this) === value.id) {
+					if (sideWithClientOnConflict) {
+						// NOOP
+					} else {
+						store.deleteRelationship(relationships[CLIENT_STATE]);
+						store.changeRelationshipState(relationship, SERVER_STATE);
+					}
+
+					handled = true;
+				} else {
+					store.deleteRelationship(relationship);
+				}
+			}, this);
+
+			if (!handled) {
+				if (sideWithClientOnConflict) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				} else {
+					store.deleteRelationship(relationships[CLIENT_STATE]);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
 			}
 
 			return;
@@ -4549,64 +5308,161 @@ EG.Model.reopen({
 	connectHasManyToNull: Em.aliasMethod('connectHasManyToHasMany'),
 
 	connectHasManyToHasOne: function(name, meta, values) {
+		var thisType = this.typeKey;
+		var thisId = this.get('id');
+		var store = this.get('store');
+		var sideWithClientOnConflict = store.get('sideWithClientOnConflict');
 
+		var valueMap = reduce.call(values, function(map, value) {
+			map[value.type + ':' + value.id] = value;
+			return map;
+		}, {});
+
+		var relationships = store.relationshipsForRecord(thisType, thisId, name);
+
+		forEach.call(relationships, function(relationship) {
+			var valueKey = relationship.otherType(this) + ':' + relationship.otherId(this);
+
+			if (valueMap[valueKey]) {
+				switch (relationship.get('state')) {
+					case SERVER_STATE:
+						// NOOP
+						break;
+					case DELETED_STATE:
+						if (sideWithClientOnConflict) {
+							// NOOP
+						} else {
+							store.changeRelationshipState(relationship, SERVER_STATE);
+						}
+						break;
+					case CLIENT_STATE:
+						store.changeRelationshipState(relationship, SERVER_STATE);
+						break;
+				}
+			} else {
+				switch (relationship.get('state')) {
+					case SERVER_STATE:
+					case DELETED_STATE:
+						store.deleteRelationship(relationship);
+						break;
+					case CLIENT_STATE:
+						if (sideWithClientOnConflict) {
+							// NOOP
+						} else {
+							store.deleteRelationship(relationship);
+						}
+						break;
+				}
+			}
+
+			delete valueMap[valueKey];
+		}, this);
+
+		// We've narrowed it down to relationships that have to be created from scratch. (Possibly with conflicts.)
+		EG.values(valueMap, function(key, value) {
+			var conflicts = store.sortHasOneRelationships(value.type, value.id, meta.inverse);
+
+			if (!conflicts[SERVER_STATE] && !conflicts[CLIENT_STATE] && conflicts[DELETED_STATE].length <= 0) {
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				return;
+			}
+
+			if (conflicts[SERVER_STATE] && !conflicts[CLIENT_STATE] && conflicts[DELETED_STATE].length <= 0) {
+				store.deleteRelationship(conflicts[SERVER_STATE]);
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				return;
+			}
+
+			if (!conflicts[SERVER_STATE] && conflicts[CLIENT_STATE] && conflicts[DELETED_STATE].length <= 0) {
+				if (sideWithClientOnConflict) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				} else {
+					store.deleteRelationship(conflicts[CLIENT_STATE]);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
+				return;
+			}
+
+			if (!conflicts[SERVER_STATE] && !conflicts[CLIENT_STATE] && conflicts[DELETED_STATE].length > 0) {
+				forEach.call(conflicts[DELETED_STATE], function(relationship) {
+					store.deleteRelationship(relationship);
+				});
+
+				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				return;
+			}
+
+			if (!conflicts[SERVER_STATE] && conflicts[CLIENT_STATE] && conflicts[DELETED_STATE].length > 0) {
+				forEach.call(conflicts[DELETED_STATE], function(relationship) {
+					store.deleteRelationship(relationship);
+				});
+
+				if (sideWithClientOnConflict) {
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, DELETED_STATE);
+				} else {
+					store.deleteRelationship(conflicts[CLIENT_STATE]);
+					store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
+				}
+				return;
+			}
+		}, this);
 	},
 
 	connectHasManyToHasMany: function(name, meta, values) {
 		var thisType = this.typeKey;
 		var thisId = this.get('id');
 		var store = this.get('store');
+		var sideWithClientOnConflict = store.get('sideWithClientOnConflict');
+
+		var valueMap = reduce.call(values, function(map, value) {
+			map[value.type + ':' + value.id] = value;
+			return map;
+		}, {});
+
 		var relationships = store.relationshipsForRecord(thisType, thisId, name);
 
-		var valueSet = new Em.Set(map.call(values, function(value) {
-			return value.type + ':' + value.id;
-		}));
-
-		// Upgrade any client relationships that match our values to server relationships
-		var alreadyCreated = new Em.Set();
 		forEach.call(relationships, function(relationship) {
-			var key = relationship.otherType(this) + ':' + relationship.otherId(this);
-			if (valueSet.contains(key)) {
-				// If it's a client relationship, upgrade it
-				// If it's a deleted relationship, but we're overriding the client, upgrade it
-				if (relationship.get('state') === CLIENT_STATE) {
-					store.changeRelationshipState(relationship, SERVER_STATE);
-				} else if (relationship.get('state') === DELETED_STATE && !store.get('sideWithClientOnConflict')) {
-					store.changeRelationshipState(relationship, SERVER_STATE);
+			var valueKey = relationship.otherType(this) + ':' + relationship.otherId(this);
+
+			if (valueMap[valueKey]) {
+				switch (relationship.get('state')) {
+					case SERVER_STATE:
+						// NOOP
+						break;
+					case DELETED_STATE:
+						if (sideWithClientOnConflict) {
+							// NOOP
+						} else {
+							store.changeRelationshipState(relationship, SERVER_STATE);
+						}
+						break;
+					case CLIENT_STATE:
+						store.changeRelationshipState(relationship, SERVER_STATE);
+						break;
+				}
+			} else {
+				switch (relationship.get('state')) {
+					case SERVER_STATE:
+					case DELETED_STATE:
+						store.deleteRelationship(relationship);
+						break;
+					case CLIENT_STATE:
+						if (sideWithClientOnConflict) {
+							// NOOP
+						} else {
+							store.deleteRelationship(relationship);
+						}
+						break;
 				}
 			}
 
-			alreadyCreated.addObject(key);
+			delete valueMap[valueKey];
 		}, this);
 
-		// Create the values that aren't already created
-		forEach.call(values, function(value) {
-			var key = value.type + ':' + value.id;
-			if (!alreadyCreated.contains(key)) {
-				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
-			}
-		}, this);
-	},
-
-	sortHasOneRelationships: function(type, id, name) {
-		var values = {};
-		var relationships = this.get('store').relationshipsForRecord(type, id, name);
-
-		values[SERVER_STATE] = filter.call(relationships, function(relationship) {
-			return relationship.get('state') === SERVER_STATE;
-		})[0] || null;
-
-		values[DELETED_STATE] = filter.call(relationships, function(relationship) {
-			return relationship.get('state') === DELETED_STATE;
+		// We've narrowed it down to relationships that have to be created from scratch.
+		EG.values(valueMap, function(key, value) {
+			store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
 		});
-
-		values[CLIENT_STATE] = filter.call(relationships, function(relationship) {
-			return relationship.get('state') === CLIENT_STATE;
-		})[0] || null;
-
-		
-
-		return values;
 	}
 });
 
