@@ -458,11 +458,11 @@
 		expect(3);
 
 		var post = store._loadRecord('post', { id: '50', author: { type: 'user', id: '1' } });
-		ok(post.get('_author') === '1');
+		deepEqual(post.get('_author'), { type: 'user', id: '1' });
 		var user = store.getRecord('user', '1');
-		ok(user.get('_posts').contains('50'));
+		ok(user.get('_posts').mapBy('id').indexOf('50') >= 0);
 		user.rollbackRelationships();
-		ok(user.get('_posts').contains('50'));
+		ok(user.get('_posts').mapBy('id').indexOf('50') >= 0);
 	});
 
 	asyncTest('Loading a hasOne relationship fully returns the correct record', function() {
@@ -510,11 +510,11 @@
 		expect(3);
 
 		var post = store.getRecord('post', '1');
-		ok(post.get('_author') === '1');
+		deepEqual(post.get('_author'), { type: 'user', id: '1' });
 
-		var user = store.createRecord('user', { posts: ['1'] });
-		ok(user.get('_posts').contains('1'));
-		ok(post.get('_author') === user.get('id'));
+		var user = store.createRecord('user', { posts: [{ type: 'post', id: '1' }] });
+		ok(user.get('_posts').mapBy('id').indexOf('1') >= 0);
+		strictEqual(post.get('_author').id, user.get('id'));
 	});
 
 	test('A hasMany can be changed by removing the record from its inverse', function() {

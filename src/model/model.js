@@ -83,14 +83,42 @@ EG.Model = Em.Object.extend(Em.Evented, {
 	 *
 	 * @method loadData
 	 * @param {Object} json
+	 * @deprecated Use `loadDataFromServer` instead
 	 */
-	loadData: function(json) {
+	loadData: Em.aliasMethod('loadDataFromServer'),
+
+	/**
+	 * Takes a payload from the server and merges the data into the current data.
+	 * This is generally only called by the store, but it may be useful to
+	 * override it if you're looking to intercept and modify server data before
+	 * it's loaded into the record.
+	 *
+	 * @method loadDataFromServer
+	 * @param {Object} json
+	 */
+	loadDataFromServer: function(json) {
 		json = json || {};
 		Em.assert('The record `' + this.typeKey + ':' + this.get('id') + '` was attempted to be reloaded ' +
 			'while dirty with `reloadDirty` disabled.', !this.get('isDirty') || this.get('store.reloadDirty'));
 
 		this._loadAttributes(json);
-		this.loadRelationships(json);
+		this.loadRelationshipsFromServer(json);
+	},
+
+	/**
+	 * Takes the data passed to the store's {{link-to-method 'Store' 'createRecord'}}
+	 * method and loads it into the newly created record by calling the model's
+	 * public API methods for manipulating records. This should really only be
+	 * called by the store and when a record is brand new.
+	 *
+	 * @method loadDataFromClient
+	 * @param {Object} json
+	 */
+	loadDataFromClient: function(json) {
+		json = json || {};
+
+		this.loadAttributesFromClient(json);
+		this.loadRelationshipsFromClient(json);
 	},
 
 	/**

@@ -213,65 +213,57 @@ EG.Model.reopen({
 
 			// If the type wasn't provided, fill it in based on the inverse
 			if (Em.typeOf(id) !== 'string') {
-				polymorphicType = id.typeKey;
-				id = id.get('id');
+				polymorphicType = Em.get(id, 'typeKey');
+				id = Em.get(id, 'id');
 			} else if (Em.typeOf(polymorphicType) !== 'string') {
 				polymorphicType = meta.relatedType;
 			}
 
-			// Check to see if the records are already connected
+			var otherModel = store.modelForType(polymorphicType);
+			var otherMeta = (meta.inverse === null ? null : otherModel.metaForRelationship(meta.inverse));
 			var currentValues = this.getHasManyRelationships(relationshipName, false);
+			var serverValues = this.getHasManyRelationships(relationshipName, true);
+
+			// Check to see if the records are already connected
 			for (i = 0; i < currentValues.length; ++i) {
 				if (currentValues[i].otherType(this) === polymorphicType && currentValues[i].otherId(this) === id) {
 					return;
 				}
 			}
 
-			// If there's a deleted relationship to connect these records, get it.
-			var serverValues = this.getHasManyRelationships(relationshipName, true);
-			var deletedValue = null;
-			for (i = 0; i < serverValues.length; ++i) {
-				if (serverValues[i].otherType(this) === polymorphicType && serverValues[i].otherId(this) === id) {
-					deletedValue = serverValues[i];
-					break;
-				}
-			}
-
-			// If the inverse is null, we can create the relationship without conflict
-			if (meta.inverse === null) {
-				if (deletedValue) {
-					store.changeRelationshipState(deletedValue, SERVER_STATE);
-				} else {
-					store.createRelationship(this.typeKey, this.get('id'), relationshipName,
-						polymorphicType, id, null, CLIENT_STATE);
-				}
-
-				return;
-			}
-
-			// If the inverse isn't null, we have to disconnect any hasOne conflicts
-			var otherMeta = store.modelForType(polymorphicType).metaForRelationship(meta.inverse).kind;
-			if (otherMeta.kind === HAS_ONE_KEY) {
-				var otherRecord = store.getRecord(polymorphicType, id);
-				if (otherRecord) {
-					var conflict = otherRecord.getHasOneRelationship(meta.inverse, false);
-					if (conflict) {
-						if (conflict.get('state') === CLIENT_STATE) {
-							store.deleteRelationship(conflict);
-						} else {
-							store.changeRelationshipState(conflict);
-						}
+			// If the inverse is null or a hasMany, we can create the relationship without conflict
+			if (meta.inverse === null || otherMeta.kind === HAS_MANY_KEY) {
+				// Check for delete relationships first
+				for (i = 0; i < serverValues.length; ++i) {
+					if (serverValues[i].otherType(this) === polymorphicType && serverValues[i].otherId(this) === id) {
+						store.changeRelationshipState(serverValues[i], SERVER_STATE);
+						return;
 					}
 				}
-			}
 
-			// Now that everything is free from conflicts, connect the deleted relationship if we found one
-			if (deletedValue) {
-				store.changeRelationshipState(deletedValue, SERVER_STATE);
+				store.createRelationship(this.typeKey, this.get('id'), relationshipName,
+					polymorphicType, id, null, CLIENT_STATE);
+
 				return;
 			}
 
-			// If all of that fails, create a new relationship (possibly queued)
+			// Make sure there are no conflicts on the other side since it's a hasOne
+			var otherValues = store.sortHasOneRelationships(polymorphicType, id, meta.inverse);
+			if (otherValues[SERVER_STATE]) {
+				store.changeRelationshipState(otherValues[SERVER_STATE], DELETED_STATE);
+			} else if (otherValues[CLIENT_STATE]) {
+				store.deleteRelationship(otherValues[CLIENT_STATE]);
+			}
+
+			// Check for any deleted relationships that match the one we need
+			for (i = 0; i < serverValues.length; ++i) {
+				if (serverValues[i].otherType(this) === polymorphicType && serverValues[i].otherId(this) === id) {
+					store.changeRelationshipState(serverValues[i], SERVER_STATE);
+					return;
+				}
+			}
+
+			// If all else fails, create a relationship
 			store.createRelationship(this.typeKey, this.get('id'), relationshipName,
 				polymorphicType, id, meta.inverse, CLIENT_STATE);
 		}, this);
@@ -288,8 +280,8 @@ EG.Model.reopen({
 
 			// If the type wasn't provided, fill it in based on the inverse
 			if (Em.typeOf(id) !== 'string') {
-				polymorphicType = id.typeKey;
-				id = id.get('id');
+				polymorphicType = Em.get(id, 'typeKey');
+				id = Em.get(id, 'id');
 			} else if (Em.typeOf(polymorphicType) !== 'string') {
 				polymorphicType = meta.relatedType;
 			}
@@ -328,61 +320,68 @@ EG.Model.reopen({
 				polymorphicType = meta.relatedType;
 			}
 
-			// If there's a deleted relationship to connect these records, get it.
-			var deletedValue = filter.call(this.getRelationshipsByName(relationshipName), function(relationship) {
-				return (relationship.otherType(this) === polymorphicType && relationship.otherId(this) === id);
-			}, this)[0];
+			var otherModel = store.modelForType(polymorphicType);
+			var otherMeta = (meta.inverse === null ? null : otherModel.metaForRelationship(meta.inverse));
+			var currentRelationships = store.sortHasOneRelationships(this.typeKey, this.get('id'), relationshipName);
 
-			// If we're already connected to that record, return.
-			// If not, clear the current value for this record.
-			var currentValue = this.getHasOneRelationship(relationshipName, false);
-			if (currentValue) {
-				if (currentValue.otherType(this) === polymorphicType && currentValue.otherId(this) === id) {
+			// First make sure they're not already connected
+			if (currentRelationships[SERVER_STATE] &&
+				currentRelationships[SERVER_STATE].otherType(this) === polymorphicType &&
+				currentRelationships[SERVER_STATE].otherId(this) === id) {
+				return;
+			}
+
+			if (currentRelationships[CLIENT_STATE] &&
+				currentRelationships[CLIENT_STATE].otherType(this) === polymorphicType &&
+				currentRelationships[CLIENT_STATE].otherId(this) === id) {
+				return;
+			}
+
+			// They're not connected, so we definitely have to get rid of the current value
+			if (currentRelationships[SERVER_STATE]) {
+				store.changeRelationshipState(currentRelationships[SERVER_STATE], DELETED_STATE);
+			} else if (currentRelationships[CLIENT_STATE]) {
+				store.deleteRelationship(currentRelationships[CLIENT_STATE]);
+			}
+
+			// If the inverse is null or a hasMany, we can just create the relationship
+			if (meta.inverse === null || otherMeta.kind === HAS_MANY_KEY) {
+				var temp1;
+				// Check for a deleted relationship first
+				for (var i = 0; i < currentRelationships[DELETED_STATE].length; ++i) {
+					temp1 = currentRelationships[DELETED_STATE][i];
+					if (temp1.otherType(this) === polymorphicType && temp1.otherId(this) === id) {
+						store.changeRelationshipState(temp1, SERVER_STATE);
+						return;
+					}
+				}
+
+				// If we can't find one, just create a new relationship
+				store.createRelationship(this.typeKey, this.get('id'), relationshipName,
+					polymorphicType, id, meta.inverse, CLIENT_STATE);
+
+				return;
+			}
+
+			// We have to make sure there are no conflicts on the other side, since it's also a hasOne
+			var otherRelationships = store.sortHasOneRelationships(polymorphicType, id, meta.inverse);
+			if (otherRelationships[SERVER_STATE]) {
+				store.changeRelationshipState(otherRelationships[SERVER_STATE], DELETED_STATE);
+			} else if (otherRelationships[CLIENT_STATE]) {
+				store.deleteRelationship(otherRelationships[CLIENT_STATE]);
+			}
+
+			// Finally, check for a deleted relationship between the two
+			var temp2;
+			for (var j = 0; j < currentRelationships[DELETED_STATE].length; ++j) {
+				temp2 = currentRelationships[DELETED_STATE][j];
+				if (temp2.otherType(this) === polymorphicType && temp2.otherId(this) === id) {
+					store.changeRelationshipState(temp2, SERVER_STATE);
 					return;
-				} else {
-					if (currentValue.get('state') === CLIENT_STATE) {
-						store.deleteRelationship(currentValue);
-					} else {
-						store.changeRelationshipState(currentValue, DELETED_STATE);
-					}
 				}
 			}
 
-			// If the inverse is null, we can create the relationship without conflict
-			if (meta.inverse === null) {
-				if (deletedValue) {
-					store.changeRelationshipState(deletedValue, SERVER_STATE);
-				} else {
-					store.createRelationship(this.typeKey, this.get('id'), relationshipName,
-						polymorphicType, id, null, CLIENT_STATE);
-				}
-
-				return;
-			}
-
-			// If the inverse isn't null, we have to disconnect any hasOne conflicts
-			var otherMeta = store.modelForType(polymorphicType).metaForRelationship(meta.inverse).kind;
-			if (otherMeta.kind === HAS_ONE_KEY) {
-				var otherRecord = store.getRecord(polymorphicType, id);
-				if (otherRecord) {
-					var conflict = otherRecord.getHasOneRelationship(meta.inverse, false);
-					if (conflict) {
-						if (conflict.get('state') === CLIENT_STATE) {
-							store.deleteRelationship(conflict);
-						} else {
-							store.changeRelationshipState(conflict);
-						}
-					}
-				}
-			}
-
-			// Now that everything is free from conflicts, connect the deleted relationship if we found one
-			if (deletedValue) {
-				store.changeRelationshipState(deletedValue, SERVER_STATE);
-				return;
-			}
-
-			// If all of that fails, create a new relationship (possibly queued)
+			// If all else fails, create a relationship
 			store.createRelationship(this.typeKey, this.get('id'), relationshipName,
 				polymorphicType, id, meta.inverse, CLIENT_STATE);
 		}, this);

@@ -16,7 +16,40 @@ var DELETED_STATE = EG.Relationship.DELETED_STATE;
 EG.Model.reopen({
 
 	/**
-	 * Merges relationship data from the client into the relationships
+	 * Sets up relationships given to the constructor for this record.
+	 * Equivalent to calling the relationship functions individually.
+	 */
+	loadRelationshipsFromClient: function(json) {
+		this.constructor.eachRelationship(function(name, meta) {
+			Em.assert('Your JSON is missing a required relationship.', !meta.isRequired || json.hasOwnProperty(name));
+			var value = json[name] || meta.defaultValue;
+
+			if (meta.kind === HAS_MANY_KEY) {
+				forEach.call(value, function(v) {
+					if (Em.typeOf(v) === 'string') {
+						this.addToRelationship(name, v);
+					} else {
+						this.addToRelationship(name, v.id, v.type);
+					}
+				}, this);
+			} else {
+				switch (Em.typeOf(value)) {
+					case 'string':
+						this.setHasOneRelationship(name, value);
+						break;
+					case 'null':
+						this.clearHasOneRelationship(name);
+						break;
+					default:
+						this.setHasOneRelationship(name, value.id, value.type);
+						break;
+				}
+			}
+		}, this);
+	},
+
+	/**
+	 * Merges relationship data from the server into the relationships
 	 * already connected to this record. Any absolutely correct choices
 	 * are made automatically, while choices that come down to preference
 	 * are decided based on the configurable store properties.
@@ -24,7 +57,7 @@ EG.Model.reopen({
 	 * @param {Object} json
 	 * @private
 	 */
-	loadRelationships: function(json) {
+	loadRelationshipsFromServer: function(json) {
 		this.constructor.eachRelationship(function(name, meta) {
 			var otherKind = null;
 
@@ -86,7 +119,7 @@ EG.Model.reopen({
 
 	disconnectHasOneFromHasMany: function(name, meta) {
 		var store = this.get('store');
-		var relationships = this.sortHasOneRelationships(this.typeKey, this.get('id'), name);
+		var relationships = store.sortHasOneRelationships(this.typeKey, this.get('id'), name);
 
 		if (relationships[DELETED_STATE].length > 0) {
 			forEach.call(relationships[DELETED_STATE], function (relationship) {
@@ -119,8 +152,8 @@ EG.Model.reopen({
 		var store = this.get('store');
 		var sideWithClientOnConflict = store.get('sideWithClientOnConflict');
 
-		var theseValues = this.sortHasOneRelationships(thisType, thisId, name);
-		var otherValues = this.sortHasOneRelationships(value.type, value.id, meta.inverse);
+		var theseValues = store.sortHasOneRelationships(thisType, thisId, name);
+		var otherValues = store.sortHasOneRelationships(value.type, value.id, meta.inverse);
 
 		var thisCurrent = theseValues[SERVER_STATE] || theseValues[CLIENT_STATE] || null;
 		var otherCurrent = otherValues[SERVER_STATE] || otherValues[CLIENT_STATE] || null;
@@ -547,7 +580,7 @@ EG.Model.reopen({
 		var thisType = this.typeKey;
 		var thisId = this.get('id');
 		var store = this.get('store');
-		var relationships = this.sortHasOneRelationships(thisType, thisId, name);
+		var relationships = store.sortHasOneRelationships(thisType, thisId, name);
 		var sideWithClientOnConflict = store.get('sideWithClientOnConflict');
 
 		// TODO: Make it right, then make it good
@@ -696,7 +729,7 @@ EG.Model.reopen({
 
 		// We've narrowed it down to relationships that have to be created from scratch. (Possibly with conflicts.)
 		EG.values(valueMap, function(key, value) {
-			var conflicts = this.sortHasOneRelationships(value.type, value.id, meta.inverse);
+			var conflicts = store.sortHasOneRelationships(value.type, value.id, meta.inverse);
 
 			if (!conflicts[SERVER_STATE] && !conflicts[CLIENT_STATE] && conflicts[DELETED_STATE].length <= 0) {
 				store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
@@ -799,41 +832,5 @@ EG.Model.reopen({
 		EG.values(valueMap, function(key, value) {
 			store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
 		});
-	},
-
-	sortHasOneRelationships: function(type, id, name) {
-		var values = {};
-		var relationships = this.get('store').relationshipsForRecord(type, id, name);
-
-		values[SERVER_STATE] = filter.call(relationships, function(relationship) {
-			return relationship.get('state') === SERVER_STATE;
-		})[0] || null;
-
-		values[DELETED_STATE] = filter.call(relationships, function(relationship) {
-			return relationship.get('state') === DELETED_STATE;
-		});
-
-		values[CLIENT_STATE] = filter.call(relationships, function(relationship) {
-			return relationship.get('state') === CLIENT_STATE;
-		})[0] || null;
-
-		Em.runInDebug(function() {
-			/* jshint ignore:start */
-			// No relationships at all
-			if (!values[SERVER_STATE] && values[DELETED_STATE].length <= 0 && !values[CLIENT_STATE]) return;
-			// One server relationship, nothing else
-			if (values[SERVER_STATE] && values[DELETED_STATE].length <= 0 && !values[CLIENT_STATE]) return;
-			// One client relationship, nothing else
-			if (!values[SERVER_STATE] && values[DELETED_STATE].length <= 0 && values[CLIENT_STATE]) return;
-			// One client relationship and some deleted relationships
-			if (!values[SERVER_STATE] && values[DELETED_STATE].length > 0 && values[CLIENT_STATE]) return;
-			// Some deleted relationships, nothing else
-			if (!values[SERVER_STATE] && values[DELETED_STATE].length > 0 && !values[CLIENT_STATE]) return;
-			// Everything else is invalid
-			Em.assert('Invalid hasOne relationship values.');
-			/* jshint ignore:end */
-		});
-
-		return values;
 	}
 });

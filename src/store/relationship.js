@@ -1,6 +1,10 @@
 var filter = Em.ArrayPolyfills.filter;
 var forEach = Em.ArrayPolyfills.forEach;
 
+var CLIENT_STATE = EG.Relationship.CLIENT_STATE;
+var SERVER_STATE = EG.Relationship.SERVER_STATE;
+var DELETED_STATE = EG.Relationship.DELETED_STATE;
+
 EG.Store.reopen({
 
 	allRelationships: new Em.Object(),
@@ -146,6 +150,68 @@ EG.Store.reopen({
 		}
 
 		record.get('relationships').removeRelationship(relationship);
+	},
+
+	/**
+	 * Takes the relationships for a hasOne relationship, and sorts them in
+	 * an object that is easy to manipulate. The object returned contains
+	 * the following properties:
+	 *
+	 * - `[SERVER_STATE]` - A single relationship or `null`
+	 * - `[CLIENT_STATE]` - A single relationship or `null`
+	 * - `[DELETED_STATE]` - An array of relationships
+	 *
+	 * There are 5 valid configurations for a hasOne relationship at any
+	 * given time:
+	 *
+	 * 1. No relationships connected
+	 * 2. A single server relationship is connected
+	 * 3. A single client relationship is connected
+	 * 4. One or more delete relationships is connected
+	 * 5. A single client relationship, along with one or more deleted relationships
+	 *
+	 * This function will make assertions to ensure that the relationship
+	 * exists in one of these 5 states.
+	 *
+	 * @param {String} type
+	 * @param {String} id
+	 * @param {String} name
+	 * @returns {Object}
+	 */
+	sortHasOneRelationships: function(type, id, name) {
+		var values = {};
+		var relationships = this.relationshipsForRecord(type, id, name);
+
+		values[SERVER_STATE] = filter.call(relationships, function(relationship) {
+			return relationship.get('state') === SERVER_STATE;
+		})[0] || null;
+
+		values[DELETED_STATE] = filter.call(relationships, function(relationship) {
+			return relationship.get('state') === DELETED_STATE;
+		});
+
+		values[CLIENT_STATE] = filter.call(relationships, function(relationship) {
+			return relationship.get('state') === CLIENT_STATE;
+		})[0] || null;
+
+		Em.runInDebug(function() {
+			/* jshint ignore:start */
+			// No relationships at all
+			if (!values[SERVER_STATE] && values[DELETED_STATE].length <= 0 && !values[CLIENT_STATE]) return;
+			// One server relationship, nothing else
+			if (values[SERVER_STATE] && values[DELETED_STATE].length <= 0 && !values[CLIENT_STATE]) return;
+			// One client relationship, nothing else
+			if (!values[SERVER_STATE] && values[DELETED_STATE].length <= 0 && values[CLIENT_STATE]) return;
+			// One client relationship and some deleted relationships
+			if (!values[SERVER_STATE] && values[DELETED_STATE].length > 0 && values[CLIENT_STATE]) return;
+			// Some deleted relationships, nothing else
+			if (!values[SERVER_STATE] && values[DELETED_STATE].length > 0 && !values[CLIENT_STATE]) return;
+			// Everything else is invalid
+			Em.assert('Invalid hasOne relationship values.');
+			/* jshint ignore:end */
+		});
+
+		return values;
 	}
 
 });

@@ -221,5 +221,18 @@ EG.Model.reopen({
 			delete this.get('_clientAttributes')[name];
 			this.notifyPropertyChange('_clientAttributes');
 		}
+	},
+
+	/**
+	 * Sets up attributes given to the constructor for this record.
+	 * Equivalent to setting the attribute values individually.
+	 */
+	loadAttributesFromClient: function(json) {
+		this.constructor.eachAttribute(function(name, meta) {
+			Em.assert('Your are missing the `' + name + '` property.', !meta.isRequired || json.hasOwnProperty(name));
+
+			var value = (json.hasOwnProperty(name) ? json[name] : meta.defaultValue);
+			this.set(name, value);
+		}, this);
 	}
 });

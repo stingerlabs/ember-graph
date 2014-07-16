@@ -186,31 +186,21 @@ EG.Store = Em.Object.extend({
 
 		this._setRecord(typeKey, record);
 
-		record.loadData(json);
+		record.loadDataFromClient(json);
 
 		return record;
 	},
 
 	/**
-	 * Loads an already created record into the store. This method
-	 * should probably only be used by the store or adapter.
-	 *
-	 * @param typeKey
-	 * @param json
 	 * @deprecated Use `extractPayload` instead
 	 */
 	_loadRecord: function(typeKey, json) {
-		var record = this.modelForType(typeKey)._create();
-		record.set('store', this);
-		record.set('id', json.id);
+		var id = json.id;
+		var payload = {};
+		payload[typeKey] = [json];
+		this.extractPayload(payload);
 
-		this._setRecord(typeKey, record);
-
-		this.connectQueuedRelationships(record);
-
-		record.loadData(json);
-
-		return record;
+		return this.getRecord(typeKey, id);
 	},
 
 	/**
@@ -537,10 +527,16 @@ EG.Store = Em.Object.extend({
 
 					if (record) {
 						if (!record.get('isDirty') || reloadDirty) {
-							record.loadData(json);
+							record.loadDataFromServer(json);
 						}
 					} else {
-						this._loadRecord(typeKey, json);
+						record = this.modelForType(typeKey)._create();
+						record.set('store', this);
+						record.set('id', json.id);
+
+						this._setRecord(typeKey, record);
+						this.connectQueuedRelationships(record);
+						record.loadDataFromServer(json);
 					}
 				}, this);
 			}, this);
