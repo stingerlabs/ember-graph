@@ -4241,12 +4241,12 @@ EG.Model.reopenClass({
 			// We're not going to close over many variables for the sake of speed
 			if (meta.kind === HAS_ONE_KEY) {
 				relationship = function(key) {
-					var value = this.getHasOneValue(key, false);
+					var value = this.get('_' + key);
 					return (value ? this.get('store').find(value.type, value.id) : null);
 				};
 			} else if (!meta.isPolymorphic) {
 				relationship = function(key) {
-					var value = this.getHasManyValue(key, false);
+					var value = this.get('_' + key);
 					var ids = Em.ArrayPolyfills.map.call(value, function(item) {
 						return item.id;
 					});
@@ -4255,7 +4255,7 @@ EG.Model.reopenClass({
 			} else {
 				relationship = function(key) {
 					var store = this.get('store');
-					var value = this.getHasManyValue(key, false);
+					var value = this.get('_' + key);
 					var groups = EG.groupRecords(value);
 					var promises = Em.ArrayPolyfills.map.call(groups, function(group) {
 						var ids = Em.ArrayPolyfills.map.call(group, function(item) {
