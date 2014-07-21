@@ -4673,7 +4673,11 @@ EG.Model.reopen({
 				throw new Em.Error('Your JSON is missing the required `' + name + '` relationship.');
 			}
 
-			var value = json[name] || meta.defaultValue;
+			var value = json[name];
+
+			if (value === undefined) {
+				value = meta.defaultValue;
+			}
 
 			if (meta.kind === HAS_MANY_KEY) {
 				forEach.call(value, function(v) {
@@ -4730,7 +4734,7 @@ EG.Model.reopen({
 				throw new Em.Error('Your JSON is missing the required `' + name + '` relationship.');
 			}
 
-			if (!json.hasOwnProperty(name)) {
+			if (json[name] === undefined) {
 				json[name] = meta.defaultValue;
 			}
 
