@@ -30,7 +30,7 @@ var createAttribute = function(attributeName, options) {
 		});
 
 		if (value !== undefined) {
-      var scope = meta.isEqual ? meta : this.get('store').attributeTypeFor(meta.type);
+			var scope = meta.isEqual ? meta : this.get('store').attributeTypeFor(meta.type);
 
 			if (scope.isEqual(server, value)) {
 				delete this.get('_clientAttributes')[key];
@@ -172,8 +172,8 @@ EG.Model.reopen({
 		this.constructor.eachAttribute(function(name, meta) {
 			var server = this.get('_serverAttributes.' + name);
 			var client = this.get('_clientAttributes.' + name);
-      var scope = meta.isEqual ? meta : store.attributeTypeFor(meta.type);
 
+			var scope = meta.isEqual ? meta : store.attributeTypeFor(meta.type);
 			if (client === undefined || scope.isEqual(server, client)) {
 				return;
 			}
@@ -217,8 +217,8 @@ EG.Model.reopen({
 		var server = this.get('_serverAttributes.' + name);
 		var client = this.get('_clientAttributes.' + name);
 
-		var meta = this.constructor.metaForAttribute(name),
-        scope = meta.isEqual ? meta : this.get('store').attributeTypeFor(meta.type);
+		var meta = this.constructor.metaForAttribute(name);
+        var scope = meta.isEqual ? meta : this.get('store').attributeTypeFor(meta.type);
 		if (scope.isEqual(server, client)) {
 			delete this.get('_clientAttributes')[name];
 			this.notifyPropertyChange('_clientAttributes');

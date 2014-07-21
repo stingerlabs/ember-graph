@@ -3926,8 +3926,9 @@ var createAttribute = function(attributeName, options) {
 		
 
 		if (value !== undefined) {
-			var isEqual = meta.isEqual || this.get('store').attributeTypeFor(meta.type).isEqual;
-			if (isEqual(server, value)) {
+			var scope = meta.isEqual ? meta : this.get('store').attributeTypeFor(meta.type);
+
+			if (scope.isEqual(server, value)) {
 				delete this.get('_clientAttributes')[key];
 			} else {
 				this.set('_clientAttributes.' + key, value);
@@ -4067,10 +4068,8 @@ EG.Model.reopen({
 			var server = this.get('_serverAttributes.' + name);
 			var client = this.get('_clientAttributes.' + name);
 
-			var type = store.attributeTypeFor(meta.type);
-			var isEqual = meta.isEqual || type.isEqual;
-
-			if (client === undefined || isEqual(server, client)) {
+			var scope = meta.isEqual ? meta : store.attributeTypeFor(meta.type);
+			if (client === undefined || scope.isEqual(server, client)) {
 				return;
 			}
 
@@ -4113,8 +4112,8 @@ EG.Model.reopen({
 		var client = this.get('_clientAttributes.' + name);
 
 		var meta = this.constructor.metaForAttribute(name);
-		var isEqual = meta.isEqual || this.get('store').attributeTypeFor(meta.type).isEqual;
-		if (isEqual(server, client)) {
+        var scope = meta.isEqual ? meta : this.get('store').attributeTypeFor(meta.type);
+		if (scope.isEqual(server, client)) {
 			delete this.get('_clientAttributes')[name];
 			this.notifyPropertyChange('_clientAttributes');
 		}
@@ -4133,6 +4132,7 @@ EG.Model.reopen({
 		}, this);
 	}
 });
+
 
 })();
 
