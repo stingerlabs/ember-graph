@@ -161,7 +161,7 @@ EG.Model.reopen({
 		this.constructor.eachRelationship(function(name, meta) {
 			var oldVal, newVal;
 
-			if (meta.readOnly) {
+			if (meta.isReadOnly) {
 				return;
 			}
 
