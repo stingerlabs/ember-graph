@@ -4418,7 +4418,7 @@ EG.Model.reopen({
 				}
 
 				store.createRelationship(this.typeKey, this.get('id'), relationshipName,
-					polymorphicType, id, null, CLIENT_STATE);
+					polymorphicType, id, meta.inverse, CLIENT_STATE);
 
 				return;
 			}
