@@ -4292,15 +4292,19 @@ EG.Model.reopen({
 		this.constructor.eachRelationship(function(name, meta) {
 			var oldVal, newVal;
 
+			if (meta.readOnly) {
+				return;
+			}
+
 			if (meta.kind === HAS_MANY_KEY) {
 				oldVal = this.getHasManyValue(name, true);
 				var oldValSet = map.call(oldVal, function(value) {
-					return value.type + '.' + value.id;
+					return value.type + ':' + value.id;
 				});
 
 				newVal = this.getHasManyValue(name, false);
 				var newValSet = map.call(newVal, function(value) {
-					return value.type + '.' + value.id;
+					return value.type + ':' + value.id;
 				});
 
 				if (!EG.arrayContentsEqual(oldVal, newVal)) {
@@ -4310,7 +4314,12 @@ EG.Model.reopen({
 				oldVal = this.getHasOneValue(name, true);
 				newVal = this.getHasOneValue(name, false);
 
-				if (oldVal !== newVal) {
+				if (!oldVal && !newVal) {
+					return;
+				}
+
+				if ((!oldVal && newVal) || (oldVal && !newVal) ||
+					(oldVal.typeKey !== newVal.typeKey || oldVal.id !== newVal.id)) {
 					changes[name] = [oldVal, newVal];
 				}
 			}
