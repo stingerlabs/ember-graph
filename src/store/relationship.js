@@ -212,6 +212,18 @@ EG.Store.reopen({
 		});
 
 		return values;
+	},
+
+	updateRelationshipsWithNewId: function(typeKey, oldId, newId) {
+		var all = this.get('allRelationships');
+
+		for (var id in all) {
+			if (all.hasOwnProperty(id)) {
+				all[id].changeId(typeKey, oldId, newId);
+			}
+		}
+
+		this.notifyPropertyChange('allRelationships');
 	}
 
 });

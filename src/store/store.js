@@ -408,6 +408,7 @@ EG.Store = Em.Object.extend({
 
 				this._deleteRecord(type, tempId);
 				this._setRecord(type, record);
+				this.updateRelationshipsWithNewId(type, tempId, record.get('id'));
 
 				this.extractPayload(payload);
 				return record;

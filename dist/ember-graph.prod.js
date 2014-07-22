@@ -550,6 +550,14 @@ EG.Relationship = Em.Object.extend({
 		}
 	},
 
+	changeId: function(typeKey, oldId, newId) {
+		if (this.get('type1') === typeKey && this.get('id1') === oldId) {
+			this.set('id1', newId);
+		} else if (this.get('type2') === typeKey && this.get('id2') === oldId) {
+			this.set('id2', newId);
+		}
+	},
+
 	erase: function() {
 		this.setProperties({
 			id: null,
@@ -2422,6 +2430,7 @@ EG.Store = Em.Object.extend({
 
 				this._deleteRecord(type, tempId);
 				this._setRecord(type, record);
+				this.updateRelationshipsWithNewId(type, tempId, record.get('id'));
 
 				this.extractPayload(payload);
 				return record;
@@ -2810,6 +2819,18 @@ EG.Store.reopen({
 		
 
 		return values;
+	},
+
+	updateRelationshipsWithNewId: function(typeKey, oldId, newId) {
+		var all = this.get('allRelationships');
+
+		for (var id in all) {
+			if (all.hasOwnProperty(id)) {
+				all[id].changeId(typeKey, oldId, newId);
+			}
+		}
+
+		this.notifyPropertyChange('allRelationships');
 	}
 
 });

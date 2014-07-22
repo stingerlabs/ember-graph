@@ -112,6 +112,14 @@ EG.Relationship = Em.Object.extend({
 		}
 	},
 
+	changeId: function(typeKey, oldId, newId) {
+		if (this.get('type1') === typeKey && this.get('id1') === oldId) {
+			this.set('id1', newId);
+		} else if (this.get('type2') === typeKey && this.get('id2') === oldId) {
+			this.set('id2', newId);
+		}
+	},
+
 	erase: function() {
 		this.setProperties({
 			id: null,
