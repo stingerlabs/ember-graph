@@ -217,9 +217,9 @@ EG.Model.reopen({
 		Em.changeProperties(function() {
 			var i, store = this.get('store');
 
-			// Don't modify a read-only relationship
+			// Don't modify a read-only relationship (unless we're initializing)
 			var meta = this.constructor.metaForRelationship(relationshipName);
-			if (meta.isReadOnly) {
+			if (meta.isReadOnly && this.get('isInitialized')) {
 				Em.assert('Can\'t modify a read-only relationship.');
 				return;
 			}
@@ -318,9 +318,9 @@ EG.Model.reopen({
 		Em.changeProperties(function() {
 			var store = this.get('store');
 
-			// Don't modify a read-only relationship
+			// Don't modify a read-only relationship (unless we're initializing)
 			var meta = this.constructor.metaForRelationship(relationshipName);
-			if (meta.isReadOnly) {
+			if (meta.isReadOnly && this.get('isInitialized')) {
 				Em.assert('Can\'t modify a read-only relationship.');
 				return;
 			}
@@ -432,7 +432,7 @@ EG.Model.reopen({
 	 */
 	relationships: null,
 
-	initializeRelationships: Em.on('init', function() {
+	initializeRelationshipStore: Em.on('init', function() {
 		this.set('relationships', new EG.RelationshipStore());
 	}),
 

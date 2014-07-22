@@ -101,7 +101,7 @@ EG.Model = Em.Object.extend(Em.Evented, {
 		Em.assert('The record `' + this.typeKey + ':' + this.get('id') + '` was attempted to be reloaded ' +
 			'while dirty with `reloadDirty` disabled.', !this.get('isDirty') || this.get('store.reloadDirty'));
 
-		this._loadAttributes(json);
+		this.loadAttributesFromServer(json);
 		this.loadRelationshipsFromServer(json);
 	},
 
@@ -111,14 +111,15 @@ EG.Model = Em.Object.extend(Em.Evented, {
 	 * public API methods for manipulating records. This should really only be
 	 * called by the store and when a record is brand new.
 	 *
-	 * @method loadDataFromClient
+	 * @method initializeRecord
 	 * @param {Object} json
 	 */
-	loadDataFromClient: function(json) {
+	initializeRecord: function(json) {
 		json = json || {};
 
-		this.loadAttributesFromClient(json);
-		this.loadRelationshipsFromClient(json);
+		this.initializeAttributes(json);
+		this.initializeRelationships(json);
+		this.set('isInitialized', true);
 	},
 
 	/**
@@ -223,11 +224,21 @@ EG.Model.reopenClass({
 		return EG.String.startsWith(id, this.temporaryIdPrefix);
 	},
 
-	create: function() {
-		Em.assert('You can\'t create a record directly. Use the store.');
+	/**
+	 * This method creates a record shell, initializing the `store` and `id` properties.
+	 * (The ID is a temporary ID.) **This can only be called by the store.** Calling it
+	 * yourself will decouple the record from the store, causing odd behavior.
+	 *
+	 * @method create
+	 * @param {Store} store
+	 * @return {Model}
+	 */
+	create: function(store) {
+		var record = this._super();
+		record.set('store', store);
+		record.set('_id', Em.get(this, 'temporaryIdPrefix') + EG.generateUUID());
+		return record;
 	},
-
-	_create: EG.Model.create,
 
 	/**
 	 * @method extend

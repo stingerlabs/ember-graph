@@ -2194,13 +2194,9 @@ EG.Store = Em.Object.extend({
 	createRecord: function(typeKey, json) {
 		json = json || {};
 
-		var record = this.modelForType(typeKey)._create();
-		record.set('store', this);
-		record.set('id', EG.Model.temporaryIdPrefix + EG.generateUUID());
-
+		var record = this.modelForType(typeKey).create(this);
 		this._setRecord(typeKey, record);
-
-		record.loadDataFromClient(json);
+		record.initializeRecord(json);
 
 		return record;
 	},
@@ -2557,8 +2553,7 @@ EG.Store = Em.Object.extend({
 							record.loadDataFromServer(json);
 						}
 					} else {
-						record = this.modelForType(typeKey)._create();
-						record.set('store', this);
+						record = this.modelForType(typeKey).create(this);
 						record.set('id', json.id);
 
 						this._setRecord(typeKey, record);
@@ -3600,7 +3595,7 @@ EG.Model = Em.Object.extend(Em.Evented, {
 		json = json || {};
 		
 
-		this._loadAttributes(json);
+		this.loadAttributesFromServer(json);
 		this.loadRelationshipsFromServer(json);
 	},
 
@@ -3610,14 +3605,15 @@ EG.Model = Em.Object.extend(Em.Evented, {
 	 * public API methods for manipulating records. This should really only be
 	 * called by the store and when a record is brand new.
 	 *
-	 * @method loadDataFromClient
+	 * @method initializeRecord
 	 * @param {Object} json
 	 */
-	loadDataFromClient: function(json) {
+	initializeRecord: function(json) {
 		json = json || {};
 
-		this.loadAttributesFromClient(json);
-		this.loadRelationshipsFromClient(json);
+		this.initializeAttributes(json);
+		this.initializeRelationships(json);
+		this.set('isInitialized', true);
 	},
 
 	/**
@@ -3722,11 +3718,21 @@ EG.Model.reopenClass({
 		return EG.String.startsWith(id, this.temporaryIdPrefix);
 	},
 
-	create: function() {
-		
+	/**
+	 * This method creates a record shell, initializing the `store` and `id` properties.
+	 * (The ID is a temporary ID.) **This can only be called by the store.** Calling it
+	 * yourself will decouple the record from the store, causing odd behavior.
+	 *
+	 * @method create
+	 * @param {Store} store
+	 * @return {Model}
+	 */
+	create: function(store) {
+		var record = this._super();
+		record.set('store', store);
+		record.set('_id', Em.get(this, 'temporaryIdPrefix') + EG.generateUUID());
+		return record;
 	},
-
-	_create: EG.Model.create,
 
 	/**
 	 * @method extend
@@ -3891,7 +3897,17 @@ EG.Model.reopen({
 	 * @type Boolean
 	 * @final
 	 */
-	isInTransit: Em.computed.or('isSaving', 'isDeleting', 'isCreating', 'isReloading')
+	isInTransit: Em.computed.or('isSaving', 'isDeleting', 'isCreating', 'isReloading'),
+
+	/**
+	 * Indicates whether the record has been completely initialized by the store yet.
+	 * If this is `false`, it's not safe to use the record.
+	 *
+	 * @property isInitialized
+	 * @type Boolean
+	 * @final
+	 */
+	isInitialized: false
 });
 
 })();
@@ -3926,7 +3942,7 @@ var createAttribute = function(attributeName, options) {
 		
 
 		if (value !== undefined) {
-			var scope = meta.isEqual ? meta : this.get('store').attributeTypeFor(meta.type);
+      var scope = meta.isEqual ? meta : this.get('store').attributeTypeFor(meta.type);
 
 			if (scope.isEqual(server, value)) {
 				delete this.get('_clientAttributes')[key];
@@ -4067,7 +4083,6 @@ EG.Model.reopen({
 		this.constructor.eachAttribute(function(name, meta) {
 			var server = this.get('_serverAttributes.' + name);
 			var client = this.get('_clientAttributes.' + name);
-
 			var scope = meta.isEqual ? meta : store.attributeTypeFor(meta.type);
 			if (client === undefined || scope.isEqual(server, client)) {
 				return;
@@ -4092,7 +4107,7 @@ EG.Model.reopen({
 	/**
 	 * Loads attributes from the server.
 	 */
-	_loadAttributes: function(json) {
+	loadAttributesFromServer: function(json) {
 		this.constructor.eachAttribute(function(attributeName, meta) {
 			
 
@@ -4111,8 +4126,8 @@ EG.Model.reopen({
 		var server = this.get('_serverAttributes.' + name);
 		var client = this.get('_clientAttributes.' + name);
 
-		var meta = this.constructor.metaForAttribute(name);
-        var scope = meta.isEqual ? meta : this.get('store').attributeTypeFor(meta.type);
+		var meta = this.constructor.metaForAttribute(name),
+        scope = meta.isEqual ? meta : this.get('store').attributeTypeFor(meta.type);
 		if (scope.isEqual(server, client)) {
 			delete this.get('_clientAttributes')[name];
 			this.notifyPropertyChange('_clientAttributes');
@@ -4122,13 +4137,16 @@ EG.Model.reopen({
 	/**
 	 * Sets up attributes given to the constructor for this record.
 	 * Equivalent to setting the attribute values individually.
+	 *
+	 * @private
 	 */
-	loadAttributesFromClient: function(json) {
+	initializeAttributes: function(json) {
 		this.constructor.eachAttribute(function(name, meta) {
-			
+			if (meta.isRequired && json[name] === undefined) {
+				throw new Em.Error('You tried to create a record without the required `' + name + '` property.');
+			}
 
-			var value = (json[name] !== undefined ? json[name] : meta.defaultValue);
-			this.set(name, value);
+			this.set(name, json[name] === undefined ? meta.defaultValue : json[name]);
 		}, this);
 	}
 });
@@ -4348,9 +4366,9 @@ EG.Model.reopen({
 		Em.changeProperties(function() {
 			var i, store = this.get('store');
 
-			// Don't modify a read-only relationship
+			// Don't modify a read-only relationship (unless we're initializing)
 			var meta = this.constructor.metaForRelationship(relationshipName);
-			if (meta.isReadOnly) {
+			if (meta.isReadOnly && this.get('isInitialized')) {
 				
 				return;
 			}
@@ -4449,9 +4467,9 @@ EG.Model.reopen({
 		Em.changeProperties(function() {
 			var store = this.get('store');
 
-			// Don't modify a read-only relationship
+			// Don't modify a read-only relationship (unless we're initializing)
 			var meta = this.constructor.metaForRelationship(relationshipName);
-			if (meta.isReadOnly) {
+			if (meta.isReadOnly && this.get('isInitialized')) {
 				
 				return;
 			}
@@ -4563,7 +4581,7 @@ EG.Model.reopen({
 	 */
 	relationships: null,
 
-	initializeRelationships: Em.on('init', function() {
+	initializeRelationshipStore: Em.on('init', function() {
 		this.set('relationships', new EG.RelationshipStore());
 	}),
 
@@ -4643,18 +4661,16 @@ EG.Model.reopen({
 	/**
 	 * Sets up relationships given to the constructor for this record.
 	 * Equivalent to calling the relationship functions individually.
+	 *
+	 * @private
 	 */
-	loadRelationshipsFromClient: function(json) {
+	initializeRelationships: function(json) {
 		this.constructor.eachRelationship(function(name, meta) {
 			if (meta.isRequired && json[name] === undefined) {
-				throw new Em.Error('Your JSON is missing the required `' + name + '` relationship.');
+				throw new Em.Error('You tried to create a record without the required `' + name + '` relationship.');
 			}
 
-			var value = json[name];
-
-			if (value === undefined) {
-				value = meta.defaultValue;
-			}
+			var value = (json[name] === undefined ? meta.defaultValue : json[name]);
 
 			if (meta.kind === HAS_MANY_KEY) {
 				forEach.call(value, function(v) {
@@ -4676,7 +4692,7 @@ EG.Model.reopen({
 						this.setHasOneRelationship(name, value);
 						break;
 					case 'null':
-						this.clearHasOneRelationship(name);
+						// It's already null
 						break;
 					case 'instance':
 						this.setHasOneRelationship(name, value.get('id'), value.get('typeKey'));

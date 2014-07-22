@@ -30,7 +30,7 @@ var createAttribute = function(attributeName, options) {
 		});
 
 		if (value !== undefined) {
-			var scope = meta.isEqual ? meta : this.get('store').attributeTypeFor(meta.type);
+      var scope = meta.isEqual ? meta : this.get('store').attributeTypeFor(meta.type);
 
 			if (scope.isEqual(server, value)) {
 				delete this.get('_clientAttributes')[key];
@@ -172,7 +172,6 @@ EG.Model.reopen({
 		this.constructor.eachAttribute(function(name, meta) {
 			var server = this.get('_serverAttributes.' + name);
 			var client = this.get('_clientAttributes.' + name);
-
 			var scope = meta.isEqual ? meta : store.attributeTypeFor(meta.type);
 			if (client === undefined || scope.isEqual(server, client)) {
 				return;
@@ -197,7 +196,7 @@ EG.Model.reopen({
 	/**
 	 * Loads attributes from the server.
 	 */
-	_loadAttributes: function(json) {
+	loadAttributesFromServer: function(json) {
 		this.constructor.eachAttribute(function(attributeName, meta) {
 			Em.assert('Your JSON is missing the \'' + attributeName + '\' property.',
 				!meta.isRequired || json.hasOwnProperty(attributeName));
@@ -217,8 +216,8 @@ EG.Model.reopen({
 		var server = this.get('_serverAttributes.' + name);
 		var client = this.get('_clientAttributes.' + name);
 
-		var meta = this.constructor.metaForAttribute(name);
-        var scope = meta.isEqual ? meta : this.get('store').attributeTypeFor(meta.type);
+		var meta = this.constructor.metaForAttribute(name),
+        scope = meta.isEqual ? meta : this.get('store').attributeTypeFor(meta.type);
 		if (scope.isEqual(server, client)) {
 			delete this.get('_clientAttributes')[name];
 			this.notifyPropertyChange('_clientAttributes');
@@ -228,13 +227,16 @@ EG.Model.reopen({
 	/**
 	 * Sets up attributes given to the constructor for this record.
 	 * Equivalent to setting the attribute values individually.
+	 *
+	 * @private
 	 */
-	loadAttributesFromClient: function(json) {
+	initializeAttributes: function(json) {
 		this.constructor.eachAttribute(function(name, meta) {
-			Em.assert('Your are missing the `' + name + '` property.', !meta.isRequired || json.hasOwnProperty(name));
+			if (meta.isRequired && json[name] === undefined) {
+				throw new Em.Error('You tried to create a record without the required `' + name + '` property.');
+			}
 
-			var value = (json[name] !== undefined ? json[name] : meta.defaultValue);
-			this.set(name, value);
+			this.set(name, json[name] === undefined ? meta.defaultValue : json[name]);
 		}, this);
 	}
 });

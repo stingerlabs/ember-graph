@@ -180,13 +180,9 @@ EG.Store = Em.Object.extend({
 	createRecord: function(typeKey, json) {
 		json = json || {};
 
-		var record = this.modelForType(typeKey)._create();
-		record.set('store', this);
-		record.set('id', EG.Model.temporaryIdPrefix + EG.generateUUID());
-
+		var record = this.modelForType(typeKey).create(this);
 		this._setRecord(typeKey, record);
-
-		record.loadDataFromClient(json);
+		record.initializeRecord(json);
 
 		return record;
 	},
@@ -544,8 +540,7 @@ EG.Store = Em.Object.extend({
 							record.loadDataFromServer(json);
 						}
 					} else {
-						record = this.modelForType(typeKey)._create();
-						record.set('store', this);
+						record = this.modelForType(typeKey).create(this);
 						record.set('id', json.id);
 
 						this._setRecord(typeKey, record);

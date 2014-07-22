@@ -18,18 +18,16 @@ EG.Model.reopen({
 	/**
 	 * Sets up relationships given to the constructor for this record.
 	 * Equivalent to calling the relationship functions individually.
+	 *
+	 * @private
 	 */
-	loadRelationshipsFromClient: function(json) {
+	initializeRelationships: function(json) {
 		this.constructor.eachRelationship(function(name, meta) {
 			if (meta.isRequired && json[name] === undefined) {
-				throw new Em.Error('Your JSON is missing the required `' + name + '` relationship.');
+				throw new Em.Error('You tried to create a record without the required `' + name + '` relationship.');
 			}
 
-			var value = json[name];
-
-			if (value === undefined) {
-				value = meta.defaultValue;
-			}
+			var value = (json[name] === undefined ? meta.defaultValue : json[name]);
 
 			if (meta.kind === HAS_MANY_KEY) {
 				forEach.call(value, function(v) {
@@ -51,7 +49,7 @@ EG.Model.reopen({
 						this.setHasOneRelationship(name, value);
 						break;
 					case 'null':
-						this.clearHasOneRelationship(name);
+						// It's already null
 						break;
 					case 'instance':
 						this.setHasOneRelationship(name, value.get('id'), value.get('typeKey'));
