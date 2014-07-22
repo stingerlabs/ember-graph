@@ -35,6 +35,7 @@ require('adapter/adapter');
 require('adapter/synchronous');
 require('adapter/**/*');
 
+require('store/record_cache');
 require('store/store');
 require('store/relationship');
 

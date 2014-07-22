@@ -2020,6 +2020,67 @@ EG.RESTAdapter = EG.Adapter.extend({
 
 (function() {
 
+// TODO: Need tests
+EG.RecordCache = Em.Object.extend({
+
+	cacheTimeout: Infinity,
+
+	records: {},
+
+	init: function(cacheTimeout) {
+		this.setProperties({
+			cacheTimeout: cacheTimeout,
+			records: {}
+		});
+	},
+
+	getRecord: function(typeKey, id) {
+		var key = typeKey + ':' + id;
+		var records = this.get('records');
+
+		if (records[key] && records[key].timestamp >= (new Date()).getTime() - this.get('cacheTimeout')) {
+			return records[key].record;
+		}
+
+		return null;
+	},
+
+	getRecords: function(typeKey) {
+		var records = this.get('records');
+		var found = [];
+		var cutoff = (new Date()).getTime() - this.get('cacheTimeout');
+
+		for (var key in records) {
+			if (records.hasOwnProperty(key) && key.indexOf(typeKey) === 0) {
+				if (records[key].timestamp >= cutoff) {
+					found.push(records[key].record);
+				}
+			}
+		}
+
+		return found;
+	},
+
+	storeRecord: function(record) {
+		var records = this.get('records');
+
+		records[record.typeKey + ':' + record.get('id')] = {
+			record: record,
+			timestamp: (new Date()).getTime()
+		};
+	},
+
+	deleteRecord: function(typeKey, id) {
+		var records = this.get('records');
+		delete records[typeKey + ':' + id];
+	}
+
+});
+
+})();
+
+(function() {
+
 /**
  * The store is used to manage all records in the application.
  * Ideally, there should only be one store for an application.
@@ -2100,9 +2161,12 @@ EG.Store = Em.Object.extend({
 	 * Contains the records cached in the store. The keys are type names,
 	 * and the values are nested objects keyed at the ID of the record.
 	 *
-	 * @type {Object.<String, Model>}
+	 * @property recordCache
+	 * @type {RecordCache}
+	 * @final
+	 * @private
 	 */
-	_records: {},
+	recordCache: {},
 
 	/**
 	 * Stores adapters as they're looked up in the container.
@@ -2114,60 +2178,12 @@ EG.Store = Em.Object.extend({
 	 */
 	adapterCache: {},
 
-	/**
-	 * Initializes all of the variables properly
-	 */
-	init: function() {
-		this._super();
-		this.set('_records', {});
-		this.set('_types', {});
-		this.set('_relationships', {});
-		this.set('_queuedRelationships', {});
-		this.set('adapterCache', {});
-	},
-
-	/**
-	 * Gets a record from the store's cached records (including timestamp).
-	 *
-	 * @param {String} typeKey
-	 * @param {String} id
-	 * @private
-	 */
-	_getRecord: function(typeKey, id) {
-		var records = this.get('_records');
-		records[typeKey] = records[typeKey] || {};
-		return records[typeKey][id];
-	},
-
-	/**
-	 * Puts a record into the store's cached records.
-	 * Overwrites the old instance of it if it exists.
-	 *
-	 * @param {String} typeKey
-	 * @param {Model} record
-	 * @private
-	 */
-	_setRecord: function(typeKey, record) {
-		var records = this.get('_records');
-		records[typeKey] = records[typeKey] || {};
-		records[typeKey][record.get('id')] = {
-			record: record,
-			timestamp: new Date().getTime()
-		};
-	},
-
-	/**
-	 * Deletes a record from the store's cached records.
-	 *
-	 * @param {Store} typeKey
-	 * @param {String} id
-	 * @private
-	 */
-	_deleteRecord: function(typeKey, id) {
-		var records = this.get('_records');
-		records[typeKey] = records[typeKey] || {};
-		delete records[typeKey][id];
-	},
+	initializeCaches: Em.on('init', function() {
+		this.setProperties({
+			recordCache: new EG.RecordCache(this.get('cacheTimeout')),
+			adapterCache: {}
+		});
+	}),
 
 	/**
 	 * Looks up the model for the specified typeKey. The `typeKey` property
@@ -2203,7 +2219,7 @@ EG.Store = Em.Object.extend({
 		json = json || {};
 
 		var record = this.modelForType(typeKey).create(this);
-		this._setRecord(typeKey, record);
+		this.get('recordCache').storeRecord(record);
 		record.initializeRecord(json);
 
 		return record;
@@ -2229,18 +2245,7 @@ EG.Store = Em.Object.extend({
 	 * @return {Model[]}
 	 */
 	cachedRecordsFor: function(typeKey) {
-		var records = this.get('_records.' + typeKey) || {};
-		var timeout = new Date().getTime() - this.get('cacheTimeout');
-
-		return Em.keys(records).map(function(id) {
-			var recordShell = records[id];
-
-			if (recordShell.timestamp >= timeout) {
-				return recordShell.record;
-			} else {
-				return undefined;
-			}
-		});
+		return this.get('recordCache').getRecords(typeKey);
 	},
 
 	/**
@@ -2288,14 +2293,7 @@ EG.Store = Em.Object.extend({
 	 * @return {Model}
 	 */
 	getRecord: function(typeKey, id) {
-		var record = this._getRecord(typeKey, id);
-		var timeout = new Date().getTime() - this.get('cacheTimeout');
-
-		if (record && record.record) {
-			return (record.timestamp >= timeout ? record.record : null);
-		} else {
-			return null;
-		}
+		return this.get('recordCache').getRecord(typeKey, id);
 	},
 
 	/**
@@ -2428,8 +2426,9 @@ EG.Store = Em.Object.extend({
 			return this.adapterFor(record.typeKey).createRecord(record).then(function(payload) {
 				record.set('id', payload.meta.newId);
 
-				this._deleteRecord(type, tempId);
-				this._setRecord(type, record);
+				var recordCache = this.get('recordCache');
+				recordCache.deleteRecord(type, tempId);
+				recordCache.storeRecord(record);
 				this.updateRelationshipsWithNewId(type, tempId, record.get('id'));
 
 				this.extractPayload(payload);
@@ -2460,7 +2459,7 @@ EG.Store = Em.Object.extend({
 
 		if (record.get('isNew')) {
 			this.deleteRelationshipsForRecord(type, id);
-			this._deleteRecord(type, id);
+			this.get('recordCache').deleteRecord(type, id);
 			record.set('store', null);
 			return Em.RSVP.resolve();
 		}
@@ -2468,7 +2467,7 @@ EG.Store = Em.Object.extend({
 		return this.adapterFor(record.typeKey).deleteRecord(record).then(function(payload) {
 			this.deleteRelationshipsForRecord(type, id);
 			this.extractPayload(payload);
-			this._deleteRecord(type, id);
+			this.get('recordCache').deleteRecord(type, id);
 			record.set('store', null);
 		}.bind(this));
 	},
@@ -2565,7 +2564,7 @@ EG.Store = Em.Object.extend({
 						record = this.modelForType(typeKey).create(this);
 						record.set('id', json.id);
 
-						this._setRecord(typeKey, record);
+						this.get('recordCache').storeRecord(record);
 						this.connectQueuedRelationships(record);
 						record.loadDataFromServer(json);
 					}
