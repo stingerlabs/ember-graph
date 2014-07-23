@@ -446,15 +446,13 @@ EG.Store = Em.Object.extend({
 	 */
 	extractPayload: function(payload) {
 		payload = payload || {};
+		// We don't do anything with `meta` yet
+		delete payload.meta;
 
 		Em.changeProperties(function() {
 			var reloadDirty = this.get('reloadDirty');
 
 			Em.keys(payload).forEach(function(typeKey) {
-				if (typeKey === 'meta') {
-					return;
-				}
-
 				var model = this.modelForType(typeKey);
 
 				payload[typeKey].forEach(function(json) {
