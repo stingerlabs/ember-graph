@@ -4147,6 +4147,14 @@ var CLIENT_STATE = EG.Relationship.CLIENT_STATE;
 var SERVER_STATE = EG.Relationship.SERVER_STATE;
 var DELETED_STATE = EG.Relationship.DELETED_STATE;
 
+var HAS_ONE_GETTER = function(key) {
+	return this.getHasOneValue(key.substring(1), false);
+};
+
+var HAS_MANY_GETTER = function(key) {
+	return this.getHasManyValue(key.substring(1), false);
+};
+
 var createRelationship = function(name, kind, options) {
 	
 	
@@ -4165,19 +4173,9 @@ var createRelationship = function(name, kind, options) {
 	
 	
 
-	if (meta.kind === HAS_MANY_KEY) {
-		return Em.computed(function(key) {
-			return this.getHasManyValue(key.substring(1), false);
-		}).property('relationships.client.' + name,
-				'relationships.deleted.' + name,
-				'relationships.server.' + name).meta(meta).readOnly();
-	} else {
-		return Em.computed(function(key) {
-			return this.getHasOneValue(key.substring(1), false);
-		}).property('relationships.client.' + name,
-				'relationships.deleted.' + name,
-				'relationships.server.' + name).meta(meta).readOnly();
-	}
+	return Em.computed(meta.kind === HAS_MANY_KEY ? HAS_MANY_GETTER : HAS_ONE_GETTER).
+		property('relationships.client.' + name, 'relationships.deleted.' + name, 'relationships.server.' + name).
+		meta(meta).readOnly();
 };
 
 EG.Model.reopenClass({
@@ -4608,10 +4606,6 @@ EG.Model.reopen({
 				id: relationship.otherId(this)
 			};
 		}, this);
-	},
-
-	getRelationshipsByName: function(name) {
-		return this.get('relationships').getRelationshipsByName(name);
 	}
 
 });
