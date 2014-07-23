@@ -46,10 +46,14 @@
 				})
 			});
 
-			store._loadRecord('tag', { id: '1', name: 'c++' });
-			store._loadRecord('tag', { id: '2', name: 'pizza' });
-			store._loadRecord('tag', { id: '3', name: 'ember' });
-			store._loadRecord('tag', { id: '4', name: 'rubik\'s cube' });
+			store.extractPayload({
+				tag: [
+					{ id: '1', name: 'c++' },
+					{ id: '2', name: 'pizza' },
+					{ id: '3', name: 'ember' },
+					{ id: '4', name: 'rubik\'s cube' }
+				]
+			});
 		}
 	});
 

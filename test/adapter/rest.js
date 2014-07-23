@@ -19,7 +19,9 @@
 
 			adapter = store.get('container').lookup('adapter:application');
 
-			store._loadRecord('person', { id: '1' });
+			store.extractPayload({
+				person: [{ id: '1' }]
+			});
 		}
 	});
 

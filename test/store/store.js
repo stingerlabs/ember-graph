@@ -51,29 +51,29 @@
 	});
 
 	test('The store can load records properly', function() {
-		expect(9);
+		expect(6);
 
-		ok(store.hasRecord(typeKey, '1') === false);
-		ok(store.hasRecord(typeKey, '2') === false);
-		ok(store.hasRecord(typeKey, '4') === false);
+		strictEqual(store.getRecord(typeKey, '1'), null);
+		strictEqual(store.getRecord(typeKey, '2'), null);
+		strictEqual(store.getRecord(typeKey, '4'), null);
 
-		ok(store._loadRecord(typeKey, records[1]));
-		ok(store._loadRecord(typeKey, records[2]));
-		ok(store._loadRecord(typeKey, records[4]));
+		var payload = {};
+		payload[typeKey] = [records[1], records[2], records[4]];
+		store.extractPayload(payload);
 
-		ok(store.hasRecord(typeKey, '1') === true);
-		ok(store.hasRecord(typeKey, '2') === true);
-		ok(store.hasRecord(typeKey, '4') === true);
+		ok(store.getRecord(typeKey, '1'));
+		ok(store.getRecord(typeKey, '2'));
+		ok(store.getRecord(typeKey, '4'));
 	});
 
 	asyncTest('The store can find a single record properly', function() {
 		expect(3);
 
-		ok(store.hasRecord(typeKey, '1') === false);
+		strictEqual(store.getRecord(typeKey, '1'), null);
 		store.find(typeKey, '1').then(function(record) {
 			start();
-			ok(store.hasRecord(typeKey, '1') === true);
-			ok(record.get('id') === '1');
+			ok(store.getRecord(typeKey, '1'));
+			strictEqual(record.get('id'), '1');
 		});
 	});
 
@@ -85,9 +85,9 @@
 
 			var set = new Em.Set(resolvedRecords);
 			ok(Em.get(set, 'length') === 3);
-			ok(store.hasRecord(typeKey, '1'));
-			ok(store.hasRecord(typeKey, '2'));
-			ok(store.hasRecord(typeKey, '4'));
+			ok(store.getRecord(typeKey, '1'));
+			ok(store.getRecord(typeKey, '2'));
+			ok(store.getRecord(typeKey, '4'));
 		});
 	});
 
@@ -100,10 +100,10 @@
 			var set = new Em.Set(resolvedRecords);
 
 			ok(Em.get(set, 'length') === 4);
-			ok(store.hasRecord(typeKey, '1'));
-			ok(store.hasRecord(typeKey, '2'));
-			ok(store.hasRecord(typeKey, '3'));
-			ok(store.hasRecord(typeKey, '4'));
+			ok(store.getRecord(typeKey, '1'));
+			ok(store.getRecord(typeKey, '2'));
+			ok(store.getRecord(typeKey, '3'));
+			ok(store.getRecord(typeKey, '4'));
 		});
 	});
 
@@ -113,16 +113,16 @@
 		var record = store.createRecord(typeKey, {});
 		var tempId = record.get('id');
 
-		ok(store.hasRecord(typeKey, tempId));
+		ok(store.getRecord(typeKey, tempId));
 
 		var promise = store.saveRecord(record);
 
 		promise.then(function() {
 			start();
 
-			ok(!store.hasRecord(typeKey, tempId));
+			ok(!store.getRecord(typeKey, tempId));
 			ok(tempId !== record.get('id'));
-			ok(store.hasRecord(typeKey, record.get('id')));
+			ok(store.getRecord(typeKey, record.get('id')));
 		});
 	});
 
@@ -136,31 +136,37 @@
 			var promise = record.destroy();
 
 			start();
-			ok(record.get('isDeleting') === true);
+			strictEqual(record.get('isDeleting'), true);
 			stop();
 
 			return promise;
 		}).then(function() {
 			start();
 
-			ok(!store.hasRecord(typeKey, '1'));
-			ok(record.get('isDeleted') === true);
+			strictEqual(store.getRecord(typeKey, '1'), null);
+			strictEqual(record.get('isDeleted'), true);
 		});
 	});
 
 	test('The `cacheFor` method functions properly', function() {
 		expect(4);
 
-		store._loadRecord(typeKey, records[1]);
+		var payload = {};
+
+		payload[typeKey] = [records[1]];
+		store.extractPayload(payload);
 		deepEqual(store.cachedRecordsFor(typeKey).mapBy('id').sort(), ['1'].sort());
 
-		store._loadRecord(typeKey, records[2]);
+		payload[typeKey] = [records[2]];
+		store.extractPayload(payload);
 		deepEqual(store.cachedRecordsFor(typeKey).mapBy('id').sort(), ['1', '2'].sort());
 
-		store._loadRecord(typeKey, records[3]);
+		payload[typeKey] = [records[3]];
+		store.extractPayload(payload);
 		deepEqual(store.cachedRecordsFor(typeKey).mapBy('id').sort(), ['1', '2', '3'].sort());
 
-		store._loadRecord(typeKey, records[4]);
+		payload[typeKey] = [records[4]];
+		store.extractPayload(payload);
 		deepEqual(store.cachedRecordsFor(typeKey).mapBy('id').sort(), ['1', '2', '3', '4'].sort());
 	});
 

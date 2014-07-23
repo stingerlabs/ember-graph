@@ -8,10 +8,11 @@
 	test('Existing ID loads correctly', function() {
 		expect(1);
 
-		var id = 'TEST_ID';
-		var model = store._loadRecord('test', { id: id });
+		store.extractPayload({
+			test: [{ id: 'TEST_ID' }]
+		});
 
-		ok(model.get('id') === id);
+		strictEqual(store.getRecord('test', 'TEST_ID').get('id'), 'TEST_ID');
 	});
 
 	test('New ID is created', function() {
@@ -25,7 +26,11 @@
 	test('A permanent ID cannot be changed', function() {
 		expect(1);
 
-		var model = store._loadRecord('test', { id: '1' });
+		store.extractPayload({
+			test: [{ id: '1' }]
+		});
+
+		var model = store.getRecord('test', '1');
 
 		throws(function() {
 			model.set('id', '');

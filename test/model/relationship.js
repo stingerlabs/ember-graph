@@ -110,7 +110,15 @@
 			}
 		}
 
-		var post = store._loadRecord('post', { id: '7', author: { type: 'user', id: '3' }, tags: [] });
+		store.extractPayload({
+			post: [{
+				id: '7',
+				author: { type: 'user', id: '3' },
+				tags: []
+			}]
+		});
+
+		var post = store.getRecord('post', '7');
 
 		strictEqual(typeof rid, 'string');
 		strictEqual(queued[rid], undefined);
@@ -457,7 +465,14 @@
 	test('A new permanent record loaded creates new server relationships', function() {
 		expect(3);
 
-		var post = store._loadRecord('post', { id: '50', author: { type: 'user', id: '1' } });
+		store.extractPayload({
+			post: [{
+				id: '50',
+				author: { type: 'user', id: '1' }
+			}]
+		});
+
+		var post = store.getRecord('post', '50');
 		deepEqual(post.get('_author'), { type: 'user', id: '1' });
 		var user = store.getRecord('user', '1');
 		ok(user.get('_posts').mapBy('id').indexOf('50') >= 0);

@@ -2158,6 +2158,18 @@ EG.Store = Em.Object.extend({
 	overwriteClientAttributes: false,
 
 	/**
+	 * Stores the models used so far. This not ony caches them so we don't
+	 * have to hit the container, but it also let's use know that the
+	 * typeKey has been property injected into them.
+	 *
+	 * @property modelCache
+	 * @type {Object}
+	 * @final
+	 * @private
+	 */
+	modelCache: {},
+
+	/**
 	 * Contains the records cached in the store. The keys are type names,
 	 * and the values are nested objects keyed at the ID of the record.
 	 *
@@ -2180,6 +2192,7 @@ EG.Store = Em.Object.extend({
 
 	initializeCaches: Em.on('init', function() {
 		this.setProperties({
+			modelCache: {},
 			recordCache: new EG.RecordCache(this.get('cacheTimeout')),
 			adapterCache: {}
 		});
@@ -2195,16 +2208,16 @@ EG.Store = Em.Object.extend({
 	 * @return {Class}
 	 */
 	modelForType: function(typeKey) {
-		this._modelCache = this._modelCache || {};
-		var factory = this.get('container').lookupFactory('model:' + typeKey);
+		var modelCache = this.get('modelCache');
 
-		if (!this._modelCache[typeKey]) {
-			this._modelCache[typeKey] = factory;
+		if (!modelCache[typeKey]) {
+			var factory = this.get('container').lookupFactory('model:' + typeKey);
 			factory.reopen({ typeKey: typeKey });
 			factory.reopenClass({ typeKey: typeKey });
+			modelCache[typeKey] = factory;
 		}
 
-		return factory;
+		return modelCache[typeKey];
 	},
 
 	/**
@@ -2216,25 +2229,10 @@ EG.Store = Em.Object.extend({
 	 * @return {Model}
 	 */
 	createRecord: function(typeKey, json) {
-		json = json || {};
-
 		var record = this.modelForType(typeKey).create(this);
 		this.get('recordCache').storeRecord(record);
-		record.initializeRecord(json);
-
+		record.initializeRecord(json || {});
 		return record;
-	},
-
-	/**
-	 * @deprecated Use `extractPayload` instead
-	 */
-	_loadRecord: function(typeKey, json) {
-		var id = json.id;
-		var payload = {};
-		payload[typeKey] = [json];
-		this.extractPayload(payload);
-
-		return this.getRecord(typeKey, id);
 	},
 
 	/**
@@ -2246,6 +2244,19 @@ EG.Store = Em.Object.extend({
 	 */
 	cachedRecordsFor: function(typeKey) {
 		return this.get('recordCache').getRecords(typeKey);
+	},
+
+	/**
+	 * Returns the record directly if the record is cached in the store.
+	 * Otherwise returns `null`.
+	 *
+	 * @method getRecord
+	 * @param {String} typeKey
+	 * @param {String} id
+	 * @return {Model}
+	 */
+	getRecord: function(typeKey, id) {
+		return this.get('recordCache').getRecord(typeKey, id);
 	},
 
 	/**
@@ -2265,10 +2276,6 @@ EG.Store = Em.Object.extend({
 	 * @return {PromiseObject|PromiseArray}
 	 */
 	find: function(typeKey, options) {
-		if (arguments.length > 1 && !options) {
-			throw new Ember.Error('A bad `find` call was made to the store.');
-		}
-
 		switch (Em.typeOf(options)) {
 			case 'string':
 				return this._findSingle(typeKey, options);
@@ -2277,23 +2284,13 @@ EG.Store = Em.Object.extend({
 			case 'object':
 				return this._findQuery(typeKey, options);
 			case 'undefined':
-				return this._findAll(typeKey);
+				if (arguments.length === 1) {
+					return this._findAll(typeKey);
+				}
+				/* falls through */
 			default:
-				throw new Ember.Error('A bad `find` call was made to the store.');
+				throw new Em.Error('A bad `find` call was made to the store.');
 		}
-	},
-
-	/**
-	 * Returns the record directly if the record is cached in the store.
-	 * Otherwise returns `null`.
-	 *
-	 * @method getRecord
-	 * @param {String} typeKey
-	 * @param {String} id
-	 * @return {Model}
-	 */
-	getRecord: function(typeKey, id) {
-		return this.get('recordCache').getRecord(typeKey, id);
 	},
 
 	/**
@@ -2399,18 +2396,6 @@ EG.Store = Em.Object.extend({
 	},
 
 	/**
-	 * Returns `true` if the record is cached in the store, `false` otherwise.
-	 *
-	 * @method hasRecord
-	 * @param {String} typeKey
-	 * @param {String} id
-	 * @return {Boolean}
-	 */
-	hasRecord: function(typeKey, id) {
-		return this.getRecord(typeKey, id) !== null;
-	},
-
-	/**
 	 * Persists a record (new or old) to the server.
 	 *
 	 * @method saveRecord
@@ -2480,8 +2465,9 @@ EG.Store = Em.Object.extend({
 	 * @return {Promise} Resolves to the reloaded record
 	 */
 	reloadRecord: function(record) {
-		Em.assert('You can\'t reload record `' + record.typeKey + ':' +
-			record.get('id') + '` while it\'s dirty.', !record.get('isDirty'));
+		if (record.get('isDirty') && !this.get('reloadDirty')) {
+			throw new Em.Error('Can\'t reload a record while it\'s dirty and `reloadDirty` is turned off.');
+		}
 
 		return this.adapterFor(record.typeKey).findRecord(record.typeKey, record.get('id')).then(function(payload) {
 			this.extractPayload(payload);
@@ -2552,7 +2538,7 @@ EG.Store = Em.Object.extend({
 					return;
 				}
 
-				var type = this.modelForType(typeKey);
+				var model = this.modelForType(typeKey);
 
 				payload[typeKey].forEach(function(json) {
 					var record = this.getRecord(typeKey, json.id);
@@ -2562,7 +2548,7 @@ EG.Store = Em.Object.extend({
 							record.loadDataFromServer(json);
 						}
 					} else {
-						record = this.modelForType(typeKey).create(this);
+						record = model.create(this);
 						record.set('id', json.id);
 
 						this.get('recordCache').storeRecord(record);
@@ -2582,9 +2568,7 @@ EG.Store = Em.Object.extend({
 	 * @return {AttributeType}
 	 */
 	attributeTypeFor: function(typeName) {
-		var attributeType = this.get('container').lookup('type:' + typeName);
-		Em.assert('Can\'t find an attribute type for the \'' + typeName + '\' type.', !!attributeType);
-		return attributeType;
+		return this.get('container').lookup('type:' + typeName);
 	},
 
 	/**

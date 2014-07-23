@@ -13,10 +13,14 @@
 				})
 			});
 
-			store._loadRecord('tag', { id: '1', name: 'tag1' });
-			store._loadRecord('tag', { id: '2', name: 'tag2' });
-			store._loadRecord('tag', { id: '3', name: 'tag3' });
-			store._loadRecord('tag', { id: '4', name: 'tag4' });
+			store.extractPayload({
+				tag: [
+					{ id: '1', name: 'tag1' },
+					{ id: '2', name: 'tag2' },
+					{ id: '3', name: 'tag3' },
+					{ id: '4', name: 'tag4' }
+				]
+			});
 		}
 	});
 
