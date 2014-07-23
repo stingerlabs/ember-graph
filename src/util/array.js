@@ -49,6 +49,12 @@ EG.ArrayPolyfills = {
 		}
 
 		return value;
+	},
+
+	mapBy: function(property) {
+		return Em.ArrayPolyfills.map.call(this, function(item) {
+			return Em.get(item, property);
+		});
 	}
 };
 

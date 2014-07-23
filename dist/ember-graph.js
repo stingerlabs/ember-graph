@@ -118,6 +118,12 @@ EG.ArrayPolyfills = {
 		}
 
 		return value;
+	},
+
+	mapBy: function(property) {
+		return Em.ArrayPolyfills.map.call(this, function(item) {
+			return Em.get(item, property);
+		});
 	}
 };
 
@@ -911,15 +917,9 @@ EG.EmberGraphDatabaseSerializer = EG.Serializer.extend({
 (function() {
 
 var map = Ember.ArrayPolyfills.map;
+var mapBy = EG.ArrayPolyfills.mapBy;
 var filter = Ember.ArrayPolyfills.filter;
 var forEach = Ember.ArrayPolyfills.forEach;
-var isArray = function(array) {
-	return Object.prototype.toString.call(array) === '[object Array]';
-};
-
-var coerceId = function(id) {
-	return (id === null ? null : id + '');
-};
 
 /**
  * This serializer was designed to be compatible with the
@@ -940,6 +940,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * @property polymorphicRelationships
 	 * @type Boolean
 	 * @default false
+	 * @private
 	 */
 	polymorphicRelationships: false,
 
@@ -952,7 +953,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 				json[EG.String.pluralize(record.typeKey)] = [this.serializeRecord(record)];
 				return json;
 			default:
-				throw new Error('Invalid request type for JSON serializer.');
+				throw new Em.Error('Invalid request type for JSON serializer.');
 		}
 	},
 
@@ -1007,6 +1008,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * @param {Model} record
 	 * @param {String} name The name of the attribute to serialize
 	 * @return {Object}
+	 * @protected
 	 */
 	serializeAttribute: function(record, name) {
 		var meta = record.constructor.metaForAttribute(name);
@@ -1038,6 +1040,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * @param {Model} record
 	 * @param {String} name The name of the relationship to serialize
 	 * @return {Object}
+	 * @protected
 	 */
 	serializeRelationship: function(record, name) {
 		var meta = record.constructor.metaForRelationship(name);
@@ -1048,26 +1051,19 @@ EG.JSONSerializer = EG.Serializer.extend({
 				value = null;
 			}
 
-			if (this.get('polymorphicRelationships')) {
-				return { name: name, value: value };
-			} else {
-				return { name: name, value: value.id };
-			}
+			return {
+				name: name,
+				value: (this.get('polymorphicRelationships') ? value : value.id)
+			};
 		} else {
 			value = filter.call(value, function(v) {
 				return !EG.Model.isTemporaryId(v.id);
 			});
 
-			if (this.get('polymorphicRelationships')) {
-				return { name: name, value: value };
-			} else {
-				return {
-					name: name,
-					value: map.call(value, function(v) {
-						return v.id;
-					})
-				};
-			}
+			return {
+				name: name,
+				value: (this.get('polymorphicRelationships') ? value : mapBy.call(value, 'id'))
+			};
 		}
 	},
 
@@ -1106,12 +1102,8 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * @return {JSON} Array of change operations
 	 */
 	serializeDelta: function(record) {
-		var operations = [];
-
-		operations = operations.concat(this.serializeAttributeDelta(record));
-		operations = operations.concat(this.serializeRelationshipDelta(record));
-
-		return operations;
+		var operations = this.serializeAttributeDelta(record);
+		return operations.concat(this.serializeRelationshipDelta(record));
 	},
 
 	/**
@@ -1120,6 +1112,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * @method serializeAttributeDelta
 	 * @param {Model} record
 	 * @return {JSON} Array of change operations
+	 * @protected
 	 */
 	serializeAttributeDelta: function(record) {
 		var changes = record.changedAttributes();
@@ -1140,6 +1133,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * @method serializeAttributeDelta
 	 * @param {Model} record
 	 * @return {JSON} Array of change operations
+	 * @protected
 	 */
 	serializeRelationshipDelta: function(record) {
 		var operations = [];
@@ -1151,15 +1145,11 @@ EG.JSONSerializer = EG.Serializer.extend({
 			var meta = record.constructor.metaForRelationship(relationshipName);
 
 			if (meta.kind === EG.Model.HAS_ONE_KEY) {
-				if (polymorphicRelationships) {
-					operations.push({ op: 'replace', path: '/links/' + relationshipName, value: values[1] });
-				} else {
-					operations.push({
-						op: 'replace',
-						path: '/links/' + relationshipName,
-						value: (values[1] === null ? null : values[1].id)
-					});
-				}
+				operations.push({
+					op: 'replace',
+					path: '/links/' + relationshipName,
+					value: (polymorphicRelationships ? values[1] : (values[1] === null ? null : values[1].id))
+				});
 			} else if (meta.kind === EG.Model.HAS_MANY_KEY) {
 				var originalSet = new Em.Set(map.call(values[0], function(value) {
 					return value.type + ':' + value.id;
@@ -1171,29 +1161,23 @@ EG.JSONSerializer = EG.Serializer.extend({
 
 				forEach.call(values[1], function(value) {
 					if (!originalSet.contains(value.type + ':' + value.id) && !EG.Model.isTemporaryId(value.id)) {
-						if (polymorphicRelationships) {
-							operations.push({ op: 'add', path: '/links/' + relationshipName, value: value });
-						} else {
-							operations.push({ op: 'add', path: '/links/' + relationshipName, value: value.id });
-						}
+						operations.push({
+							op: 'add',
+							path: '/links/' + relationshipName,
+							value: (polymorphicRelationships ? value : value.id)
+						});
 					}
 				});
 
 				forEach.call(values[0], function(value) {
 					if (!currentSet.contains(value.type + ':' + value.id)  && !EG.Model.isTemporaryId(value.id)) {
-						if (polymorphicRelationships) {
-							operations.push({
-								op: 'remove',
-								path: '/links/' + relationshipName + '/' + value.id,
-								value: value
-							});
-						} else {
-							operations.push({ op: 'remove', path: '/links/' + relationshipName + '/' + value.id });
-						}
+						operations.push({
+							op: 'remove',
+							path: '/links/' + relationshipName + '/' + value.id,
+							value: (polymorphicRelationships ? value : value.id)
+						});
 					}
 				});
-			} else {
-				Em.assert('Invalid relationship kind.');
 			}
 		});
 
@@ -1201,11 +1185,8 @@ EG.JSONSerializer = EG.Serializer.extend({
 	},
 
 	deserialize: function(payload, options) {
-		payload = payload || {};
-		options = options || {};
-
 		var store = this.get('store');
-		var normalized = this.transformPayload(payload, options);
+		var normalized = this.transformPayload(payload || {}, options || {});
 
 		forEach.call(Em.keys(normalized), function(typeKey) {
 			if (typeKey === 'meta') {
@@ -1231,6 +1212,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * @param {JSON} payload
 	 * @param {Object} options
 	 * @return {Object} Normalized JSON payload
+	 * @protected
 	 */
 	transformPayload: function(payload, options) {
 		if (!payload || Em.keys(payload).length === 0) {
@@ -1247,10 +1229,10 @@ EG.JSONSerializer = EG.Serializer.extend({
 
 		if (options.requestType === 'findQuery') {
 			normalized.meta.queryIds = map.call(payload[EG.String.pluralize(options.recordType)], function(record) {
-				return coerceId(record.id);
+				return record.id + '';
 			});
 		} else if (options.requestType === 'createRecord') {
-			normalized.meta.newId = coerceId(payload[EG.String.pluralize(options.recordType)][0].id);
+			normalized.meta.newId = payload[EG.String.pluralize(options.recordType)][0].id + '';
 		}
 
 		forEach.call(Em.keys(payload), function(key) {
@@ -1275,22 +1257,16 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * @param {Model} model
 	 * @param {JSON} json
 	 * @return {Object} Deserialized record
+	 * @protected
 	 */
 	deserializeRecord: function(model, json) {
-		var record = {
-			id: coerceId(json.id)
-		};
-
-		switch (Em.typeOf(json.id)) {
-			case 'string':
-			case 'number':
-				record.id = coerceId(json.id);
-				break;
-			case 'undefined':
-				throw new Error('Your JSON is missing an ID: ' + JSON.stringify(json));
-			default:
-				throw new Error('Your JSON has an invalid ID: ' + JSON.stringify(json));
+		if (Em.typeOf(json.id) !== 'string' && Em.typeOf(json.id) !== 'number') {
+			throw new Em.Error('Your JSON has an invalid ID: ' + JSON.stringify(json));
 		}
+
+		var record = {
+			id: json.id + ''
+		};
 
 		model.eachAttribute(function(name, meta) {
 			var deserialized = this.deserializeAttribute(model, json, name);
@@ -1336,23 +1312,23 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * @param {JSON} json
 	 * @param {String} name
 	 * @return {Object}
+	 * @protected
 	 */
 	deserializeAttribute: function(model, json, name) {
 		var meta = model.metaForAttribute(name);
 		var type = this.get('store').attributeTypeFor(meta.type);
 		var value = json[name];
-		var error;
 
 		if (value === undefined) {
 			if (meta.isRequired) {
-				error = { id: json.id, typeKey: model.typeKey, name: name };
-				throw new Error('Attribute was missing: ' + JSON.stringify(error));
-			} else {
-				return {
-					name: name,
-					value: (meta.defaultValue === undefined ? type.get('defaultValue') : meta.defaultValue)
-				};
+				var error = { id: json.id, typeKey: model.typeKey, name: name };
+				throw new Em.Error('Attribute was missing: ' + JSON.stringify(error));
 			}
+
+			return {
+				name: name,
+				value: (meta.defaultValue === undefined ? type.get('defaultValue') : meta.defaultValue)
+			};
 		} else {
 			return { name: name, value: type.deserialize(value) };
 		}
@@ -1384,79 +1360,79 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * @param {JSON} json
 	 * @param {String} name
 	 * @return {Object}
+	 * @protected
 	 */
 	deserializeRelationship: function(model, json, name) {
-		var polymorphicRelationships = this.get('polymorphicRelationships');
 		var meta = model.metaForRelationship(name);
 		var value = json.links[name];
-		var error;
 
 		if (value === undefined) {
 			if (meta.isRequired) {
-				error = { id: json.id, typeKey: model.typeKey, name: name };
-				throw new Error('Relationship was missing: ' + JSON.stringify(error));
-			} else {
-				return { name: name, value: meta.defautlValue };
+				throw new Em.Error('Missing `' + name + '` relationship: ' + JSON.stringify(json));
 			}
+
+			return { name: name, value: meta.defautlValue };
 		} else {
 			if (meta.kind === EG.Model.HAS_MANY_KEY) {
-				if (!isArray(value)) {
-					error = { id: json.id, typeKey: model.typeKey, name: name, value: value };
-					throw new Error('Invalid hasMany relationship value: ' + JSON.stringify(error));
-				}
-
-				return {
-					name: name,
-					value: map.call(value, function(v) {
-						if (polymorphicRelationships) {
-							switch (Em.typeOf(v.id)) {
-								case 'string':
-								case 'number':
-									v.id = coerceId(v.id);
-									return v;
-								default:
-									error = { id: json.id, typeKey: model.typeKey, name: name };
-									throw new Error('Invalid hasMany relationship value: ' + JSON.stringify(error));
-							}
-						} else {
-							switch (Em.typeOf(v)) {
-								case 'string':
-								case 'number':
-									return { type: meta.relatedType, id: coerceId(v) };
-								default:
-									error = { id: json.id, typeKey: model.typeKey, name: name };
-									throw new Error('Invalid hasMany relationship value: ' + JSON.stringify(error));
-							}
-						}
-					})
-				};
+				return this.deserializeHasManyRelationship(model, name, value);
 			} else {
-				if (value === null) {
-					return { name: name, value: null };
-				}
-
-				if (polymorphicRelationships) {
-					switch (Em.typeOf(value.id)) {
-						case 'number':
-						case 'string':
-							value.id = coerceId(value.id);
-							return { name: name, value: value };
-						default:
-							error = { id: json.id, typeKey: model.typeKey, name: name };
-							throw new Error('Invalid hasOne relationship value: ' + JSON.stringify(error));
-					}
-				} else {
-					switch (Em.typeOf(value)) {
-						case 'string':
-						case 'number':
-							return { name: name, value: { type: meta.relatedType, id: coerceId(value) } };
-						default:
-							error = { id: json.id, typeKey: model.typeKey, name: name };
-							throw new Error('Invalid hasOne relationship value: ' + JSON.stringify(error));
-					}
-				}
+				return this.deserializeHasOneRelationship(model, name, value);
 			}
 		}
+	},
+
+	/**
+	 * After {{link-to-method 'JSONSerializer' 'deserializeRelationship}} has checked
+	 * for missing values, it delegates to this function to deserialize a single
+	 * hasOne relationship. Their return types are the same.
+	 *
+	 * @deserializeHasOneRelationship
+	 * @param {Class} model
+	 * @param {String} name
+	 * @param {Object|String|Number} value
+	 * @returns {Object}
+	 * @protected
+	 */
+	deserializeHasOneRelationship: function(model, name, value) {
+		if (value === null) {
+			return { name: name, value: null };
+		}
+
+		var polymorphic = this.get('polymorphicRelationships');
+
+		return {
+			name: name,
+			value: {
+				type: (polymorphic ? value.type : model.metaForRelationship(name).relatedType),
+				id: (polymorphic ? value.id : value) + ''
+			}
+		};
+	},
+
+	/**
+	 * After {{link-to-method 'JSONSerializer' 'deserializeRelationship}} has checked
+	 * for missing values, it delegates to this function to deserialize a single
+	 * hasMany relationship. Their return types are the same.
+	 *
+	 * @deserializeHasManyRelationship
+	 * @param {Class} model
+	 * @param {String} name
+	 * @param {Object[]|String[]|Number[]} values
+	 * @returns {Object}
+	 * @protected
+	 */
+	deserializeHasManyRelationship: function(model, name, values) {
+		var relatedType = model.metaForRelationship(name).relatedType;
+		var polymorphic = this.get('polymorphicRelationships');
+
+		var mapped =  map.call(values, function(value) {
+			return {
+				type: (polymorphic ? value.type : relatedType),
+				id: (polymorphic ? value.id : value) + ''
+			};
+		});
+
+		return { name: name, value: mapped };
 	}
 });
 
