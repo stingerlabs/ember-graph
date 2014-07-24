@@ -35,7 +35,7 @@ EG.attr = function(options) {
  *
  * - **`relatedType`**: The type of the related models.
  * - **`inverse`**: The relationship on the related models that reciprocates this relationship.
- * - `isRequired`: `true` if the relationship can be left out of the JSON. Defaults to `false`.
+ * - `isRequired`: `false` if the relationship can be left out of the JSON. Defaults to `true`.
  * - `defaultValue`: The value that gets used if the relationship is missing from the loaded data.
  * The default is an empty array.
  * - `readOnly`: Set to `true` to make the relationship read-only. Defaults to `false`.
@@ -63,7 +63,7 @@ EG.hasMany = function(options) {
  *
  * - **`relatedType`**: The type of the related models.
  * - **`inverse`**: The relationship on the related model that reciprocates this relationship.
- * - `isRequired`: `true` if the relationship can be left out of the JSON. Defaults to `false`.
+ * - `isRequired`: `false` if the relationship can be left out of the JSON. Defaults to `true`.
  * - `defaultValue`: The value that gets used if the relationship is missing from the loaded data.
  * The default is `null`.
  * - `readOnly`: Set to `true` to make the relationship read-only. Defaults to `false`.
