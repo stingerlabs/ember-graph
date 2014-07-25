@@ -6,6 +6,7 @@ EG.Model.reopen({
 	 * @property isDeleting
 	 * @type Boolean
 	 * @final
+	 * @for Model
 	 */
 	isDeleting: false,
 
@@ -15,6 +16,7 @@ EG.Model.reopen({
 	 * @property isDeleted
 	 * @type Boolean
 	 * @final
+	 * @for Model
 	 */
 	isDeleted: false,
 
@@ -25,6 +27,7 @@ EG.Model.reopen({
 	 * @property isSaving
 	 * @type Boolean
 	 * @final
+	 * @for Model
 	 */
 	isSaving: false,
 
@@ -34,6 +37,7 @@ EG.Model.reopen({
 	 * @property isReloading
 	 * @type Boolean
 	 * @final
+	 * @for Model
 	 */
 	isReloading: false,
 
@@ -43,6 +47,7 @@ EG.Model.reopen({
 	 * @property isLoaded
 	 * @type Boolean
 	 * @final
+	 * @for Model
 	 */
 	isLoaded: Em.computed(function() {
 		return this.get('store') !== null;
@@ -55,6 +60,7 @@ EG.Model.reopen({
 	 * @property isDirty
 	 * @type Boolean
 	 * @final
+	 * @for Model
 	 */
 	isDirty: Em.computed.or('_areAttributesDirty', 'areRelationshipsDirty', 'isNew'),
 
@@ -65,6 +71,7 @@ EG.Model.reopen({
 	 * @property isCreating
 	 * @type Boolean
 	 * @final
+	 * @for Model
 	 */
 	isCreating: false,
 
@@ -75,6 +82,7 @@ EG.Model.reopen({
 	 * @property isNew
 	 * @type Boolean
 	 * @final
+	 * @for Model
 	 */
 	isNew: Em.computed(function() {
 		return EG.String.startsWith(this.get('_id'), this.constructor.temporaryIdPrefix);
@@ -86,6 +94,7 @@ EG.Model.reopen({
 	 * @property isInTransit
 	 * @type Boolean
 	 * @final
+	 * @for Model
 	 */
 	isInTransit: Em.computed.or('isSaving', 'isDeleting', 'isCreating', 'isReloading'),
 
@@ -96,6 +105,7 @@ EG.Model.reopen({
 	 * @property isInitialized
 	 * @type Boolean
 	 * @final
+	 * @for Model
 	 */
 	isInitialized: false
 });
