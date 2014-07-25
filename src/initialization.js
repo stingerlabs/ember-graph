@@ -21,7 +21,6 @@ if (Em) {
 				App.register('adapter:rest', EG.RESTAdapter, { singleton: true });
 
 				App.register('serializer:json', EG.JSONSerializer, { singleton: true });
-				App.register('serializer:ember_graph_database', EG.EmberGraphDatabaseSerializer, { singleton: true });
 
 				App.register('type:string', EG.StringType, { singleton: true });
 				App.register('type:number', EG.NumberType, { singleton: true });

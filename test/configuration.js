@@ -8,7 +8,6 @@
 		container.register('adapter:rest', EG.RESTAdapter, { singleton: true });
 
 		container.register('serializer:json', EG.JSONSerializer, { singleton: true });
-		container.register('serializer:ember_graph_database', EG.EmberGraphDatabaseSerializer, { singleton: true });
 
 		container.register('type:string', EG.StringType, { singleton: true });
 		container.register('type:number', EG.NumberType, { singleton: true });
