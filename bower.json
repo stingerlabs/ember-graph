@@ -1,10 +1,5 @@
 {
-	"name": "Ember-Graph",
-	"version": "0.1.0",
-	"main": ["ember-graph.js"],
-	"ignore": [
-		"**/*."
-	],
+	"name": "ember-graph",
 	"dependencies": {
 		"ember": "1.6.1"
 	},
