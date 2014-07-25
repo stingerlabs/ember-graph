@@ -37,9 +37,11 @@ module.exports = function(grunt) {
 
 function uploadFile(s3, fileName, contents, callback) {
 	s3.putObject({
+		ACL: 'public-read',
+		Body: contents,
 		Bucket: 'ember-graph-builds',
-		Key: fileName,
-		Body: contents
+		ContentType: 'application/javascript',
+		Key: fileName
 	}, function(err, data) {
 		callback(!err, fileName);
 	});
