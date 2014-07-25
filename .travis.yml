@@ -12,6 +12,9 @@ script:
     - grunt release
 after_success:
     - |
+        cd ${EG_DIR}
+        grunt upload_builds_to_s3
+    - |
         cd ${EG_DIR};
         grunt build_site;
         cd site_build;
@@ -34,3 +37,5 @@ env:
         - EG_DIR: /home/travis/build/gordonkristan/ember-graph
         - secure: MgMI2LQwzgjO38L5UKKgkmV0J4d1d+b4DK4kuPYegDxBgADB/o8NocW2LF2IARWGUEhU1BBDmKv45xs1X4TavQJ5/+AM5D/HdyK9VB8cQ+3nHBaqyvO7lURKOi8Pvs+hxiWoTLtXF8rImVtWzoJwcyzNbwY/UceKF3d58PMJ++w=
         - secure: G0L+6oA48vlg5vCm8qu/PiC2f2Q7aEzXPbD3blLRXYJXJOGz3bsbSl/n4CE8ogU5u1A0jenaSDFggYV0oDoebWxdcBaMaIIsxsQ5GdSb9RWjYDoSemhbUQjmUUN+EP56pNTDxNAfQLJxIbZvCqOUiZ3Q56y948fK4giloWF1844=
+        - secure: SZjHvDSi1w3p8g+ZR1ls3iSS07uJvXG8y+4r7aSytAtWvtcJibLAHcv9tIgtn901wsCdfuQYmHbjVucI1ASvSdf1TXWGr505UoWY/t3/KEnz2PgFmul87AQUqH0bHkhrRRzh9jlpeRdSwUnLkfvNCbib/LzVdTp5Ft01xseFHwY=
+        - secure: cdTopjWAPZa+ut0tIFKsJQcNSF4ejG7FAhrSKTYh1xZ29lAmLFnOUmBOspgH3bYHpCDS5j1fBRHJTuOJ5xrLSiSPNgEMkPL+833XpyzzBzVrr6gW95r++cA77seD23I4EzTFyCofAdJOpG1wwfx/EOiZrFSaVfiGTGOfehBBzOY=
