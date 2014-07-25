@@ -17,8 +17,7 @@ module.exports = function(grunt) {
 		var json = JSON.parse(fs.readFileSync('doc/data.json', { encoding: 'utf8' }));
 
 		var data = {
-			methods: extractTopLevelMethods(json),
-			properties: extractTopLevelProperties(json),
+			namespaces: extractNamespaces(json),
 			classes: extractClasses(json).map(function(klass) {
 				klass.methods = extractClassMethods(json, getInheritanceChain(json, klass.name));
 				klass.properties = extractClassProperties(json, getInheritanceChain(json, klass.name));
@@ -32,17 +31,44 @@ module.exports = function(grunt) {
 	});
 };
 
-function extractTopLevelMethods(json) {
-	return extractTopLevelItems(json, 'method');
+function extractNamespaces(data) {
+	var namespaces = [];
+
+	data.classitems.forEach(function(item) {
+		if (!item.namespace) {
+			return;
+		}
+
+		if (namespaces.indexOf(item.namespace) < 0) {
+			namespaces.push(item.namespace);
+		}
+	});
+
+	return namespaces.sort().map(function(namespace) {
+		return extractNamespace(data, namespace);
+	});
 }
 
-function extractTopLevelProperties(json) {
-	return extractTopLevelItems(json, 'property');
+function extractNamespace(data, namespace) {
+	return {
+		name: namespace,
+		description: '',
+		methods: extractNamespaceMethods(data, namespace),
+		properties: extractNamespaceProperties(data, namespace)
+	};
 }
 
-function extractTopLevelItems(json, type) {
-	return json.classitems.filter(function(item) {
-		return (item.itemtype === type && (item.category || []).indexOf('top-level') >= 0);
+function extractNamespaceMethods(data, namespace) {
+	return extractNamespaceItems(data, namespace, 'method');
+}
+
+function extractNamespaceProperties(data, namespace) {
+	return extractNamespaceItems(data, namespace, 'property');
+}
+
+function extractNamespaceItems(data, namespace, type) {
+	return data.classitems.filter(function(item) {
+		return (item.itemtype === type && item.namespace === namespace);
 	}).map(function(item) {
 		item.class = null;
 		return (type === 'method' ? convertMethodItem : convertPropertyItem)(item);
@@ -52,7 +78,9 @@ function extractTopLevelItems(json, type) {
 }
 
 function extractClasses(data) {
-	return Object.keys(data.classes).sort().map(function(className) {
+	return Object.keys(data.classes).sort().filter(function(className) {
+		return !data.classes[className].namespace;
+	}).map(function(className) {
 		return convertClassItem(data.classes[className]);
 	});
 }

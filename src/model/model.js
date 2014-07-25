@@ -69,7 +69,7 @@ EG.Model = Em.Object.extend(Em.Evented, {
 
 	/**
 	 * @property store
-	 * @type EmberGraph.Store
+	 * @type Store
 	 * @final
 	 */
 	store: null,

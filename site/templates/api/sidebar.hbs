@@ -4,12 +4,13 @@
 			<strong>Namespaces</strong>
 		</h4>
 	</li>
-	<li class="{{#if emberGraphNamespace}}active{{/if}}">
-		<a href="EG.html"><small>EmberGraph</small></a>
-	</li>
-	<li class="{{#if stringNamespace}}active{{/if}}">
-		<a href="#"><small>String</small></a>
-	</li>
+	{{#each namespaces}}
+		<li class="{{#if active}}active{{/if}}">
+			<a href="{{name}}.html">
+				<small>{{name}}</small>
+			</a>
+		</li>
+	{{/each}}
 </ul>
 
 <ul class="list-unstyled">

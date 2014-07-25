@@ -13,8 +13,7 @@ var reduce = EG.ArrayPolyfills.reduce;
  * @method abstractMethod
  * @param {String} methodName
  * @return {Function}
- * @category top-level
- * @for EG
+ * @namespace EmberGraph
  */
 EG.abstractMethod = function(methodName) {
 	return function() {
@@ -35,8 +34,7 @@ EG.abstractMethod = function(methodName) {
  * @method abstractProperty
  * @param {String} propertyName
  * @return {ComputedProperty}
- * @category top-level
- * @for EG
+ * @namespace EmberGraph
  */
 EG.abstractProperty = function(propertyName) {
 	return Em.computed(function() {
@@ -49,8 +47,7 @@ EG.abstractProperty = function(propertyName) {
  *
  * @method generateUUID
  * @return {String}
- * @category top-level
- * @for EG
+ * @namespace EmberGraph
  */
 EG.generateUUID = function() {
 	return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -69,8 +66,7 @@ EG.generateUUID = function() {
  * @param {Array} a
  * @param {Array} b
  * @returns {Boolean}
- * @category top-level
- * @for EG
+ * @namespace EmberGraph
  */
 EG.arrayContentsEqual = function(a, b) {
 	return (a.length === b.length && (new Em.Set(a)).isEqual(b));
@@ -83,8 +79,7 @@ EG.arrayContentsEqual = function(a, b) {
  * @method groupRecords
  * @param {Object[]} records
  * @return {Array[]}
- * @category top-level
- * @for EG
+ * @namespace EmberGraph
  */
 EG.groupRecords = function(records) {
 	var groups = reduce.call(records, function(groups, record) {

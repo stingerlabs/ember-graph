@@ -4,6 +4,16 @@ var isNativeFunction = function(fn) {
 };
 
 EG.ArrayPolyfills = {
+
+	/**
+	 * Polyfill for Array.prototype.some
+	 *
+	 * @method some
+	 * @param {Function} predicate
+	 * @param {Any} thisArg
+	 * @return {Boolean}
+	 * @namespace Array
+	 */
 	some: isNativeFunction(Array.prototype.some) ? Array.prototype.some : function(predicate, thisArg) {
 		if (this === void 0 || this === null) {
 			throw new TypeError('Array.prototype.some called on null or undefined');
@@ -14,7 +24,7 @@ EG.ArrayPolyfills = {
 		}
 
 		var list = Object(this);
-		var length = list.length >>> 0;
+		var length = list.length >>> 0; // jshint ignore:line
 
 		for (var i = 0; i < length; ++i) {
 			if (i in list && predicate.call(thisArg, list[i], i, list)) {
@@ -25,6 +35,15 @@ EG.ArrayPolyfills = {
 		return false;
 	},
 
+	/**
+	 * Polyfill for Array.prototype.reduce
+	 *
+	 * @method reduce
+	 * @param {Function} predicate
+	 * @param {Any} thisArg
+	 * @return {Boolean}
+	 * @namespace Array
+	 */
 	reduce: isNativeFunction(Array.prototype.reduce) ? Array.prototype.reduce : function(predicate, initialValue) {
 		if (this === void 0 || this === null) {
 			throw new TypeError('Array.prototype.reduce called on null or undefined');
@@ -35,7 +54,7 @@ EG.ArrayPolyfills = {
 		}
 
 		var list = Object(this);
-		var length = list.length >>> 0;
+		var length = list.length >>> 0; // jshint ignore:line
 		var value = initialValue;
 
 		if (length <= 0 && arguments.length < 2) {

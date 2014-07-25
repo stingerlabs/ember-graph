@@ -5,7 +5,7 @@
 window.EmberGraph = window.EG = Em.Namespace.create({
 	/**
 	 * @property VERSION
-	 * @category top-level
+	 * @namespace EmberGraph
 	 * @type String
 	 * @static
 	 * @final
@@ -13,8 +13,8 @@ window.EmberGraph = window.EG = Em.Namespace.create({
 	VERSION: '<%= version %>'
 });
 
-if (Ember.libraries) {
-	Ember.libraries.register('Ember Graph', EG.VERSION);
+if (Em.libraries) {
+	Em.libraries.register('Ember Graph', EG.VERSION);
 }
 
 require('initialization');
