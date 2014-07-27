@@ -1,7 +1,3 @@
-var methodMissing = function(method) {
-	return new Error('Your serializer failed to implement the \'' + method + '\' method.');
-};
-
 /**
  * An interface for a serializer. A serializer is used to convert
  * objects back and forth between the JSON that the server uses,

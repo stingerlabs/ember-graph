@@ -26,9 +26,10 @@
 	});
 
 	test('The serializer is initialized properly', function() {
-		expect(1);
+		expect(2);
 
-		ok(EG.JSONSerializer.detectInstance(adapter.get('serializer')));
+		ok(EG.JSONSerializer.detectInstance(adapter.serializerFor('person')));
+		ok(EG.JSONSerializer.detectInstance(adapter.serializerFor('foobar')));
 	});
 
 	asyncTest('findRecord request', function() {

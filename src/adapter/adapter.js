@@ -24,32 +24,16 @@ EG.Adapter = Em.Object.extend({
 	store: null,
 
 	/**
-	 * The serializer to use if an application serializer is not found.
-	 *
-	 * @property defaultSerializer
-	 * @type String
-	 * @default 'json'
+	 * @property serializerCache
+	 * @type Object
+	 * @private
+	 * @final
 	 */
-	defaultSerializer: 'json',
+	serializerCache: {},
 
-	/**
-	 * The serializer used to convert records and payload to the correct formats.
-	 * The adapter will attempt to use the application serializer, and if one
-	 * isn't found, it will used the serializer specified by
-	 * {{link-to-property 'Adapter' 'defaultSerializer'}}.
-	 *
-	 * @property serializer
-	 * @type Serializer
-	 */
-	serializer: Em.computed(function() {
-		var container = this.get('container');
-		var serializer = container.lookup('serializer:application') ||
-			container.lookup('serializer:' + this.get('defaultSerializer'));
-
-		Em.assert('A valid serializer could not be found.', EG.Serializer.detectInstance(serializer));
-
-		return serializer;
-	}).property().readOnly(),
+	initializeSerializerCache: Em.on('init', function() {
+		this.set('serializerCache', {});
+	}),
 
 	/**
 	 * Persists a record to the server. The returned JSON
@@ -129,6 +113,32 @@ EG.Adapter = Em.Object.extend({
 	deleteRecord: EG.abstractMethod('deleteRecord'),
 
 	/**
+	 * Gets the serializer specified for a type. It first tries to get
+	 * a type-specific serializer. If it can't find one, it tries to use
+	 * the application serializer. If it can't find one, it uses the default
+	 * {{link-to-class 'JSONSerializer'}}.
+	 *
+	 * @method serializerFor
+	 * @param {String} typeKey
+	 * @return {Serializer}
+	 * @protected
+	 */
+	serializerFor: function(typeKey) {
+		var serializerCache = this.get('serializerCache');
+
+		if (!serializerCache[typeKey]) {
+			var container = this.get('container');
+
+			serializerCache[typeKey] =
+				container.lookup('serializer:' + (typeKey || 'application')) ||
+				container.lookup('serializer:application') ||
+				container.lookup('serializer:json');
+		}
+
+		return serializerCache[typeKey];
+	},
+
+	/**
 	 * Serializes the given record. By default, it defers to the serializer.
 	 *
 	 * @method serialize
@@ -138,7 +148,7 @@ EG.Adapter = Em.Object.extend({
 	 * @protected
 	 */
 	serialize: function(record, options) {
-		return this.get('serializer').serialize(record, options);
+		return this.serializerFor(record.get('typeKey')).serialize(record, options);
 	},
 
 	/**
@@ -151,6 +161,6 @@ EG.Adapter = Em.Object.extend({
 	 * @protected
 	 */
 	deserialize: function(payload, options) {
-		return this.get('serializer').deserialize(payload, options);
+		return this.serializerFor(options.recordType).deserialize(payload, options);
 	}
 });
