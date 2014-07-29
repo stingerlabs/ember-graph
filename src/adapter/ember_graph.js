@@ -1,0 +1,278 @@
+var Promise = Em.RSVP.Promise;
+var map = Em.ArrayPolyfills.map;
+
+function cloneJson(json) {
+	return JSON.parse(JSON.stringify(json));
+}
+
+/**
+ * This class acts as a base adapter for synchronous storage forms. Specifically,
+ * the {{link-to-class 'LocalStorageAdapter'}} and {{link-to-class 'MemoryAdapter'}}
+ * inherit from this class. This class will perform all of the work of updating data
+ * and maintaining data integrity, subclasses need only implement the
+ * {{link-to-method 'EmberGraphAdapter' 'getDatabase'}} and
+ * {{link-to-method 'EmberGraphAdapter' 'setDatabase'}} methods to create a
+ * fully-functioning adapter. This class works with data as a single JSON object
+ * that takes the following form:
+ *
+ * ```json
+ * {
+ *     "records": {
+ *          "type_key": {
+ *              "record_id": {
+ *                  "attr1": "value",
+ *                  "attr2": 5
+ *              }
+ *          }
+ *     },
+ *     "relationships": {
+ *         "relationship_id": {
+ *             "t1": "type_key",
+ *             "i1": "id",
+ *             "n1": "relationship_name",
+ *             "t2": "type_key",
+ *             "i2": "id",
+ *             "n2": "relationship_name",
+ *         }
+ *     }
+ * }
+ * ```
+ *
+ * If you can store the JSON data, then this adapter will ensure complete
+ * database integrity, since everything is done is single transactions.
+ * You may also override some of the hooks and methods if you wish to
+ * customize how the adapter saves or retrieves data.
+ *
+ * @class EmberGraphAdapter
+ * @extends Adapter
+ * @category abstract
+ */
+EG.EmberGraphAdapter = EG.Adapter.extend({
+
+	createRecord: function(record) {
+		var json = this.serialize(record, { requestType: 'createRecord', recordType: record.get('typeKey') });
+		return this.serverCreateRecord(record.get('typeKey'), json);
+	},
+
+	findRecord: function(typeKey, id) {
+		return this.serverFindRecord(typeKey, id);
+	},
+
+	findMany: function(typeKey, ids) {
+		return this.serverFindMany(typeKey, ids);
+	},
+
+	findAll: function(typeKey) {
+		return this.serverFindAll(typeKey);
+	},
+
+	findQuery: function() {
+		return Promise.reject('LocalStorageAdapter doesn\'t implement `findQuery` by default.');
+	},
+
+	updateRecord: function(record) {
+		var changes = this.serialize(record, { requestType: 'updateRecord', recordType: record.get('typeKey') });
+		return this.serverUpdateRecord(record.get('typeKey'), record.get('id'), changes);
+	},
+
+	deleteRecord: function(record) {
+		return this.serverDeleteRecord(record.get('typeKey'), record.get('id'));
+	}
+
+});
+
+EG.EmberGraphAdapter.reopen({
+
+	/**
+	 * @method serverCreateRecord
+	 * @param {String} typeKey
+	 * @param {JSON} json
+	 * @return {Promise}
+	 * @protected
+	 */
+	serverCreateRecord: function(typeKey, json) {
+
+	},
+
+	/**
+	 * @method serverFindRecord
+	 * @param {String} typeKey
+	 * @param {String} id
+	 * @return {Promise}
+	 * @protected
+	 */
+	serverFindRecord: function(typeKey, id) {
+		var _this = this;
+
+		return this.getDatabase().then(function(db) {
+			if (Em.get(db, 'records.' + typeKey + '.' + id)) {
+				var payload = {};
+				payload[EG.String.pluralize(typeKey)] = [_this.buildRecord(typeKey, id, db)];
+				return payload;
+			} else {
+				throw { status: 404, typeKey: typeKey, id: id };
+			}
+		});
+	},
+
+	/**
+	 * @method serverFindMany
+	 * @param {String} typeKey
+	 * @param {String[]} ids
+	 * @return {Promise}
+	 * @protected
+	 */
+	serverFindMany: function(typeKey, ids) {
+		var _this = this;
+
+		return this.getDatabase().then(function(db) {
+			var records = map.call(ids, function(id) {
+				if (Em.get(db, 'records.' + typeKey + '.' + id)) {
+					return _this.buildRecord(typeKey, id, db);
+				} else {
+					throw { status: 404, typeKey: typeKey, id: id };
+				}
+			});
+
+			var payload = {};
+			payload[EG.String.pluralize(typeKey)] = records;
+			return payload;
+		});
+	},
+
+	/**
+	 * @method serverFindAll
+	 * @param {String} typeKey
+	 * @return {Promise}
+	 * @protected
+	 */
+	serverFindAll: function(typeKey) {
+		var _this = this;
+
+		return this.getDatabase().then(function(db) {
+			var records = map.call(Em.keys(db.records[typeKey] || {}), function(id) {
+				return _this.buildRecord(typeKey, id, db);
+			});
+
+			var payload = {};
+			payload[EG.String.pluralize(typeKey)] = records;
+			return payload;
+		});
+	},
+
+	/**
+	 * @method serverUpdateRecord
+	 * @param {String} typeKey
+	 * @param {String} id
+	 * @param {JSON[]} changes
+	 * @return {Promise}
+	 * @protected
+	 */
+	serverUpdateRecord: function(typeKey, id, changes) {
+
+	},
+
+	/**
+	 * @method serverDeleteRecord
+	 * @param {String} typeKey
+	 * @param {String} id
+	 * @return {Promise}
+	 * @protected
+	 */
+	serverDeleteRecord: function(typeKey, id) {
+		var _this = this;
+		var payload = null;
+
+		return this.getDatabase().then(function(db) {
+			if (db.records[typeKey]) {
+				delete db.records[typeKey][id];
+			}
+
+			forEach.call(Em.keys(db.relationships), function(rid) {
+				var r = db.relationships[rid];
+
+				if ((r.t1 === typeKey && r.i1 === id) || (r.t2 === typeKey && r.i2 === id)) {
+					delete db.relationships[rid];
+				}
+			});
+
+			return _this.setDatabase(db).then(function() {
+				return {
+					meta: {
+						deletedRecords: [{ type: typeKey, id: id }]
+					}
+				};
+			});
+		});
+	},
+
+	/**
+	 * Return a copy of the database from the storage location in JSON form.
+	 *
+	 * @method getDatabase
+	 * @return {Promise} Resolves to the DB JSON
+	 * @protected
+	 */
+	getDatabase: EG.abstractMethod('getDatabase'),
+
+	/**
+	 * Store the updated version of the database in the storage location.
+	 *
+	 * @method setDatabase
+	 * @param {JSON} db
+	 * @return {Promise} Resolves or rejects based on saving success
+	 * @protected
+	 */
+	setDatabase: EG.abstractMethod('saveDatabase'),
+
+	/**
+	 * Builds the record from the database, combining the relationships and attributes.
+	 * This assumes that the record actually exists.
+	 *
+	 * @method buildRecord
+	 * @param {String} typeKey
+	 * @param {String} id
+	 * @param {JSON} db
+	 * @return {JSON}
+	 * @private
+	 */
+	buildRecord: function(typeKey, id, db) {
+		var model = this.get('store').modelFor(typeKey);
+		var json = cloneJson(db.records[typeKey][id]);
+		json.id = id;
+		json.links = {};
+
+		EG.values(db.relationships, function(rid, relationship) {
+			var meta;
+
+			if (relationship.t1 === typeKey && relationship.i1 === id) {
+				meta = model.metaForRelationship(relationship.n1);
+
+				if (meta.kind === EG.Model.HAS_ONE_KEY) {
+					json.links[relationship.n1] = { type: relationship.t2, id: relationship.i2 };
+				} else {
+					json.links[relationship.n1] = json.links[relationship.n1] || [];
+					json.links[relationship.n1].push({ type: relationship.t2, id: relationship.i2 });
+				}
+			} else if (relationship.t2 === typeKey && relationship.i2 === id) {
+				meta = model.metaForRelationship(relationship.n2);
+
+				if (meta.kind === EG.Model.HAS_ONE_KEY) {
+					json.links[relationship.n2] = { type: relationship.t1, id: relationship.i1 };
+				} else {
+					json.links[relationship.n2] = json.links[relationship.n2] || [];
+					json.links[relationship.n2].push({ type: relationship.t1, id: relationship.i1 });
+				}
+			}
+		});
+
+		model.eachRelationship(function(name, meta) {
+			if (meta.kind === EG.Model.HAS_ONE_KEY && !json.links[name]) {
+				json.links[name] = null;
+			}
+		});
+
+		return json;
+	}
+
+});

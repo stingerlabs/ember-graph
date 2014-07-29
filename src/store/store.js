@@ -418,9 +418,21 @@ EG.Store = Em.Object.extend({
 	 * ```json
 	 * {
 	 *     "post": [
-	 *         { id: "1", title: "Introduction To Ember-Graph", tags: [] },
-	 *         { id: "2", title: "Defining Models", tags: ["1", "3"] },
-	 *         { id: "3", title: "Connecting to a REST API", tags: ["2"] }
+	 *         {
+	 *             id: "1",
+	 *             title: "Introduction To Ember-Graph",
+	 *             tags: []
+	 *         },
+	 *         {
+	 *             id: "2",
+	 *             title: "Defining Models",
+	 *             tags: [{ "type": "tag", "id": "1" }, { "type": "tag", "id": "3" }]
+	 *         },
+	 *         {
+	 *             id: "3",
+	 *             title: "Connecting to a REST API",
+	 *             tags: [{ "type": "tag", "id": "2" }]
+	 *         }
 	 *     ],
 	 *     "tag": [
 	 *         { id: "1", name: "relationship" },

@@ -76,10 +76,10 @@ EG.Serializer = Em.Object.extend({
 	 * ```json
 	 * {
 	 *     "deletedRecords": [
-	 *         { typeKey: "user", id: "3" },
-	 *         { typeKey: "post", id: "10" },
-	 *         { typeKey: "post", id: "11" },
-	 *         { typeKey: "tag", id: "674" }
+	 *         { "type": "user", "id": "3" },
+	 *         { "type": "post", "id": "10" },
+	 *         { "type": "post", "id": "11" },
+	 *         { "type": "tag", "id": "674" }
 	 *     ]
 	 * }
 	 * ```
