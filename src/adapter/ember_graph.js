@@ -43,6 +43,9 @@ function cloneJson(json) {
  * You may also override some of the hooks and methods if you wish to
  * customize how the adapter saves or retrieves data.
  *
+ * TODO: What about the serializer? Can it be overridden?
+ * TODO: Should relationships be an array instead? What's the cost of a `splice`?
+ *
  * @class EmberGraphAdapter
  * @extends Adapter
  * @category abstract
@@ -77,11 +80,9 @@ EG.EmberGraphAdapter = EG.Adapter.extend({
 
 	deleteRecord: function(record) {
 		return this.serverDeleteRecord(record.get('typeKey'), record.get('id'));
-	}
+	},
 
-});
-
-EG.EmberGraphAdapter.reopen({
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	/**
 	 * @method serverCreateRecord
@@ -107,7 +108,7 @@ EG.EmberGraphAdapter.reopen({
 		return this.getDatabase().then(function(db) {
 			if (Em.get(db, 'records.' + typeKey + '.' + id)) {
 				var payload = {};
-				payload[EG.String.pluralize(typeKey)] = [_this.buildRecord(typeKey, id, db)];
+				payload[EG.String.pluralize(typeKey)] = [_this.getRecordFromDatabase(typeKey, id, db)];
 				return payload;
 			} else {
 				throw { status: 404, typeKey: typeKey, id: id };
@@ -128,7 +129,7 @@ EG.EmberGraphAdapter.reopen({
 		return this.getDatabase().then(function(db) {
 			var records = map.call(ids, function(id) {
 				if (Em.get(db, 'records.' + typeKey + '.' + id)) {
-					return _this.buildRecord(typeKey, id, db);
+					return _this.getRecordFromDatabase(typeKey, id, db);
 				} else {
 					throw { status: 404, typeKey: typeKey, id: id };
 				}
@@ -151,7 +152,7 @@ EG.EmberGraphAdapter.reopen({
 
 		return this.getDatabase().then(function(db) {
 			var records = map.call(Em.keys(db.records[typeKey] || {}), function(id) {
-				return _this.buildRecord(typeKey, id, db);
+				return _this.getRecordFromDatabase(typeKey, id, db);
 			});
 
 			var payload = {};
@@ -229,14 +230,14 @@ EG.EmberGraphAdapter.reopen({
 	 * Builds the record from the database, combining the relationships and attributes.
 	 * This assumes that the record actually exists.
 	 *
-	 * @method buildRecord
+	 * @method getRecordFromDatabase
 	 * @param {String} typeKey
 	 * @param {String} id
 	 * @param {JSON} db
 	 * @return {JSON}
 	 * @private
 	 */
-	buildRecord: function(typeKey, id, db) {
+	getRecordFromDatabase: function(typeKey, id, db) {
 		var model = this.get('store').modelFor(typeKey);
 		var json = cloneJson(db.records[typeKey][id]);
 		json.id = id;
@@ -267,12 +268,48 @@ EG.EmberGraphAdapter.reopen({
 		});
 
 		model.eachRelationship(function(name, meta) {
-			if (meta.kind === EG.Model.HAS_ONE_KEY && !json.links[name]) {
-				json.links[name] = null;
+			if (!json.links[name]) {
+				if (meta.kind === EG.Model.HAS_ONE_KEY) {
+					json.links[name] = null;
+				} else {
+					json.links[name] = [];
+				}
 			}
 		});
 
 		return json;
+	},
+
+	/**
+	 * Takes a serialized record and splits it into attributes
+	 * and relationships, then puts it in the database. It will
+	 * replace any existing record with the same type and ID.
+	 *
+	 * @method putRecordInDatabase
+	 * @param {String} typeKey
+	 * @param {String} id
+	 * @param {JSON} json
+	 * @param {JSON} db
+	 * @return {JSON} The updated DB
+	 * @private
+	 */
+	putRecordInDatabase: function(typeKey, id, json, db) {
+		// TODO: Resolve relationship conflicts
+	},
+
+	/**
+	 * Applies a list of changes for a given record to the database.
+	 *
+	 * @method applyChangesToDatabase
+	 * @param {String} typeKey
+	 * @param {String} id
+	 * @param {JSON[]} changes
+	 * @param {JSON} db
+	 * @return {JSON} The updated DB
+	 * @private
+	 */
+	applyChangesToDatabase: function(typeKey, id, changes, db) {
+		// TODO: Resolve relationship conflicts
 	}
 
 });
