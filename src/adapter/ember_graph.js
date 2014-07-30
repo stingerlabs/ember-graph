@@ -3,6 +3,13 @@ var map = Em.ArrayPolyfills.map;
 var filter = Em.ArrayPolyfills.filter;
 var forEach = Em.ArrayPolyfills.forEach;
 
+var ADD_OP_NAME_REGEX = /^\/links\/([^/]+)/i;
+var REMOVE_OP_REGEX = /^\/links\/([^/]+)\/.+/i;
+
+function getRelationshipNameFromChangePath(path, op) {
+	return path.match(op === 'add' ? ADD_OP_NAME_REGEX : REMOVE_OP_REGEX)[1];
+}
+
 function cloneJson(json) {
 	return JSON.parse(JSON.stringify(json));
 }
@@ -388,13 +395,44 @@ EG.EmberGraphAdapter = EG.Adapter.extend({
 		forEach.call(changes, function(change) {
 			switch (change.op) {
 				case 'replace':
+					if (EG.String.startsWith(change.path, '/links/')) {
+						var hasOneName = change.path.substring('/links/'.length);
+
+						if (change.value === null) {
+							db = this.clearHasOneRelationshipInDatabase(typeKey, id, hasOneName, db);
+						} else {
+							var hasOneMeta = model.metaForRelationship(hasOneName);
+
+							var replacementRelationship = {
+								t1: typeKey, i1: id, n1: hasOneName,
+								t2: change.value.type, i2: change.value.id, n2: hasOneMeta.inverse
+							};
+
+							db = this.setHasOneRelationshipInDatabase(replacementRelationship, db);
+						}
+					} else {
+						var attrName = change.path.substring('/'.length);
+						db.records[typeKey][id][attrName] = change.value;
+					}
 					break;
 				case 'add':
-					break;
 				case 'remove':
+					var hasManyName = getRelationshipNameFromChangePath(change.path, change.op);
+					var hasManyMeta = model.metaForRelationship(hasManyName);
+
+					var relationship = {
+						t1: typeKey, i1: id, n1: hasManyName,
+						t2: change.value.type, i2: change.value.id, n2: hasManyMeta.inverse
+					};
+
+					if (change.op === 'add') {
+						db = this.addHasManyRelationshipToDatabase(relationship, db);
+					} else {
+						db = this.removeHasManyRelationshipFromDatabase(relationship, db);
+					}
 					break;
 			}
-		});
+		}, this);
 	},
 
 	/**
@@ -404,11 +442,19 @@ EG.EmberGraphAdapter = EG.Adapter.extend({
 	 * @return {JSON} The updated DB
 	 * @private
 	 */
-	addRelationshipToDatabase: function(relationship, db) {
+	addHasManyRelationshipToDatabase: function(relationship, db) {
 
 	},
 
-	removeRelationshipFromDatabase: function() {
+	removeHasManyRelationshipFromDatabase: function(relationship, db) {
+
+	},
+
+	setHasOneRelationshipInDatabase: function(relationship, db) {
+
+	},
+
+	clearHasOneRelationshipInDatabase: function(typeKey, id, name, db) {
 
 	},
 
