@@ -1,5 +1,7 @@
 var Promise = Em.RSVP.Promise;
 var map = Em.ArrayPolyfills.map;
+var filter = Em.ArrayPolyfills.filter;
+var forEach = Em.ArrayPolyfills.forEach;
 
 function cloneJson(json) {
 	return JSON.parse(JSON.stringify(json));
@@ -25,16 +27,14 @@ function cloneJson(json) {
  *              }
  *          }
  *     },
- *     "relationships": {
- *         "relationship_id": {
+ *     "relationships": [{
  *             "t1": "type_key",
  *             "i1": "id",
  *             "n1": "relationship_name",
  *             "t2": "type_key",
  *             "i2": "id",
  *             "n2": "relationship_name",
- *         }
- *     }
+ *     }]
  * }
  * ```
  *
@@ -43,7 +43,6 @@ function cloneJson(json) {
  * You may also override some of the hooks and methods if you wish to
  * customize how the adapter saves or retrieves data.
  *
- * TODO: What about the serializer? Can it be overridden?
  * TODO: Should relationships be an array instead? What's the cost of a `splice`?
  *
  * @class EmberGraphAdapter
@@ -51,6 +50,21 @@ function cloneJson(json) {
  * @category abstract
  */
 EG.EmberGraphAdapter = EG.Adapter.extend({
+
+	/**
+	 * @property serializer
+	 * @type JSONSerializer
+	 * @protected
+	 * @final
+	 */
+	serializer: null,
+
+	init: function() {
+		this._super();
+		this.set('serializer', EG.JSONSerializer.create({
+			polymorphicRelationships: true
+		}));
+	},
 
 	createRecord: function(record) {
 		var json = this.serialize(record, { requestType: 'createRecord', recordType: record.get('typeKey') });
@@ -82,6 +96,14 @@ EG.EmberGraphAdapter = EG.Adapter.extend({
 		return this.serverDeleteRecord(record.get('typeKey'), record.get('id'));
 	},
 
+	serialize: function(record, options) {
+		return this.get('serializer').serialize(record, options);
+	},
+
+	deserialize: function(payload, options) {
+		return this.get('serializer').deserialize(payload, options);
+	},
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	/**
@@ -92,7 +114,13 @@ EG.EmberGraphAdapter = EG.Adapter.extend({
 	 * @protected
 	 */
 	serverCreateRecord: function(typeKey, json) {
+		var _this = this;
 
+		return this.getDatabase().then(function(db) {
+			var id = _this.generateIdForRecord(typeKey, json, db);
+			db = _this.putRecordInDatabase(typeKey, id, json, db);
+			return _this.setDatabase(db);
+		});
 	},
 
 	/**
@@ -170,7 +198,12 @@ EG.EmberGraphAdapter = EG.Adapter.extend({
 	 * @protected
 	 */
 	serverUpdateRecord: function(typeKey, id, changes) {
+		var _this = this;
 
+		return this.getDatabase().then(function(db) {
+			db = _this.applyChangesToDatabase(typeKey, id, changes, db);
+			return _this.setDatabase(db);
+		});
 	},
 
 	/**
@@ -189,12 +222,8 @@ EG.EmberGraphAdapter = EG.Adapter.extend({
 				delete db.records[typeKey][id];
 			}
 
-			forEach.call(Em.keys(db.relationships), function(rid) {
-				var r = db.relationships[rid];
-
-				if ((r.t1 === typeKey && r.i1 === id) || (r.t2 === typeKey && r.i2 === id)) {
-					delete db.relationships[rid];
-				}
+			db.relationships = filter.call(db.relationships, function(r) {
+				return !((r.t1 === typeKey && r.i1 === id) || (r.t2 === typeKey && r.i2 === id));
 			});
 
 			return _this.setDatabase(db).then(function() {
@@ -206,6 +235,8 @@ EG.EmberGraphAdapter = EG.Adapter.extend({
 			});
 		});
 	},
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	/**
 	 * Return a copy of the database from the storage location in JSON form.
@@ -227,6 +258,18 @@ EG.EmberGraphAdapter = EG.Adapter.extend({
 	setDatabase: EG.abstractMethod('saveDatabase'),
 
 	/**
+	 * @method generateIdForRecord
+	 * @param {String} typeKey
+	 * @param {JSON} json
+	 * @param {JSON} db
+	 * @return {String}
+	 * @protected
+	 */
+	generateIdForRecord: function(typeKey, json, db) {
+		return EG.generateUUID();
+	},
+
+	/**
 	 * Builds the record from the database, combining the relationships and attributes.
 	 * This assumes that the record actually exists.
 	 *
@@ -243,7 +286,7 @@ EG.EmberGraphAdapter = EG.Adapter.extend({
 		json.id = id;
 		json.links = {};
 
-		EG.values(db.relationships, function(rid, relationship) {
+		forEach.call(db.relationships, function(relationship) {
 			var meta;
 
 			if (relationship.t1 === typeKey && relationship.i1 === id) {
@@ -294,7 +337,38 @@ EG.EmberGraphAdapter = EG.Adapter.extend({
 	 * @private
 	 */
 	putRecordInDatabase: function(typeKey, id, json, db) {
-		// TODO: Resolve relationship conflicts
+		var model = this.get('store').modelFor(typeKey);
+
+		db.records[typeKey] = db.records[typeKey] || {};
+		db.records[typeKey][id] = {};
+
+		model.eachAttribute(function(name, meta) {
+			db.records[typeKey][id][name] = json[name];
+		});
+
+		model.eachRelationship(function(name, meta) {
+			if (meta.kind === EG.Model.HAS_ONE_KEY) {
+				if (json.links[name]) {
+					var relationship = {
+						t1: typeKey, i1: id, n1: name,
+						t2: json.links[name].type, i2: json.links[name].id, n2: meta.inverse
+					};
+
+					db = this.addRelationshipToDatabase(relationship, db);
+				}
+			} else {
+				forEach.call(json.links[name], function(value) {
+					var relationship = {
+						t1: typeKey, i1: id, n1: name,
+						t2: value.type, i2: value.id, n2: meta.inverse
+					};
+
+					db = this.addRelationshipToDatabase(relationship, db);
+				}, this);
+			}
+		}, this);
+
+		return db;
 	},
 
 	/**
@@ -309,7 +383,51 @@ EG.EmberGraphAdapter = EG.Adapter.extend({
 	 * @private
 	 */
 	applyChangesToDatabase: function(typeKey, id, changes, db) {
-		// TODO: Resolve relationship conflicts
+		var model = this.get('store').modelFor(typeKey);
+
+		forEach.call(changes, function(change) {
+			switch (change.op) {
+				case 'replace':
+					break;
+				case 'add':
+					break;
+				case 'remove':
+					break;
+			}
+		});
+	},
+
+	/**
+	 * @method addRelationshipToDatabase
+	 * @param {JSON} relationship
+	 * @param {JSON} db
+	 * @return {JSON} The updated DB
+	 * @private
+	 */
+	addRelationshipToDatabase: function(relationship, db) {
+
+	},
+
+	removeRelationshipFromDatabase: function() {
+
+	},
+
+	/**
+	 * Gets all of the relationships that connect to the record given.
+	 *
+	 * @method getRelationshipsFor
+	 * @param {String} typeKey
+	 * @param {String} id
+	 * @param {String} name
+	 * @param {JSON} db
+	 * @return {JSON[]} Relationships
+	 * @private
+	 */
+	getRelationshipsFor: function(typeKey, id, name, db) {
+		return filter.call(db.relationships, function(relationship) {
+			return ((relationship.t1 === typeKey && relationship.i1 === id && relationship.n1 === name) ||
+				(relationship.t2 === typeKey && relationship.i2 === id && relationship.n2 === name));
+		});
 	}
 
 });
