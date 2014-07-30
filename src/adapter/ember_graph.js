@@ -2,6 +2,7 @@ var Promise = Em.RSVP.Promise;
 var map = Em.ArrayPolyfills.map;
 var filter = Em.ArrayPolyfills.filter;
 var forEach = Em.ArrayPolyfills.forEach;
+var indexOf = Em.ArrayPolyfills.indexOf;
 
 var ADD_OP_NAME_REGEX = /^\/links\/([^/]+)/i;
 var REMOVE_OP_REGEX = /^\/links\/([^/]+)\/.+/i;
@@ -49,8 +50,6 @@ function cloneJson(json) {
  * database integrity, since everything is done is single transactions.
  * You may also override some of the hooks and methods if you wish to
  * customize how the adapter saves or retrieves data.
- *
- * TODO: Should relationships be an array instead? What's the cost of a `splice`?
  *
  * @class EmberGraphAdapter
  * @extends Adapter
@@ -436,6 +435,9 @@ EG.EmberGraphAdapter = EG.Adapter.extend({
 	},
 
 	/**
+	 * Adds a new hasMany relationship to the database, removing any conflicts.
+	 * The hasMany relationship should be the first one in the relationship JSON.
+	 *
 	 * @method addRelationshipToDatabase
 	 * @param {JSON} relationship
 	 * @param {JSON} db
@@ -443,19 +445,96 @@ EG.EmberGraphAdapter = EG.Adapter.extend({
 	 * @private
 	 */
 	addHasManyRelationshipToDatabase: function(relationship, db) {
+		var relationships = this.getRelationshipsFor(relationship.t1, relationship.i1, relationship.n1, db);
 
+		var connected = filter.call(relationships, function(r) {
+			return (relationship.t2 === r.t2 && relationship.i2 === r.i2 && relationship.n2 === r.n2);
+		});
+
+		if (connected.length > 0) {
+			return db;
+		}
+
+		if (relationship.n2) {
+			var inverseModel = this.get('store').modelForType(relationship.t2);
+			var inverseMeta = inverseModel.metaForRelationship(relationship.n2);
+
+			if (inverseMeta.kind === EG.Model.HAS_ONE_KEY) {
+				db = this.clearHasOneRelationshipInDatabase(relationship.t2, relationship.i2, relationship.n2, db);
+			}
+		}
+
+		db.relationships.push(relationship);
+
+		return db;
 	},
 
+	/**
+	 * Removes a hasMany relationship from the database.
+	 * The hasMany relationship should be the first one in the relationship JSON.
+	 *
+	 * @method removeHasManyRelationshipFromDatabase
+	 * @param {JSON} relationship
+	 * @param {JSON} db
+	 * @return {JSON} The updated DB
+	 * @private
+	 */
 	removeHasManyRelationshipFromDatabase: function(relationship, db) {
+		var relationships = this.getRelationshipsFor(relationship.t1, relationship.i1, relationship.n1, db);
 
+		db.relationships = filter.call(db.relationships, function(r) {
+			return !(relationship.t2 === r.t2 && relationship.i2 === r.i2 && relationship.n2 === r.n2);
+		});
+
+		return db;
 	},
 
+	/**
+	 * Sets a hasOne relationship to a new value, removing any conflicts.
+	 * The hasOne relationship should be the first one in the relationship JSON.
+	 *
+	 * @method setHasOneRelationshipInDatabase
+	 * @param {JSON} relationship
+	 * @param {JSON} db
+	 * @return {JSON} The updated DB
+	 * @private
+	 */
 	setHasOneRelationshipInDatabase: function(relationship, db) {
+		db = this.clearHasOneRelationshipInDatabase(relationship.t1, relationship.i1, relationship.n1, db);
 
+		if (relationship.n2) {
+			var inverseModel = this.get('store').modelForType(relationship.t2);
+			var inverseMeta = inverseModel.metaForRelationship(relationship.n2);
+
+			if (inverseMeta.kind === EG.Model.HAS_ONE_KEY) {
+				db = this.clearHasOneRelationshipInDatabase(relationship.t2, relationship.i2, relationship.n2, db);
+			}
+		}
+
+		db.relationships.push(relationship);
+
+		return db;
 	},
 
+	/**
+	 * Clears the value of the given hasOne relationship (if there is one).
+	 *
+	 * @method clearHasOneRelationshipInDatabase
+	 * @param {String} typeKey
+	 * @param {String} id
+	 * @param {String} name
+	 * @param {JSON} db
+	 * @return {JSON} The updated DB
+	 * @private
+	 */
 	clearHasOneRelationshipInDatabase: function(typeKey, id, name, db) {
+		var relationships = this.getRelationshipsFor(typeKey, id, name, db);
 
+		forEach.call(relationships, function(relationship) {
+			db.relationships.splice(indexOf.call(db.relationships, relationship), 1);
+		});
+
+		return db;
 	},
 
 	/**
