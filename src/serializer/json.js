@@ -130,7 +130,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 
 		if (meta.kind === EG.Model.HAS_ONE_KEY) {
 			if (value === null || EG.Model.isTemporaryId(value.id)) {
-				value = null;
+				return { name: name, value: null };
 			}
 
 			return {

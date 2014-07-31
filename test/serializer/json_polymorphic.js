@@ -315,6 +315,32 @@
 		deepEqual(serialized, expected);
 	});
 
+	test('Serialize a create record request (2)', function() {
+		expect(1);
+
+		var post = store.createRecord('post', {
+			title: 'title',
+			body: 'body',
+			author: null,
+			tags: []
+		});
+
+		var expected = {
+			posts: [{
+				title: 'title',
+				body: 'body',
+				links: {
+					author: null,
+					tags: []
+				}
+			}]
+		};
+
+		var serialized = serializer.serialize(post, { requestType: 'createRecord' });
+
+		deepEqual(serialized, expected);
+	});
+
 	test('Serialize an update request properly', function() {
 		expect(1);
 
