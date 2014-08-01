@@ -1,7 +1,7 @@
 (function() {
 	'use strict';
 
-	var store, adapter
+	var store, adapter;
 
 	module('REST Adapter', {
 		setup: function() {

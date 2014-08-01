@@ -245,6 +245,18 @@ EG.EmberGraphAdapter = EG.Adapter.extend({
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	/**
+	 * The value of an empty database. This can be used for initializing
+	 * a database if it hasn't been used before.
+	 *
+	 * @property emptyDatabase
+	 * @final
+	 * @protected
+	 */
+	emptyDatabase: Em.computed(function() {
+		return { records: {}, relationships: [] };
+	}).readOnly().volatile(),
+
+	/**
 	 * Return a copy of the database from the storage location in JSON form.
 	 *
 	 * @method getDatabase
