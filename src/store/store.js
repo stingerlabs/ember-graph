@@ -1,3 +1,5 @@
+var map = Em.ArrayPolyfills.map;
+
 /**
  * The store is used to manage all records in the application.
  * Ideally, there should only be one store for an application.
@@ -301,12 +303,12 @@ EG.Store = Em.Object.extend({
 	 */
 	_findQuery: function(typeKey, options) {
 		var promise = this.adapterFor(typeKey).findQuery(typeKey, options).then(function(payload) {
-			var ids = payload.meta.ids;
+			var records = payload.meta.matchedRecords;
 			this.extractPayload(payload);
 
-			return ids.map(function(id) {
-				return this.getRecord(typeKey, id);
-			}, this);
+			return map.call(records, function(record) {
+				return this.getRecord(record.type, record.id);
+			});
 		}.bind(this));
 
 		return EG.PromiseArray.create({ promise: promise });
@@ -458,7 +460,11 @@ EG.Store = Em.Object.extend({
 	 */
 	extractPayload: function(payload) {
 		payload = payload || {};
-		// We don't do anything with `meta` yet
+		// TODO: In addition, this is a meta attribute that allows you to easily remove
+		// records from the store. The `meta` object may contain an object array
+		// called `deletedRecords` that tells the store which records have been
+		// deleted. The objects should contain a `type` and `id` field. Any
+		// records included in the array will be removed from the store.
 		delete payload.meta;
 
 		Em.changeProperties(function() {

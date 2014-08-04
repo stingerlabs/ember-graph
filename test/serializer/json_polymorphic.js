@@ -171,7 +171,7 @@
 		var expected = {
 			meta: {
 				serverMeta: {},
-				newId: '200'
+				createdRecord: { type: 'post', id: '200' }
 			},
 			post: [{
 				id: '200',
@@ -204,7 +204,12 @@
 		var expected = {
 			meta: {
 				serverMeta: {},
-				queryIds: ['158', '98', '262', '0']
+				matchedRecords: [
+					{ type: 'post', id: '158' },
+					{ type: 'post', id: '98' },
+					{ type: 'post', id: '262' },
+					{ type: 'post', id: '0' }
+				]
 			},
 
 			post: [

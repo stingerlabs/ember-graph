@@ -309,12 +309,17 @@ EG.JSONSerializer = EG.Serializer.extend({
 
 		delete payload.meta;
 
+		// TODO: Query multiple types
 		if (options.requestType === 'findQuery') {
-			normalized.meta.queryIds = map.call(payload[EG.String.pluralize(options.recordType)], function(record) {
-				return record.id + '';
-			});
+			normalized.meta.matchedRecords =
+				map.call(payload[EG.String.pluralize(options.recordType)], function(record) {
+					return { type: options.recordType, id: record.id + '' };
+				});
 		} else if (options.requestType === 'createRecord') {
-			normalized.meta.newId = payload[EG.String.pluralize(options.recordType)][0].id + '';
+			normalized.meta.createdRecord = {
+				type: options.recordType,
+				id: payload[EG.String.pluralize(options.recordType)][0].id + ''
+			};
 		}
 
 		forEach.call(Em.keys(payload), function(key) {

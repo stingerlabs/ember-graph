@@ -43,46 +43,29 @@ EG.Serializer = Em.Object.extend({
 	 * can be found in the {{link-to-method 'Store' 'extractPayload'}}
 	 * documentation.
 	 *
-	 * In addition to the format described by the store, the adapter
+	 * In addition to the format described by the store, the store
 	 * may require some additional information. This information should
 	 * be included in the `meta` object. The attributes required by the
-	 * built-in Ember-Graph adapters are:
+	 * store are:
 	 *
-	 * - `queryIds`: This is an array of IDs that represents the records
-	 *     returned as the result of a query. This helps the adapter in the
-	 *     case that addition records of the same type were side-loaded.
-	 * - `newId`: This tells the adapter which record was just created. Again,
-	 *     this helps the adapter differentiate the newly created record in
-	 *     case other records of the same type were side-loaded.
+	 * - `matchedRecords`: This is an array of objects (with `type` and
+	 *     `id` fields) that tell which records were matched on a query.
+	 *     This helps distinguish queried records from records of the
+	 *     same type that may have been side loaded. If this property
+	 *     doesn't exist, the adapter will assume that all objects
+	 *     of that type were returned by the query.
+	 * - `createdRecord`: This is a single object (with `type` and `id`)
+	 *     that tells the adapter which record was created as the result
+	 *     of a `createRecord` request. Again, this helps distinguish
+	 *     the record from other records of the same type.
 	 *
 	 * To determine whether those meta attributes are required or not, the
 	 * `requestType` option can be used. The built-in Ember-Graph adapters
 	 * will pass one of the following values: `findRecord`, `findMany`,
 	 * `findAll`, `findQuery`, `createRecord`, `updateRecord`, `deleteRecord`.
-	 * If the value is `findQuery`, then the `queryIds` meta attribute is
-	 * required. If the value is `createRecord`, then the `newId` meta
+	 * If the value is `findQuery`, then the `matchedRecords` meta attribute is
+	 * required. If the value is `createRecord`, then the `createdRecord` meta
 	 * attribute is required.
-	 *
-	 * TODO: Implement...
-	 *
-	 * There's also an optional attribute that can be given for any call:
-	 *
-	 * - `deletedRecords`: This attribute is given to the store to let it
-	 *     know that records were deleted from the server and that the store
-	 *     should unload them. This allows you to remove records from the
-	 *     store as easily as you can add them. The format of this attribute
-	 *     can be seen in the example below:
-	 *
-	 * ```json
-	 * {
-	 *     "deletedRecords": [
-	 *         { "type": "user", "id": "3" },
-	 *         { "type": "post", "id": "10" },
-	 *         { "type": "post", "id": "11" },
-	 *         { "type": "tag", "id": "674" }
-	 *     ]
-	 * }
-	 * ```
 	 *
 	 * In addition to `requestType`, the following options are available:
 	 *
