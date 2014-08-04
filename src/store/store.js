@@ -372,7 +372,8 @@ EG.Store = Em.Object.extend({
 			this.deleteRelationshipsForRecord(type, id);
 			this.extractPayload(payload);
 			this.get('recordCache').deleteRecord(type, id);
-			record.set('store', null);
+			// TODO: #49
+			//record.set('store', null);
 		}.bind(this));
 	},
 
