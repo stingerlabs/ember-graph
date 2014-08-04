@@ -17,10 +17,9 @@
  * Like other Ember properties, `undefined` is _not_ a valid attribute value.
  *
  * @method attr
- * @for EG
- * @category top-level
  * @param {Object} options
  * @return {Object} Property descriptor used by model during initialization
+ * @namespace EmberGraph
  */
 EG.attr = function(options) {
 	return {
@@ -44,10 +43,9 @@ EG.attr = function(options) {
  * which is always `true`, and the `kind` property which is always `hasMany`.
  *
  * @method hasMany
- * @for EG
- * @category top-level
  * @param {Object} options
  * @return {Object} Property descriptor used by model during initialization
+ * @namespace EmberGraph
  */
 EG.hasMany = function(options) {
 	return {
@@ -72,10 +70,9 @@ EG.hasMany = function(options) {
  * which is always `true`, and the `kind` property which is always `hasOne`.
  *
  * @method hasOne
- * @for EG
- * @category top-level
  * @param {Object} options
  * @return {Object} Property descriptor used by model during initialization
+ * @namespace EmberGraph
  */
 EG.hasOne = function(options) {
 	return {
