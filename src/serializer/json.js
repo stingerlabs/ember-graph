@@ -458,7 +458,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 				throw new Em.Error('Missing `' + name + '` relationship: ' + JSON.stringify(json));
 			}
 
-			return { name: name, value: meta.defautlValue };
+			return { name: name, value: meta.defaultValue };
 		} else {
 			if (meta.kind === EG.Model.HAS_MANY_KEY) {
 				return this.deserializeHasManyRelationship(model, name, value);
