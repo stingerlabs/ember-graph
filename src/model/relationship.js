@@ -25,8 +25,7 @@ var createRelationship = function(name, kind, options) {
 	var meta = {
 		isRelationship: false, // the 'real' relationship (without _) is the relationship
 		kind: kind,
-		isRequired: (options.hasOwnProperty('defaultValue') ? false : options.isRequired !== false) ||
-			options.serverOnly === true,
+		isRequired: (options.hasOwnProperty('defaultValue') ? false : options.isRequired !== false),
 		defaultValue: options.defaultValue || (kind === HAS_MANY_KEY ? [] : null),
 		relatedType: options.relatedType,
 		inverse: options.inverse,

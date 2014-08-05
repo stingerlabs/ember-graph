@@ -4,7 +4,7 @@ var createAttribute = function(attributeName, options) {
 	var meta = {
 		isAttribute: true,
 		type: options.type,
-		isRequired: !options.hasOwnProperty('defaultValue') || options.serverOnly === true,
+		isRequired: !options.hasOwnProperty('defaultValue'),
 		defaultValue: options.defaultValue,
 		isReadOnly: options.readOnly === true || options.serverOnly === true,
 		isServerOnly: options.serverOnly === true,

@@ -13,7 +13,7 @@
  * - `serverOnly`: This marks the attribute as a server-only attribute. This can be used when
  * an attribute is required for the model, but cannot be created on the client side. Ember-Graph
  * will allow the attribute to remain uninitialized until the record is persisted to the server.
- * This automatically makes the attribute read only and required.
+ * This automatically makes the attribute read only.
  *
  * The option values are all available as property metadata, as well the `isAttribute` property
  * which is always `true`, and the `isRequired` property.
@@ -45,7 +45,7 @@ EG.attr = function(options) {
  * - `serverOnly`: This marks the relationship as a server-only relationship. This can be used when
  * a relationship is required for the model, but cannot be created on the client side. Ember-Graph
  * will allow the relationship to remain uninitialized until the record is persisted to the server.
- * This automatically makes the relationship read only and required.
+ * This automatically makes the relationship read only.
  *
  * The option values are all available as property metadata, as well the `isRelationship` property
  * which is always `true`, and the `kind` property which is always `hasMany`.
@@ -76,7 +76,7 @@ EG.hasMany = function(options) {
  * - `serverOnly`: This marks the relationship as a server-only relationship. This can be used when
  * a relationship is required for the model, but cannot be created on the client side. Ember-Graph
  * will allow the relationship to remain uninitialized until the record is persisted to the server.
- * This automatically makes the relationship read only and required.
+ * This automatically makes the relationship read only.
  *
  * The option values are all available as property metadata, as well the `isRelationship` property
  * which is always `true`, and the `kind` property which is always `hasOne`.
