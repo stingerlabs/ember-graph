@@ -23,11 +23,11 @@ EG.Model.reopen({
 	 */
 	initializeRelationships: function(json) {
 		this.constructor.eachRelationship(function(name, meta) {
-			if (meta.isRequired && json[name] === undefined) {
-				throw new Em.Error('You tried to create a record without the required `' + name + '` relationship.');
-			}
+			var value = json[name];
 
-			var value = (json[name] === undefined ? meta.defaultValue : json[name]);
+			if (value === undefined) {
+				return;
+			}
 
 			if (meta.kind === HAS_MANY_KEY) {
 				forEach.call(value, function(v) {

@@ -96,16 +96,5 @@ EG.Model.reopen({
 	 * @final
 	 * @for Model
 	 */
-	isInTransit: Em.computed.or('isSaving', 'isDeleting', 'isCreating', 'isReloading'),
-
-	/**
-	 * Indicates whether the record has been completely initialized by the store yet.
-	 * If this is `false`, it's not safe to use the record.
-	 *
-	 * @property isInitialized
-	 * @type Boolean
-	 * @final
-	 * @for Model
-	 */
-	isInitialized: false
+	isInTransit: Em.computed.or('isSaving', 'isDeleting', 'isCreating', 'isReloading')
 });

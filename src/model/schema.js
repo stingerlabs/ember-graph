@@ -6,10 +6,14 @@
  * and `object` are the built in types. New types can be declared by extending `AttributeType`.
  * - `defaultValue`: The value that gets used if the attribute is missing from the loaded data.
  * If omitted, the attribute is required and will error if missing.
- * - `readOnly`: Set to `true` to make the attribute read-only. Defaults to `false`.
+ * - `readOnly`: Set to `true` to make the attribute read-only (except for new records). Defaults to `false`.
  * - `isEqual`: Function that will compare two different instances of the attribute. Should take
  * two arguments and return `true` if the given attributes are equal. Defaults to the function
  * declared in the `AttributeType` subclass.
+ * - `serverOnly`: This marks the attribute as a server-only attribute. This can be used when
+ * an attribute is required for the model, but cannot be created on the client side. Ember-Graph
+ * will allow the attribute to remain uninitialized until the record is persisted to the server.
+ * This automatically makes the attribute read only and required.
  *
  * The option values are all available as property metadata, as well the `isAttribute` property
  * which is always `true`, and the `isRequired` property.
@@ -37,7 +41,11 @@ EG.attr = function(options) {
  * - `isRequired`: `false` if the relationship can be left out of the JSON. Defaults to `true`.
  * - `defaultValue`: The value that gets used if the relationship is missing from the loaded data.
  * The default is an empty array.
- * - `readOnly`: Set to `true` to make the relationship read-only. Defaults to `false`.
+ * - `readOnly`: Set to `true` to make the relationship read-only (except for new records). Defaults to `false`.
+ * - `serverOnly`: This marks the relationship as a server-only relationship. This can be used when
+ * a relationship is required for the model, but cannot be created on the client side. Ember-Graph
+ * will allow the relationship to remain uninitialized until the record is persisted to the server.
+ * This automatically makes the relationship read only and required.
  *
  * The option values are all available as property metadata, as well the `isRelationship` property
  * which is always `true`, and the `kind` property which is always `hasMany`.
@@ -64,7 +72,11 @@ EG.hasMany = function(options) {
  * - `isRequired`: `false` if the relationship can be left out of the JSON. Defaults to `true`.
  * - `defaultValue`: The value that gets used if the relationship is missing from the loaded data.
  * The default is `null`.
- * - `readOnly`: Set to `true` to make the relationship read-only. Defaults to `false`.
+ * - `readOnly`: Set to `true` to make the relationship read-only (except for new records). Defaults to `false`.
+ * - `serverOnly`: This marks the relationship as a server-only relationship. This can be used when
+ * a relationship is required for the model, but cannot be created on the client side. Ember-Graph
+ * will allow the relationship to remain uninitialized until the record is persisted to the server.
+ * This automatically makes the relationship read only and required.
  *
  * The option values are all available as property metadata, as well the `isRelationship` property
  * which is always `true`, and the `kind` property which is always `hasOne`.

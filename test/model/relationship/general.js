@@ -107,14 +107,21 @@
 		});
 	});
 
-//  TODO: Issue #26
-//	test('Changing a read-only relationship causes an exception', function() {
-//		expect(1);
-//
-//		var vertex = store.getRecord('vertex', '4');
-//
-//		throws(function() {
-//			vertex.clearHasOneRelationship('owner');
-//		});
-//	});
+	test('Changing a read-only relationship causes an exception', function() {
+		expect(1);
+
+		var vertex = store.getRecord('vertex', '4');
+
+		throws(function() {
+			vertex.clearHasOneRelationship('owner');
+		});
+	});
+
+	test('Changing a read-only relationship on a new record succeeds', function() {
+		expect(1);
+
+		var vertex = store.createRecord('vertex');
+		vertex.setHasOneRelationship('owner', '2');
+		deepEqual(vertex.get('_owner'), { type: 'user', id: '2' });
+	});
 })();

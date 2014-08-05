@@ -25,12 +25,14 @@ var createRelationship = function(name, kind, options) {
 	var meta = {
 		isRelationship: false, // the 'real' relationship (without _) is the relationship
 		kind: kind,
-		isRequired: (options.hasOwnProperty('defaultValue') ? false : options.isRequired !== false),
+		isRequired: (options.hasOwnProperty('defaultValue') ? false : options.isRequired !== false) ||
+			options.serverOnly === true,
 		defaultValue: options.defaultValue || (kind === HAS_MANY_KEY ? [] : null),
 		relatedType: options.relatedType,
 		inverse: options.inverse,
-		isReadOnly: options.readOnly === true,
-		isPolymorphic: options.polymorphic === true
+		isReadOnly: options.readOnly === true || options.serverOnly === true,
+		isPolymorphic: options.polymorphic === true,
+		isServerOnly: options.serverOnly === true
 	};
 
 	Em.assert('defaultValue for hasMany must be an array.', meta.kind === HAS_ONE_KEY || Em.isArray(meta.defaultValue));
@@ -153,6 +155,20 @@ EG.Model.reopen({
 		return this.get('relationships.client.length') > 0 || this.get('relationships.deleted.length') > 0;
 	}).property('relationships.client.length', 'relationships.deleted.length'),
 
+	/**
+	 * Gets all of the dirty relationships for the model. The object returned
+	 * is of the format:
+	 *
+	 * ```js
+	 * {
+	 *     relationshipName: [oldValue, newValue]
+	 * }
+	 * ```
+	 *
+	 * @method changedRelationships
+	 * @for Model
+	 * @returns {Object}
+	 */
 	changedRelationships: function() {
 		var changes = {};
 
@@ -195,6 +211,12 @@ EG.Model.reopen({
 		return changes;
 	},
 
+	/**
+	 * Resets all of the relationships to the last known server state.
+	 *
+	 * @method rollbackRelationships
+	 * @for Model
+	 */
 	rollbackRelationships: function() {
 		Em.changeProperties(function() {
 			var store = this.get('store');
@@ -211,16 +233,33 @@ EG.Model.reopen({
 		}, this);
 	},
 
+	/**
+	 * Adds a value to the given hasMany relationship. The `id` parameter can
+	 * be either a string or a model instance. If it's a model, the ID and
+	 * type and detected automatically. If it's a string, the type should
+	 * be given explicitly for polymorphic relationships. If the relationship
+	 * is non-polymorphic, the declared `relatedType` will be used.
+	 *
+	 * @method addToRelationship
+	 * @for Model
+	 * @param {String} relationshipName
+	 * @param {String|Model} id
+	 * @param {String} [polymorphicType] Defaults to declared `relatedType`
+	 */
 	addToRelationship: function(relationshipName, id, polymorphicType) {
-		Em.changeProperties(function() {
-			var i, store = this.get('store');
+		var meta = this.constructor.metaForRelationship(relationshipName);
+		if (meta.kind !== HAS_MANY_KEY) {
+			throw new Em.Error('`addToRelationship` called on hasOne relationship.');
+		}
 
-			// Don't modify a read-only relationship (unless we're initializing)
-			var meta = this.constructor.metaForRelationship(relationshipName);
-			if (meta.isReadOnly && this.get('isInitialized')) {
-				Em.assert('Can\'t modify a read-only relationship.');
-				return;
-			}
+		if (meta.isReadOnly && !this.get('isNew')) {
+			throw new Em.Error('Can\'t modify a read-only relationship.');
+		}
+
+		Em.changeProperties(function() {
+			this.set('initializedRelationships.' + relationshipName, true);
+
+			var i, store = this.get('store');
 
 			// If the type wasn't provided, fill it in based on the inverse
 			if (Em.typeOf(id) !== 'string') {
@@ -280,15 +319,30 @@ EG.Model.reopen({
 		}, this);
 	},
 
+	/**
+	 * Removes a value from the given hasMany relationship. The `id` parameter can
+	 * be either a string or a model instance. If it's a model, the ID and
+	 * type and detected automatically. If it's a string, the type should
+	 * be given explicitly for polymorphic relationships. If the relationship
+	 * is non-polymorphic, the declared `relatedType` will be used.
+	 *
+	 * @method removeFromRelationship
+	 * @for Model
+	 * @param {String} relationshipName
+	 * @param {String|Model} id
+	 * @param {String} [polymorphicType] Defaults to declared `relatedType`
+	 */
 	removeFromRelationship: function(relationshipName, id, polymorphicType) {
-		Em.changeProperties(function() {
-			// Don't modify a read-only relationship
-			var meta = this.constructor.metaForRelationship(relationshipName);
-			if (meta.isReadOnly) {
-				Em.assert('Can\'t modify a read-only relationship.');
-				return;
-			}
+		var meta = this.constructor.metaForRelationship(relationshipName);
+		if (meta.kind !== HAS_MANY_KEY) {
+			throw new Em.Error('`removeFromRelationship` called on hasOne relationship.');
+		}
 
+		if (meta.isReadOnly && !this.get('isNew')) {
+			throw new Em.Error('Can\'t modify a read-only relationship.');
+		}
+
+		Em.changeProperties(function() {
 			// If the type wasn't provided, fill it in based on the inverse
 			if (Em.typeOf(id) !== 'string') {
 				polymorphicType = Em.get(id, 'typeKey');
@@ -312,16 +366,33 @@ EG.Model.reopen({
 		}, this);
 	},
 
+	/**
+	 * Sets the value of the given hasOne relationship. The `id` parameter can
+	 * be either a string or a model instance. If it's a model, the ID and
+	 * type and detected automatically. If it's a string, the type should
+	 * be given explicitly for polymorphic relationships. If the relationship
+	 * is non-polymorphic, the declared `relatedType` will be used.
+	 *
+	 * @method setHasOneRelationship
+	 * @for Model
+	 * @param {String} relationshipName
+	 * @param {String|Model} id
+	 * @param {String} [polymorphicType] Defaults to declared `relatedType`
+	 */
 	setHasOneRelationship: function(relationshipName, id, polymorphicType) {
-		Em.changeProperties(function() {
-			var store = this.get('store');
+		var meta = this.constructor.metaForRelationship(relationshipName);
+		if (meta.kind !== HAS_ONE_KEY) {
+			throw new Em.Error('`setHasOneRelationship` called on hasMany relationship.');
+		}
 
-			// Don't modify a read-only relationship (unless we're initializing)
-			var meta = this.constructor.metaForRelationship(relationshipName);
-			if (meta.isReadOnly && this.get('isInitialized')) {
-				Em.assert('Can\'t modify a read-only relationship.');
-				return;
-			}
+		if (meta.isReadOnly && !this.get('isNew')) {
+			throw new Em.Error('Can\'t modify a read-only relationship.');
+		}
+
+		Em.changeProperties(function() {
+			this.set('initializedRelationships.' + relationshipName, true);
+
+			var store = this.get('store');
 
 			// If the type wasn't provided, fill it in based on the inverse
 			if (Em.typeOf(id) !== 'string') {
@@ -398,14 +469,24 @@ EG.Model.reopen({
 		}, this);
 	},
 
+	/**
+	 * Clears the value of the given hasOne relationship.
+	 *
+	 * @method clearHasOneRelationship
+	 * @for Model
+	 * @param {String} relationshipName
+	 */
 	clearHasOneRelationship: function(relationshipName) {
-		Em.changeProperties(function() {
-			var meta = this.constructor.metaForRelationship(relationshipName);
-			if (meta.isReadOnly) {
-				Em.assert('Can\'t modify a read-only relationship.');
-				return;
-			}
+		var meta = this.constructor.metaForRelationship(relationshipName);
+		if (meta.kind !== HAS_ONE_KEY) {
+			throw new Em.Error('`clearHasOneRelationship` called on hasMany relationship.');
+		}
 
+		if (meta.isReadOnly && !this.get('isNew')) {
+			throw new Em.Error('Can\'t modify a read-only relationship.');
+		}
+
+		Em.changeProperties(function() {
 			var relationship = this.getHasOneRelationship(relationshipName, false);
 			if (relationship) {
 				if (relationship.get('state') === CLIENT_STATE) {
@@ -415,6 +496,39 @@ EG.Model.reopen({
 				}
 			}
 		}, this);
+	},
+
+	/**
+	 * Determines whether or not every required attribute has been initialized.
+	 * If this returns false, the record cannot be persisted to the server.
+	 *
+	 * @method areRelationshipsInitialized
+	 * @for Model
+	 * @return {Boolean}
+	 */
+	areRelationshipsInitialized: function() {
+		var initialized = true;
+
+		this.constructor.eachRelationship(function(name, meta) {
+			if (meta.isRequired && !meta.isServerOnly) {
+				initialized = initialized && this.isRelationshipInitialized(name);
+			}
+		}, this);
+
+		return initialized;
+	},
+
+	/**
+	 * Determines if the given relationship has been initialized yet.
+	 * Always returns `true` for non-new records.
+	 *
+	 * @method isRelationshipInitialized
+	 * @for Model
+	 * @param {String} relationshipName
+	 * @return {Boolean}
+	 */
+	isRelationshipInitialized: function(relationshipName) {
+		return !this.get('isNew') || !!this.get('initializedRelationships.' + relationshipName);
 	}
 
 });
@@ -427,11 +541,23 @@ EG.Model.reopen({
 	 * and deletions are handled by the store (so they can be reciprocated).
 	 *
 	 * @type RelationshipMap
+	 * @private
 	 */
 	relationships: null,
 
-	initializeRelationshipStore: Em.on('init', function() {
-		this.set('relationships', new EG.RelationshipStore());
+	/**
+	 * Stores which relationships have had values set.
+	 *
+	 * @type Object
+	 * @private
+	 */
+	initializedRelationships: null,
+
+	initializeRelationshipStoreAndStatus: Em.on('init', function() {
+		this.setProperties({
+			relationships: new EG.RelationshipStore(),
+			initializedRelationships: {}
+		});
 	}),
 
 	getHasOneRelationship: function(name, server) {

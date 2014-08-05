@@ -4,9 +4,10 @@ var createAttribute = function(attributeName, options) {
 	var meta = {
 		isAttribute: true,
 		type: options.type,
-		isRequired: !options.hasOwnProperty('defaultValue'),
+		isRequired: !options.hasOwnProperty('defaultValue') || options.serverOnly === true,
 		defaultValue: options.defaultValue,
-		readOnly: options.readOnly === true,
+		isReadOnly: options.readOnly === true || options.serverOnly === true,
+		isServerOnly: options.serverOnly === true,
 
 		// These should really only be used internally by the model class
 		isEqual: options.isEqual
@@ -18,8 +19,8 @@ var createAttribute = function(attributeName, options) {
 		var client = this.get('_clientAttributes.' + key);
 		var current = (client === undefined ? server : client);
 
-		// If it's currently undefined, we're setting it for the first time, so that's OK.
-		if (arguments.length > 1 && meta.readOnly && current !== undefined) {
+		// New records can modify read only attributes. But not if they're server only
+		if (arguments.length > 1 && meta.isReadOnly && !this.get('isNew')) {
 			throw new Em.Error('Cannot set read-only property "' + key + '" on object: ' + this);
 		}
 
@@ -30,7 +31,7 @@ var createAttribute = function(attributeName, options) {
 		});
 
 		if (value !== undefined) {
-      var scope = meta.isEqual ? meta : this.get('store').attributeTypeFor(meta.type);
+			var scope = meta.isEqual ? meta : this.get('store').attributeTypeFor(meta.type);
 
 			if (scope.isEqual(server, value)) {
 				delete this.get('_clientAttributes')[key];
@@ -232,11 +233,36 @@ EG.Model.reopen({
 	 */
 	initializeAttributes: function(json) {
 		this.constructor.eachAttribute(function(name, meta) {
-			if (meta.isRequired && json[name] === undefined) {
-				throw new Em.Error('You tried to create a record without the required `' + name + '` property.');
-			}
+			var value = json[name];
 
-			this.set(name, json[name] === undefined ? meta.defaultValue : json[name]);
+			if (value !== undefined) {
+				this.set(name, value);
+			}
 		}, this);
+	},
+
+	areAttributesInitialized: function() {
+		var initialized = true;
+
+		this.constructor.eachAttribute(function(name, meta) {
+			if (meta.isRequired && !meta.isServerOnly) {
+				initialized = initialized && this.isAttributeInitialized(name);
+			}
+		}, this);
+
+		return initialized;
+	},
+
+	/**
+	 * Determines if the given attribute has been initialized or not.
+	 * Always returns `true` for non-new records.
+	 *
+	 * @method isAttributeInitialized
+	 * @for Model
+	 * @param attributeName
+	 * @return {Boolean}
+	 */
+	isAttributeInitialized: function(attributeName) {
+		return !this.get('isNew') || this.get(attributeName) !== undefined;
 	}
 });

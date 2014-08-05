@@ -119,7 +119,6 @@ EG.Model = Em.Object.extend(Em.Evented, {
 
 		this.initializeAttributes(json);
 		this.initializeRelationships(json);
-		this.set('isInitialized', true);
 	},
 
 	/**
@@ -189,6 +188,15 @@ EG.Model = Em.Object.extend(Em.Evented, {
 		}
 
 		return (this.typeKey === Em.get(other, 'typeKey') && this.get('id') === Em.get(other, 'id'));
+	},
+
+	/**
+	 * Determines if the newly created record is fully initialized yet.
+	 * If it's not initialized, it can't be persisted to the server.
+	 * This will always return `true` for non-new records.
+	 */
+	isInitialized: function() {
+		return !this.get('isNew') || (this.areAttributesInitialized() && this.areRelationshipsInitialized());
 	},
 
 	/**

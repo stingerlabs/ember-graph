@@ -140,7 +140,12 @@ EG.Store = Em.Object.extend({
 	},
 
 	/**
-	 * Creates a record of the specified type.
+	 * Creates a record of the specified type. The record starts in a blank
+	 * state, meaning all attributes are `undefined`, all hasOne relationships
+	 * are `null` and all hasMany relationships are `[]`. But before the record
+	 * can be saved to the server, all relationships and attributes must be
+	 * initialized (except for `serverOnly` ones). Even optional attributes
+	 * and relationships must have their values filled in explicitly.
 	 *
 	 * @method createRecord
 	 * @param {String} typeKey
@@ -327,6 +332,10 @@ EG.Store = Em.Object.extend({
 		var tempId = record.get('id');
 
 		if (isNew) {
+			if (!record.isInitialized()) {
+				throw new Em.Error('Can\'t save an uninitialized record.');
+			}
+
 			return this.adapterFor(record.typeKey).createRecord(record).then(function(payload) {
 				record.set('id', payload.meta.newId);
 

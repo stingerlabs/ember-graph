@@ -39,7 +39,32 @@
 
 	module('Store Test', {
 		setup: function() {
-			store = setupStore({ storeTest: EG.Model.extend() }, { adapter: Adapter });
+			store = setupStore({
+				storeTest: EG.Model.extend(),
+
+				user: EG.Model.extend({
+					name: EG.attr({
+						type: 'string'
+					}),
+
+					posts: EG.hasMany({
+						relatedType: 'post',
+						inverse: 'author'
+					})
+				}),
+
+				post: EG.Model.extend({
+					author: EG.hasOne({
+						relatedType: 'user',
+						inverse: 'posts'
+					}),
+
+					posted: EG.attr({
+						type: 'date',
+						serverOnly: true
+					})
+				})
+			}, { adapter: Adapter });
 
 			records = {
 				'1': { id: '1' },
@@ -183,5 +208,35 @@
 		ok(UserAdapter.detectInstance(store.adapterFor('user')));
 		ok(ForumAdminAdapter.detectInstance(store.adapterFor('forum_admin')));
 		ok(Adapter.detectInstance(store.adapterFor('foobar')));
+	});
+
+	test('Can\'t save a record with uninitialized attributes', function() {
+		expect(2);
+
+		var user = store.createRecord('user', { posts: [] });
+		strictEqual(user.isAttributeInitialized('name'), false);
+
+		throws(function() {
+			user.save();
+		});
+	});
+
+	test('Can\'t save record with uninitialized relationships', function() {
+		expect(2);
+
+		var user = store.createRecord('user', { name: '' });
+		strictEqual(user.isRelationshipInitialized('posts'), false);
+
+		throws(function() {
+			user.save();
+		});
+	});
+
+	test('Can save record with uninitialized serverOnly attribute', function() {
+		expect(1);
+
+		var post = store.createRecord('post', { author: '1' });
+		strictEqual(post.isAttributeInitialized('posted'), false);
+		post.save().catch(function() {});
 	});
 })();

@@ -109,7 +109,7 @@
 			return Em.RSVP.resolve({ people: [{ id: '100' }] });
 		};
 
-		var person = store.createRecord('person');
+		var person = store.createRecord('person', { name: '' });
 		adapter.createRecord(person);
 	});
 

@@ -660,4 +660,12 @@
 		deepEqual(post.get('_author'), { type: 'user', id: '1' });
 		deepEqual(post.get('_tags').toArray().mapBy('id').sort(), ['1', '3'].sort());
 	});
+
+	test('Creating a new record leaves the relationships undefined', function() {
+		expect(2);
+
+		var post = store.createRecord('post');
+		ok(!post.isRelationshipInitialized('author'));
+		ok(!post.isRelationshipInitialized('tags'));
+	});
 })();

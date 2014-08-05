@@ -63,39 +63,39 @@
 		var tag = store.createRecord('tag');
 
 		start();
-		ok(!tag.get('isDeleting'));
-		ok(!tag.get('isDeleted'));
-		ok(!tag.get('isSaving'));
-		ok(!tag.get('isReloading'));
-		ok(tag.get('isLoaded'));
-		ok(tag.get('isDirty'));
-		ok(!tag.get('isCreating'));
-		ok(tag.get('isNew'));
-		ok(!tag.get('isInTransit'));
+		strictEqual(tag.get('isDeleting'), false);
+		strictEqual(tag.get('isDeleted'), false);
+		strictEqual(tag.get('isSaving'), false);
+		strictEqual(tag.get('isReloading'), false);
+		strictEqual(tag.get('isLoaded'), true);
+		strictEqual(tag.get('isDirty'), true);
+		strictEqual(tag.get('isCreating'), false);
+		strictEqual(tag.get('isNew'), true);
+		strictEqual(tag.get('isInTransit'), false);
 
 		tag.save().then(function() {
 			start();
-			ok(!tag.get('isDeleting'));
-			ok(!tag.get('isDeleted'));
-			ok(!tag.get('isSaving'));
-			ok(!tag.get('isReloading'));
-			ok(tag.get('isLoaded'));
-			ok(!tag.get('isDirty'));
-			ok(!tag.get('isCreating'));
-			ok(!tag.get('isNew'));
-			ok(!tag.get('isInTransit'));
+			strictEqual(tag.get('isDeleting'), false);
+			strictEqual(tag.get('isDeleted'), false);
+			strictEqual(tag.get('isSaving'), false);
+			strictEqual(tag.get('isReloading'), false);
+			strictEqual(tag.get('isLoaded'), true);
+			strictEqual(tag.get('isDirty'), false);
+			strictEqual(tag.get('isCreating'), false);
+			strictEqual(tag.get('isNew'), false);
+			strictEqual(tag.get('isInTransit'), false);
 
 		});
 
-		ok(!tag.get('isDeleting'));
-		ok(!tag.get('isDeleted'));
-		ok(!tag.get('isSaving'));
-		ok(!tag.get('isReloading'));
-		ok(tag.get('isLoaded'));
-		ok(tag.get('isDirty'));
-		ok(tag.get('isCreating'));
-		ok(tag.get('isNew'));
-		ok(tag.get('isInTransit'));
+		strictEqual(tag.get('isDeleting'), false);
+		strictEqual(tag.get('isDeleted'), false);
+		strictEqual(tag.get('isSaving'), false);
+		strictEqual(tag.get('isReloading'), false);
+		strictEqual(tag.get('isLoaded'), true);
+		strictEqual(tag.get('isDirty'), true);
+		strictEqual(tag.get('isCreating'), true);
+		strictEqual(tag.get('isNew'), true);
+		strictEqual(tag.get('isInTransit'), true);
 		stop();
 	});
 
@@ -105,43 +105,43 @@
 		var tag = store.getRecord('tag', '1');
 
 		start();
-		ok(!tag.get('isDeleting'));
-		ok(!tag.get('isDeleted'));
-		ok(!tag.get('isSaving'));
-		ok(!tag.get('isReloading'));
-		ok(tag.get('isLoaded'));
-		ok(!tag.get('isDirty'));
-		ok(!tag.get('isCreating'));
-		ok(!tag.get('isNew'));
-		ok(!tag.get('isInTransit'));
+		strictEqual(tag.get('isDeleting'), false);
+		strictEqual(tag.get('isDeleted'), false);
+		strictEqual(tag.get('isSaving'), false);
+		strictEqual(tag.get('isReloading'), false);
+		strictEqual(tag.get('isLoaded'), true);
+		strictEqual(tag.get('isDirty'), false);
+		strictEqual(tag.get('isCreating'), false);
+		strictEqual(tag.get('isNew'), false);
+		strictEqual(tag.get('isInTransit'), false);
 
 		tag.set('name', 'foobar');
 
-		ok(tag.get('isDirty'));
+		strictEqual(tag.get('isDirty'), true);
 
 		tag.save().then(function() {
 			start();
-			ok(!tag.get('isDeleting'));
-			ok(!tag.get('isDeleted'));
-			ok(!tag.get('isSaving'));
-			ok(!tag.get('isReloading'));
-			ok(tag.get('isLoaded'));
-			ok(!tag.get('isDirty'));
-			ok(!tag.get('isCreating'));
-			ok(!tag.get('isNew'));
-			ok(!tag.get('isInTransit'));
+			strictEqual(tag.get('isDeleting'), false);
+			strictEqual(tag.get('isDeleted'), false);
+			strictEqual(tag.get('isSaving'), false);
+			strictEqual(tag.get('isReloading'), false);
+			strictEqual(tag.get('isLoaded'), true);
+			strictEqual(tag.get('isDirty'), false);
+			strictEqual(tag.get('isCreating'), false);
+			strictEqual(tag.get('isNew'), false);
+			strictEqual(tag.get('isInTransit'), false);
 
 		});
 
-		ok(!tag.get('isDeleting'));
-		ok(!tag.get('isDeleted'));
-		ok(tag.get('isSaving'));
-		ok(!tag.get('isReloading'));
-		ok(tag.get('isLoaded'));
-		ok(tag.get('isDirty'));
-		ok(!tag.get('isCreating'));
-		ok(!tag.get('isNew'));
-		ok(tag.get('isInTransit'));
+		strictEqual(tag.get('isDeleting'), false);
+		strictEqual(tag.get('isDeleted'), false);
+		strictEqual(tag.get('isSaving'), true);
+		strictEqual(tag.get('isReloading'), false);
+		strictEqual(tag.get('isLoaded'), true);
+		strictEqual(tag.get('isDirty'), true);
+		strictEqual(tag.get('isCreating'), false);
+		strictEqual(tag.get('isNew'), false);
+		strictEqual(tag.get('isInTransit'), true);
 		stop();
 	});
 
@@ -151,39 +151,39 @@
 		var tag = store.getRecord('tag', '1');
 
 		start();
-		ok(!tag.get('isDeleting'));
-		ok(!tag.get('isDeleted'));
-		ok(!tag.get('isSaving'));
-		ok(!tag.get('isReloading'));
-		ok(tag.get('isLoaded'));
-		ok(!tag.get('isDirty'));
-		ok(!tag.get('isCreating'));
-		ok(!tag.get('isNew'));
-		ok(!tag.get('isInTransit'));
+		strictEqual(tag.get('isDeleting'), false);
+		strictEqual(tag.get('isDeleted'), false);
+		strictEqual(tag.get('isSaving'), false);
+		strictEqual(tag.get('isReloading'), false);
+		strictEqual(tag.get('isLoaded'), true);
+		strictEqual(tag.get('isDirty'), false);
+		strictEqual(tag.get('isCreating'), false);
+		strictEqual(tag.get('isNew'), false);
+		strictEqual(tag.get('isInTransit'), false);
 
 		tag.reload().then(function() {
 			start();
-			ok(!tag.get('isDeleting'));
-			ok(!tag.get('isDeleted'));
-			ok(!tag.get('isSaving'));
-			ok(!tag.get('isReloading'));
-			ok(tag.get('isLoaded'));
-			ok(!tag.get('isDirty'));
-			ok(!tag.get('isCreating'));
-			ok(!tag.get('isNew'));
-			ok(!tag.get('isInTransit'));
+			strictEqual(tag.get('isDeleting'), false);
+			strictEqual(tag.get('isDeleted'), false);
+			strictEqual(tag.get('isSaving'), false);
+			strictEqual(tag.get('isReloading'), false);
+			strictEqual(tag.get('isLoaded'), true);
+			strictEqual(tag.get('isDirty'), false);
+			strictEqual(tag.get('isCreating'), false);
+			strictEqual(tag.get('isNew'), false);
+			strictEqual(tag.get('isInTransit'), false);
 
 		});
 
-		ok(!tag.get('isDeleting'));
-		ok(!tag.get('isDeleted'));
-		ok(!tag.get('isSaving'));
-		ok(tag.get('isReloading'));
-		ok(tag.get('isLoaded'));
-		ok(!tag.get('isDirty'));
-		ok(!tag.get('isCreating'));
-		ok(!tag.get('isNew'));
-		ok(tag.get('isInTransit'));
+		strictEqual(tag.get('isDeleting'), false);
+		strictEqual(tag.get('isDeleted'), false);
+		strictEqual(tag.get('isSaving'), false);
+		strictEqual(tag.get('isReloading'), true);
+		strictEqual(tag.get('isLoaded'), true);
+		strictEqual(tag.get('isDirty'), false);
+		strictEqual(tag.get('isCreating'), false);
+		strictEqual(tag.get('isNew'), false);
+		strictEqual(tag.get('isInTransit'), true);
 		stop();
 	});
 
@@ -193,39 +193,39 @@
 		var tag = store.getRecord('tag', '1');
 
 		start();
-		ok(!tag.get('isDeleting'));
-		ok(!tag.get('isDeleted'));
-		ok(!tag.get('isSaving'));
-		ok(!tag.get('isReloading'));
-		ok(tag.get('isLoaded'));
-		ok(!tag.get('isDirty'));
-		ok(!tag.get('isCreating'));
-		ok(!tag.get('isNew'));
-		ok(!tag.get('isInTransit'));
+		strictEqual(tag.get('isDeleting'), false);
+		strictEqual(tag.get('isDeleted'), false);
+		strictEqual(tag.get('isSaving'), false);
+		strictEqual(tag.get('isReloading'), false);
+		strictEqual(tag.get('isLoaded'), true);
+		strictEqual(tag.get('isDirty'), false);
+		strictEqual(tag.get('isCreating'), false);
+		strictEqual(tag.get('isNew'), false);
+		strictEqual(tag.get('isInTransit'), false);
 
 		tag.destroy().then(function() {
 			start();
-			ok(!tag.get('isDeleting'));
-			ok(tag.get('isDeleted'));
-			ok(!tag.get('isSaving'));
-			ok(!tag.get('isReloading'));
-			ok(!tag.get('isLoaded'));
-			ok(!tag.get('isDirty'));
-			ok(!tag.get('isCreating'));
-			ok(!tag.get('isNew'));
-			ok(!tag.get('isInTransit'));
+			strictEqual(tag.get('isDeleting'), false);
+			strictEqual(tag.get('isDeleted'), true);
+			strictEqual(tag.get('isSaving'), false);
+			strictEqual(tag.get('isReloading'), false);
+			strictEqual(tag.get('isLoaded'), false);
+			strictEqual(tag.get('isDirty'), false);
+			strictEqual(tag.get('isCreating'), false);
+			strictEqual(tag.get('isNew'), false);
+			strictEqual(tag.get('isInTransit'), false);
 
 		});
 
-		ok(tag.get('isDeleting'));
-		ok(!tag.get('isDeleted'));
-		ok(!tag.get('isSaving'));
-		ok(!tag.get('isReloading'));
-		ok(tag.get('isLoaded'));
-		ok(!tag.get('isDirty'));
-		ok(!tag.get('isCreating'));
-		ok(!tag.get('isNew'));
-		ok(tag.get('isInTransit'));
+		strictEqual(tag.get('isDeleting'), true);
+		strictEqual(tag.get('isDeleted'), false);
+		strictEqual(tag.get('isSaving'), false);
+		strictEqual(tag.get('isReloading'), false);
+		strictEqual(tag.get('isLoaded'), true);
+		strictEqual(tag.get('isDirty'), false);
+		strictEqual(tag.get('isCreating'), false);
+		strictEqual(tag.get('isNew'), false);
+		strictEqual(tag.get('isInTransit'), true);
 		stop();
 	});
 
@@ -234,11 +234,11 @@
 
 		var tag = store.getRecord('tag', '1');
 
-		ok(!tag.get('isDirty'));
+		strictEqual(tag.get('isDirty'), false);
 		tag.set('name', 'foobar');
-		ok(tag.get('isDirty'));
+		strictEqual(tag.get('isDirty'), true);
 		tag.rollbackAttributes();
-		ok(!tag.get('isDirty'));
+		strictEqual(tag.get('isDirty'), false);
 	});
 })();
 

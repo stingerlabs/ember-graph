@@ -59,15 +59,13 @@
 		ok(model.get('birthday').getTime() === birthday.getTime());
 	});
 
-	test('Creating an object inserts the correct defaults', function() {
-		expect(1);
+	test('Creating an object leaves attributes uninitialized', function() {
+		expect(3);
 
-		var model = store.createRecord('test', {
-			name: 'Bob',
-			birthday: null
-		});
-
-		ok(model.get('posts') === 0);
+		var model = store.createRecord('test');
+		ok(!model.isAttributeInitialized('name'));
+		ok(!model.isAttributeInitialized('posts'));
+		ok(!model.isAttributeInitialized('birthday'));
 	});
 
 	if (window.DEBUG_MODE === true) {
@@ -109,7 +107,26 @@
 		ok(model.get('birthday') === null);
 	});
 
-	test('Setting a read-only property throws', function() {
+	test('Setting a read-only property on a saved record throws', function() {
+		expect(1);
+
+		store.extractPayload({
+			test: [{
+				id: '50',
+				name: 'Bob',
+				birthday: new Date(),
+				posts: 10
+			}]
+		});
+
+		var model = store.getRecord('test', '50');
+
+		throws(function() {
+			model.set('name', '');
+		});
+	});
+
+	test('Setting a read-only property on a new record doesn\'t throw', function() {
 		expect(1);
 
 		var model = store.createRecord('test', {
@@ -117,9 +134,8 @@
 			birthday: new Date()
 		});
 
-		throws(function() {
-			model.set('name', '');
-		});
+		model.set('name', 'Robert');
+		strictEqual(model.get('name'), 'Robert');
 	});
 
 	test('Setting value to undefined fails', function() {
@@ -127,7 +143,8 @@
 
 		var model = store.createRecord('test', {
 			name: 'Bob',
-			birthday: null
+			birthday: null,
+			posts: 0
 		});
 
 		ok(model.set('posts', undefined));
