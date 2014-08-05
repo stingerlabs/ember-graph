@@ -23,7 +23,10 @@
 
 						return Em.RSVP.Promise.resolve({
 							meta: {
-								newId: id
+								createdRecord: {
+									type: record.get('typeKey'),
+									id: id
+								}
 							},
 							tag: [{
 								id: id, name: record.get('name')

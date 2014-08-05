@@ -337,7 +337,7 @@ EG.Store = Em.Object.extend({
 			}
 
 			return this.adapterFor(record.typeKey).createRecord(record).then(function(payload) {
-				record.set('id', payload.meta.newId);
+				record.set('id', payload.meta.createdRecord.id);
 
 				var recordCache = this.get('recordCache');
 				recordCache.deleteRecord(type, tempId);

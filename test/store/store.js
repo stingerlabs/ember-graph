@@ -9,7 +9,17 @@
 
 		createRecord: function(record) {
 			var id = EG.generateUUID();
-			return Em.RSVP.Promise.resolve({ meta: { newId: id }, storeTest: [{ id: id }] });
+			return Em.RSVP.Promise.resolve({
+				meta: {
+					createdRecord: {
+						type: record.get('typeKey'),
+						id: id
+					}
+				},
+				storeTest: [{
+					id: id
+				}]
+			});
 		},
 
 		findRecord: function(type, id) {

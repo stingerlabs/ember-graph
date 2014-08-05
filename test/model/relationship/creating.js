@@ -24,7 +24,10 @@
 					createRecord: function(record) {
 						return Em.RSVP.resolve({
 							meta: {
-								newId: 'NEW_POST_ID'
+								createdRecord: {
+									type: record.get('typeKey'),
+									id: 'NEW_POST_ID'
+								}
 							},
 							post: [{
 								id: 'NEW_POST_ID',
