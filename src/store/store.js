@@ -313,7 +313,7 @@ EG.Store = Em.Object.extend({
 
 			return map.call(records, function(record) {
 				return this.getRecord(record.type, record.id);
-			});
+			}.bind(this));
 		}.bind(this));
 
 		return EG.PromiseArray.create({ promise: promise });
