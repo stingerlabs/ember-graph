@@ -29,6 +29,8 @@ EG.Model.reopen({
 				return;
 			}
 
+			this.set('initializedRelationships.' + name, true);
+
 			if (meta.kind === HAS_MANY_KEY) {
 				forEach.call(value, function(v) {
 					switch (Em.typeOf(v)) {
