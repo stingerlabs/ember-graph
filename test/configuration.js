@@ -9,6 +9,7 @@
 		container.register('adapter:local_storage', EG.LocalStorageAdapter, { singleton: true });
 
 		container.register('serializer:json', EG.JSONSerializer, { singleton: true });
+		container.register('serializer:ember_graph', EG.EmberGraphSerializer, { singleton: true });
 
 		container.register('type:string', EG.StringType, { singleton: true });
 		container.register('type:number', EG.NumberType, { singleton: true });

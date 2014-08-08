@@ -63,18 +63,17 @@ EG.EmberGraphAdapter = EG.Adapter.extend({
 	 * @protected
 	 * @final
 	 */
-	serializer: null,
-
-	init: function() {
-		this._super();
-		this.set('serializer', EG.JSONSerializer.create({
-			polymorphicRelationships: true
-		}));
-	},
+	serializer: Em.computed(function() {
+		return this.get('container').lookup('serializer:ember_graph');
+	}).property().readOnly(),
 
 	createRecord: function(record) {
+		var _this = this;
+
 		var json = this.serialize(record, { requestType: 'createRecord', recordType: record.get('typeKey') });
-		return this.serverCreateRecord(record.get('typeKey'), json);
+		return this.serverCreateRecord(record.get('typeKey'), json).then(function(payload) {
+			return _this.deserialize(payload, { requestType: 'createRecord', recordType: record.typeKey });
+		});
 	},
 
 	findRecord: function(typeKey, id) {
@@ -120,12 +119,17 @@ EG.EmberGraphAdapter = EG.Adapter.extend({
 	 * @protected
 	 */
 	serverCreateRecord: function(typeKey, json) {
-		var _this = this;
+		var id, _this = this;
 
 		return this.getDatabase().then(function(db) {
-			var id = _this.generateIdForRecord(typeKey, json, db);
-			db = _this.putRecordInDatabase(typeKey, id, json, db);
+			id = _this.generateIdForRecord(typeKey, json, db);
+			db = _this.putRecordInDatabase(typeKey, id, json[EG.String.pluralize(typeKey)][0], db);
 			return _this.setDatabase(db);
+		}).then(function(db) {
+			var record = _this.getRecordFromDatabase(typeKey, id, db);
+			var payload = {};
+			payload[EG.String.pluralize(typeKey)] = [record];
+			return payload;
 		});
 	},
 
@@ -245,6 +249,40 @@ EG.EmberGraphAdapter = EG.Adapter.extend({
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	/**
+	 * Determines whether or not to bootstrap the database
+	 * with an initial set of data. If you want to initialize
+	 * the database with data, you should override this property
+	 * to return true. Use a computed property if deciding to
+	 * initialize requires application logic.
+	 *
+	 * @property shouldBootstrapDatabase
+	 * @returns {Boolean}
+	 * @protected
+	 */
+	shouldBootstrapDatabase: false,
+
+	/**
+	 * If {{link-to-method 'EmberGraphAdapter' 'shouldBootstrapDatabase'}} is true,
+	 * then this hook is called to get the data to inject into the database. The format
+	 * is the same format required by {{link-to-method 'Store' 'extractPayload'}}.
+	 *
+	 * @method getBootstrappedData
+	 * @return {Object}
+	 * @protected
+	 */
+	getBootstrappedData: EG.abstractMethod('getBootstrappedData'),
+
+	bootstrapData: Em.on('init', function() {
+		if (!this.get('shouldBootstrapDatabase')) {
+			return;
+		}
+
+		var data = this.getBootstrappedData();
+	}),
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	/**
 	 * The value of an empty database. This can be used for initializing
 	 * a database if it hasn't been used before.
 	 *
@@ -270,7 +308,7 @@ EG.EmberGraphAdapter = EG.Adapter.extend({
 	 *
 	 * @method setDatabase
 	 * @param {JSON} db
-	 * @return {Promise} Resolves or rejects based on saving success
+	 * @return {Promise} Resolves or rejects based on saving success (resolves to current DB)
 	 * @protected
 	 */
 	setDatabase: EG.abstractMethod('saveDatabase'),
@@ -299,7 +337,7 @@ EG.EmberGraphAdapter = EG.Adapter.extend({
 	 * @private
 	 */
 	getRecordFromDatabase: function(typeKey, id, db) {
-		var model = this.get('store').modelFor(typeKey);
+		var model = this.get('store').modelForType(typeKey);
 		var json = cloneJson(db.records[typeKey][id]);
 		json.id = id;
 		json.links = {};
@@ -355,7 +393,7 @@ EG.EmberGraphAdapter = EG.Adapter.extend({
 	 * @private
 	 */
 	putRecordInDatabase: function(typeKey, id, json, db) {
-		var model = this.get('store').modelFor(typeKey);
+		var model = this.get('store').modelForType(typeKey);
 
 		db.records[typeKey] = db.records[typeKey] || {};
 		db.records[typeKey][id] = {};
@@ -401,7 +439,7 @@ EG.EmberGraphAdapter = EG.Adapter.extend({
 	 * @private
 	 */
 	applyChangesToDatabase: function(typeKey, id, changes, db) {
-		var model = this.get('store').modelFor(typeKey);
+		var model = this.get('store').modelForType(typeKey);
 
 		forEach.call(changes, function(change) {
 			switch (change.op) {

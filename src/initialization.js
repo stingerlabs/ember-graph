@@ -8,6 +8,7 @@ Em.Application.initializer({
 		App.register('adapter:local_storage', EG.LocalStorageAdapter, { singleton: true });
 
 		App.register('serializer:json', EG.JSONSerializer, { singleton: true });
+		App.register('serializer:ember_graph', EG.EmberGraphSerializer, { singleton: true });
 
 		App.register('type:string', EG.StringType, { singleton: true });
 		App.register('type:number', EG.NumberType, { singleton: true });

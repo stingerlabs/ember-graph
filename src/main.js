@@ -29,6 +29,7 @@ require('relationship/relationship');
 require('relationship/relationship_store');
 
 require('serializer/serializer');
+require('serializer/json');
 require('serializer/**/*');
 
 require('adapter/adapter');

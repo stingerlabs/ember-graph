@@ -33,7 +33,7 @@ EG.LocalStorageAdapter = EG.EmberGraphAdapter.extend({
 		try {
 			var key = this.get('localStorageKey');
 			localStorage[key] = JSON.stringify(db);
-			return Promise.resolve();
+			return Promise.resolve(db);
 		} catch (error) {
 			return Promise.reject(error);
 		}
