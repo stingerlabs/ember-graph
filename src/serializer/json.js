@@ -301,6 +301,8 @@ EG.JSONSerializer = EG.Serializer.extend({
 			return {};
 		}
 
+		payload = Em.copy(payload, true);
+
 		var normalized = {
 			meta: {
 				serverMeta: payload.meta || {}
