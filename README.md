@@ -81,12 +81,12 @@ App.Post = EmberGraph.Model.extend({
 		readOnly: true
 	}),
 
-	author: hasOne({
+	author: EmberGraph.hasOne({
 		relatedType: 'user',
 		inverse: 'posts'
 	}),
 
-	tags: hasMany({
+	tags: EmberGraph.hasMany({
 		relatedType: 'tag',
 		inverse: null,
 		defaultValue: ['1', '2']
