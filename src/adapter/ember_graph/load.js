@@ -1,5 +1,8 @@
 var Promise = Em.RSVP.Promise;
 
+var forEach = Em.ArrayPolyfills.forEach;
+var typeOf = Em.typeOf;
+
 EG.EmberGraphAdapter.extend({
 
 	/**
@@ -52,7 +55,7 @@ EG.EmberGraphAdapter.extend({
 		var payload = this.getInitialPayload();
 
 		try {
-			var db = this.convertAndVerifyPayload(payload);
+			var db = this.convertAndVerifyPayload(Em.copy(payload, true));
 			return this.setDatabase(db);
 		} catch (error) {
 			console.error('There was an error while trying to initialize your database.');
@@ -61,14 +64,111 @@ EG.EmberGraphAdapter.extend({
 	},
 
 	/**
-	 *
 	 * @method convertAndVerifyPayload
-	 * @param {JSON} payload
+	 * @param {Object} payload
 	 * @return {JSON} Database object
 	 * @private
 	 * @for EmberGraphAdapter
 	 */
 	convertAndVerifyPayload: function(payload) {
+		var records = this.extractRecords(payload);
+		var relationships = this.extractRelationships(payload, records);
+
+		var database = {
+			records: records,
+			relationships: relationships
+		};
+
+		this.validateDatabase(database);
+
+		return database;
+	},
+
+	/**
+	 * @method extractRecords
+	 * @param {Object} payload
+	 * @return {JSON} `records` object for database
+	 * @private
+	 * @for EmberGraphAdapter
+	 */
+	extractRecords: function(payload) {
+		var store = this.get('store');
+		var databaseRecords = {};
+
+		EG.values(payload, function(typeKey, records) {
+			databaseRecords[typeKey] = {};
+
+			var model = store.modelForType(typeKey);
+
+			forEach.call(records, function(record) {
+				databaseRecords[typeKey][record.id] = this.convertRecord(model, record);
+			}, this);
+		}, this);
+	},
+
+	/**
+	 * Takes a single record, fills in missing attributes
+	 * and serializes it for storage in the database.
+	 *
+	 * @method convertRecord
+	 * @param {Class} model
+	 * @param {Object} record
+	 * @return {JSON}
+	 * @private
+	 * @for EmberGraphAdapter
+	 */
+	convertRecord: function(model, record) {
+		var json = {
+			id: record.id + ''
+		};
+
+		model.eachAttribute(function(name, meta) {
+			var type = this.get('store').attributeTypeFor(meta.type);
+
+			if (record[name] === undefined) {
+				if (meta.isRequired) {
+					throw new Em.Error(Em.get(model, 'typeKey') + ':' + record.id + ' is missing `' + name + '`');
+				} else {
+					json[name] = type.serialize(meta.defaultValue);
+				}
+			} else {
+				json[name] = type.serialize(record[name]);
+			}
+		}, this);
+
+		return json;
+	},
+
+	/**
+	 * @method extractRelationships
+	 * @param {Object} payload
+	 * @param {JSON} databaseRecords
+	 * @return {JSON[]}
+	 * @private
+	 * @for EmberGraphAdapter
+	 */
+	extractRelationships: function(payload, databaseRecords) {
+		var store = this.get('store');
+		var createdRelationships = new Em.Set();
+
+		EG.values(payload, function(typeKey, records) {
+			 var model = store.modelForType(typeKey);
+
+			forEach.call(records, function(record) {
+				model.eachRelationship(function(name, meta) {
+					
+				});
+			});
+		}, this);
+	},
+
+	/**
+	 * @method validateDatabase
+	 * @param {JSON} db
+	 * @private
+	 * @for EmberGraphAdapter
+	 */
+	validateDatabase: function(db) {
 
 	}
 
