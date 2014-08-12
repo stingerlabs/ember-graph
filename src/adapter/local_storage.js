@@ -22,7 +22,7 @@ EG.LocalStorageAdapter = EG.EmberGraphAdapter.extend({
 			if (value) {
 				return Promise.resolve(JSON.parse(value));
 			} else {
-				return Promise.resolve(this.get('emptyDatabase'));
+				return Promise.resolve({ records: {}, relationships: [] });
 			}
 		} catch (error) {
 			return Promise.reject(error);
@@ -37,6 +37,22 @@ EG.LocalStorageAdapter = EG.EmberGraphAdapter.extend({
 		} catch (error) {
 			return Promise.reject(error);
 		}
-	}
+	},
+
+	/**
+	 * Initializes the database (if configured to do so).
+	 * This function is called at adapter initialization
+	 * (which is probably when it's looked up by the container).
+	 *
+	 * @method initializeDatabase
+	 * @private
+	 */
+	initializeDatabase: function() {
+		this._super();
+	},
+
+	initializeDatabaseOnInit: Em.on('init', function() {
+		this.initializeDatabase();
+	})
 
 });

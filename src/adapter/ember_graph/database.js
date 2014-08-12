@@ -1,8 +1,7 @@
-var Promise = Em.RSVP.Promise;
-var map = Em.ArrayPolyfills.map;
 var filter = Em.ArrayPolyfills.filter;
 var forEach = Em.ArrayPolyfills.forEach;
 var indexOf = Em.ArrayPolyfills.indexOf;
+
 
 var ADD_OP_NAME_REGEX = /^\/links\/([^/]+)/i;
 var REMOVE_OP_REGEX = /^\/links\/([^/]+)\/.+/i;
@@ -11,295 +10,62 @@ function getRelationshipNameFromChangePath(path, op) {
 	return path.match(op === 'add' ? ADD_OP_NAME_REGEX : REMOVE_OP_REGEX)[1];
 }
 
-function cloneJson(json) {
-	return JSON.parse(JSON.stringify(json));
-}
-
 /**
- * This class acts as a base adapter for synchronous storage forms. Specifically,
- * the {{link-to-class 'LocalStorageAdapter'}} and {{link-to-class 'MemoryAdapter'}}
- * inherit from this class. This class will perform all of the work of updating data
- * and maintaining data integrity, subclasses need only implement the
- * {{link-to-method 'EmberGraphAdapter' 'getDatabase'}} and
- * {{link-to-method 'EmberGraphAdapter' 'setDatabase'}} methods to create a
- * fully-functioning adapter. This class works with data as a single JSON object
- * that takes the following form:
+ * The JSON database has a simple format. The top-level
+ * format looks like this:
  *
  * ```json
  * {
- *     "records": {
- *          "type_key": {
- *              "record_id": {
- *                  "attr1": "value",
- *                  "attr2": 5
- *              }
- *          }
- *     },
- *     "relationships": [{
- *             "t1": "type_key",
- *             "i1": "id",
- *             "n1": "relationship_name",
- *             "t2": "type_key",
- *             "i2": "id",
- *             "n2": "relationship_name",
- *     }]
+ *     "records": {},
+ *     "relationships": []
  * }
  * ```
  *
- * If you can store the JSON data, then this adapter will ensure complete
- * database integrity, since everything is done is single transactions.
- * You may also override some of the hooks and methods if you wish to
- * customize how the adapter saves or retrieves data.
+ * Records are grouped by their type and stored by ID, like so:
  *
- * @class EmberGraphAdapter
- * @extends Adapter
- * @category abstract
+ * ```json
+ * {
+ *     "user": {
+ *         "1": {},
+ *         "3": {}
+ *     },
+ *     "post": {
+ *         "10": {}
+ *     }
+ * }
+ * ```
+ *
+ * Relationships are stored in the following form (short keys are to conserve space):
+ *
+ * ```json
+ * {
+ *    "t1": "typeKey1",
+ *    "i1": "id1",
+ *    "n1": "relationshipName1",
+ *    "t2": "typeKey2",
+ *    "i2": "id2",
+ *    "n2": "relationshipName2"
+ * }
+ * ```
  */
-EG.EmberGraphAdapter = EG.Adapter.extend({
-
-	/**
-	 * @property serializer
-	 * @type JSONSerializer
-	 * @protected
-	 * @final
-	 */
-	serializer: Em.computed(function() {
-		return this.get('container').lookup('serializer:ember_graph');
-	}).property().readOnly(),
-
-	createRecord: function(record) {
-		var _this = this;
-
-		var json = this.serialize(record, { requestType: 'createRecord', recordType: record.get('typeKey') });
-		return this.serverCreateRecord(record.get('typeKey'), json).then(function(payload) {
-			return _this.deserialize(payload, { requestType: 'createRecord', recordType: record.typeKey });
-		});
-	},
-
-	findRecord: function(typeKey, id) {
-		return this.serverFindRecord(typeKey, id);
-	},
-
-	findMany: function(typeKey, ids) {
-		return this.serverFindMany(typeKey, ids);
-	},
-
-	findAll: function(typeKey) {
-		return this.serverFindAll(typeKey);
-	},
-
-	findQuery: function() {
-		return Promise.reject('LocalStorageAdapter doesn\'t implement `findQuery` by default.');
-	},
-
-	updateRecord: function(record) {
-		var changes = this.serialize(record, { requestType: 'updateRecord', recordType: record.get('typeKey') });
-		return this.serverUpdateRecord(record.get('typeKey'), record.get('id'), changes);
-	},
-
-	deleteRecord: function(record) {
-		return this.serverDeleteRecord(record.get('typeKey'), record.get('id'));
-	},
-
-	serialize: function(record, options) {
-		return this.get('serializer').serialize(record, options);
-	},
-
-	deserialize: function(payload, options) {
-		return this.get('serializer').deserialize(payload, options);
-	},
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	/**
-	 * @method serverCreateRecord
-	 * @param {String} typeKey
-	 * @param {JSON} json
-	 * @return {Promise}
-	 * @protected
-	 */
-	serverCreateRecord: function(typeKey, json) {
-		var id, _this = this;
-
-		return this.getDatabase().then(function(db) {
-			id = _this.generateIdForRecord(typeKey, json, db);
-			db = _this.putRecordInDatabase(typeKey, id, json[EG.String.pluralize(typeKey)][0], db);
-			return _this.setDatabase(db);
-		}).then(function(db) {
-			var record = _this.getRecordFromDatabase(typeKey, id, db);
-			var payload = {};
-			payload[EG.String.pluralize(typeKey)] = [record];
-			return payload;
-		});
-	},
-
-	/**
-	 * @method serverFindRecord
-	 * @param {String} typeKey
-	 * @param {String} id
-	 * @return {Promise}
-	 * @protected
-	 */
-	serverFindRecord: function(typeKey, id) {
-		var _this = this;
-
-		return this.getDatabase().then(function(db) {
-			if (Em.get(db, 'records.' + typeKey + '.' + id)) {
-				var payload = {};
-				payload[EG.String.pluralize(typeKey)] = [_this.getRecordFromDatabase(typeKey, id, db)];
-				return payload;
-			} else {
-				throw { status: 404, typeKey: typeKey, id: id };
-			}
-		});
-	},
-
-	/**
-	 * @method serverFindMany
-	 * @param {String} typeKey
-	 * @param {String[]} ids
-	 * @return {Promise}
-	 * @protected
-	 */
-	serverFindMany: function(typeKey, ids) {
-		var _this = this;
-
-		return this.getDatabase().then(function(db) {
-			var records = map.call(ids, function(id) {
-				if (Em.get(db, 'records.' + typeKey + '.' + id)) {
-					return _this.getRecordFromDatabase(typeKey, id, db);
-				} else {
-					throw { status: 404, typeKey: typeKey, id: id };
-				}
-			});
-
-			var payload = {};
-			payload[EG.String.pluralize(typeKey)] = records;
-			return payload;
-		});
-	},
-
-	/**
-	 * @method serverFindAll
-	 * @param {String} typeKey
-	 * @return {Promise}
-	 * @protected
-	 */
-	serverFindAll: function(typeKey) {
-		var _this = this;
-
-		return this.getDatabase().then(function(db) {
-			var records = map.call(Em.keys(db.records[typeKey] || {}), function(id) {
-				return _this.getRecordFromDatabase(typeKey, id, db);
-			});
-
-			var payload = {};
-			payload[EG.String.pluralize(typeKey)] = records;
-			return payload;
-		});
-	},
-
-	/**
-	 * @method serverUpdateRecord
-	 * @param {String} typeKey
-	 * @param {String} id
-	 * @param {JSON[]} changes
-	 * @return {Promise}
-	 * @protected
-	 */
-	serverUpdateRecord: function(typeKey, id, changes) {
-		var _this = this;
-
-		return this.getDatabase().then(function(db) {
-			db = _this.applyChangesToDatabase(typeKey, id, changes, db);
-			return _this.setDatabase(db);
-		});
-	},
-
-	/**
-	 * @method serverDeleteRecord
-	 * @param {String} typeKey
-	 * @param {String} id
-	 * @return {Promise}
-	 * @protected
-	 */
-	serverDeleteRecord: function(typeKey, id) {
-		var _this = this;
-		var payload = null;
-
-		return this.getDatabase().then(function(db) {
-			if (db.records[typeKey]) {
-				delete db.records[typeKey][id];
-			}
-
-			db.relationships = filter.call(db.relationships, function(r) {
-				return !((r.t1 === typeKey && r.i1 === id) || (r.t2 === typeKey && r.i2 === id));
-			});
-
-			return _this.setDatabase(db).then(function() {
-				return {
-					meta: {
-						deletedRecords: [{ type: typeKey, id: id }]
-					}
-				};
-			});
-		});
-	},
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	/**
-	 * Determines whether or not to bootstrap the database
-	 * with an initial set of data. If you want to initialize
-	 * the database with data, you should override this property
-	 * to return true. Use a computed property if deciding to
-	 * initialize requires application logic.
-	 *
-	 * @property shouldBootstrapDatabase
-	 * @returns {Boolean}
-	 * @protected
-	 */
-	shouldBootstrapDatabase: false,
-
-	/**
-	 * If {{link-to-method 'EmberGraphAdapter' 'shouldBootstrapDatabase'}} is true,
-	 * then this hook is called to get the data to inject into the database. The format
-	 * is the same format required by {{link-to-method 'Store' 'extractPayload'}}.
-	 *
-	 * @method getBootstrappedData
-	 * @return {Object}
-	 * @protected
-	 */
-	getBootstrappedData: EG.abstractMethod('getBootstrappedData'),
-
-	bootstrapData: Em.on('init', function() {
-		if (!this.get('shouldBootstrapDatabase')) {
-			return;
-		}
-
-		var data = this.getBootstrappedData();
-	}),
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	/**
-	 * The value of an empty database. This can be used for initializing
-	 * a database if it hasn't been used before.
-	 *
-	 * @property emptyDatabase
-	 * @final
-	 * @protected
-	 */
-	emptyDatabase: Em.computed(function() {
-		return { records: {}, relationships: [] };
-	}).readOnly().volatile(),
+EG.EmberGraphAdapter.reopen({
 
 	/**
 	 * Return a copy of the database from the storage location in JSON form.
+	 * If the database doesn't exist and you need to create and empty one,
+	 * the following JSON object should be returned:
+	 *
+	 * ```json
+	 * {
+	 *     "records": {},
+	 *     "relationships": []
+	 * }
+	 * ```
 	 *
 	 * @method getDatabase
 	 * @return {Promise} Resolves to the DB JSON
 	 * @protected
+	 * @for EmberGraphAdapter
 	 */
 	getDatabase: EG.abstractMethod('getDatabase'),
 
@@ -310,19 +76,27 @@ EG.EmberGraphAdapter = EG.Adapter.extend({
 	 * @param {JSON} db
 	 * @return {Promise} Resolves or rejects based on saving success (resolves to current DB)
 	 * @protected
+	 * @for EmberGraphAdapter
 	 */
 	setDatabase: EG.abstractMethod('saveDatabase'),
 
 	/**
-	 * @method generateIdForRecord
+	 * Determines if the given database contains the given record.
+	 *
+	 * @method databaseHasRecord
 	 * @param {String} typeKey
-	 * @param {JSON} json
+	 * @param {String} id
 	 * @param {JSON} db
-	 * @return {String}
-	 * @protected
+	 * @return {Boolean}
+	 * @private
+	 * @for EmberGraphAdapter
 	 */
-	generateIdForRecord: function(typeKey, json, db) {
-		return EG.generateUUID();
+	databaseHasRecord: function(typeKey, id, db) {
+		try {
+			return (!!db.records[typeKey][id]);
+		} catch (e) {
+			return false;
+		}
 	},
 
 	/**
@@ -335,10 +109,11 @@ EG.EmberGraphAdapter = EG.Adapter.extend({
 	 * @param {JSON} db
 	 * @return {JSON}
 	 * @private
+	 * @for EmberGraphAdapter
 	 */
 	getRecordFromDatabase: function(typeKey, id, db) {
 		var model = this.get('store').modelForType(typeKey);
-		var json = cloneJson(db.records[typeKey][id]);
+		var json = Em.copy(db.records[typeKey][id], true);
 		json.id = id;
 		json.links = {};
 
@@ -391,6 +166,7 @@ EG.EmberGraphAdapter = EG.Adapter.extend({
 	 * @param {JSON} db
 	 * @return {JSON} The updated DB
 	 * @private
+	 * @for EmberGraphAdapter
 	 */
 	putRecordInDatabase: function(typeKey, id, json, db) {
 		var model = this.get('store').modelForType(typeKey);
@@ -437,6 +213,7 @@ EG.EmberGraphAdapter = EG.Adapter.extend({
 	 * @param {JSON} db
 	 * @return {JSON} The updated DB
 	 * @private
+	 * @for EmberGraphAdapter
 	 */
 	applyChangesToDatabase: function(typeKey, id, changes, db) {
 		var model = this.get('store').modelForType(typeKey);
@@ -493,6 +270,7 @@ EG.EmberGraphAdapter = EG.Adapter.extend({
 	 * @param {JSON} db
 	 * @return {JSON} The updated DB
 	 * @private
+	 * @for EmberGraphAdapter
 	 */
 	addHasManyRelationshipToDatabase: function(relationship, db) {
 		var relationships = this.getRelationshipsFor(relationship.t1, relationship.i1, relationship.n1, db);
@@ -528,6 +306,7 @@ EG.EmberGraphAdapter = EG.Adapter.extend({
 	 * @param {JSON} db
 	 * @return {JSON} The updated DB
 	 * @private
+	 * @for EmberGraphAdapter
 	 */
 	removeHasManyRelationshipFromDatabase: function(relationship, db) {
 		var relationships = this.getRelationshipsFor(relationship.t1, relationship.i1, relationship.n1, db);
@@ -548,6 +327,7 @@ EG.EmberGraphAdapter = EG.Adapter.extend({
 	 * @param {JSON} db
 	 * @return {JSON} The updated DB
 	 * @private
+	 * @for EmberGraphAdapter
 	 */
 	setHasOneRelationshipInDatabase: function(relationship, db) {
 		db = this.clearHasOneRelationshipInDatabase(relationship.t1, relationship.i1, relationship.n1, db);
@@ -576,6 +356,7 @@ EG.EmberGraphAdapter = EG.Adapter.extend({
 	 * @param {JSON} db
 	 * @return {JSON} The updated DB
 	 * @private
+	 * @for EmberGraphAdapter
 	 */
 	clearHasOneRelationshipInDatabase: function(typeKey, id, name, db) {
 		var relationships = this.getRelationshipsFor(typeKey, id, name, db);
@@ -597,6 +378,7 @@ EG.EmberGraphAdapter = EG.Adapter.extend({
 	 * @param {JSON} db
 	 * @return {JSON[]} Relationships
 	 * @private
+	 * @for EmberGraphAdapter
 	 */
 	getRelationshipsFor: function(typeKey, id, name, db) {
 		return filter.call(db.relationships, function(relationship) {

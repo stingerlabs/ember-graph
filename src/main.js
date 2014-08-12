@@ -33,7 +33,8 @@ require('serializer/json');
 require('serializer/**/*');
 
 require('adapter/adapter');
-require('adapter/synchronous');
+require('adapter/ember_graph/adapter');
+require('adapter/ember_graph/**/*');
 require('adapter/**/*');
 
 require('store/record_cache');
@@ -46,8 +47,4 @@ require('attribute_type/type');
 require('attribute_type/**/*');
 
 require('model/model');
-require('model/states');
-require('model/attribute');
-require('model/relationship');
-require('model/relationship_load');
-require('model/schema');
+require('model/**/*');

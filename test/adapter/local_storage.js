@@ -46,13 +46,12 @@
 		}).then(function(payload) {
 			start();
 
+			delete payload.meta;
 			deepEqual(payload, {
-				users: [{
+				user: [{
 					id: id,
 					name: 'Ben Derisgreat',
-					links: {
-						posts: []
-					}
+					posts: []
 				}]
 			});
 		});
