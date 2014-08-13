@@ -6,6 +6,7 @@
 
 		var container = new Em.Container();
 		container.register('adapter:rest', EG.RESTAdapter, { singleton: true });
+		container.register('adapter:memory', EG.MemoryAdapter, { singleton: true });
 		container.register('adapter:local_storage', EG.LocalStorageAdapter, { singleton: true });
 
 		container.register('serializer:json', EG.JSONSerializer, { singleton: true });

@@ -25,8 +25,15 @@ EG.EmberGraphAdapter.reopen({
 
 	/**
 	 * If {{link-to-method 'EmberGraphAdapter' 'shouldInitializeDatabase'}} returns `true`,
-	 * then this hook is called to get the data to inject into the database. The format
-	 * is the same format required by {{link-to-method 'Store' 'extractPayload'}}.
+	 * then this hook is called to get the data to inject into the database. You should
+	 * return your initial data payload from this hook. The format of the payload is
+	 * very similar to the format required by {{link-to-method 'Store' 'extractPayload'}}.
+	 * But there are a few differences for the sake of terseness:
+	 *
+	 * - IDs can be numbers or strings, they'll be converted to strings automatically
+	 * - Relationships can be just IDs or ID objects (the later for polymorphic relationships).
+	 *   For example, you may use `{ id: 1, posts: [1] }` instead of `{ id: 1, posts: [{ type: 'post', id: 1 }] }`
+	 * - Optional values can be left out, they'll be filled in automatically
 	 *
 	 * @method getInitialPayload
 	 * @return {Object}

@@ -1,6 +1,22 @@
 var Promise = Em.RSVP.Promise;
 
 /**
+ * This adapter will store all of your application data in the browser's
+ * localStorage. This adapter can be useful for caching data on the client,
+ * or for testing purposes. If you want to initialize the localStorage
+ * with an initial data set, override the
+ * {{link-to-method 'LocalStorageAdapter' 'shouldInitializeDatabase'}} and
+ * {{link-to-method 'LocalStorageAdapter' 'getInitialPayload'}} hooks.
+ *
+ * To customize the the behavior for getting or saving records, you can
+ * override any of the following methods:
+ * {{link-to-method 'LocalStorageAdapter' 'serverFindRecord'}},
+ * {{link-to-method 'LocalStorageAdapter' 'serverFindMany'}},
+ * {{link-to-method 'LocalStorageAdapter' 'serverFindAll'}},
+ * {{link-to-method 'LocalStorageAdapter' 'serverCreateRecord'}},
+ * {{link-to-method 'LocalStorageAdapter' 'serverDeleteRecord'}},
+ * {{link-to-method 'LocalStorageAdapter' 'serverUpdateRecord'}}.
+ *
  * @class LocalStorageAdapter
  * @extends EmberGraphAdapter
  */

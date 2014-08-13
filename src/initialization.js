@@ -5,6 +5,7 @@ Em.Application.initializer({
 		App.register('store:main', App.Store || EG.Store, { singleton: true });
 
 		App.register('adapter:rest', EG.RESTAdapter, { singleton: true });
+		App.register('adapter:memory', EG.MemoryAdapter, { singleton: true });
 		App.register('adapter:local_storage', EG.LocalStorageAdapter, { singleton: true });
 
 		App.register('serializer:json', EG.JSONSerializer, { singleton: true });
