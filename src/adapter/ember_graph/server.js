@@ -113,7 +113,7 @@ EG.EmberGraphAdapter.reopen({
 			return _this.setDatabase(db);
 		}).then(function(db) {
 			var payload = {};
-			payload[EG.String.pluralize[typeKey]] = [_this.getRecordFromDatabase(typeKey, id, db)];
+			payload[EG.String.pluralize(typeKey)] = [_this.getRecordFromDatabase(typeKey, id, db)];
 			return payload;
 		});
 	},

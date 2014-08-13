@@ -257,43 +257,57 @@
 		});
 	});
 
-//	asyncTest('Update an existing record', function() {
-//		expect(2);
-//
-//		store.find('post', '4').then(function(post) {
-//			post.set('title', '4444');
-//			post.setHasOneRelationship('author', '4');
-//			return post.save();
-//		}).then(function() {
-//			return adapter.findRecord('post', '4');
-//		}).then(function(payload) {
-//			start();
-//
-//			delete payload.meta;
-//			deepEqual(payload, {
-//				post: [{
-//					id: '4',
-//					title: '4444',
-//					author: { type: 'user', id: '4' }
-//				}]
-//			});
-//
-//			stop();
-//
-//			return adapter.findRecord('user', '4');
-//		}).then(function(payload) {
-//			start();
-//
-//			delete payload.meta;
-//			deepEqual(payload, {
-//				user: [{
-//					id: '4',
-//					name: 'Rando',
-//					posts: [
-//						{ type: 'post', id: '4' }
-//					]
-//				}]
-//			});
-//		});
-//	});
+	asyncTest('Update an existing record', function() {
+		expect(2);
+
+		store.find('post', '4').then(function(post) {
+			post.set('title', '4444');
+			post.setHasOneRelationship('author', '4');
+			return post.save();
+		}).then(function() {
+			return adapter.findRecord('post', '4');
+		}).then(function(payload) {
+			start();
+
+			delete payload.meta;
+			deepEqual(payload, {
+				post: [{
+					id: '4',
+					title: '4444',
+					author: { type: 'user', id: '4' }
+				}]
+			});
+
+			stop();
+
+			return adapter.findRecord('user', '4');
+		}).then(function(payload) {
+			start();
+
+			delete payload.meta;
+			deepEqual(payload, {
+				user: [{
+					id: '4',
+					name: 'Rando',
+					posts: [
+						{ type: 'post', id: '4' }
+					]
+				}]
+			});
+		});
+	});
+
+	asyncTest('Delete existing record', function() {
+		expect(1);
+
+		store.find('post', '4').then(function(post) {
+			return post.destroy();
+		}).then(function() {
+			start();
+
+			adapter.findRecord('post', '4').catch(function(error) {
+				strictEqual(error.status, 404);
+			});
+		});
+	});
 })();

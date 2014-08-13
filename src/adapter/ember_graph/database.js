@@ -259,6 +259,8 @@ EG.EmberGraphAdapter.reopen({
 					break;
 			}
 		}, this);
+
+		return db;
 	},
 
 	/**
