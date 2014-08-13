@@ -19,7 +19,8 @@
 					posts: [{ type: 'post', id: 3 }, { type: 'post', id: '4' }]
 				}, {
 					id: '4',
-					name: 'Rando'
+					name: 'Rando',
+					favoritePost: 4
 				}],
 
 				post: [{
@@ -51,6 +52,12 @@
 						relatedType: 'post',
 						inverse: 'author',
 						defaultValue: []
+					}),
+
+					favoritePost: EG.hasOne({
+						relatedType: 'post',
+						inverse: null,
+						defaultValue: null
 					})
 				}),
 
@@ -113,7 +120,8 @@
 				{ t1: 'post', i1: '1', n1: 'author', t2: 'user', i2: '1', n2: 'posts' },
 				{ t1: 'post', i1: '2', n1: 'author', t2: 'user', i2: '1', n2: 'posts' },
 				{ t1: 'post', i1: '3', n1: 'author', t2: 'user', i2: '2', n2: 'posts' },
-				{ t1: 'post', i1: '4', n1: 'author', t2: 'user', i2: '2', n2: 'posts' }
+				{ t1: 'post', i1: '4', n1: 'author', t2: 'user', i2: '2', n2: 'posts' },
+				{ t1: 'post', i1: '4', n1: null, t2: 'user', i2: '4', n2: 'favoritePost' }
 			].map(relationshipToString)
 		};
 
@@ -151,14 +159,16 @@
 		});
 	});
 
-	test('Initializing an invalid test payload fails (missing required relationship)', function() {
+	test('Initializing an invalid test payload fails (missing required attribute)', function() {
 		expect(1);
 
 		throws(function() {
 			adapter.convertAndVerifyPayload({
-				post: [{
+				user: [{
 					id: '1',
-					title: ''
+					posts: [
+						{ type: 'post', id: 'wontexist' }
+					]
 				}]
 			});
 		});
@@ -203,6 +213,7 @@
 				user: [{
 					id: '1',
 					name: 'Ben Derisgreat',
+					favoritePost: null,
 					posts: [
 						{ type: 'post', id: '1' },
 						{ type: 'post', id: '2' }
@@ -315,6 +326,7 @@
 				user: [{
 					id: id,
 					name: 'Professor Bald',
+					favoritePost: null,
 					posts: []
 				}]
 			});
@@ -353,6 +365,7 @@
 				user: [{
 					id: '4',
 					name: 'Rando',
+					favoritePost: { type: 'post', id: '4' },
 					posts: [
 						{ type: 'post', id: '4' }
 					]

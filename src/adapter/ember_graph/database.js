@@ -120,7 +120,7 @@ EG.EmberGraphAdapter.reopen({
 		forEach.call(db.relationships, function(relationship) {
 			var meta;
 
-			if (relationship.t1 === typeKey && relationship.i1 === id) {
+			if (relationship.t1 === typeKey && relationship.i1 === id && relationship.n1 !== null) {
 				meta = model.metaForRelationship(relationship.n1);
 
 				if (meta.kind === EG.Model.HAS_ONE_KEY) {
@@ -129,7 +129,7 @@ EG.EmberGraphAdapter.reopen({
 					json.links[relationship.n1] = json.links[relationship.n1] || [];
 					json.links[relationship.n1].push({ type: relationship.t2, id: relationship.i2 });
 				}
-			} else if (relationship.t2 === typeKey && relationship.i2 === id) {
+			} else if (relationship.t2 === typeKey && relationship.i2 === id && relationship.n2 !== null) {
 				meta = model.metaForRelationship(relationship.n2);
 
 				if (meta.kind === EG.Model.HAS_ONE_KEY) {
