@@ -1,5 +1,7 @@
 var Promise = Em.RSVP.Promise;
 
+var map = Em.ArrayPolyfills.map;
+var filter = Em.ArrayPolyfills.filter;
 var forEach = Em.ArrayPolyfills.forEach;
 var typeOf = Em.typeOf;
 
@@ -221,7 +223,51 @@ EG.EmberGraphAdapter.reopen({
 	 * @for EmberGraphAdapter
 	 */
 	validateDatabase: function(db) {
+		function filterRelationships(typeKey, id, name) {
+			return filter.call(db.relationships, function(r) {
+				return ((r.t1 === typeKey && r.i1 === id && r.n1 === name) ||
+					(r.t2 === typeKey && r.i2 === id && r.n2 === name));
+			});
+		}
 
+		function relationshipToString(r) {
+			var one = r.t1 + ':' + r.i1 + ':' + r.n1;
+			var two = r.t2 + ':' + r.i2 + ':' + r.n2;
+			return (one < two ? one + '::' + two : two  + '::' + one);
+		}
+
+		var relationshipSet = new Em.Set(map.call(db.relationships, relationshipToString));
+		if (Em.get(relationshipSet, 'length') !== db.relationships.length) {
+			throw new Em.Error('An invalid set of relationships was generated.');
+		}
+
+		forEach.call(db.relationships, function(relationship) {
+			if (!db.records[relationship.t1][relationship.i1]) {
+				throw new Em.Error(relationship.t1 + ':' + relationship.i1 + ' doesn\'t exist');
+			}
+
+			if (!db.records[relationship.t2][relationship.i2]) {
+				throw new Em.Error(relationship.t2 + ':' + relationship.i2 + ' doesn\'t exist');
+			}
+		});
+
+		EG.values(db.records, function(typeKey, records) {
+			var model = this.get('store').modelForType(typeKey);
+
+			model.eachRelationship(function(name, meta) {
+				if (meta.kind !== EG.Model.HAS_ONE_KEY) {
+					return;
+				}
+
+				EG.values(records, function(id, record) {
+					var relationships = filterRelationships(typeKey, id, name);
+
+					if (relationships.length > 1) {
+						throw new Error('Too many relationships connected to ' + typeKey + ':' + id + ':' + name);
+					}
+				});
+			});
+		}, this);
 	}
 
 });

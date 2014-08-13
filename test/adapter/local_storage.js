@@ -120,13 +120,77 @@
 		deepEqual(db, expected);
 	});
 
-//	test('Initializing an invalid test payload fails (1)', function() {
-//		expect(0);
-//	});
-//
-//	test('Initializing an invalid test payload fails (2)', function() {
-//		expect(0);
-//	});
+	test('Initializing an invalid test payload fails (missing record)', function() {
+		expect(1);
+
+		throws(function() {
+			adapter.convertAndVerifyPayload({
+				user: [{
+					id: '1',
+					name: '',
+					posts: [
+						{ type: 'post', id: 'wontexist' }
+					]
+				}]
+			});
+		});
+	});
+
+	test('Initializing an invalid test payload fails (missing required attribute)', function() {
+		expect(1);
+
+		throws(function() {
+			adapter.convertAndVerifyPayload({
+				user: [{
+					id: '1',
+					posts: [
+						{ type: 'post', id: 'wontexist' }
+					]
+				}]
+			});
+		});
+	});
+
+	test('Initializing an invalid test payload fails (missing required relationship)', function() {
+		expect(1);
+
+		throws(function() {
+			adapter.convertAndVerifyPayload({
+				post: [{
+					id: '1',
+					title: ''
+				}]
+			});
+		});
+	});
+
+
+	test('Initializing an invalid test payload fails (too many hasOne relationships)', function() {
+		expect(1);
+
+		throws(function() {
+			adapter.convertAndVerifyPayload({
+				user: [{
+					id: '1',
+					name: '',
+					posts: [
+						{ type: 'post', id: '1' }
+					]
+				}, {
+					id: '2',
+					name: '',
+					posts: [
+						{ type: 'post', id: '1' }
+					]
+				}],
+				post: [{
+					id: '1',
+					title: 'foo',
+					author: { type: 'user', id: '1' }
+				}]
+			});
+		});
+	});
 
 	asyncTest('Get an existing record', function() {
 		expect(1);
