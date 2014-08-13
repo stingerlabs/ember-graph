@@ -3,7 +3,7 @@ var Promise = Em.RSVP.Promise;
 var forEach = Em.ArrayPolyfills.forEach;
 var typeOf = Em.typeOf;
 
-EG.EmberGraphAdapter.extend({
+EG.EmberGraphAdapter.reopen({
 
 	/**
 	 * Determines whether or not to bootstrap the database
@@ -48,7 +48,7 @@ EG.EmberGraphAdapter.extend({
 	 * @for EmberGraphAdapter
 	 */
 	initializeDatabase: function() {
-		if (this.shouldInitializeDatabase()) {
+		if (!this.shouldInitializeDatabase()) {
 			return Promise.resolve();
 		}
 
@@ -71,12 +71,9 @@ EG.EmberGraphAdapter.extend({
 	 * @for EmberGraphAdapter
 	 */
 	convertAndVerifyPayload: function(payload) {
-		var records = this.extractRecords(payload);
-		var relationships = this.extractRelationships(payload, records);
-
 		var database = {
-			records: records,
-			relationships: relationships
+			records: this.extractRecords(payload),
+			relationships: this.extractRelationships(payload)
 		};
 
 		this.validateDatabase(database);
@@ -104,6 +101,8 @@ EG.EmberGraphAdapter.extend({
 				databaseRecords[typeKey][record.id] = this.convertRecord(model, record);
 			}, this);
 		}, this);
+
+		return databaseRecords;
 	},
 
 	/**
@@ -118,9 +117,7 @@ EG.EmberGraphAdapter.extend({
 	 * @for EmberGraphAdapter
 	 */
 	convertRecord: function(model, record) {
-		var json = {
-			id: record.id + ''
-		};
+		var json = {};
 
 		model.eachAttribute(function(name, meta) {
 			var type = this.get('store').attributeTypeFor(meta.type);
@@ -142,24 +139,79 @@ EG.EmberGraphAdapter.extend({
 	/**
 	 * @method extractRelationships
 	 * @param {Object} payload
-	 * @param {JSON} databaseRecords
 	 * @return {JSON[]}
 	 * @private
 	 * @for EmberGraphAdapter
 	 */
-	extractRelationships: function(payload, databaseRecords) {
+	extractRelationships: function(payload) {
 		var store = this.get('store');
+		var relationships = [];
 		var createdRelationships = new Em.Set();
 
+		function addRelationship(r) {
+			var one = r.t1 + ':' + r.i1 + ':' + r.n1;
+			var two = r.t2 + ':' + r.i2 + ':' + r.n2;
+			var sorted = (one < two ? one + '::' + two : two  + '::' + one);
+
+			if (!createdRelationships.contains(sorted)) {
+				createdRelationships.addObject(sorted);
+				relationships.push(r);
+			}
+		}
+
 		EG.values(payload, function(typeKey, records) {
-			 var model = store.modelForType(typeKey);
+			var model = store.modelForType(typeKey);
 
 			forEach.call(records, function(record) {
-				model.eachRelationship(function(name, meta) {
-					
-				});
-			});
+				var recordRelationships = this.extractRelationshipsFromRecord(model, record);
+				forEach.call(recordRelationships, addRelationship);
+			}, this);
 		}, this);
+
+		return relationships;
+	},
+
+	extractRelationshipsFromRecord: function(model, record) {
+		var relationships = [];
+		var typeKey = Em.get(model, 'typeKey');
+
+		model.eachRelationship(function(name, meta) {
+			var value = record[name];
+
+			if (value === undefined) {
+				if (meta.isRequired) {
+					throw new Em.Error(typeKey + ':' + record.id + ' is missing `' + name + '`');
+				} else {
+					value = meta.defaultValue;
+				}
+			}
+
+			if (meta.kind === EG.Model.HAS_ONE_KEY) {
+				if (value !== null) {
+					if (typeOf(value) === 'string' || typeOf(value) === 'number') {
+						value = { type: meta.relatedType, id: value + '' };
+					}
+
+					relationships.push({
+						t1: typeKey, i1: record.id + '', n1: name,
+						t2: value.type, i2: value.id + '', n2: meta.inverse
+					});
+				}
+			} else {
+				forEach.call(value, function(other) {
+					if (typeOf(other) === 'string' || typeOf(other) === 'number') {
+						other = { type: meta.relatedType, id: other + '' };
+					}
+
+					relationships.push({
+						t1: typeKey, i1: record.id + '', n1: name,
+						t2: other.type, i2: other.id + '', n2: meta.inverse
+					});
+				});
+			}
+		});
+
+		return relationships;
 	},
 
 	/**

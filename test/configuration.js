@@ -26,7 +26,6 @@
 
 		if (options.adapter) {
 			container.register('adapter:application', options.adapter, { singleton: true });
-			container.lookup('adapter:application');
 		}
 
 		Em.keys(models || {}).forEach(function(typeKey) {
