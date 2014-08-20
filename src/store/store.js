@@ -340,7 +340,7 @@ EG.Store = Em.Object.extend({
 
 		return this.adapterFor(typeKey).createRecord(record).then(function(payload) {
 			var tempId = record.get('id');
-			var newId = payload.meta.createdRecord.id;
+			var newId = Em.get(payload, 'meta.createdRecord.id') || Em.get(payload, typeKey + '.firstObject.id');
 
 			record.set('id', newId);
 
