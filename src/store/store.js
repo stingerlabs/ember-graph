@@ -372,8 +372,23 @@ EG.Store = Em.Object.extend({
 	updateRecord: function(record) {
 		var _this = this;
 
+		var recordJson = {
+			id: record.get('id')
+		};
+
+		record.constructor.eachAttribute(function(name) {
+			recordJson[name] = record.get(name);
+		});
+
+		record.constructor.eachRelationship(function(name) {
+			recordJson[name] = record.get('_' + name);
+		});
+
+		var potentialPayload = {};
+		potentialPayload[record.get('typeKey')] = [recordJson];
+
 		return this.adapterFor(record.get('typeKey')).updateRecord(record).then(function(payload) {
-			_this.extractPayload(payload);
+			_this.extractPayload(payload || potentialPayload);
 			return record;
 		});
 	},
