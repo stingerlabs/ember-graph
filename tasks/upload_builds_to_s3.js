@@ -50,7 +50,7 @@ function uploadFile(s3, fileName, contents, callback) {
 		ACL: 'public-read',
 		Body: contents,
 		Bucket: 'ember-graph-builds',
-		ContentType: 'application/javascript',
+		ContentType: (fileName.endsWith('.zip') ? 'application/zip' : 'application/javascript'),
 		Key: fileName
 	}, function(err, data) {
 		callback(!err, fileName);
