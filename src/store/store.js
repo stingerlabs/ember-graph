@@ -327,32 +327,47 @@ EG.Store = Em.Object.extend({
 	 * @return {Promise} Resolves to the saved record
 	 */
 	saveRecord: function(record) {
-		var type = record.typeKey;
-		var isNew = record.get('isNew');
-		var tempId = record.get('id');
-
-		if (isNew) {
-			if (!record.isInitialized()) {
-				throw new Em.Error('Can\'t save an uninitialized record.');
-			}
-
-			return this.adapterFor(record.typeKey).createRecord(record).then(function(payload) {
-				record.set('id', payload.meta.createdRecord.id);
-
-				var recordCache = this.get('recordCache');
-				recordCache.deleteRecord(type, tempId);
-				recordCache.storeRecord(record);
-				this.updateRelationshipsWithNewId(type, tempId, record.get('id'));
-
-				this.extractPayload(payload);
-				return record;
-			}.bind(this));
-		} else {
-			return this.adapterFor(record.typeKey).updateRecord(record).then(function(payload) {
-				this.extractPayload(payload);
-				return record;
-			}.bind(this));
+		if (!record.get('isNew')) {
+			return this.updateRecord(record);
 		}
+
+		if (!record.isInitialized()) {
+			throw new Em.Error('Can\'t save an uninitialized record.');
+		}
+
+		var _this = this;
+		var typeKey = record.get('typeKey');
+
+		return this.adapterFor(typeKey).createRecord(record).then(function(payload) {
+			var tempId = record.get('id');
+			var newId = payload.meta.createdRecord.id;
+
+			record.set('id', newId);
+
+			var recordCache = _this.get('recordCache');
+			recordCache.deleteRecord(typeKey, tempId);
+			recordCache.storeRecord(record);
+			_this.updateRelationshipsWithNewId(typeKey, tempId, newId);
+
+			_this.extractPayload(payload);
+			return record;
+		});
+	},
+
+	/**
+	 * Saves an old record's changes to the server.
+	 *
+	 * @method updateRecord
+	 * @param {Model} record
+	 * @return {Promise} Resolves to the saved record
+	 */
+	updateRecord: function(record) {
+		var _this = this;
+
+		return this.adapterFor(record.get('typeKey')).updateRecord(record).then(function(payload) {
+			_this.extractPayload(payload);
+			return record;
+		});
 	},
 
 	/**
