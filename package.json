@@ -17,6 +17,7 @@
 		"handlebars": "2.0.0-alpha.4",
 		"highlight.js": "8.0.0",
 		"marked": "0.3.2",
-		"node-sass": "0.9.2"
+		"node-sass": "0.9.2",
+		"adm-zip": "0.4.4"
 	}
 }
