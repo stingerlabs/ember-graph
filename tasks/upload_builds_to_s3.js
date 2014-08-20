@@ -26,12 +26,12 @@ module.exports = function(grunt) {
 		};
 
 		var s3 = new AWS.S3();
-		uploadFile(s3, 'latest/ember-graph-latest.js', debugBuild, counter);
-		uploadFile(s3, hash + '/ember-graph-' + hash + '.js', debugBuild, counter);
-		uploadFile(s3, 'latest/ember-graph-latest.prod.js', productionBuild, counter);
-		uploadFile(s3, hash + '/ember-graph-' + hash + '.prod.js', productionBuild, counter);
-		uploadFile(s3, 'latest/ember-graph-latest.min.js', minifiedBuild, counter);
-		uploadFile(s3, hash + '/ember-graph-' + hash + '.min.js', minifiedBuild, counter);
+		uploadFile(s3, 'latest/ember-graph.js', debugBuild, counter);
+		uploadFile(s3, hash + '/ember-graph-.js', debugBuild, counter);
+		uploadFile(s3, 'latest/ember-graph.prod.js', productionBuild, counter);
+		uploadFile(s3, hash + '/ember-graph-.prod.js', productionBuild, counter);
+		uploadFile(s3, 'latest/ember-graph.min.js', minifiedBuild, counter);
+		uploadFile(s3, hash + '/ember-graph-.min.js', minifiedBuild, counter);
 	});
 };
 
