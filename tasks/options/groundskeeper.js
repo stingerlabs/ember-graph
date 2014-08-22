@@ -10,7 +10,8 @@ module.exports = {
 			namespace: [
 				'Em.assert', 'Ember.assert',
 				'Em.warn', 'Ember.warn',
-				'Em.runInDebug', 'Ember.runInDebug'
+				'Em.runInDebug', 'Ember.runInDebug',
+				'Em.deprecate', 'Ember.deprecate'
 			]
 		}
 	}

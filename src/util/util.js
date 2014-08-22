@@ -105,9 +105,11 @@ EG.groupRecords = function(records) {
  * Calls `callback` once for each value of the given object.
  * The callback receives `key` and `value` parameters.
  *
+ * @method values
  * @param {Object} obj
  * @param {Function} callback
  * @param {Any} [thisArg=undefined]
+ * @namespace EmberGraph
  */
 EG.values = function(obj, callback, thisArg) {
 	for (var key in obj) {
@@ -115,4 +117,21 @@ EG.values = function(obj, callback, thisArg) {
 			callback.call(thisArg, key, obj[key]);
 		}
 	}
+};
+
+/**
+ * Functions like `Ember.aliasMethod` only it displays a
+ * deprecation warning before the aliased method is called.
+ *
+ * @method deprecateMethod
+ * @param {String} message
+ * @param {String} method
+ * @return {Function}
+ * @namespace EmberGraph
+ */
+EG.deprecateMethod = function(message, method) {
+	return function() {
+		Em.deprecate(message);
+		this[method].apply(this, arguments);
+	};
 };

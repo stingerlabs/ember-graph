@@ -503,11 +503,14 @@ EG.Store = Em.Object.extend({
 	 * doesn't care how or where the records come from, as long as they can
 	 * be converted to this form.
 	 *
-	 * @method extractPayload
+	 * @method pushPayload
 	 * @param {Object} payload
 	 */
-	extractPayload: function(payload) {
-		payload = payload || {};
+	pushPayload: function(payload) {
+		if (!payload || Em.keys(payload).length === 0) {
+			return;
+		}
+
 		// TODO: In addition, this is a meta attribute that allows you to easily remove
 		// records from the store. The `meta` object may contain an object array
 		// called `deletedRecords` that tells the store which records have been
@@ -540,6 +543,12 @@ EG.Store = Em.Object.extend({
 			}, this);
 		}, this);
 	},
+
+	/**
+	 * @method extractPayload
+	 * @deprecated Renamed to `pushPayload` to be more familiar to Ember-Data users.
+	 */
+	extractPayload: EG.deprecateMethod('`extractPayload` is deprecated in favor of `pushPayload`', 'pushPayload'),
 
 	/**
 	 * Returns an `AttributeType` instance for the given named type.
