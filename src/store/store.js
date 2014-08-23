@@ -405,23 +405,36 @@ EG.Store = Em.Object.extend({
 			return Em.RSVP.reject('Can\'t delete a record before it\'s created.');
 		}
 
-		var type = record.typeKey;
+		var _this = this;
+		var typeKey = record.get('typeKey');
 		var id = record.get('id');
 
 		if (record.get('isNew')) {
-			this.deleteRelationshipsForRecord(type, id);
-			this.get('recordCache').deleteRecord(type, id);
-			record.set('store', null);
+			this.deleteRecordFromStore(typeKey, id);
 			return Em.RSVP.resolve();
 		}
 
-		return this.adapterFor(record.typeKey).deleteRecord(record).then(function(payload) {
-			this.deleteRelationshipsForRecord(type, id);
-			this.extractPayload(payload);
-			this.get('recordCache').deleteRecord(type, id);
-			// TODO: #49
-			//record.set('store', null);
-		}.bind(this));
+		return this.adapterFor(typeKey).deleteRecord(record).then(function(payload) {
+			_this.deleteRecordFromStore(typeKey, id);
+			_this.pushPayload(payload);
+		});
+	},
+
+	/**
+	 * Deletes a record from the store, removing its relationships and unloading it.
+	 * This should only be used when a record has already been deleted from the server.
+	 *
+	 * @method deleteRecordFromStore
+	 * @param {String} typeKey
+	 * @param {String} id
+	 * @private
+	 */
+	deleteRecordFromStore: function(typeKey, id) {
+		this.deleteRelationshipsForRecord(typeKey, id);
+		this.get('recordCache').deleteRecord(typeKey, id);
+
+		// TODO: #49
+		// record.set('store', null);
 	},
 
 	/**
