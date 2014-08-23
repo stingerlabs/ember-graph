@@ -443,6 +443,12 @@ EG.Store = Em.Object.extend({
 	},
 
 	/**
+	 * @method extractPayload
+	 * @deprecated Renamed to `pushPayload` to be more familiar to Ember-Data users.
+	 */
+	extractPayload: EG.deprecateMethod('`extractPayload` is deprecated in favor of `pushPayload`', 'pushPayload'),
+
+	/**
 	 * Takes a normalized payload from the server and load the
 	 * record into the store. This format is called normalized JSON
 	 * and allows you to easily load multiple records in at once.
@@ -545,10 +551,28 @@ EG.Store = Em.Object.extend({
 	},
 
 	/**
-	 * @method extractPayload
-	 * @deprecated Renamed to `pushPayload` to be more familiar to Ember-Data users.
+	 * Unloads a record from the store. To get the record, back you must
+	 * fetch it from your server again. If the record is dirty when this
+	 * is called, an error will be thrown unless you set `discardChanges`
+	 * to `true`.
+	 *
+	 * @method unloadRecord
+	 * @param {Model} record
+	 * @param {Boolean} [discardChanges=false]
 	 */
-	extractPayload: EG.deprecateMethod('`extractPayload` is deprecated in favor of `pushPayload`', 'pushPayload'),
+	unloadRecord: function(record, discardChanges) {
+		if (!discardChanges && record.get('isDirty')) {
+			throw new Em.Error('Can\'t unload a dirty record.');
+		}
+
+		Em.changeProperties(function() {
+			record.rollback();
+
+			this.queueConnectedRelationships(record);
+			this.get('recordCache').deleteRecord(record.get('typeKey'), record.get('id'));
+			record.set('store', null);
+		}, this);
+	},
 
 	/**
 	 * Returns an `AttributeType` instance for the given named type.

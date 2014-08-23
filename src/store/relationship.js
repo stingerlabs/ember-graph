@@ -94,6 +94,18 @@ EG.Store.reopen({
 		this.notifyPropertyChange('queuedRelationships');
 	},
 
+	queueConnectedRelationships: function(record) {
+		var queued = this.get('queuedRelationships');
+		var server = record.get('relationships').getRelationshipsByState(SERVER_STATE);
+
+		forEach.call(server, function(relationship) {
+			this.disconnectRelationshipFrom(record, relationship);
+			queued[relationship.get('id')] = relationship;
+		}, this);
+
+		this.notifyPropertyChange('queuedRelationships');
+	},
+
 	relationshipsForRecord: function(type, id, name) {
 		var data, filtered = [];
 		var all = this.get('allRelationships');
