@@ -41,7 +41,7 @@
 				})
 			});
 
-			store.extractPayload({
+			store.pushPayload({
 				user: [{
 					id: '1',
 					posts: [
@@ -100,5 +100,24 @@
 			strictEqual(post.get('store'), null);
 			ok(user.get('_posts').toArray().indexOf(id) < 0);
 		});
+	});
+
+	test('Delete records with `deletedRecords` meta attribute', function() {
+		expect(2);
+
+		var user = store.getRecord('user', '1');
+		deepEqual(user.get('_posts').mapBy('id').sort(), ['1', '2', '3'].sort());
+
+		store.pushPayload({
+			meta: {
+				deletedRecords: [
+					{ type: 'post', id: '1' },
+					{ type: 'post', id: '2' },
+					{ type: 'post', id: '3' }
+				]
+			}
+		});
+
+		deepEqual(user.get('_posts'), []);
 	});
 })();

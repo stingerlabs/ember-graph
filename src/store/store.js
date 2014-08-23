@@ -1,4 +1,5 @@
 var map = Em.ArrayPolyfills.map;
+var forEach = Em.ArrayPolyfills.forEach;
 
 /**
  * The store is used to manage all records in the application.
@@ -530,15 +531,14 @@ EG.Store = Em.Object.extend({
 			return;
 		}
 
-		// TODO: In addition, this is a meta attribute that allows you to easily remove
-		// records from the store. The `meta` object may contain an object array
-		// called `deletedRecords` that tells the store which records have been
-		// deleted. The objects should contain a `type` and `id` field. Any
-		// records included in the array will be removed from the store.
-		delete payload.meta;
-
 		Em.changeProperties(function() {
 			var reloadDirty = this.get('reloadDirty');
+
+			forEach.call(Em.get(payload, 'meta.deletedRecords') || [], function(record) {
+				this.deleteRecordFromStore(record.type, record.id);
+			}, this);
+
+			delete payload.meta;
 
 			Em.keys(payload).forEach(function(typeKey) {
 				var model = this.modelForType(typeKey);
