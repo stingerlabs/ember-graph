@@ -17,9 +17,7 @@
 						defaultValue: 0
 					}),
 
-					birthday: EG.attr({
-						type: 'date'
-					})
+					birthday: EG.attr('date')
 				})
 			});
 		}

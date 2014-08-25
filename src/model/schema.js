@@ -20,12 +20,30 @@
  *
  * Like other Ember properties, `undefined` is _not_ a valid attribute value.
  *
+ * As a shorthand, the `options` parameter may be a single string type. So this
+ *
+ * ```js
+ * EmberGraph.attr({
+ *     type: 'string'
+ * })
+ * ```
+ *
+ * can be turned into this
+ *
+ * ```js
+ * EmberGraph.attr('string')
+ * ```
+ *
  * @method attr
  * @param {Object} options
  * @return {Object} Property descriptor used by model during initialization
  * @namespace EmberGraph
  */
 EG.attr = function(options) {
+	if (Em.typeOf(options) === 'string') {
+		options = { type: options };
+	}
+
 	return {
 		isAttribute: true,
 		options: options
