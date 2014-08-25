@@ -110,13 +110,11 @@ EG.Store.reopen({
 		var data, filtered = [];
 		var all = this.get('allRelationships');
 
-		for (var i in all) {
-			if (all.hasOwnProperty(i)) {
-				if (all[i].matchesOneSide(type, id, name)) {
-					filtered.push(all[i]);
-				}
+		forEach.call(Em.keys(all), function(key) {
+			if (all[key].matchesOneSide(type, id, name)) {
+				filtered.push(all[key]);
 			}
-		}
+		});
 
 		return filtered;
 	},
@@ -229,11 +227,9 @@ EG.Store.reopen({
 	updateRelationshipsWithNewId: function(typeKey, oldId, newId) {
 		var all = this.get('allRelationships');
 
-		for (var id in all) {
-			if (all.hasOwnProperty(id)) {
-				all[id].changeId(typeKey, oldId, newId);
-			}
-		}
+		forEach.call(Em.keys(all), function(id) {
+			all[id].changeId(typeKey, oldId, newId);
+		});
 
 		this.notifyPropertyChange('allRelationships');
 	}

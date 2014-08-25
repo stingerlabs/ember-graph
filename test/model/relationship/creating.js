@@ -54,23 +54,20 @@
 		var tempId = post.get('id');
 
 		var all = store.get('allRelationships');
-		for (var id in all) {
-			if (all.hasOwnProperty(id)) {
-				if (all[id].get('id1') === tempId || all[id].get('id2') === tempId) {
-					ok(true);
-				}
+		Em.keys(all).forEach(function(id) {
+			if (all[id].get('id1') === tempId || all[id].get('id2') === tempId) {
+				ok(true);
 			}
-		}
+		});
 
 		post.save().then(function() {
 			var all = store.get('allRelationships');
-			for (var id in all) {
-				if (all.hasOwnProperty(id)) {
-					if (all[id].get('id1') === tempId || all[id].get('id2') === tempId) {
-						ok(false);
-					}
+
+			Em.keys(all).forEach(function(id) {
+				if (all[id].get('id1') === tempId || all[id].get('id2') === tempId) {
+					ok(false);
 				}
-			}
-		})
+			});
+		});
 	});
 })();

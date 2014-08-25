@@ -112,10 +112,10 @@ EG.groupRecords = function(records) {
  * @namespace EmberGraph
  */
 EG.values = function(obj, callback, thisArg) {
-	for (var key in obj) {
-		if (obj.hasOwnProperty(key)) {
-			callback.call(thisArg, key, obj[key]);
-		}
+	var keys = Em.keys(obj);
+
+	for (var i = 0; i < keys.length; ++i) {
+		callback.call(thisArg, keys[i], obj[keys[i]]);
 	}
 };
 

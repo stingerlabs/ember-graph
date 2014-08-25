@@ -1,3 +1,5 @@
+var forEach = Em.ArrayPolyfills.forEach;
+
 // TODO: Need tests
 EG.RecordCache = Em.Object.extend({
 
@@ -28,13 +30,11 @@ EG.RecordCache = Em.Object.extend({
 		var found = [];
 		var cutoff = (new Date()).getTime() - this.get('cacheTimeout');
 
-		for (var key in records) {
-			if (records.hasOwnProperty(key) && key.indexOf(typeKey) === 0) {
-				if (records[key].timestamp >= cutoff) {
-					found.push(records[key].record);
-				}
+		forEach.call(Em.keys(records), function(key) {
+			if (key.indexOf(typeKey) === 0 && records[key].timestamp >= cutoff) {
+				found.push(records[key].record);
 			}
-		}
+		});
 
 		return found;
 	},
