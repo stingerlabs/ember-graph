@@ -24,7 +24,7 @@
 				})
 			});
 
-			store.extractPayload({
+			store.pushPayload({
 				user: [{ id: '1', posts: [] }],
 				post: [{ id: '1', author: null }, { id: '2', author: null }]
 			});

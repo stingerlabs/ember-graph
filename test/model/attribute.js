@@ -110,7 +110,7 @@
 	test('Setting a read-only property on a saved record throws', function() {
 		expect(1);
 
-		store.extractPayload({
+		store.pushPayload({
 			test: [{
 				id: '50',
 				name: 'Bob',
@@ -155,7 +155,7 @@
 		expect(4);
 
 		var birthday = new Date();
-		store.extractPayload({
+		store.pushPayload({
 			test: [{
 				id: '500',
 				name: 'Bob',
@@ -179,7 +179,7 @@
 		expect(3);
 
 		var birthday = new Date();
-		store.extractPayload({
+		store.pushPayload({
 			test: [{
 				id: '500',
 				name: 'Bob',
@@ -200,7 +200,7 @@
 	test('Rolling back attributes works correctly', function() {
 		expect(3);
 
-		store.extractPayload({
+		store.pushPayload({
 			test: [{
 				id: '500',
 				name: 'Bob',
@@ -233,7 +233,7 @@
 	test('Setting attributes dirties the record (old record)', function() {
 		expect(2);
 
-		store.extractPayload({
+		store.pushPayload({
 			test: [{
 				id: '500',
 				name: 'Bob',
@@ -253,7 +253,7 @@
 	test('Rolling back attributes cleans the record', function() {
 		expect(3);
 
-		store.extractPayload({
+		store.pushPayload({
 			test: [{
 				id: '500',
 				name: 'Bob',

@@ -210,7 +210,7 @@ EG.Model.reopen({
 	},
 
 	/**
-	 * When an attribute's value is set directly (like in `extractPayload`), this
+	 * When an attribute's value is set directly (like in `pushPayload`), this
 	 * will synchronize the server and client attributes and fix the dirty state.
 	 */
 	_synchronizeAttribute: function(name) {

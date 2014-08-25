@@ -94,7 +94,7 @@
 
 		var payload = {};
 		payload[typeKey] = [records[1], records[2], records[4]];
-		store.extractPayload(payload);
+		store.pushPayload(payload);
 
 		ok(store.getRecord(typeKey, '1'));
 		ok(store.getRecord(typeKey, '2'));
@@ -189,19 +189,19 @@
 		var payload = {};
 
 		payload[typeKey] = [records[1]];
-		store.extractPayload(payload);
+		store.pushPayload(payload);
 		deepEqual(store.cachedRecordsFor(typeKey).mapBy('id').sort(), ['1'].sort());
 
 		payload[typeKey] = [records[2]];
-		store.extractPayload(payload);
+		store.pushPayload(payload);
 		deepEqual(store.cachedRecordsFor(typeKey).mapBy('id').sort(), ['1', '2'].sort());
 
 		payload[typeKey] = [records[3]];
-		store.extractPayload(payload);
+		store.pushPayload(payload);
 		deepEqual(store.cachedRecordsFor(typeKey).mapBy('id').sort(), ['1', '2', '3'].sort());
 
 		payload[typeKey] = [records[4]];
-		store.extractPayload(payload);
+		store.pushPayload(payload);
 		deepEqual(store.cachedRecordsFor(typeKey).mapBy('id').sort(), ['1', '2', '3', '4'].sort());
 	});
 

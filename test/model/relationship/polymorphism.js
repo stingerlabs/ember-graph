@@ -50,7 +50,7 @@
 				})
 			});
 
-			store.extractPayload({
+			store.pushPayload({
 				admin: [{
 					id: '1',
 					posts: [

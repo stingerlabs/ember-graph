@@ -102,7 +102,7 @@
 	asyncTest('Saving without returning a payload updates the record', function() {
 		expect(10);
 
-		store.extractPayload({
+		store.pushPayload({
 			user: [{
 				id: '1',
 				email: 'test@test',

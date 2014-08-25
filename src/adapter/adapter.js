@@ -4,7 +4,7 @@
  * called by the store to perform its operations.
  *
  * The adapter should return normalized JSON from its operations. Details
- * about normalized JSON can be found in the {{link-to-method 'Store' 'extractPayload'}}
+ * about normalized JSON can be found in the {{link-to-method 'Store' 'pushPayload'}}
  * documentation.
  *
  * @class Adapter

@@ -19,7 +19,7 @@
 				})
 			});
 
-			store.extractPayload({
+			store.pushPayload({
 				user: [
 					{
 						id: '1',
@@ -50,7 +50,7 @@
 			ok(true);
 		});
 
-		store.extractPayload({
+		store.pushPayload({
 			user: [{
 				id: '1',
 				posts: [
@@ -77,7 +77,7 @@
 			ok(true);
 		});
 
-		store.extractPayload({
+		store.pushPayload({
 			user: [{
 				id: '1',
 				posts: [

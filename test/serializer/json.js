@@ -63,7 +63,7 @@
 
 			serializer = EG.JSONSerializer.create({ store: store });
 
-			store.extractPayload({
+			store.pushPayload({
 				user: [{
 					id: '1',
 					email: 'test@test.com',

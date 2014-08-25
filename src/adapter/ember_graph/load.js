@@ -27,7 +27,7 @@ EG.EmberGraphAdapter.reopen({
 	 * If {{link-to-method 'EmberGraphAdapter' 'shouldInitializeDatabase'}} returns `true`,
 	 * then this hook is called to get the data to inject into the database. You should
 	 * return your initial data payload from this hook. The format of the payload is
-	 * very similar to the format required by {{link-to-method 'Store' 'extractPayload'}}.
+	 * very similar to the format required by {{link-to-method 'Store' 'pushPayload'}}.
 	 * But there are a few differences for the sake of terseness:
 	 *
 	 * - IDs can be numbers or strings, they'll be converted to strings automatically

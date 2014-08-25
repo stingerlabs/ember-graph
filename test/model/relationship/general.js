@@ -33,7 +33,7 @@
 				tag: EG.Model.extend()
 			});
 
-			store.extractPayload({
+			store.pushPayload({
 				user: [
 					{
 						id: '1',
@@ -101,7 +101,7 @@
 		expect(1);
 
 		throws(function() {
-			store.extractPayload({
+			store.pushPayload({
 				vertex: [{ id: '-1' }]
 			});
 		});

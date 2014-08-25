@@ -234,7 +234,7 @@ EG.Store = Em.Object.extend({
 			promise = Em.RSVP.Promise.resolve(record);
 		} else {
 			promise = this.adapterFor(typeKey).findRecord(typeKey, id).then(function(payload) {
-				this.extractPayload(payload);
+				this.pushPayload(payload);
 				return this.getRecord(typeKey, id);
 			}.bind(this));
 		}
@@ -272,7 +272,7 @@ EG.Store = Em.Object.extend({
 			}, this));
 		} else {
 			promise = this.adapterFor(typeKey).findMany(typeKey, set.toArray()).then(function(payload) {
-				this.extractPayload(payload);
+				this.pushPayload(payload);
 
 				return ids.map(function(id) {
 					return this.getRecord(typeKey, id);
@@ -292,7 +292,7 @@ EG.Store = Em.Object.extend({
 	 */
 	_findAll: function(typeKey) {
 		var promise = this.adapterFor(typeKey).findAll(typeKey).then(function(payload) {
-			this.extractPayload(payload);
+			this.pushPayload(payload);
 			return this.cachedRecordsFor(typeKey);
 		}.bind(this));
 
@@ -310,7 +310,7 @@ EG.Store = Em.Object.extend({
 	_findQuery: function(typeKey, options) {
 		var promise = this.adapterFor(typeKey).findQuery(typeKey, options).then(function(payload) {
 			var records = payload.meta.matchedRecords;
-			this.extractPayload(payload);
+			this.pushPayload(payload);
 
 			return map.call(records, function(record) {
 				return this.getRecord(record.type, record.id);
@@ -358,7 +358,7 @@ EG.Store = Em.Object.extend({
 			recordCache.storeRecord(record);
 			_this.updateRelationshipsWithNewId(typeKey, tempId, newId);
 
-			_this.extractPayload(payload);
+			_this.pushPayload(payload);
 			return record;
 		});
 	},
@@ -389,7 +389,7 @@ EG.Store = Em.Object.extend({
 		potentialPayload[record.get('typeKey')] = [recordJson];
 
 		return this.adapterFor(record.get('typeKey')).updateRecord(record).then(function(payload) {
-			_this.extractPayload(payload || potentialPayload);
+			_this.pushPayload(payload || potentialPayload);
 			return record;
 		});
 	},
@@ -451,7 +451,7 @@ EG.Store = Em.Object.extend({
 		}
 
 		return this.adapterFor(record.typeKey).findRecord(record.typeKey, record.get('id')).then(function(payload) {
-			this.extractPayload(payload);
+			this.pushPayload(payload);
 			return record;
 		}.bind(this));
 	},

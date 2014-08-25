@@ -35,7 +35,7 @@
 				tag: EG.Model.extend()
 			});
 
-			store.extractPayload({
+			store.pushPayload({
 				user: [
 					{ id: '1', posts: [{ type: 'post', id: '1' }, { type: 'post', id: '2' }] },
 					{ id: '2', posts: [{ type: 'post', id: '3' }] },
@@ -110,7 +110,7 @@
 			}
 		}
 
-		store.extractPayload({
+		store.pushPayload({
 			post: [{
 				id: '7',
 				author: { type: 'user', id: '3' },
@@ -395,7 +395,7 @@
 
 		var post = store.getRecord('post', '1');
 
-		store.extractPayload({
+		store.pushPayload({
 			post: [
 				{ id: '1', author: { type: 'user', id: '50' }, tags: post.get('_tags') }
 			]
@@ -411,7 +411,7 @@
 
 		var post = store.getRecord('post', '1');
 
-		store.extractPayload({
+		store.pushPayload({
 			post: [
 				{ id: '1', author: null, tags: post.get('_tags') }
 			]
@@ -427,7 +427,7 @@
 
 		var user = store.getRecord('user', '1');
 
-		store.extractPayload({
+		store.pushPayload({
 			user: [
 				{ id: '1', posts: [{ type: 'post', id: '1' }, { type: 'post', id: '50' }, { type: 'post', id: '51' }]}
 			]
@@ -449,7 +449,7 @@
 		user.removeFromRelationship('posts', '7');
 		ok(user.get('_posts').mapBy('id').indexOf('7') < 0);
 
-		store.extractPayload({
+		store.pushPayload({
 			post: [
 				{ id: '7', author: { type: 'user', id: '3' }, tags: []}
 			]
@@ -465,7 +465,7 @@
 	test('A new permanent record loaded creates new server relationships', function() {
 		expect(3);
 
-		store.extractPayload({
+		store.pushPayload({
 			post: [{
 				id: '50',
 				author: { type: 'user', id: '1' }
@@ -575,7 +575,7 @@
 		ok(user1.get('_posts').mapBy('id').indexOf('7') >= 0);
 		ok(user3.get('_posts').mapBy('id').indexOf('7') < 0);
 
-		store.extractPayload({
+		store.pushPayload({
 			post: [{
 				id: '7',
 				author: { type: 'user', id: '3' },

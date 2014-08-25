@@ -38,7 +38,7 @@
 				})
 			});
 
-			store.extractPayload({
+			store.pushPayload({
 				user: [{
 					id: '1',
 					posts: []

@@ -8,7 +8,7 @@
 	test('Existing ID loads correctly', function() {
 		expect(1);
 
-		store.extractPayload({
+		store.pushPayload({
 			test: [{ id: 'TEST_ID' }]
 		});
 
@@ -26,7 +26,7 @@
 	test('A permanent ID cannot be changed', function() {
 		expect(1);
 
-		store.extractPayload({
+		store.pushPayload({
 			test: [{ id: '1' }]
 		});
 

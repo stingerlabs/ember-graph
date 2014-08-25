@@ -49,7 +49,7 @@
 				})
 			});
 
-			store.extractPayload({
+			store.pushPayload({
 				tag: [
 					{ id: '1', name: 'c++' },
 					{ id: '2', name: 'pizza' },

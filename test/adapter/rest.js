@@ -19,7 +19,7 @@
 
 			adapter = store.get('container').lookup('adapter:application');
 
-			store.extractPayload({
+			store.pushPayload({
 				person: [{ id: '1' }]
 			});
 		}

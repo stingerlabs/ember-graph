@@ -13,7 +13,7 @@
 				})
 			});
 
-			store.extractPayload({
+			store.pushPayload({
 				tag: [
 					{ id: '1', name: 'tag1' },
 					{ id: '2', name: 'tag2' },

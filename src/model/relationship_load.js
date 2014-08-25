@@ -12,7 +12,7 @@ var DELETED_STATE = EG.Relationship.DELETED_STATE;
 
 // TODO: This can probably be moved into the store to be more model-agnostic
 // Idea: load attributes into records directly, but load relationships into store
-// Split the data apart in `extractPayload`
+// Split the data apart in `pushPayload`
 EG.Model.reopen({
 
 	/**
