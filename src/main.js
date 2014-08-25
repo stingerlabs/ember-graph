@@ -2,20 +2,8 @@
  * @module ember-graph
  * @main ember-graph
  */
-window.EmberGraph = window.EG = Em.Namespace.create({
-	/**
-	 * @property VERSION
-	 * @namespace EmberGraph
-	 * @type String
-	 * @static
-	 * @final
-	 */
-	VERSION: '<%= version %>'
-});
-
-if (Em.libraries) {
-	Em.libraries.register('Ember Graph', EG.VERSION);
-}
+window.EmberGraph = window.EG = Em.Namespace.create();
+Em.libraries.register('Ember Graph');
 
 require('initialization');
 

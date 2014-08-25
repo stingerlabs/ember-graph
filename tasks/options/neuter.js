@@ -10,16 +10,7 @@ String.prototype.endsWith = String.prototype.endsWith || function(suffix) {
 module.exports = {
 	main: {
 		options: {
-			basePath: 'src/',
-			process: function(src, filepath) {
-				if (filepath === 'src/main.js') {
-					var file = fs.readFileSync('bower.json', 'utf8');
-					var json = JSON.parse(file);
-					return grunt.template.process(src, { data: { version: json.version } });
-				}
-
-				return src;
-			}
+			basePath: 'src/'
 		},
 
 		src: 'src/main.js',
