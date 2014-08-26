@@ -9,7 +9,7 @@
  * - `readOnly`: Set to `true` to make the attribute read-only (except for new records). Defaults to `false`.
  * - `isEqual`: Function that will compare two different instances of the attribute. Should take
  * two arguments and return `true` if the given attributes are equal. Defaults to the function
- * declared in the `AttributeType` subclass.
+ * declared in the `AttributeType` subclass. **deprecated**
  * - `serverOnly`: This marks the attribute as a server-only attribute. This can be used when
  * an attribute is required for the model, but cannot be created on the client side. Ember-Graph
  * will allow the attribute to remain uninitialized until the record is persisted to the server.
@@ -43,6 +43,9 @@ EG.attr = function(options) {
 	if (Em.typeOf(options) === 'string') {
 		options = { type: options };
 	}
+
+	Em.deprecate('The `isEqual` method on attributes is deprecated. ' +
+			'Please use a custom attribute type instead.', !options.isEqual);
 
 	return {
 		isAttribute: true,
