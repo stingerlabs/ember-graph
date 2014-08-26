@@ -114,3 +114,29 @@ EG.hasOne = function(options) {
 		options: options
 	};
 };
+
+EG.embeddedHasMany = function(options) {
+	if (Em.typeOf(options) === 'string') {
+		options = { type: options };
+	}
+
+	return {
+		isAttribute: true,
+		isEmbedded: true,
+		hasMany: true,
+		options: options
+	};
+};
+
+EG.embeddedHasOne = function(options) {
+	if (Em.typeOf(options) === 'string') {
+		options = { type: options };
+	}
+
+	return {
+		isAttribute: true,
+		isEmbedded: true,
+		hasOne: true,
+		options: options
+	};
+};
