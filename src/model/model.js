@@ -14,10 +14,10 @@
  * on the [DefaultResolver](http://emberjs.com/api/classes/Ember.DefaultResolver.html).
  *
  * @class Model
- * @constructor
+ * @extends CoreModel
  * @uses Ember.Evented
  */
-EG.Model = Em.Object.extend(Em.Evented, {
+EG.Model = EG.CoreModel.extend(Em.Evented, {
 
 	/**
 	 * This property is available on every model instance and every
@@ -278,7 +278,7 @@ EG.Model.reopenClass({
 		args.push(options);
 
 		var subclass = this._super.apply(this, args);
-		subclass._declareAttributes(attributes);
+		subclass.declareAttributes(attributes);
 		subclass.declareRelationships(relationships);
 		return subclass;
 	},

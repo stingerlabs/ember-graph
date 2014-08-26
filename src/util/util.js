@@ -120,7 +120,7 @@ EG.values = function(obj, callback, thisArg) {
 };
 
 /**
- * Functions like `Ember.aliasMethod` only it displays a
+ * Works like `Ember.aliasMethod` only it displays a
  * deprecation warning before the aliased method is called.
  *
  * @method deprecateMethod
@@ -134,4 +134,26 @@ EG.deprecateMethod = function(message, method) {
 		Em.deprecate(message);
 		this[method].apply(this, arguments);
 	};
+};
+
+/**
+ * Works like 'Ember.computed.alias' only it displays a
+ * deprecation warning before the aliased property is returned.
+ *
+ * @method deprecateProperty
+ * @param {String} message
+ * @param {String} property
+ * @return {ComputedProperty}
+ * @namespace EmberGraph
+ */
+EG.deprecateProperty = function(message, property) {
+	return Em.computed(function(key, value) {
+		Em.deprecate(message);
+
+		if (arguments.length > 1) {
+			this.set(property, value);
+		}
+
+		return this.get(property);
+	}).property(property);
 };

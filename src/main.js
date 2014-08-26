@@ -34,5 +34,6 @@ require('data/promise_object');
 require('attribute_type/type');
 require('attribute_type/**/*');
 
+require('model/core');
 require('model/model');
 require('model/**/*');
