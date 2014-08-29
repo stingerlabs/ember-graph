@@ -22,11 +22,12 @@ EG.RESTAdapter = EG.Adapter.extend({
 	 */
 	createRecord: function(record) {
 		var _this = this;
-		var url = this.buildUrl(record.typeKey);
-		var json = this.serialize(record, { requestType: 'createRecord' });
+		var typeKey = record.get('typeKey');
+		var url = this.buildUrl(typeKey);
+		var json = this.serialize(record, { requestType: 'createRecord', recordType: typeKey });
 
 		return this.ajax(url, 'POST', json).then(function(payload) {
-			return _this.deserialize(payload, { requestType: 'createRecord', recordType: record.typeKey });
+			return _this.deserialize(payload, { requestType: 'createRecord', recordType: typeKey });
 		});
 	},
 
