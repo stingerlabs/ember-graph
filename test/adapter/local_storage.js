@@ -306,7 +306,7 @@
 		});
 	});
 
-	asyncTest('Create and save a new record', function() {
+	asyncTest('Create and save a new record 1', function() {
 		expect(1);
 
 		var id;
@@ -317,7 +317,7 @@
 
 		user.save().then(function(record) {
 			id = record.get('id');
-			return adapter.findRecord('user', record.get('id'));
+			return adapter.findRecord('user', id);
 		}).then(function(payload) {
 			start();
 
@@ -330,6 +330,72 @@
 					posts: []
 				}]
 			});
+		});
+	});
+
+	asyncTest('Create and save a new record 2', function() {
+		expect(1);
+
+		var id;
+		var post = store.createRecord('post', {
+			author: '1',
+			title: 'Test'
+		});
+
+		post.save().then(function(record) {
+			id = record.get('id');
+			return adapter.findRecord('post', id);
+		}).then(function(payload) {
+			start();
+
+			delete payload.meta;
+			deepEqual(payload, {
+				post: [{
+					id: id,
+					title: 'Test',
+					author: { type: 'user', id: '1' }
+				}]
+			});
+		});
+	});
+
+	asyncTest('Create and save a new record 3', function() {
+		expect(3);
+
+		var id;
+		var user = store.createRecord('user', {
+			name: 'Sterling Archer',
+			posts: ['2']
+		});
+
+		user.save().then(function(record) {
+			id = record.get('id');
+			return adapter.findRecord('user', id);
+		}).then(function(payload) {
+			start();
+
+			delete payload.meta;
+			deepEqual(payload, {
+				user: [{
+					id: id,
+					name: 'Sterling Archer',
+					favoritePost: null,
+					posts: [{ type: 'post', id: '2' }]
+				}]
+			});
+
+			stop();
+
+			return adapter.findRecord('post', '2');
+		}).then(function(payload) {
+			start();
+			strictEqual(payload.post[0].author.id, id);
+			stop();
+
+			return adapter.findRecord('user', '1');
+		}).then(function(payload) {
+			start();
+			ok(payload.user[0].posts.mapBy('id').indexOf('2') < 0);
 		});
 	});
 

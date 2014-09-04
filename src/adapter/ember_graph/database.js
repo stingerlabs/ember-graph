@@ -186,7 +186,7 @@ EG.EmberGraphAdapter.reopen({
 						t2: json.links[name].type, i2: json.links[name].id, n2: meta.inverse
 					};
 
-					db = this.addRelationshipToDatabase(relationship, db);
+					db = this.setHasOneRelationshipInDatabase(relationship, db);
 				}
 			} else {
 				forEach.call(json.links[name], function(value) {
@@ -195,7 +195,7 @@ EG.EmberGraphAdapter.reopen({
 						t2: value.type, i2: value.id, n2: meta.inverse
 					};
 
-					db = this.addRelationshipToDatabase(relationship, db);
+					db = this.addHasManyRelationshipToDatabase(relationship, db);
 				}, this);
 			}
 		}, this);
@@ -267,7 +267,7 @@ EG.EmberGraphAdapter.reopen({
 	 * Adds a new hasMany relationship to the database, removing any conflicts.
 	 * The hasMany relationship should be the first one in the relationship JSON.
 	 *
-	 * @method addRelationshipToDatabase
+	 * @method addHasManyRelationshipToDatabase
 	 * @param {JSON} relationship
 	 * @param {JSON} db
 	 * @return {JSON} The updated DB
