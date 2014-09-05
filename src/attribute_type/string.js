@@ -14,7 +14,7 @@ EG.StringType = EG.AttributeType.extend({
 	 * @returns {String}
 	 */
 	serialize: function(str) {
-		return (str === null ? null : '' + str);
+		return (str === null || str === undefined ? null : '' + str);
 	},
 
 	/**
@@ -26,6 +26,6 @@ EG.StringType = EG.AttributeType.extend({
 	 * @returns {String}
 	 */
 	deserialize: function(json) {
-		return (json === null ? null : '' + json);
+		return (json === null || json === undefined ? null : '' + json);
 	}
 });

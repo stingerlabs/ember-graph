@@ -11,7 +11,7 @@
 		strictEqual('foo', type.serialize('foo'));
 		strictEqual('bar', type.serialize(new String('bar'))); // jshint ignore:line
 		strictEqual(null, type.serialize(null));
-		strictEqual('undefined', type.serialize());
+		strictEqual(null, type.serialize());
 		strictEqual({}.toString(), type.serialize({}));
 		strictEqual('4', type.serialize(4));
 		strictEqual('true', type.serialize(true));
@@ -20,7 +20,7 @@
 	test('Deserialization works correctly', function() {
 		expect(7);
 
-		strictEqual('undefined', type.deserialize(undefined));
+		strictEqual(null, type.deserialize(undefined));
 		strictEqual(null, type.deserialize(null));
 		strictEqual('42', type.deserialize(42));
 		strictEqual('false', type.deserialize(false));
