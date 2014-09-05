@@ -29,10 +29,10 @@ EG.JSONSerializer = EG.Serializer.extend({
 	serialize: function(record, options) {
 		switch (options.requestType) {
 			case 'updateRecord':
-				return this.serializeDelta(record);
+				return this.serializeDelta(record, options);
 			case 'createRecord':
 				var json = {};
-				json[EG.String.pluralize(record.typeKey)] = [this.serializeRecord(record)];
+				json[EG.String.pluralize(record.typeKey)] = [this.serializeRecord(record, options)];
 				return json;
 			default:
 				throw new Em.Error('Invalid request type for JSON serializer.');
@@ -44,22 +44,23 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 *
 	 * @method serializeRecord
 	 * @param {Model} record
+	 * @param {Object} options
 	 * @return {JSON} The JSON representation of the record
 	 */
-	serializeRecord: function(record) {
+	serializeRecord: function(record, options) {
 		var json = {
 			links: {}
 		};
 
 		record.constructor.eachAttribute(function(name, meta) {
-			var serialized = this.serializeAttribute(record, name);
+			var serialized = this.serializeAttribute(record, name, options);
 			if (serialized) {
 				json[serialized.name] = serialized.value;
 			}
 		}, this);
 
 		record.constructor.eachRelationship(function(name, meta) {
-			var serialized = this.serializeRelationship(record, name);
+			var serialized = this.serializeRelationship(record, name, options);
 			if (serialized) {
 				json.links[serialized.name] = serialized.value;
 			}
@@ -89,10 +90,11 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * @method serializeAttribute
 	 * @param {Model} record
 	 * @param {String} name The name of the attribute to serialize
+	 * @param {Object} options
 	 * @return {Object}
 	 * @protected
 	 */
-	serializeAttribute: function(record, name) {
+	serializeAttribute: function(record, name, options) {
 		var meta = record.constructor.metaForAttribute(name);
 		var type = this.get('store').attributeTypeFor(meta.type);
 
@@ -121,10 +123,11 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * @method serializeRelationship
 	 * @param {Model} record
 	 * @param {String} name The name of the relationship to serialize
+	 * @param {Object} options
 	 * @return {Object}
 	 * @protected
 	 */
-	serializeRelationship: function(record, name) {
+	serializeRelationship: function(record, name, options) {
 		var meta = record.constructor.metaForRelationship(name);
 		var value = record.get('_' + name);
 
@@ -181,11 +184,12 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 *
 	 * @method serializeDelta
 	 * @param {Model} record
+	 * @param {Object} options
 	 * @return {JSON} Array of change operations
 	 */
-	serializeDelta: function(record) {
-		var operations = this.serializeAttributeDelta(record);
-		return operations.concat(this.serializeRelationshipDelta(record));
+	serializeDelta: function(record, options) {
+		var operations = this.serializeAttributeDelta(record, options);
+		return operations.concat(this.serializeRelationshipDelta(record, options));
 	},
 
 	/**
@@ -193,10 +197,11 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 *
 	 * @method serializeAttributeDelta
 	 * @param {Model} record
+	 * @param {Object} options
 	 * @return {JSON} Array of change operations
 	 * @protected
 	 */
-	serializeAttributeDelta: function(record) {
+	serializeAttributeDelta: function(record, options) {
 		var changes = record.changedAttributes();
 		var store = this.get('store');
 
@@ -214,10 +219,11 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 *
 	 * @method serializeAttributeDelta
 	 * @param {Model} record
+	 * @param {Object} options
 	 * @return {JSON} Array of change operations
 	 * @protected
 	 */
-	serializeRelationshipDelta: function(record) {
+	serializeRelationshipDelta: function(record, options) {
 		var operations = [];
 		var changes = record.changedRelationships();
 		var polymorphicRelationships = this.get('polymorphicRelationships');
@@ -278,7 +284,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 			var model = store.modelForType(typeKey);
 
 			normalized[typeKey] = map.call(normalized[typeKey], function(json) {
-				return this.deserializeRecord(model, json);
+				return this.deserializeRecord(model, json, options);
 			}, this);
 		}, this);
 
@@ -345,10 +351,11 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * @method deserializeRecord
 	 * @param {Model} model
 	 * @param {JSON} json
+	 * @param {Object} options
 	 * @return {Object} Deserialized record
 	 * @protected
 	 */
-	deserializeRecord: function(model, json) {
+	deserializeRecord: function(model, json, options) {
 		if (Em.typeOf(json.id) !== 'string' && Em.typeOf(json.id) !== 'number') {
 			throw new Em.Error('Your JSON has an invalid ID: ' + JSON.stringify(json));
 		}
@@ -358,7 +365,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 		};
 
 		model.eachAttribute(function(name, meta) {
-			var deserialized = this.deserializeAttribute(model, json, name);
+			var deserialized = this.deserializeAttribute(model, json, name, options);
 			if (deserialized) {
 				record[deserialized.name] = deserialized.value;
 			}
@@ -367,7 +374,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 		json.links = json.links || {};
 
 		model.eachRelationship(function(name, meta) {
-			var deserialized = this.deserializeRelationship(model, json, name);
+			var deserialized = this.deserializeRelationship(model, json, name, options);
 			if (deserialized) {
 				record[deserialized.name] = deserialized.value;
 			}
@@ -400,10 +407,11 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * @param {Class} model
 	 * @param {JSON} json
 	 * @param {String} name
+	 * @param {Object} options
 	 * @return {Object}
 	 * @protected
 	 */
-	deserializeAttribute: function(model, json, name) {
+	deserializeAttribute: function(model, json, name, options) {
 		var meta = model.metaForAttribute(name);
 		var type = this.get('store').attributeTypeFor(meta.type);
 		var value = json[name];
@@ -448,10 +456,11 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * @param {Class} model
 	 * @param {JSON} json
 	 * @param {String} name
+	 * @param {Object} options
 	 * @return {Object}
 	 * @protected
 	 */
-	deserializeRelationship: function(model, json, name) {
+	deserializeRelationship: function(model, json, name, options) {
 		var meta = model.metaForRelationship(name);
 		var value = json.links[name];
 
@@ -479,10 +488,11 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * @param {Class} model
 	 * @param {String} name
 	 * @param {Object|String|Number} value
+	 * @param {Object} options
 	 * @returns {Object}
 	 * @protected
 	 */
-	deserializeHasOneRelationship: function(model, name, value) {
+	deserializeHasOneRelationship: function(model, name, value, options) {
 		if (value === null) {
 			return { name: name, value: null };
 		}
@@ -507,10 +517,11 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * @param {Class} model
 	 * @param {String} name
 	 * @param {Object[]|String[]|Number[]} values
+	 * @param {Object} options
 	 * @returns {Object}
 	 * @protected
 	 */
-	deserializeHasManyRelationship: function(model, name, values) {
+	deserializeHasManyRelationship: function(model, name, values, options) {
 		var relatedType = model.metaForRelationship(name).relatedType;
 		var polymorphic = this.get('polymorphicRelationships');
 
