@@ -98,6 +98,10 @@ EG.JSONSerializer = EG.Serializer.extend({
 		var meta = record.constructor.metaForAttribute(name);
 		var type = this.get('store').attributeTypeFor(meta.type);
 
+		if (meta.isServerOnly && options.requestType === 'createRecord') {
+			return null;
+		}
+
 		return { name: name, value: type.serialize(record.get(name)) };
 	},
 
@@ -130,6 +134,10 @@ EG.JSONSerializer = EG.Serializer.extend({
 	serializeRelationship: function(record, name, options) {
 		var meta = record.constructor.metaForRelationship(name);
 		var value = record.get('_' + name);
+
+		if (meta.isServerOnly && options.requestType === 'createRecord') {
+			return null;
+		}
 
 		if (meta.kind === EG.Model.HAS_ONE_KEY) {
 			if (value === null || EG.Model.isTemporaryId(value.id)) {
