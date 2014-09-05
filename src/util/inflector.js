@@ -94,12 +94,22 @@ var apply = function(str, rules) {
 	return str;
 };
 
+var PLURALIZE_CACHE = {};
 EG.String.pluralize = function(str) {
-	return apply(str, pluralRules);
+	if (!PLURALIZE_CACHE[str]) {
+		PLURALIZE_CACHE[str] = apply(str, pluralRules);
+	}
+
+	return PLURALIZE_CACHE[str];
 };
 
+var SINGULARIZE_CACHE = {};
 EG.String.singularize = function(str) {
-	return apply(str, singularRules);
+	if (!SINGULARIZE_CACHE[str]) {
+		SINGULARIZE_CACHE[str] = apply(str, singularRules);
+	}
+
+	return SINGULARIZE_CACHE[str];
 };
 
 if (Em.EXTEND_PROTOTYPES === true || Em.EXTEND_PROTOTYPES.String) {
