@@ -90,7 +90,7 @@ EG.Model.reopenClass({
 		var obj = {};
 
 		Em.runInDebug(function() {
-			var disallowedNames = new Em.Set(['id', 'type', 'content', 'length', 'model']);
+			var disallowedNames = new EG.Set(['id', 'type', 'content', 'length', 'model']);
 
 			forEach.call(Em.keys(relationships), function(name) {
 				Em.assert('`' + name + '` cannot be used as a relationship name.', !disallowedNames.contains(name));

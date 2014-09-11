@@ -37,7 +37,7 @@ EG.EnumType = EG.AttributeType.extend({
 	 * @final
 	 */
 	valueSet: Em.computed(function() {
-		return new Em.Set(this.get('values').map(function(value) {
+		return new EG.Set(this.get('values').map(function(value) {
 			return value.toLocaleLowerCase();
 		}));
 	}).property('values'),

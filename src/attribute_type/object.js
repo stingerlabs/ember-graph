@@ -80,7 +80,7 @@ EG.ObjectType = EG.AttributeType.extend({
 	 */
 	deepCompare: function(a, b) {
 		if (this.isObject(a) && this.isObject(b)) {
-			if (!new Em.Set(Em.keys(a)).isEqual(new Em.Set(Em.keys(b)))) {
+			if (!new EG.Set(Em.keys(a)).isEqual(new EG.Set(Em.keys(b)))) {
 				return false;
 			}
 

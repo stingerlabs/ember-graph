@@ -247,11 +247,11 @@ EG.JSONSerializer = EG.Serializer.extend({
 					value: (polymorphicRelationships ? values[1] : (values[1] === null ? null : values[1].id))
 				});
 			} else if (meta.kind === EG.Model.HAS_MANY_KEY) {
-				var originalSet = new Em.Set(map.call(values[0], function(value) {
+				var originalSet = new EG.Set(map.call(values[0], function(value) {
 					return value.type + ':' + value.id;
 				}));
 
-				var currentSet = new Em.Set(map.call(values[1], function(value) {
+				var currentSet = new EG.Set(map.call(values[1], function(value) {
 					return value.type + ':' + value.id;
 				}));
 

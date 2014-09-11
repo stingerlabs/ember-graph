@@ -232,7 +232,7 @@ EG.CoreModel.reopenClass({
 		var obj = {};
 
 		Em.runInDebug(function() {
-			var RESERVED_NAMES = new Em.Set(['id', 'type', 'content', 'length', 'model']);
+			var RESERVED_NAMES = new EG.Set(['id', 'type', 'content', 'length', 'model']);
 
 			forEach.call(Em.keys(attributes), function(name) {
 				Em.assert('`' + name + '` cannot be used as an attribute name.', !RESERVED_NAMES.contains(name));
@@ -257,7 +257,7 @@ EG.CoreModel.reopenClass({
 	 * @readOnly
 	 */
 	attributes: Em.computed(function() {
-		var attributes = new Em.Set();
+		var attributes = new EG.Set();
 
 		this.eachComputedProperty(function(name, meta) {
 			if (meta.isAttribute) {

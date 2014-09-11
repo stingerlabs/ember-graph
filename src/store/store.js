@@ -256,7 +256,7 @@ EG.Store = Em.Object.extend({
 	 */
 	_findMany: function(typeKey, ids) {
 		ids = ids || [];
-		var set = new Em.Set(ids);
+		var set = new EG.Set(ids);
 
 		ids.forEach(function(id) {
 			if (this.getRecord(typeKey, id) !== null) {
