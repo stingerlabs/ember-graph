@@ -87,7 +87,7 @@ EG.Model.reopen({
 			}
 
 			if (json[name] === undefined) {
-				json[name] = meta.defaultValue;
+				json[name] = meta.getDefaultValue();
 			}
 
 			if (meta.kind === HAS_MANY_KEY) {

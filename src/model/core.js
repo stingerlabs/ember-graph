@@ -9,6 +9,11 @@ var createAttribute = function(attributeName, options) {
 		isReadOnly: options.readOnly === true || options.serverOnly === true,
 		isServerOnly: options.serverOnly === true,
 
+		getDefaultValue: function() {
+			var defaultValue = this.defaultValue;
+			return (typeof defaultValue === 'function' ? defaultValue() : defaultValue);
+		},
+
 		// deprecated
 		isEqual: options.isEqual
 	};
@@ -151,7 +156,7 @@ EG.CoreModel = Em.Object.extend({
 				!meta.isRequired || json.hasOwnProperty(attributeName));
 
 			// TODO: Why is there here? I thought we weren't allowing this.
-			var value = (json.hasOwnProperty(attributeName) ? json[attributeName] : meta.defaultValue);
+			var value = (json.hasOwnProperty(attributeName) ? json[attributeName] : meta.getDefaultValue());
 			serverAttributes.set(attributeName, value);
 
 			this.synchronizeAttribute(attributeName);

@@ -432,7 +432,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 
 			return {
 				name: name,
-				value: (meta.defaultValue === undefined ? type.get('defaultValue') : meta.defaultValue)
+				value: (meta.getDefaultValue() === undefined ? type.get('defaultValue') : meta.getDefaultValue())
 			};
 		} else {
 			return { name: name, value: type.deserialize(value) };
@@ -477,7 +477,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 				throw new Em.Error('Missing `' + name + '` relationship: ' + JSON.stringify(json));
 			}
 
-			return { name: name, value: meta.defaultValue };
+			return { name: name, value: meta.getDefaultValue() };
 		} else {
 			if (meta.kind === EG.Model.HAS_MANY_KEY) {
 				return this.deserializeHasManyRelationship(model, name, value);

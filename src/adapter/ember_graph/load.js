@@ -135,7 +135,7 @@ EG.EmberGraphAdapter.reopen({
 				if (meta.isRequired) {
 					throw new Em.Error(Em.get(model, 'typeKey') + ':' + record.id + ' is missing `' + name + '`');
 				} else {
-					json[name] = type.serialize(meta.defaultValue);
+					json[name] = type.serialize(meta.getDefaultValue());
 				}
 			} else {
 				json[name] = type.serialize(record[name]);
@@ -191,7 +191,7 @@ EG.EmberGraphAdapter.reopen({
 				if (meta.isRequired) {
 					throw new Em.Error(typeKey + ':' + record.id + ' is missing `' + name + '`');
 				} else {
-					value = meta.defaultValue;
+					value = meta.getDefaultValue();
 				}
 			}
 

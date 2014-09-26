@@ -26,17 +26,24 @@ var createRelationship = function(name, kind, options) {
 		isRelationship: false, // the 'real' relationship (without _) is the relationship
 		kind: kind,
 		isRequired: (options.hasOwnProperty('defaultValue') ? false : options.isRequired !== false),
-		defaultValue: options.defaultValue || (kind === HAS_MANY_KEY ? [] : null),
+		defaultValue: options.defaultValue,
 		relatedType: options.relatedType,
 		inverse: options.inverse,
 		isReadOnly: options.readOnly === true || options.serverOnly === true,
 		isPolymorphic: options.polymorphic === true,
-		isServerOnly: options.serverOnly === true
+		isServerOnly: options.serverOnly === true,
+
+		getDefaultValue: function() {
+			var defaultValue = this.defaultValue || (kind === HAS_MANY_KEY ? [] : null);
+			return (typeof defaultValue === 'function' ? defaultValue() : defaultValue);
+		}
 	};
 
-	Em.assert('defaultValue for hasMany must be an array.', meta.kind === HAS_ONE_KEY || Em.isArray(meta.defaultValue));
+	Em.assert('defaultValue for hasMany must be an array.',
+			meta.kind === HAS_ONE_KEY || Em.isArray(meta.getDefaultValue()));
 	Em.assert('defaultValue for hasOne must be null or a string.',
-			meta.kind === HAS_MANY_KEY || meta.defaultValue === null || Em.typeOf(meta.defaultValue) === 'string');
+			meta.kind === HAS_MANY_KEY || meta.getDefaultValue() === null ||
+			Em.typeOf(meta.getDefaultValue()) === 'string');
 
 	return Em.computed(meta.kind === HAS_MANY_KEY ? HAS_MANY_GETTER : HAS_ONE_GETTER).
 		property('relationships.client.' + name, 'relationships.deleted.' + name, 'relationships.server.' + name).

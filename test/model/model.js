@@ -10,7 +10,9 @@
 					username: EG.attr({
 						type: 'string',
 						readOnly: true,
-						defaultValue: 'admin'
+						defaultValue: function() {
+							return 'admin';
+						}
 					}),
 
 					posts: EG.hasMany({

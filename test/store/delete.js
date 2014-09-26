@@ -28,7 +28,9 @@
 						relatedType: 'tag',
 						inverse: null,
 						isRequired: false,
-						defaultValue: ['0']
+						defaultValue: function() {
+							return ['0'];
+						}
 					})
 				}),
 
