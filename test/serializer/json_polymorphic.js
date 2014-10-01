@@ -404,4 +404,27 @@
 
 		deepEqual(serializer.deserialize(payload), expected);
 	});
+
+	test('Top-level and linked objects are all deserialized', function() {
+		expect(1);
+
+		var payload = {
+			tags: [{ id: '1', name: 'One' }],
+			linked: {
+				tags: [{ id: '2', name: 'Two' }]
+			}
+		};
+
+		var expected = {
+			meta: {
+				serverMeta: {}
+			},
+			tag: [
+				{ id: '1', name: 'One' },
+				{ id: '2', name: 'Two' }
+			]
+		};
+
+		deepEqual(serializer.deserialize(payload, {}), expected);
+	});
 })();

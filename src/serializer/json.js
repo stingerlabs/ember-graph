@@ -346,7 +346,8 @@ EG.JSONSerializer = EG.Serializer.extend({
 		});
 
 		forEach.call(Em.keys(payload.linked || {}), function(key) {
-			normalized[EG.String.singularize(key)] = payload.linked[key];
+			var singular = EG.String.singularize(key);
+			normalized[singular] = (normalized[singular] || []).concat(payload.linked[key] || []);
 		});
 
 		return normalized;
