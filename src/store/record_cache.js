@@ -1,16 +1,18 @@
 var forEach = Em.ArrayPolyfills.forEach;
 
-// TODO: Need tests
 EG.RecordCache = Em.Object.extend({
 
 	cacheTimeout: Infinity,
 
 	records: {},
 
+	liveRecordArrays: {},
+
 	init: function(cacheTimeout) {
 		this.setProperties({
-			cacheTimeout: cacheTimeout,
-			records: {}
+			cacheTimeout: (typeof cacheTimeout === 'number' ? cacheTimeout : Infinity),
+			records: {},
+			liveRecordArrays: {}
 		});
 	},
 
@@ -40,17 +42,34 @@ EG.RecordCache = Em.Object.extend({
 	},
 
 	storeRecord: function(record) {
-		var records = this.get('records');
+		if (EG.PromiseObject.detectInstance(record)) {
+			record = record.getModel();
+		}
 
-		records[record.typeKey + ':' + record.get('id')] = {
+		var typeKey = record.get('typeKey');
+
+		var records = this.get('records');
+		records[typeKey + ':' + record.get('id')] = {
 			record: record,
 			timestamp: (new Date()).getTime()
 		};
+
+		var liveRecordArrays = this.get('liveRecordArrays');
+		liveRecordArrays[typeKey] = liveRecordArrays[typeKey] || Em.A();
+		if (!liveRecordArrays[typeKey].contains(record)) {
+			liveRecordArrays[typeKey].addObject(record);
+		}
 	},
 
 	deleteRecord: function(typeKey, id) {
 		var records = this.get('records');
 		delete records[typeKey + ':' + id];
+	},
+
+	getLiveRecordArray: function(typeKey) {
+		var liveRecordArrays = this.get('liveRecordArrays');
+		liveRecordArrays[typeKey] = liveRecordArrays[typeKey] || Em.A();
+		return liveRecordArrays[typeKey];
 	}
 
 });

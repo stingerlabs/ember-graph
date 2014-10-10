@@ -13,6 +13,8 @@ require('util/set');
 require('util/string');
 require('util/inflector');
 
+require('data/promise_object');
+
 require('relationship/relationship');
 require('relationship/relationship_store');
 
@@ -28,8 +30,6 @@ require('adapter/**/*');
 require('store/record_cache');
 require('store/store');
 require('store/relationship');
-
-require('data/promise_object');
 
 require('attribute_type/type');
 require('attribute_type/**/*');

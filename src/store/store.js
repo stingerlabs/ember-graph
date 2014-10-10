@@ -185,6 +185,21 @@ EG.Store = Em.Object.extend({
 	},
 
 	/**
+	 * Returns an array containing all of the cached records for the
+	 * given type. The array will be updated as more records of the
+	 * type are cached. This will contain _all_ records of that type,
+	 * new and saved. This method will always return the same array
+	 * for a type.
+	 *
+	 * @method getLiveRecordArray
+	 * @param {String} typeKey
+	 * @returns {Model[]}
+	 */
+	getLiveRecordArray: function(typeKey) {
+		return this.get('recordCache').getLiveRecordArray(typeKey);
+	},
+
+	/**
 	 * Fetches a record (or records), either from the cache or from the server.
 	 * The type of `options` determines the behavior of this method:
 	 *

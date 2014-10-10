@@ -8,7 +8,11 @@
  * @uses PromiseProxyMixin
  * @constructor
  */
-EG.PromiseObject = Em.ObjectProxy.extend(Em.PromiseProxyMixin);
+EG.PromiseObject = Em.ObjectProxy.extend(Em.PromiseProxyMixin, {
+	getModel: function() {
+		return this.get('content');
+	}
+});
 
 /**
  * Ember's ArrayProxy combined with the PromiseProxyMixin.
