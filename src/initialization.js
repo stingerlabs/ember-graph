@@ -18,10 +18,13 @@ Em.Application.initializer({
 		App.register('type:object', EG.ObjectType);
 		App.register('type:array', EG.ArrayType);
 
+		App.register('data-adapter:main', EG.DataAdapter);
+
 		App.inject('controller', 'store', 'store:main');
 		App.inject('route', 'store', 'store:main');
 		App.inject('adapter', 'store', 'store:main');
 		App.inject('serializer', 'store', 'store:main');
+		App.inject('data-adapter', 'store', 'store:main');
 
 		var store = container.lookup('store:main');
 		App.set('store', store);

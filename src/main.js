@@ -5,6 +5,7 @@
 window.EmberGraph = window.EG = Em.Namespace.create();
 Em.libraries.register('Ember Graph');
 
+require('util/data_adapter');
 require('initialization');
 
 require('util/array');
