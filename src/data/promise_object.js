@@ -8,11 +8,7 @@
  * @uses PromiseProxyMixin
  * @constructor
  */
-EG.PromiseObject = Em.ObjectProxy.extend(Em.PromiseProxyMixin, {
-	getModel: function() {
-		return this.get('content');
-	}
-});
+EG.PromiseObject = Em.ObjectProxy.extend(Em.PromiseProxyMixin);
 
 /**
  * Ember's ArrayProxy combined with the PromiseProxyMixin.
@@ -84,5 +80,19 @@ EG.ModelPromiseObject = EG.PromiseObject.extend({
 		} else {
 			return this.get('__modelTypeKey');
 		}
-	}.property('__modelTypeKey', 'content.typeKey')
+	}.property('__modelTypeKey', 'content.typeKey'),
+
+	getModel: function() {
+		return this.get('content');
+	},
+
+	destroy: function() {
+		var model = this.getModel();
+
+		if (model && typeof model.destroy === 'function') {
+			return model.destroy();
+		} else {
+			return Em.RSVP.Promise.reject('Can\'t destroy a record that is still loading.');
+		}
+	}
 });
