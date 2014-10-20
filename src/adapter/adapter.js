@@ -24,18 +24,6 @@ EG.Adapter = Em.Object.extend({
 	store: null,
 
 	/**
-	 * @property serializerCache
-	 * @type Object
-	 * @private
-	 * @final
-	 */
-	serializerCache: {},
-
-	initializeSerializerCache: Em.on('init', function() {
-		this.set('serializerCache', {});
-	}),
-
-	/**
 	 * Persists a record to the server. The returned JSON
 	 * must include the `newId` meta attribute as described
 	 * {{link-to-method 'here' 'Serializer' 'deserialize'}}.
@@ -124,18 +112,7 @@ EG.Adapter = Em.Object.extend({
 	 * @protected
 	 */
 	serializerFor: function(typeKey) {
-		var serializerCache = this.get('serializerCache');
-
-		if (!serializerCache[typeKey]) {
-			var container = this.get('container');
-
-			serializerCache[typeKey] =
-				container.lookup('serializer:' + (typeKey || 'application')) ||
-				container.lookup('serializer:application') ||
-				container.lookup('serializer:json');
-		}
-
-		return serializerCache[typeKey];
+		return this.get('store').serializerFor(typeKey);
 	},
 
 	/**

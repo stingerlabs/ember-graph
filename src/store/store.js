@@ -110,11 +110,22 @@ EG.Store = Em.Object.extend({
 	 */
 	adapterCache: {},
 
+	/**
+	 * Stores serializers as they're looked up in the container.
+	 *
+	 * @property adapterCache
+	 * @type Object
+	 * @final
+	 * @private
+	 */
+	serializerCache: {},
+
 	initializeCaches: Em.on('init', function() {
 		this.setProperties({
 			modelCache: {},
 			recordCache: new EG.RecordCache(this.get('cacheTimeout')),
-			adapterCache: {}
+			adapterCache: {},
+			serializerCache: {}
 		});
 	}),
 
@@ -638,5 +649,33 @@ EG.Store = Em.Object.extend({
 		}
 
 		return adapterCache[typeKey];
+	},
+
+	/**
+	 * Gets the serializer for the specified type. First, it looks for a type-specific
+	 * serializer. If one isn't found, it looks for the application serializer. If that
+	 * isn't found, it uses the default {{link-to-class 'JSONSerializer'}}.
+	 *
+	 * Note that this method will cache the results, so your serializer configuration
+	 * must be finalized before the app starts up.
+	 *
+	 * @method serializerFor
+	 * @param {String} typeKey
+	 * @return {Serializer}
+	 * @protected
+	 */
+	serializerFor: function(typeKey) {
+		var serializerCache = this.get('serializerCache');
+
+		if (!serializerCache[typeKey]) {
+			var container = this.get('container');
+
+			serializerCache[typeKey] =
+				container.lookup('serializer:' + (typeKey || 'application')) ||
+				container.lookup('serializer:application') ||
+				container.lookup('serializer:json');
+		}
+
+		return serializerCache[typeKey];
 	}
 });
