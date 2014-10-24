@@ -123,27 +123,29 @@ EG.hasOne = function(options) {
 };
 
 EG.embeddedHasMany = function(options) {
-	if (Em.typeOf(options) === 'string') {
-		options = { type: options };
-	}
-
-	return {
-		isAttribute: true,
-		isEmbedded: true,
-		hasMany: true,
-		options: options
-	};
+	return embeddedRelationship(options, false);
 };
 
 EG.embeddedHasOne = function(options) {
+	return embeddedRelationship(options, true);
+};
+
+function embeddedRelationship(options, hasOne) {
 	if (Em.typeOf(options) === 'string') {
 		options = { type: options };
 	}
 
-	return {
+	var properties = {
 		isAttribute: true,
 		isEmbedded: true,
-		hasOne: true,
 		options: options
 	};
-};
+
+	if (hasOne) {
+		properties.hasOne = true;
+	} else {
+		properties.hasMany = true;
+	}
+
+	return properties;
+}
