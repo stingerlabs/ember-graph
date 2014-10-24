@@ -5,7 +5,7 @@
 
 	module('Record Cache Test', {
 		setup: function() {
-			cache = new EG.RecordCache();
+			cache = EG.RecordCache.create();
 
 			store = setupStore({
 				item: EG.Model.extend()
@@ -58,7 +58,7 @@
 	test('Records expire after timeout', function() {
 		expect(2);
 
-		cache = new EG.RecordCache(10);
+		cache = EG.RecordCache.create({ cacheTimeout: 10 });
 		var item1 = store.getRecord('item', '1');
 		cache.storeRecord(item1);
 		strictEqual(cache.getRecord('item', '1'), item1);

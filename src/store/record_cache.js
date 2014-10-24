@@ -2,15 +2,21 @@ var forEach = Em.ArrayPolyfills.forEach;
 
 EG.RecordCache = Em.Object.extend({
 
-	cacheTimeout: Infinity,
+	cacheTimeout: Em.computed(function(key, value) {
+		if (arguments.length > 1) {
+			this.set('_cacheTimeout', typeof value === 'number' ? value : Infinity);
+		}
+
+		return this.get('_cacheTimeout');
+	}).property('_cacheTimeout'),
 
 	records: {},
 
 	liveRecordArrays: {},
 
-	init: function(cacheTimeout) {
+	init: function() {
 		this.setProperties({
-			cacheTimeout: (typeof cacheTimeout === 'number' ? cacheTimeout : Infinity),
+			_cacheTimeout: Infinity,
 			records: {},
 			liveRecordArrays: {}
 		});

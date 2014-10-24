@@ -69,7 +69,9 @@ EG.generateUUID = function() {
  * @namespace EmberGraph
  */
 EG.arrayContentsEqual = function(a, b) {
-	return (a.length === b.length && (new EG.Set(a)).isEqual(b));
+	var set = EG.Set.create();
+	set.addObjects(a);
+	return (a.length === b.length && set.isEqual(b));
 };
 
 /**

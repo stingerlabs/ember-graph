@@ -19,7 +19,7 @@ var RelationshipMap = Em.Object.extend({
 			this.set(name + '.' + relationship.get('id'), relationship);
 			this.notifyPropertyChange(name);
 		} else {
-			var o = new Em.Object();
+			var o = Em.Object.create();
 			o.set(relationship.get('id'), relationship);
 			this.set(name, o);
 		}
@@ -52,7 +52,9 @@ var RelationshipMap = Em.Object.extend({
 
 	getAllRelationships: function() {
 		var relationships = [];
-		var keys = new EG.Set(Em.keys(this)).without('length');
+		var keys = EG.Set.create();
+		keys.addObjects(Em.keys(this));
+		keys = keys.without('length');
 
 		forEach.call(keys, function(key) {
 			relationships = relationships.concat(this.getRelationships(key));
@@ -62,7 +64,7 @@ var RelationshipMap = Em.Object.extend({
 	},
 
 	clearRelationships: function(name) {
-		this.set(name, new Em.Object());
+		this.set(name, Em.Object.create());
 		this.recalculateLength();
 	},
 
@@ -90,9 +92,9 @@ EG.RelationshipStore = Em.Object.extend({
 
 	initializeMaps: Em.on('init', function() {
 		this.setProperties({
-			server: new RelationshipMap(),
-			client: new RelationshipMap(),
-			deleted: new RelationshipMap()
+			server: RelationshipMap.create(),
+			client: RelationshipMap.create(),
+			deleted: RelationshipMap.create()
 		});
 	}),
 

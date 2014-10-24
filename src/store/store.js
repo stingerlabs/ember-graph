@@ -90,7 +90,7 @@ EG.Store = Em.Object.extend({
 
 	initializeCaches: Em.on('init', function() {
 		this.setProperties({
-			recordCache: new EG.RecordCache(this.get('cacheTimeout'))
+			recordCache: EG.RecordCache.create({ cacheTimeout: this.get('cacheTimeout') })
 		});
 	}),
 
@@ -225,7 +225,8 @@ EG.Store = Em.Object.extend({
 	 */
 	_findMany: function(typeKey, ids) {
 		ids = ids || [];
-		var set = new EG.Set(ids);
+		var set = EG.Set.create();
+		set.addObjects(ids);
 
 		ids.forEach(function(id) {
 			if (this.getRecord(typeKey, id) !== null) {

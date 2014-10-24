@@ -7,18 +7,19 @@ var DELETED_STATE = EG.Relationship.DELETED_STATE;
 
 EG.Store.reopen({
 
-	allRelationships: new Em.Object(),
+	allRelationships: Em.Object.create(),
 
-	queuedRelationships: new Em.Object(),
+	queuedRelationships: Em.Object.create(),
 
 	initializeRelationships: Em.on('init', function() {
 		this.setProperties({
-			allRelationships: new Em.Object(),
-			queuedRelationships: new Em.Object()
+			allRelationships: Em.Object.create(),
+			queuedRelationships: Em.Object.create()
 		});
 	}),
 
 	createRelationship: function(type1, id1, name1, type2, id2, name2, state) { // jshint ignore:line
+		// TODO: Use create()
 		var relationship = new EG.Relationship(type1, id1, name1, type2, id2, name2, state);
 
 		var queuedRelationships = this.get('queuedRelationships');

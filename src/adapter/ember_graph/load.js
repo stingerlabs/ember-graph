@@ -155,7 +155,7 @@ EG.EmberGraphAdapter.reopen({
 	extractRelationships: function(payload) {
 		var store = this.get('store');
 		var relationships = [];
-		var createdRelationships = new EG.Set();
+		var createdRelationships = EG.Set.create();
 
 		function addRelationship(r) {
 			var one = r.t1 + ':' + r.i1 + ':' + r.n1;
@@ -243,7 +243,8 @@ EG.EmberGraphAdapter.reopen({
 			return (one < two ? one + '::' + two : two  + '::' + one);
 		}
 
-		var relationshipSet = new EG.Set(map.call(db.relationships, relationshipToString));
+		var relationshipSet = EG.Set.create();
+		relationshipSet.addObjects(map.call(db.relationships, relationshipToString));
 		if (Em.get(relationshipSet, 'length') !== db.relationships.length) {
 			throw new Em.Error('An invalid set of relationships was generated.');
 		}
