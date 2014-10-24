@@ -110,12 +110,12 @@
 	test('Metadata is setup correctly', function() {
 		expect(10);
 
-		var userPostsMeta = store.modelForType('user').metaForRelationship('posts');
-		var adminPostsMeta = store.modelForType('admin').metaForRelationship('posts');
-		var memberPostsMeta = store.modelForType('member').metaForRelationship('posts');
-		var postAuthorMeta = store.modelForType('post').metaForRelationship('author');
-		var threadAuthorMeta = store.modelForType('thread').metaForRelationship('author');
-		var commentAuthorMeta = store.modelForType('comment').metaForRelationship('author');
+		var userPostsMeta = store.modelFor('user').metaForRelationship('posts');
+		var adminPostsMeta = store.modelFor('admin').metaForRelationship('posts');
+		var memberPostsMeta = store.modelFor('member').metaForRelationship('posts');
+		var postAuthorMeta = store.modelFor('post').metaForRelationship('author');
+		var threadAuthorMeta = store.modelFor('thread').metaForRelationship('author');
+		var commentAuthorMeta = store.modelFor('comment').metaForRelationship('author');
 
 		deepEqual(adminPostsMeta, userPostsMeta);
 		deepEqual(memberPostsMeta, userPostsMeta);

@@ -50,16 +50,18 @@ EG.Store.reopen({
 		});
 	}),
 
+	modelForType: EG.deprecateMethod('`modelForType` deprecated in favor of `modelFor`', 'modelFor'),
+
 	/**
 	 * Looks up the model for the specified typeKey. The `typeKey` property
 	 * isn't available on the class or its instances until the type is
 	 * looked up with this method for the first time.
 	 *
-	 * @method modelForType
+	 * @method modelFor
 	 * @param {String} typeKey
 	 * @return {Class}
 	 */
-	modelForType: function(typeKey) {
+	modelFor: function(typeKey) {
 		var modelCache = this.get('modelCache');
 
 		if (!modelCache[typeKey]) {

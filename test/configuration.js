@@ -32,7 +32,7 @@
 		Em.keys(models || {}).forEach(function(typeKey) {
 			container.register('model:' + typeKey, models[typeKey]);
 			// Load the model to set the 'typeKey' attributes on it
-			store.modelForType(typeKey);
+			store.modelFor(typeKey);
 		});
 
 		return store;

@@ -104,7 +104,7 @@ EG.EmberGraphAdapter.reopen({
 		EG.values(payload, function(typeKey, records) {
 			databaseRecords[typeKey] = {};
 
-			var model = store.modelForType(typeKey);
+			var model = store.modelFor(typeKey);
 
 			forEach.call(records, function(record) {
 				databaseRecords[typeKey][record.id] = this.convertRecord(model, record);
@@ -169,7 +169,7 @@ EG.EmberGraphAdapter.reopen({
 		}
 
 		EG.values(payload, function(typeKey, records) {
-			var model = store.modelForType(typeKey);
+			var model = store.modelFor(typeKey);
 
 			forEach.call(records, function(record) {
 				var recordRelationships = this.extractRelationshipsFromRecord(model, record);
@@ -259,7 +259,7 @@ EG.EmberGraphAdapter.reopen({
 		});
 
 		EG.values(db.records, function(typeKey, records) {
-			var model = this.get('store').modelForType(typeKey);
+			var model = this.get('store').modelFor(typeKey);
 
 			model.eachRelationship(function(name, meta) {
 				if (meta.kind !== EG.Model.HAS_ONE_KEY) {

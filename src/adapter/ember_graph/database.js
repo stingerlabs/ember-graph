@@ -112,7 +112,7 @@ EG.EmberGraphAdapter.reopen({
 	 * @for EmberGraphAdapter
 	 */
 	getRecordFromDatabase: function(typeKey, id, db) {
-		var model = this.get('store').modelForType(typeKey);
+		var model = this.get('store').modelFor(typeKey);
 		var json = Em.copy(db.records[typeKey][id], true);
 		json.id = id;
 		json.links = {};
@@ -169,7 +169,7 @@ EG.EmberGraphAdapter.reopen({
 	 * @for EmberGraphAdapter
 	 */
 	putRecordInDatabase: function(typeKey, id, json, db) {
-		var model = this.get('store').modelForType(typeKey);
+		var model = this.get('store').modelFor(typeKey);
 
 		db.records[typeKey] = db.records[typeKey] || {};
 		db.records[typeKey][id] = {};
@@ -216,7 +216,7 @@ EG.EmberGraphAdapter.reopen({
 	 * @for EmberGraphAdapter
 	 */
 	applyChangesToDatabase: function(typeKey, id, changes, db) {
-		var model = this.get('store').modelForType(typeKey);
+		var model = this.get('store').modelFor(typeKey);
 
 		forEach.call(changes, function(change) {
 			switch (change.op) {
@@ -286,7 +286,7 @@ EG.EmberGraphAdapter.reopen({
 		}
 
 		if (relationship.n2) {
-			var inverseModel = this.get('store').modelForType(relationship.t2);
+			var inverseModel = this.get('store').modelFor(relationship.t2);
 			var inverseMeta = inverseModel.metaForRelationship(relationship.n2);
 
 			if (inverseMeta.kind === EG.Model.HAS_ONE_KEY) {
@@ -335,7 +335,7 @@ EG.EmberGraphAdapter.reopen({
 		db = this.clearHasOneRelationshipInDatabase(relationship.t1, relationship.i1, relationship.n1, db);
 
 		if (relationship.n2) {
-			var inverseModel = this.get('store').modelForType(relationship.t2);
+			var inverseModel = this.get('store').modelFor(relationship.t2);
 			var inverseMeta = inverseModel.metaForRelationship(relationship.n2);
 
 			if (inverseMeta.kind === EG.Model.HAS_ONE_KEY) {

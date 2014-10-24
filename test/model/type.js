@@ -16,7 +16,7 @@
 	test('typeKey exists on the class', function() {
 		expect(1);
 
-		var TestModel = store.modelForType('test');
+		var TestModel = store.modelFor('test');
 
 		ok(TestModel.typeKey === 'test');
 	});
@@ -24,6 +24,6 @@
 	test('Looking up a type from the store works', function() {
 		expect(1);
 
-		ok(EG.Model.detect(store.modelForType('test')));
+		ok(EG.Model.detect(store.modelFor('test')));
 	});
 })();

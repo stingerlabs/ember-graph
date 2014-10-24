@@ -78,7 +78,7 @@ EG.Model.reopen({
 			var otherKind = null;
 
 			if (meta.inverse) {
-				otherKind = this.get('store').modelForType(meta.relatedType).metaForRelationship(meta.inverse).kind;
+				otherKind = this.get('store').modelFor(meta.relatedType).metaForRelationship(meta.inverse).kind;
 			}
 
 			// TODO: I don't much like this here. Same for the attributes one.

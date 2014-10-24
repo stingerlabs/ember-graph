@@ -26,7 +26,7 @@
 	test('The class properly detects every attribute (and only those attributes)', function() {
 		expect(1);
 
-		var TestModel = store.modelForType('test');
+		var TestModel = store.modelFor('test');
 		var expectedAttributes = new EG.Set(['name', 'posts', 'birthday']);
 
 		ok(Em.get(TestModel, 'attributes').isEqual(expectedAttributes));
@@ -35,7 +35,7 @@
 	test('The class knows which properties are attributes', function() {
 		expect(3);
 
-		var TestModel = store.modelForType('test');
+		var TestModel = store.modelFor('test');
 
 		ok(TestModel.isAttribute('name'));
 		ok(!TestModel.isAttribute('foofoo'));
@@ -221,7 +221,7 @@
 	test('metaForAttribute returns the correct metadata', function() {
 		expect(2);
 
-		var TestModel = store.modelForType('test');
+		var TestModel = store.modelFor('test');
 		var meta = TestModel.metaForRelationship('name');
 
 		strictEqual(meta.isAttribute, true);

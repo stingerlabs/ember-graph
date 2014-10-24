@@ -108,7 +108,7 @@ EG.Store = Em.Object.extend({
 	 * @return {Model}
 	 */
 	createRecord: function(typeKey, json) {
-		var record = this.modelForType(typeKey).create(this);
+		var record = this.modelFor(typeKey).create(this);
 		this.get('recordCache').storeRecord(record);
 		record.initializeRecord(json || {});
 		return record;
@@ -510,7 +510,7 @@ EG.Store = Em.Object.extend({
 			delete payload.meta;
 
 			Em.keys(payload).forEach(function(typeKey) {
-				var model = this.modelForType(typeKey);
+				var model = this.modelFor(typeKey);
 
 				payload[typeKey].forEach(function(json) {
 					var record = this.getRecord(typeKey, json.id);

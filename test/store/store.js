@@ -254,7 +254,7 @@
 		expect(1);
 
 		throws(function() {
-			store.modelForType('posts');
+			store.modelFor('posts');
 		}, /typeKey/gi);
 	});
 })();

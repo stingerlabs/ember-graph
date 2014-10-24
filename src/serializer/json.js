@@ -289,7 +289,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 				return;
 			}
 
-			var model = store.modelForType(typeKey);
+			var model = store.modelFor(typeKey);
 
 			normalized[typeKey] = map.call(normalized[typeKey], function(json) {
 				return this.deserializeRecord(model, json, options);

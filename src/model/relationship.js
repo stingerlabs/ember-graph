@@ -275,7 +275,7 @@ EG.Model.reopen({
 				polymorphicType = meta.relatedType;
 			}
 
-			var otherModel = store.modelForType(polymorphicType);
+			var otherModel = store.modelFor(polymorphicType);
 			var otherMeta = (meta.inverse === null ? null : otherModel.metaForRelationship(meta.inverse));
 			var currentValues = this.getHasManyRelationships(relationshipName, false);
 			var serverValues = this.getHasManyRelationships(relationshipName, true);
@@ -408,7 +408,7 @@ EG.Model.reopen({
 				polymorphicType = meta.relatedType;
 			}
 
-			var otherModel = store.modelForType(polymorphicType);
+			var otherModel = store.modelFor(polymorphicType);
 			var otherMeta = (meta.inverse === null ? null : otherModel.metaForRelationship(meta.inverse));
 			var currentRelationships = store.sortHasOneRelationships(this.typeKey, this.get('id'), relationshipName);
 
