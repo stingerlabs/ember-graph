@@ -249,4 +249,12 @@
 		strictEqual(post.isAttributeInitialized('posted'), false);
 		post.save().catch(function() {});
 	});
+
+	test('Looking up non-existent model class throws error', function() {
+		expect(1);
+
+		throws(function() {
+			store.modelForType('posts');
+		}, /typeKey/gi);
+	});
 })();

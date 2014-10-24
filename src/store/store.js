@@ -143,6 +143,10 @@ EG.Store = Em.Object.extend({
 
 		if (!modelCache[typeKey]) {
 			var factory = this.get('container').lookupFactory('model:' + typeKey);
+			if (!factory) {
+				throw new Em.Error('Cannot find model class with typeKey: ' + typeKey);
+			}
+
 			factory.reopen({ typeKey: typeKey });
 			factory.reopenClass({ typeKey: typeKey });
 			modelCache[typeKey] = factory;
