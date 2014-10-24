@@ -78,18 +78,6 @@ EG.Store = Em.Object.extend({
 	overwriteClientAttributes: false,
 
 	/**
-	 * Stores the models used so far. This not ony caches them so we don't
-	 * have to hit the container, but it also let's use know that the
-	 * typeKey has been property injected into them.
-	 *
-	 * @property modelCache
-	 * @type {Object}
-	 * @final
-	 * @private
-	 */
-	modelCache: {},
-
-	/**
 	 * Contains the records cached in the store. The keys are type names,
 	 * and the values are nested objects keyed at the ID of the record.
 	 *
@@ -100,60 +88,11 @@ EG.Store = Em.Object.extend({
 	 */
 	recordCache: {},
 
-	/**
-	 * Stores adapters as they're looked up in the container.
-	 *
-	 * @property adapterCache
-	 * @type Object
-	 * @final
-	 * @private
-	 */
-	adapterCache: {},
-
-	/**
-	 * Stores serializers as they're looked up in the container.
-	 *
-	 * @property adapterCache
-	 * @type Object
-	 * @final
-	 * @private
-	 */
-	serializerCache: {},
-
 	initializeCaches: Em.on('init', function() {
 		this.setProperties({
-			modelCache: {},
-			recordCache: new EG.RecordCache(this.get('cacheTimeout')),
-			adapterCache: {},
-			serializerCache: {}
+			recordCache: new EG.RecordCache(this.get('cacheTimeout'))
 		});
 	}),
-
-	/**
-	 * Looks up the model for the specified typeKey. The `typeKey` property
-	 * isn't available on the class or its instances until the type is
-	 * looked up with this method for the first time.
-	 *
-	 * @method modelForType
-	 * @param {String} typeKey
-	 * @return {Class}
-	 */
-	modelForType: function(typeKey) {
-		var modelCache = this.get('modelCache');
-
-		if (!modelCache[typeKey]) {
-			var factory = this.get('container').lookupFactory('model:' + typeKey);
-			if (!factory) {
-				throw new Em.Error('Cannot find model class with typeKey: ' + typeKey);
-			}
-
-			factory.reopen({ typeKey: typeKey });
-			factory.reopenClass({ typeKey: typeKey });
-			modelCache[typeKey] = factory;
-		}
-
-		return modelCache[typeKey];
-	},
 
 	/**
 	 * Creates a record of the specified type. The record starts in a blank
@@ -615,71 +554,6 @@ EG.Store = Em.Object.extend({
 			this.get('recordCache').deleteRecord(record.get('typeKey'), record.get('id'));
 			record.set('store', null);
 		}, this);
-	},
-
-	/**
-	 * Returns an `AttributeType` instance for the given named type.
-	 *
-	 * @method attributeTypeFor
-	 * @param {String} typeName
-	 * @return {AttributeType}
-	 */
-	attributeTypeFor: function(typeName) {
-		return this.get('container').lookup('type:' + typeName);
-	},
-
-	/**
-	 * Gets the adapter for the specified type. First, it looks for a type-specific
-	 * adapter. If one isn't found, it looks for the application adapter. If that
-	 * isn't found, it uses the default {{link-to-class 'RESTAdapter'}}.
-	 *
-	 * Note that this method will cache the results, so your adapter configuration
-	 * must be finalized before the app starts up.
-	 *
-	 * @method adapterFor
-	 * @param {String} typeKey
-	 * @return {Adapter}
-	 * @protected
-	 */
-	adapterFor: function(typeKey) {
-		var adapterCache = this.get('adapterCache');
-
-		if (!adapterCache[typeKey]) {
-			var container = this.get('container');
-
-			adapterCache[typeKey] = container.lookup('adapter:' + typeKey) ||
-				container.lookup('adapter:application') ||
-				container.lookup('adapter:rest');
-		}
-
-		return adapterCache[typeKey];
-	},
-
-	/**
-	 * Gets the serializer for the specified type. First, it looks for a type-specific
-	 * serializer. If one isn't found, it looks for the application serializer. If that
-	 * isn't found, it uses the default {{link-to-class 'JSONSerializer'}}.
-	 *
-	 * Note that this method will cache the results, so your serializer configuration
-	 * must be finalized before the app starts up.
-	 *
-	 * @method serializerFor
-	 * @param {String} typeKey
-	 * @return {Serializer}
-	 * @protected
-	 */
-	serializerFor: function(typeKey) {
-		var serializerCache = this.get('serializerCache');
-
-		if (!serializerCache[typeKey]) {
-			var container = this.get('container');
-
-			serializerCache[typeKey] =
-				container.lookup('serializer:' + (typeKey || 'application')) ||
-				container.lookup('serializer:application') ||
-				container.lookup('serializer:json');
-		}
-
-		return serializerCache[typeKey];
 	}
+
 });

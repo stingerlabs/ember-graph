@@ -30,6 +30,7 @@ require('adapter/**/*');
 
 require('store/record_cache');
 require('store/store');
+require('store/lookup');
 require('store/relationship');
 
 require('attribute_type/type');
