@@ -2,14 +2,6 @@
 
 Ember-Graph is a data persistence library for Ember.js with a focus on complex object graphs.
 
-**Note:** Please keep in mind that at this point in time, Ember-Graph is in a very early stage and definitely has bugs
-in it. We do use it in production for one of our applications, but the application still has a small user base and
-we aren't exercising Ember-Graph to the fullest extent of its ability yet. However, because we are using it for one of
-our applications, progress is going to come a bit faster than if it were just somebody's side project.
-
-Also, because I'll be using semantic versioning, the API will not become stable until the 1.0.0 release. But since I'm
-using this in a production app, it's not likely that many major API changes will happen between now and 1.0.0.
-
 ## Background
 
 Ember-Graph was born out of necessity. Our data model had pushed Ember-Data to its limits and it was quickly becoming a
@@ -111,28 +103,28 @@ single source of truth, so let's start with that. Assume that on your server, us
 ```js
 App.get('store').find('post', '1').then(function(post1) {
 	// Get the  ID of the relationship without loading it
-	console.log(post1.get('_author')); // '5'
+	console.log(post1.get('_author')); // { type: 'user', id: '5' }
 	// Change the author to #7
 	post1.setHasOneRelationship('author', '7');
 	// Now load user #7 in the form of a promise
 	return post1.get('author');
 }).then(function(user7) {
 	// Ember-Graph is smart enough to know that we connected post #1 to user #7
-	console.log(user7.get('_posts')); // ['1']
+	console.log(user7.get('_posts')); // [{ type: 'post', id: '1' }]
 	// Let's save our user, which also returns a promise
 	return user7.save();
 }).then(function(user7) {
 	// This is cached, so get it directly
 	var post1 = App.get('store').getRecord('user', '1');
 	// Ember-Graph knows that the relationship was persisted
-	console.log(post1.get('_author')); // '7'
+	console.log(post1.get('_author')); // { type: 'user', id: '7' }
 	console.log(post1.get('isDirty')); // false
 
 	return App.get('store').find('user', '5');
 }).then(function(user5) {
 	// Ember-Graph knows, even if the server doesn't yet,
 	// that user5 and post1 were disconnected
-	console.log(user5.get('_posts')); // ['1', '3']
+	console.log(user5.get('_posts')); // [{ type: 'post', id: '1' }, { type: 'post', id: '3' }]
 });
 ```
 
@@ -142,6 +134,36 @@ maintains state for the relationships. So at any point in time, a relationship c
 persisted but scheduled for deletion, or persisted and unchanged. And the best part is that these relationships can be
 updated at _any_ time, even if the record is dirty. Ember-Graph provides options for refreshing dirty records so that
 you can _always_ have the most up-to-date information.
+
+## Documentation
+
+To put it nicely, the documentation for Ember-Graph sucks. I simply haven't had enough time to write any good
+tutorials on how to use it. I promise you that it's number 1 on my to-do list. Until then, feel free to look at
+the [API documentation](http://ember-graph.com/api/EmberGraph.html#index) which isn't half bad. If you need help
+beyond that, just ask me directly, I'd be glad to help.
+
+## Getting Ember-Graph
+
+Originally, I intended Ember-Graph to use SemVer. Unfortunately, it went through so many API changes in the beginning
+that it was simply too hard to keep up with all of the versions. I plan to come back to SemVer one day, but for now
+it's recommended that you use the latest version of Ember-Graph. You can find all of the Ember-Graph builds
+[here](https://ember-graph-builds.s3.amazonaws.com/index.html). They are organized by Git SHA1 hash. To use the builds
+with Bower, simply point Bower to one of the .zip files on the builds site. Example:
+
+```json
+{
+	"dependencies": {
+		"ember-graph": "http://ember-graph-builds.s3.amazonaws.com/18dfe952f917e9c7f37d283252e4e2ff88e4f6c3/ember-graph.zip"
+	}
+}
+```
+
+Bower will then fetch and extract a debug build, a production build, and a minified build of Ember-Graph.
+
+## Reporting Issues
+
+Issues can be reported right here on GitHub. In general, I tend to fix bugs within a day or two. Feature requests
+are also welcome, but may take me longer to get to.
 
 ## Building Ember-Graph
 
