@@ -415,6 +415,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * value. If it's missing and required, it has to throw an
 	 * error.
 	 *
+	 * @method deserializeAttribute
 	 * @param {Class} model
 	 * @param {JSON} json
 	 * @param {String} name
@@ -464,6 +465,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * the default value will be used. If it's missing or invalid
 	 * and required, an error will be thrown.
 	 *
+	 * @method deserializeRelationship
 	 * @param {Class} model
 	 * @param {JSON} json
 	 * @param {String} name
@@ -495,7 +497,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * for missing values, it delegates to this function to deserialize a single
 	 * hasOne relationship. Their return types are the same.
 	 *
-	 * @deserializeHasOneRelationship
+	 * @method deserializeHasOneRelationship
 	 * @param {Class} model
 	 * @param {String} name
 	 * @param {Object|String|Number} value
@@ -524,7 +526,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * for missing values, it delegates to this function to deserialize a single
 	 * hasMany relationship. Their return types are the same.
 	 *
-	 * @deserializeHasManyRelationship
+	 * @method deserializeHasManyRelationship
 	 * @param {Class} model
 	 * @param {String} name
 	 * @param {Object[]|String[]|Number[]} values
