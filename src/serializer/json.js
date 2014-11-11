@@ -522,7 +522,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 	},
 
 	/**
-	 * After {{link-to-method 'JSONSerializer' 'deserializeRelationship}} has checked
+	 * After {{link-to-method 'JSONSerializer' 'deserializeRelationship'}} has checked
 	 * for missing values, it delegates to this function to deserialize a single
 	 * hasMany relationship. Their return types are the same.
 	 *
