@@ -82,10 +82,24 @@ EG.ModelPromiseObject = EG.PromiseObject.extend({
 		}
 	}.property('__modelTypeKey', 'content.typeKey'),
 
+	/**
+	 * Returns the underlying model for this promise. If the promise
+	 * isn't resolved yet, the model will be `undefined`.
+	 *
+	 * @method getModel
+	 * @return {Model}
+	 */
 	getModel: function() {
 		return this.get('content');
 	},
 
+	/**
+	 * Proxies to the underlying model's `destroy` method.
+	 * Will return a rejected promise if the promise isn't resolved yet.
+	 *
+	 * @method destroy
+	 * @return {Promise}
+	 */
 	destroy: function() {
 		var model = this.getModel();
 
