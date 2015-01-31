@@ -1,5 +1,7 @@
 var map = Em.ArrayPolyfills.map;
 var forEach = Em.ArrayPolyfills.forEach;
+var filter = Em.ArrayPolyfills.filter;
+var Promise = Em.RSVP.Promise;
 
 /**
  * The store is used to manage all records in the application.
@@ -88,9 +90,21 @@ EG.Store = Em.Object.extend({
 	 */
 	recordCache: {},
 
+	/**
+	 * Contains currently pending requests for records.
+	 * This allows us to chain duplicated requests.
+	 *
+	 * @property recordRequestCache
+	 * @type {RecordRequestCache}
+	 * @final
+	 * @private
+	 */
+	recordRequestCache: {},
+
 	initializeCaches: Em.on('init', function() {
 		this.setProperties({
-			recordCache: EG.RecordCache.create({ cacheTimeout: this.get('cacheTimeout') })
+			recordCache: EG.RecordCache.create({ cacheTimeout: this.get('cacheTimeout') }),
+			recordRequestCache: EG.RecordRequestCache.create()
 		});
 	}),
 
@@ -196,22 +210,38 @@ EG.Store = Em.Object.extend({
 	 * @private
 	 */
 	_findSingle: function(typeKey, id) {
-		var record = this.getRecord(typeKey, id);
 		var promise;
 
+		var record = this.getRecord(typeKey, id);
 		if (record) {
-			promise = Em.RSVP.Promise.resolve(record);
-		} else {
+			promise = Promise.resolve();
+		}
+
+		var recordRequestCache = this.get('recordRequestCache');
+		if (!promise) {
+			var pendingRequest = recordRequestCache.getPendingRequest(typeKey, id);
+
+			if (pendingRequest) {
+				promise = pendingRequest;
+			}
+		}
+
+		var _this = this;
+
+		if (!promise) {
 			promise = this.adapterFor(typeKey).findRecord(typeKey, id).then(function(payload) {
-				this.pushPayload(payload);
-				return this.getRecord(typeKey, id);
-			}.bind(this));
+				_this.pushPayload(payload);
+			});
+
+			recordRequestCache.savePendingRequest(typeKey, id, promise);
 		}
 
 		return EG.ModelPromiseObject.create({
 			id: id,
 			typeKey: typeKey,
-			promise: promise
+			promise: promise.then(function() {
+				return _this.getRecord(typeKey, id);
+			})
 		});
 	},
 
@@ -223,34 +253,51 @@ EG.Store = Em.Object.extend({
 	 * @return {PromiseArray}
 	 * @private
 	 */
-	_findMany: function(typeKey, ids) {
-		ids = ids || [];
-		var set = EG.Set.create();
-		set.addObjects(ids);
+	_findMany: function(typeKey /*, ids*/) {
+		var ids = arguments[1] || [];
 
-		ids.forEach(function(id) {
-			if (this.getRecord(typeKey, id) !== null) {
-				set.removeObject(id);
-			}
-		}, this);
+		var _this = this;
+
+		if (ids.length <= 0) {
+			return EG.PromiseArray.create({
+				promise: Promise.resolve([])
+			});
+		}
+
+		var idsToFetch = filter.call(ids, function(id) {
+			return (_this.getRecord(typeKey, id) === null);
+		});
 
 		var promise;
 
-		if (set.length === 0) {
-			promise = Em.RSVP.Promise.resolve(ids.map(function(id) {
-				return this.getRecord(typeKey, id);
-			}, this));
-		} else {
-			promise = this.adapterFor(typeKey).findMany(typeKey, set.toArray()).then(function(payload) {
-				this.pushPayload(payload);
-
-				return ids.map(function(id) {
-					return this.getRecord(typeKey, id);
-				}, this).toArray();
-			}.bind(this));
+		if (idsToFetch.length === 0) {
+			promise = Promise.resolve();
 		}
 
-		return EG.PromiseArray.create({ promise: promise });
+		var recordRequestCache = this.get('recordRequestCache');
+		if (!promise) {
+			var pendingRequest = recordRequestCache.getPendingRequest(typeKey, ids);
+
+			if (pendingRequest) {
+				promise = pendingRequest;
+			}
+		}
+
+		if (!promise) {
+			promise = this.adapterFor(typeKey).findMany(typeKey, ids).then(function(payload) {
+				_this.pushPayload(payload);
+			});
+
+			recordRequestCache.savePendingRequest(typeKey, ids, promise);
+		}
+
+		return EG.PromiseArray.create({
+			promise: promise.then(function() {
+				return map.call(ids, function(id) {
+					return _this.getRecord(typeKey, id);
+				}).toArray();
+			})
+		});
 	},
 
 	/**
@@ -261,33 +308,64 @@ EG.Store = Em.Object.extend({
 	 * @private
 	 */
 	_findAll: function(typeKey) {
-		var promise = this.adapterFor(typeKey).findAll(typeKey).then(function(payload) {
-			this.pushPayload(payload);
-			return this.cachedRecordsFor(typeKey);
-		}.bind(this));
+		var promise;
 
-		return EG.PromiseArray.create({ promise: promise });
+		var recordRequestCache = this.get('recordRequestCache');
+		var pendingRequest = recordRequestCache.getPendingRequest(typeKey);
+		if (pendingRequest) {
+			promise = pendingRequest;
+		}
+
+		var _this = this;
+
+		if (!promise) {
+			promise = this.adapterFor(typeKey).findAll(typeKey).then(function(payload) {
+				_this.pushPayload(payload);
+			});
+
+			recordRequestCache.savePendingRequest(typeKey, promise);
+		}
+
+		return EG.PromiseArray.create({
+			promise: promise.then(function() {
+				return _this.cachedRecordsFor(typeKey);
+			})
+		});
 	},
 
 	/**
 	 * Gets records for a query from the adapter as a PromiseArray.
 	 *
 	 * @param {String} typeKey
-	 * @param {Object} options
+	 * @param {Object} query
 	 * @return {PromiseArray}
 	 * @private
 	 */
-	_findQuery: function(typeKey, options) {
-		var promise = this.adapterFor(typeKey).findQuery(typeKey, options).then(function(payload) {
-			var records = payload.meta.matchedRecords;
-			this.pushPayload(payload);
+	_findQuery: function(typeKey, query) {
+		var promise;
 
-			return map.call(records, function(record) {
-				return this.getRecord(record.type, record.id);
-			}.bind(this));
-		}.bind(this));
+		var recordRequestCache = this.get('recordRequestCache');
+		var pendingRequest = recordRequestCache.getPendingRequest(typeKey, query);
+		if (pendingRequest) {
+			promise = pendingRequest;
+		}
 
-		return EG.PromiseArray.create({ promise: promise });
+		if (!promise) {
+			promise = this.adapterFor(typeKey).findQuery(typeKey, query);
+			recordRequestCache.savePendingRequest(typeKey, query, promise);
+		}
+
+		var _this = this;
+		return EG.PromiseArray.create({
+			promise: promise.then(function(payload) {
+				var records = payload.meta.matchedRecords;
+				_this.pushPayload(payload);
+
+				return map.call(records, function(record) {
+					return _this.getRecord(record.type, record.id);
+				});
+			})
+		});
 	},
 
 	/**

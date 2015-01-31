@@ -29,6 +29,7 @@ require('adapter/ember_graph/**/*');
 require('adapter/**/*');
 
 require('store/record_cache');
+require('store/record_request_cache');
 require('store/store');
 require('store/lookup');
 require('store/relationship');
