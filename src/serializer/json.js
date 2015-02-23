@@ -225,7 +225,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 	/**
 	 * Serializes a record's relationship changes to operation objects.
 	 *
-	 * @method serializeAttributeDelta
+	 * @method serializeRelationshipDelta
 	 * @param {Model} record
 	 * @param {Object} options
 	 * @return {JSON} Array of change operations
