@@ -3,9 +3,11 @@
 module.exports = function(grunt) {
 	function buildRunner(release) {
 		var template = grunt.file.read('test/template.html.tmpl');
+		var newNamingScheme = grunt.file.exists('lib/ember/ember.debug.js');
 		var renderingContext = {
 			data: {
 				sourceFile: (release ? 'ember-graph.min.js' : 'ember-graph.js'),
+				emberFile: (release ? 'ember.prod.js' : (newNamingScheme ? 'ember.debug.js' : 'ember.js')),
 				files: this.filesSrc // jshint ignore:line
 			}
 		};
