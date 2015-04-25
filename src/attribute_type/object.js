@@ -1,9 +1,12 @@
+import Ember from 'ember';
+import AttributeType from 'ember-graph/attribute_type/type';
+
 /**
  * @class ObjectType
  * @extends AttributeType
  * @constructor
  */
-EG.ObjectType = EG.AttributeType.extend({
+export default AttributeType.extend({
 
 	/**
 	 * If the value is a JSON object, it's returned.
@@ -66,7 +69,7 @@ EG.ObjectType = EG.AttributeType.extend({
 	 * @return {Boolean}
 	 */
 	isObject: function(obj) {
-		return !Em.isNone(obj) && Em.typeOf(obj) === 'object' && obj.constructor === Object;
+		return !Ember.isNone(obj) && Ember.typeOf(obj) === 'object' && obj.constructor === Object;
 	},
 
 	/**
@@ -83,14 +86,14 @@ EG.ObjectType = EG.AttributeType.extend({
 			var aKeys = EG.Set.create();
 			var bKeys = EG.Set.create();
 
-			aKeys.addObjects(Em.keys(a));
-			bKeys.addObjects(Em.keys(b));
+			aKeys.addObjects(Ember.keys(a));
+			bKeys.addObjects(Ember.keys(b));
 
 			if (!aKeys.isEqual(bKeys)) {
 				return false;
 			}
 
-			var keys = Em.keys(a);
+			var keys = Ember.keys(a);
 
 			for (var i = 0; i < keys.length; i = i + 1) {
 				if (!this.deepCompare(a[keys[i]], b[keys[i]])) {
@@ -99,8 +102,8 @@ EG.ObjectType = EG.AttributeType.extend({
 			}
 
 			return true;
-		} else if (Em.isArray(a) && Em.isArray(b)) {
-			return Em.compare(a, b) === 0;
+		} else if (Ember.isArray(a) && Ember.isArray(b)) {
+			return Ember.compare(a, b) === 0;
 		} else {
 			return (a === b);
 		}

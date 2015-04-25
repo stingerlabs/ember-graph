@@ -1,8 +1,12 @@
-var forEach = Em.ArrayPolyfills.forEach;
+import Ember from 'ember';
 
-EG.RecordCache = Em.Object.extend({
+import { PromiseObject } from 'ember-graph/data/promise_object';
 
-	cacheTimeout: Em.computed(function(key, value) {
+var forEach = Ember.ArrayPolyfills.forEach;
+
+export default Ember.Object.extend({
+
+	cacheTimeout: Ember.computed(function(key, value) {
 		if (arguments.length > 1) {
 			this.set('_cacheTimeout', typeof value === 'number' ? value : Infinity);
 		}
@@ -38,7 +42,7 @@ EG.RecordCache = Em.Object.extend({
 		var found = [];
 		var cutoff = (new Date()).getTime() - this.get('cacheTimeout');
 
-		forEach.call(Em.keys(records), function(key) {
+		forEach.call(Ember.keys(records), function(key) {
 			if (key.indexOf(typeKey) === 0 && records[key].timestamp >= cutoff) {
 				found.push(records[key].record);
 			}
@@ -48,7 +52,7 @@ EG.RecordCache = Em.Object.extend({
 	},
 
 	storeRecord: function(record) {
-		if (EG.PromiseObject.detectInstance(record)) {
+		if (PromiseObject.detectInstance(record)) {
 			record = record.getModel();
 		}
 
@@ -61,7 +65,7 @@ EG.RecordCache = Em.Object.extend({
 		};
 
 		var liveRecordArrays = this.get('liveRecordArrays');
-		liveRecordArrays[typeKey] = liveRecordArrays[typeKey] || Em.A();
+		liveRecordArrays[typeKey] = liveRecordArrays[typeKey] || Ember.A();
 		if (!liveRecordArrays[typeKey].contains(record)) {
 			liveRecordArrays[typeKey].addObject(record);
 		}
@@ -74,7 +78,7 @@ EG.RecordCache = Em.Object.extend({
 
 	getLiveRecordArray: function(typeKey) {
 		var liveRecordArrays = this.get('liveRecordArrays');
-		liveRecordArrays[typeKey] = liveRecordArrays[typeKey] || Em.A();
+		liveRecordArrays[typeKey] = liveRecordArrays[typeKey] || Ember.A();
 		return liveRecordArrays[typeKey];
 	}
 

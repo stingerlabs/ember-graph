@@ -1,7 +1,12 @@
-var map = Em.ArrayPolyfills.map;
-var filter = Em.ArrayPolyfills.filter;
+import Ember from 'ember';
 
-EG.EmberGraphAdapter.reopen({
+import { pluralize } from 'ember-graph/util/inflector';
+import { generateUUID } from 'ember-graph/util/util';
+
+var map = Ember.ArrayPolyfills.map;
+var filter = Ember.ArrayPolyfills.filter;
+
+export default {
 
 	/**
 	 * @method serverCreateRecord
@@ -17,12 +22,12 @@ EG.EmberGraphAdapter.reopen({
 
 		return this.getDatabase().then(function(db) {
 			newId = _this.generateIdForRecord(typeKey, json, db);
-			db = _this.putRecordInDatabase(typeKey, newId, json[EG.String.pluralize(typeKey)][0], db);
+			db = _this.putRecordInDatabase(typeKey, newId, json[pluralize(typeKey)][0], db);
 			return _this.setDatabase(db);
 		}).then(function(db) {
 			var record = _this.getRecordFromDatabase(typeKey, newId, db);
 			var payload = {};
-			payload[EG.String.pluralize(typeKey)] = [record];
+			payload[pluralize(typeKey)] = [record];
 			return payload;
 		});
 	},
@@ -39,9 +44,9 @@ EG.EmberGraphAdapter.reopen({
 		var _this = this;
 
 		return this.getDatabase().then(function(db) {
-			if (Em.get(db, 'records.' + typeKey + '.' + id)) {
+			if (Ember.get(db, 'records.' + typeKey + '.' + id)) {
 				var payload = {};
-				payload[EG.String.pluralize(typeKey)] = [_this.getRecordFromDatabase(typeKey, id, db)];
+				payload[pluralize(typeKey)] = [_this.getRecordFromDatabase(typeKey, id, db)];
 				return payload;
 			} else {
 				throw { status: 404, typeKey: typeKey, id: id };
@@ -62,7 +67,7 @@ EG.EmberGraphAdapter.reopen({
 
 		return this.getDatabase().then(function(db) {
 			var records = map.call(ids, function(id) {
-				if (Em.get(db, 'records.' + typeKey + '.' + id)) {
+				if (Ember.get(db, 'records.' + typeKey + '.' + id)) {
 					return _this.getRecordFromDatabase(typeKey, id, db);
 				} else {
 					throw { status: 404, typeKey: typeKey, id: id };
@@ -70,7 +75,7 @@ EG.EmberGraphAdapter.reopen({
 			});
 
 			var payload = {};
-			payload[EG.String.pluralize(typeKey)] = records;
+			payload[pluralize(typeKey)] = records;
 			return payload;
 		});
 	},
@@ -86,12 +91,12 @@ EG.EmberGraphAdapter.reopen({
 		var _this = this;
 
 		return this.getDatabase().then(function(db) {
-			var records = map.call(Em.keys(db.records[typeKey] || {}), function(id) {
+			var records = map.call(Ember.keys(db.records[typeKey] || {}), function(id) {
 				return _this.getRecordFromDatabase(typeKey, id, db);
 			});
 
 			var payload = {};
-			payload[EG.String.pluralize(typeKey)] = records;
+			payload[pluralize(typeKey)] = records;
 			return payload;
 		});
 	},
@@ -113,7 +118,7 @@ EG.EmberGraphAdapter.reopen({
 			return _this.setDatabase(db);
 		}).then(function(db) {
 			var payload = {};
-			payload[EG.String.pluralize(typeKey)] = [_this.getRecordFromDatabase(typeKey, id, db)];
+			payload[pluralize(typeKey)] = [_this.getRecordFromDatabase(typeKey, id, db)];
 			return payload;
 		});
 	},
@@ -159,7 +164,7 @@ EG.EmberGraphAdapter.reopen({
 	 * @for EmberGraphAdapter
 	 */
 	generateIdForRecord: function(typeKey, json, db) {
-		return EG.generateUUID();
+		return generateUUID();
 	}
 
-});
+};

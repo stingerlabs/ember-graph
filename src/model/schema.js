@@ -1,3 +1,6 @@
+import Ember from 'ember';
+import Model from 'ember-graph/model/model';
+
 /**
  * Declares an attribute on a model. The options determine the type and behavior
  * of the attributes. Bold options are required:
@@ -42,12 +45,12 @@
  * @return {Object} Property descriptor used by model during initialization
  * @namespace EmberGraph
  */
-EG.attr = function(options) {
-	if (Em.typeOf(options) === 'string') {
+var attr = function(options) {
+	if (Ember.typeOf(options) === 'string') {
 		options = { type: options };
 	}
 
-	Em.deprecate('The `isEqual` method on attributes is deprecated. ' +
+	Ember.deprecate('The `isEqual` method on attributes is deprecated. ' +
 			'Please use a custom attribute type instead.', !options.isEqual);
 
 	return {
@@ -81,10 +84,10 @@ EG.attr = function(options) {
  * @return {Object} Property descriptor used by model during initialization
  * @namespace EmberGraph
  */
-EG.hasMany = function(options) {
+var hasMany = function(options) {
 	return {
 		isRelationship: true,
-		kind: EG.Model.HAS_MANY_KEY,
+		kind: Model.HAS_MANY_KEY,
 		options: options
 	};
 };
@@ -114,24 +117,24 @@ EG.hasMany = function(options) {
  * @return {Object} Property descriptor used by model during initialization
  * @namespace EmberGraph
  */
-EG.hasOne = function(options) {
+var hasOne = function(options) {
 	return {
 		isRelationship: true,
-		kind: EG.Model.HAS_ONE_KEY,
+		kind: Model.HAS_ONE_KEY,
 		options: options
 	};
 };
 
-EG.embeddedHasMany = function(options) {
+var embeddedHasMany = function(options) {
 	return embeddedRelationship(options, false);
 };
 
-EG.embeddedHasOne = function(options) {
+var embeddedHasOne = function(options) {
 	return embeddedRelationship(options, true);
 };
 
 function embeddedRelationship(options, hasOne) {
-	if (Em.typeOf(options) === 'string') {
+	if (Ember.typeOf(options) === 'string') {
 		options = { type: options };
 	}
 
@@ -149,3 +152,9 @@ function embeddedRelationship(options, hasOne) {
 
 	return properties;
 }
+
+export {
+	attr,
+	hasMany,
+	hasOne
+};

@@ -1,16 +1,10 @@
 {
-	"predef": [
-		"QUnit",
-		"module",
-		"test",
-		"ok",
-		"throws"
-	],
 	"bitwise": true,
 	"camelcase": false,
 	"curly": true,
 	"eqeqeq": true,
 	"forin": true,
+	"futurehostile": true,
 	"immed": false,
 	"latedef": false,
 	"newcap": true,
@@ -19,8 +13,8 @@
 	"nonew": true,
 	"plusplus": true,
 	"quotmark": "single",
-	"undef": false,
-	"unused": false,
+	"undef": true,
+	"unused": "vars",
 	"strict": false,
 	"trailing": true,
 	"maxparams": 5,

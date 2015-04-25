@@ -1,9 +1,12 @@
+import Ember from 'ember';
+import AttributeType from 'ember-graph/attribute_type/type';
+
 /**
  * @class DateType
  * @extends AttributeType
  * @constructor
  */
-EG.DateType = EG.AttributeType.extend({
+export default AttributeType.extend({
 
 	/**
 	 * Converts any Date object, number or string to a timestamp.
@@ -13,7 +16,7 @@ EG.DateType = EG.AttributeType.extend({
 	 * @return {Number}
 	 */
 	serialize: function(date) {
-		switch (Em.typeOf(date)) {
+		switch (Ember.typeOf(date)) {
 			case 'date':
 				return date.getTime();
 			case 'number':
@@ -34,7 +37,7 @@ EG.DateType = EG.AttributeType.extend({
 	 * @return {Date}
 	 */
 	deserialize: function(timestamp) {
-		switch (Em.typeOf(timestamp)) {
+		switch (Ember.typeOf(timestamp)) {
 			case 'number':
 			case 'string':
 				return new Date(timestamp);

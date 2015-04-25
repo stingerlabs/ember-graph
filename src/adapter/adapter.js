@@ -1,3 +1,7 @@
+import Ember from 'ember';
+
+import { abstractMethod } from 'ember-graph/util/util';
+
 /**
  * An interface for an adapter. And adapter is used to communicate with
  * the server. The adapter is never called directly, its methods are
@@ -11,7 +15,7 @@
  * @constructor
  * @category abstract
  */
-EG.Adapter = Em.Object.extend({
+export default Ember.Object.extend({
 
 	/**
 	 * The store that this adapter belongs to.
@@ -33,7 +37,7 @@ EG.Adapter = Em.Object.extend({
 	 * @return {Promise} Resolves to the normalized JSON
 	 * @category abstract
 	 */
-	createRecord: EG.abstractMethod('createRecord'),
+	createRecord: abstractMethod('createRecord'),
 
 	/**
 	 * Fetch a record from the server.
@@ -44,7 +48,7 @@ EG.Adapter = Em.Object.extend({
 	 * @return {Promise} Resolves to the normalized JSON
 	 * @category abstract
 	 */
-	findRecord: EG.abstractMethod('findRecord'),
+	findRecord: abstractMethod('findRecord'),
 
 	/**
 	 * The same as find, only it should load several records.
@@ -55,7 +59,7 @@ EG.Adapter = Em.Object.extend({
 	 * @return {Promise} Resolves to the normalized JSON
 	 * @category abstract
 	 */
-	findMany: EG.abstractMethod('findMany'),
+	findMany: abstractMethod('findMany'),
 
 	/**
 	 * The same as find, only it should load all records of the given type.
@@ -65,7 +69,7 @@ EG.Adapter = Em.Object.extend({
 	 * @return {Promise} Resolves to the normalized JSON
 	 * @category abstract
 	 */
-	findAll: EG.abstractMethod('findAll'),
+	findAll: abstractMethod('findAll'),
 
 	/**
 	 * Queries the server for records of the given type. The resolved
@@ -78,7 +82,7 @@ EG.Adapter = Em.Object.extend({
 	 * @return {Promise} Resolves to the normalized JSON
 	 * @category abstract
 	 */
-	findQuery: EG.abstractMethod('findQuery'),
+	findQuery: abstractMethod('findQuery'),
 
 	/**
 	 * Saves the record's changes to the server.
@@ -88,7 +92,7 @@ EG.Adapter = Em.Object.extend({
 	 * @return {Promise} Resolves to the normalized JSON
 	 * @category abstract
 	 */
-	updateRecord: EG.abstractMethod('updateRecord'),
+	updateRecord: abstractMethod('updateRecord'),
 
 	/**
 	 * Deletes the record.
@@ -98,7 +102,7 @@ EG.Adapter = Em.Object.extend({
 	 * @return {Promise} Resolves to the normalized JSON
 	 * @category abstract
 	 */
-	deleteRecord: EG.abstractMethod('deleteRecord'),
+	deleteRecord: abstractMethod('deleteRecord'),
 
 	/**
 	 * Gets the serializer specified for a type. It first tries to get

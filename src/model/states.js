@@ -1,4 +1,6 @@
-EG.Model.reopen({
+import Ember from 'ember';
+
+export default {
 
 	/**
 	 * Denotes that the record is currently being deleted, but the server hasn't responded yet.
@@ -49,7 +51,7 @@ EG.Model.reopen({
 	 * @final
 	 * @for Model
 	 */
-	isLoaded: Em.computed(function() {
+	isLoaded: Ember.computed(function() {
 		return this.get('store') !== null;
 	}).property('store'),
 
@@ -62,7 +64,7 @@ EG.Model.reopen({
 	 * @final
 	 * @for Model
 	 */
-	isDirty: Em.computed.or('areAttributesDirty', 'areRelationshipsDirty', 'isNew'),
+	isDirty: Ember.computed.or('areAttributesDirty', 'areRelationshipsDirty', 'isNew'),
 
 	/**
 	 * Denotes that the record is currently being saved to the server for the first time,
@@ -84,7 +86,7 @@ EG.Model.reopen({
 	 * @final
 	 * @for Model
 	 */
-	isNew: Em.computed(function() {
+	isNew: Ember.computed(function() {
 		return EG.String.startsWith(this.get('_id'), this.constructor.temporaryIdPrefix);
 	}).property('_id'),
 
@@ -96,5 +98,5 @@ EG.Model.reopen({
 	 * @final
 	 * @for Model
 	 */
-	isInTransit: Em.computed.or('isSaving', 'isDeleting', 'isCreating', 'isReloading')
-});
+	isInTransit: Ember.computed.or('isSaving', 'isDeleting', 'isCreating', 'isReloading')
+};

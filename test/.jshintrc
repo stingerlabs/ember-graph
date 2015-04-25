@@ -1,0 +1,22 @@
+{
+	"extends": "../.jshintrc",
+	"predef": [
+		"QUnit",
+		"module",
+		"test",
+		"ok",
+		"throws",
+		"expect",
+		"deepEqual",
+		"strictEqual",
+		"start",
+		"stop",
+		"asyncTest",
+		"EG",
+		"EmberGraph",
+		"Em",
+		"Ember",
+		"setupStore"
+	],
+	"browser": true
+}

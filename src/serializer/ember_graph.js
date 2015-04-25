@@ -1,7 +1,9 @@
+import JSONSerializer from 'ember-graph/serializer/json';
+
 /**
  * @class EmberGraphSerializer
  * @extends JSONSerializer
  */
-EG.EmberGraphSerializer = EG.JSONSerializer.extend({
+export default JSONSerializer.extend({
 	polymorphicRelationships: true
 });

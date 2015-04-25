@@ -1,9 +1,11 @@
+import AttributeType from 'ember-graph/attribute_type/type';
+
 /**
  * @class StringType
  * @extends AttributeType
  * @constructor
  */
-EG.StringType = EG.AttributeType.extend({
+export default AttributeType.extend({
 
 	/**
 	 * Coerces the given value to a string, unless it's `null`,

@@ -1,26 +1,29 @@
-var filter = Em.ArrayPolyfills.filter;
-var forEach = Em.ArrayPolyfills.forEach;
+import Ember from 'ember';
+import Relationship from 'ember-graph/relationship/relationship';
 
-var CLIENT_STATE = EG.Relationship.CLIENT_STATE;
-var SERVER_STATE = EG.Relationship.SERVER_STATE;
-var DELETED_STATE = EG.Relationship.DELETED_STATE;
+var filter = Ember.ArrayPolyfills.filter;
+var forEach = Ember.ArrayPolyfills.forEach;
 
-EG.Store.reopen({
+var CLIENT_STATE = Relationship.CLIENT_STATE;
+var SERVER_STATE = Relationship.SERVER_STATE;
+var DELETED_STATE = Relationship.DELETED_STATE;
 
-	allRelationships: Em.Object.create(),
+export default {
 
-	queuedRelationships: Em.Object.create(),
+	allRelationships: Ember.Object.create(),
 
-	initializeRelationships: Em.on('init', function() {
+	queuedRelationships: Ember.Object.create(),
+
+	initializeRelationships: Ember.on('init', function() {
 		this.setProperties({
-			allRelationships: Em.Object.create(),
-			queuedRelationships: Em.Object.create()
+			allRelationships: Ember.Object.create(),
+			queuedRelationships: Ember.Object.create()
 		});
 	}),
 
 	createRelationship: function(type1, id1, name1, type2, id2, name2, state) { // jshint ignore:line
 		// TODO: Use create()
-		var relationship = new EG.Relationship(type1, id1, name1, type2, id2, name2, state);
+		var relationship = new Relationship(type1, id1, name1, type2, id2, name2, state);
 
 		var queuedRelationships = this.get('queuedRelationships');
 		var record1 = this.getRecord(type1, id1);
@@ -78,7 +81,7 @@ EG.Store.reopen({
 
 	connectQueuedRelationships: function(record) {
 		var queuedRelationships = this.get('queuedRelationships');
-		var filtered = filter.call(Em.keys(queuedRelationships), function(id) {
+		var filtered = filter.call(Ember.keys(queuedRelationships), function(id) {
 			return queuedRelationships[id].isConnectedTo(record);
 		});
 
@@ -111,7 +114,7 @@ EG.Store.reopen({
 		var data, filtered = [];
 		var all = this.get('allRelationships');
 
-		forEach.call(Em.keys(all), function(key) {
+		forEach.call(Ember.keys(all), function(key) {
 			if (all[key].matchesOneSide(type, id, name)) {
 				filtered.push(all[key]);
 			}
@@ -121,9 +124,9 @@ EG.Store.reopen({
 	},
 
 	deleteRelationshipsForRecord: function(type, id) {
-		Em.changeProperties(function() {
+		Ember.changeProperties(function() {
 			var all = this.get('allRelationships');
-			var keys = Em.keys(all);
+			var keys = Ember.keys(all);
 
 			forEach.call(keys, function(key) {
 				var relationship = all[key];
@@ -205,7 +208,7 @@ EG.Store.reopen({
 			return relationship.get('state') === CLIENT_STATE;
 		})[0] || null;
 
-		Em.runInDebug(function() {
+		Ember.runInDebug(function() {
 			/* jshint ignore:start */
 			// No relationships at all
 			if (!values[SERVER_STATE] && values[DELETED_STATE].length <= 0 && !values[CLIENT_STATE]) return;
@@ -218,7 +221,7 @@ EG.Store.reopen({
 			// Some deleted relationships, nothing else
 			if (!values[SERVER_STATE] && values[DELETED_STATE].length > 0 && !values[CLIENT_STATE]) return;
 			// Everything else is invalid
-			Em.assert('Invalid hasOne relationship values.');
+			Ember.assert('Invalid hasOne relationship values.');
 			/* jshint ignore:end */
 		});
 
@@ -228,11 +231,11 @@ EG.Store.reopen({
 	updateRelationshipsWithNewId: function(typeKey, oldId, newId) {
 		var all = this.get('allRelationships');
 
-		forEach.call(Em.keys(all), function(id) {
+		forEach.call(Ember.keys(all), function(id) {
 			all[id].changeId(typeKey, oldId, newId);
 		});
 
 		this.notifyPropertyChange('allRelationships');
 	}
 
-});
+};

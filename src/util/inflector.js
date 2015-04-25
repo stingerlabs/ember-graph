@@ -1,3 +1,5 @@
+import Ember from 'ember';
+
 /*
  I took the rules in this code from inflection.js, whose license can be found below.
  */
@@ -95,29 +97,34 @@ var apply = function(str, rules) {
 };
 
 var PLURALIZE_CACHE = {};
-EG.String.pluralize = function(str) {
+function pluralize(str) {
 	if (!PLURALIZE_CACHE[str]) {
 		PLURALIZE_CACHE[str] = apply(str, pluralRules);
 	}
 
 	return PLURALIZE_CACHE[str];
-};
+}
 
 var SINGULARIZE_CACHE = {};
-EG.String.singularize = function(str) {
+function singularize(str) {
 	if (!SINGULARIZE_CACHE[str]) {
 		SINGULARIZE_CACHE[str] = apply(str, singularRules);
 	}
 
 	return SINGULARIZE_CACHE[str];
-};
+}
 
-if (Em.EXTEND_PROTOTYPES === true || Em.EXTEND_PROTOTYPES.String) {
+if (Ember.EXTEND_PROTOTYPES === true || Ember.EXTEND_PROTOTYPES.String) {
 	String.prototype.pluralize = String.prototype.pluralize || function() {
-		return EG.String.pluralize(this);
+		return pluralize(this);
 	};
 
 	String.prototype.singularize = String.prototype.singularize || function() {
-		return EG.String.singularize(this);
+		return singularize(this);
 	};
 }
+
+export {
+	pluralize,
+	singularize
+};

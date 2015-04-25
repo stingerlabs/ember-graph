@@ -1,13 +1,15 @@
-EG.Set = Em.Set.extend({
+import Ember from 'ember';
+
+export default Ember.Set.extend({
 
 	init: function(items) {
 		// Suppress deprecation warning until we re-implement
 		// Also make sure groundskeeper doesn't remove the code
 		var d = 'deprecate';
-		var deprecate = Em[d];
-		Em[d] = function() {};
+		var deprecate = Ember[d];
+		Ember[d] = function() {};
 		this._super(items);
-		Em[d] = deprecate;
+		Ember[d] = deprecate;
 	},
 
 	withoutAll: function(items) {
@@ -17,7 +19,7 @@ EG.Set = Em.Set.extend({
 	}
 });
 
-Em.Set.reopen({
+Ember.Set.reopen({
 
 	/**
 	 * Returns a copy of this set without the passed items.

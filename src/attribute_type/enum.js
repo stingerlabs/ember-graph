@@ -1,3 +1,6 @@
+import Ember from 'ember';
+import AttributeType from 'ember-graph/attribute_type/type';
+
 /**
  * Represents an enumeration or multiple choice type. This class cannot be
  * instantiated directly, you must extend the class, overriding both the
@@ -6,8 +9,10 @@
  * be a string, and the value must also exist in the `values` array.
  *
  * @class EnumType
+ * @extends AttributeType
+ * @constructor
  */
-EG.EnumType = EG.AttributeType.extend({
+export default AttributeType.extend({
 
 	/**
 	 * The default enum value. Must be overridden in subclasses.
@@ -16,7 +21,7 @@ EG.EnumType = EG.AttributeType.extend({
 	 * @type String
 	 * @final
 	 */
-	defaultValue: Em.computed(function() {
+	defaultValue: Ember.computed(function() {
 		throw new Error('You must override the `defaultValue` in an enumeration type.');
 	}).property(),
 
@@ -36,7 +41,7 @@ EG.EnumType = EG.AttributeType.extend({
 	 * @default []
 	 * @final
 	 */
-	valueSet: Em.computed(function() {
+	valueSet: Ember.computed(function() {
 		var set = EG.Set.create();
 
 		set.addObjects(this.get('values').map(function(value) {
@@ -90,7 +95,7 @@ EG.EnumType = EG.AttributeType.extend({
 	 * @param {String} option
 	 * @return {String}
 	 */
-	deserialize: Em.aliasMethod('serialize'),
+	deserialize: Ember.aliasMethod('serialize'),
 
 	/**
 	 * Compares two enum values, case-insensitive.
@@ -99,7 +104,7 @@ EG.EnumType = EG.AttributeType.extend({
 	 * @return {Boolean}
 	 */
 	isEqual: function(a, b) {
-		if (Em.typeOf(a) !== 'string' || Em.typeOf(b) !== 'string') {
+		if (Ember.typeOf(a) !== 'string' || Ember.typeOf(b) !== 'string') {
 			return false;
 		} else {
 			return ((a + '').toLocaleLowerCase() === (b + '').toLocaleLowerCase());

@@ -1,5 +1,11 @@
-var Promise = Em.RSVP.Promise;
-var forEach = Em.ArrayPolyfills.forEach;
+import $ from 'jquery';
+import Ember from 'ember';
+import Adapter from 'ember-graph/adapter/adapter';
+
+import { pluralize } from 'ember-graph/util/inflector';
+
+var Promise = Ember.RSVP.Promise; // jshint ignore:line
+var forEach = Ember.ArrayPolyfills.forEach;
 
 /**
  * An adapter that communicates with REST back-ends. The requests made all follow the
@@ -11,7 +17,7 @@ var forEach = Em.ArrayPolyfills.forEach;
  * @extends Adapter
  * @constructor
  */
-EG.RESTAdapter = EG.Adapter.extend({
+export default Adapter.extend({
 
 	/**
 	 * Sends a `POST` request to `/{pluralized_type}` with the serialized record as the body.
@@ -93,7 +99,7 @@ EG.RESTAdapter = EG.Adapter.extend({
 		var _this = this;
 		var options = {};
 
-		forEach.call(Em.keys(query), function(key) {
+		forEach.call(Ember.keys(query), function(key) {
 			options[key] = '' + query[key];
 		});
 
@@ -166,14 +172,14 @@ EG.RESTAdapter = EG.Adapter.extend({
 	 * @protected
 	 */
 	buildUrl: function(typeKey, id, options) {
-		var url = this.get('prefix') + '/' + EG.String.pluralize(typeKey);
+		var url = this.get('prefix') + '/' + pluralize(typeKey);
 
 		if (id) {
 			url += '/' + id;
 		}
 
 		if (options) {
-			forEach.call(Em.keys(options), function(key, index) {
+			forEach.call(Ember.keys(options), function(key, index) {
 				url += ((index === 0) ? '?' : '&') + key + '=' + encodeURIComponent(options[key]);
 			});
 		}
@@ -194,7 +200,7 @@ EG.RESTAdapter = EG.Adapter.extend({
 	 * @type String
 	 * @default ''
 	 */
-	prefix: Em.computed(function() {
+	prefix: Ember.computed(function() {
 		return '';
 	}).property(),
 
@@ -216,18 +222,18 @@ EG.RESTAdapter = EG.Adapter.extend({
 			$.ajax({
 				cache: false,
 				contentType: 'application/json',
-				data: (body === undefined ? undefined : (Em.typeOf(body) === 'string' ? body : JSON.stringify(body))),
+				data:(body === undefined ? undefined : (Ember.typeOf(body) === 'string' ? body : JSON.stringify(body))),
 				headers: headers,
 				processData: false,
 				type: verb,
 				url: url,
 
 				error: function(jqXHR, textStatus, error) {
-					Em.run(null, reject, error);
+					Ember.run(null, reject, error);
 				},
 
 				success: function(data, status, jqXHR) {
-					Em.run(null, resolve, data);
+					Ember.run(null, resolve, data);
 				}
 			});
 		});

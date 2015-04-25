@@ -4,7 +4,7 @@ module.exports = {
 	},
 	code: {
 		files: ['src/**/*.js'],
-		tasks: ['neuter']
+		tasks: ['transpile']
 	},
 	test: {
 		files: ['test/**/*.js'],

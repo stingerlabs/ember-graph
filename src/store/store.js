@@ -1,7 +1,21 @@
-var map = Em.ArrayPolyfills.map;
-var forEach = Em.ArrayPolyfills.forEach;
-var filter = Em.ArrayPolyfills.filter;
-var Promise = Em.RSVP.Promise;
+import Ember from 'ember';
+import RecordCache from 'ember-graph/store/record_cache';
+import RecordRequestCache from 'ember-graph/store/record_request_cache';
+import LookupMethods from 'ember-graph/store/lookup';
+import RelationshipMethods from 'ember-graph/store/relationship';
+
+import {
+	PromiseObject,
+	PromiseArray,
+	ModelPromiseObject
+} from 'ember-graph/data/promise_object';
+import { deprecateMethod } from 'ember-graph/util/util';
+
+var Promise = Ember.RSVP.Promise; // jshint ignore:line
+
+var map = Ember.ArrayPolyfills.map;
+var forEach = Ember.ArrayPolyfills.forEach;
+var filter = Ember.ArrayPolyfills.filter;
 
 /**
  * The store is used to manage all records in the application.
@@ -10,7 +24,7 @@ var Promise = Em.RSVP.Promise;
  * @class Store
  * @constructor
  */
-EG.Store = Em.Object.extend({
+var Store = Ember.Object.extend({
 
 	/**
 	 * The number of milliseconds after a record in the cache expires
@@ -101,10 +115,10 @@ EG.Store = Em.Object.extend({
 	 */
 	recordRequestCache: {},
 
-	initializeCaches: Em.on('init', function() {
+	initializeCaches: Ember.on('init', function() {
 		this.setProperties({
-			recordCache: EG.RecordCache.create({ cacheTimeout: this.get('cacheTimeout') }),
-			recordRequestCache: EG.RecordRequestCache.create()
+			recordCache: RecordCache.create({ cacheTimeout: this.get('cacheTimeout') }),
+			recordRequestCache: RecordRequestCache.create()
 		});
 	}),
 
@@ -184,7 +198,7 @@ EG.Store = Em.Object.extend({
 	 * @return {PromiseObject|PromiseArray}
 	 */
 	find: function(typeKey, options) {
-		switch (Em.typeOf(options)) {
+		switch (Ember.typeOf(options)) {
 			case 'string':
 				return this._findSingle(typeKey, options);
 			case 'array':
@@ -197,7 +211,7 @@ EG.Store = Em.Object.extend({
 				}
 				/* falls through */
 			default:
-				throw new Em.Error('A bad `find` call was made to the store.');
+				throw new Ember.Error('A bad `find` call was made to the store.');
 		}
 	},
 
@@ -236,7 +250,7 @@ EG.Store = Em.Object.extend({
 			recordRequestCache.savePendingRequest(typeKey, id, promise);
 		}
 
-		return EG.ModelPromiseObject.create({
+		return ModelPromiseObject.create({
 			id: id,
 			typeKey: typeKey,
 			promise: promise.then(function() {
@@ -259,7 +273,7 @@ EG.Store = Em.Object.extend({
 		var _this = this;
 
 		if (ids.length <= 0) {
-			return EG.PromiseArray.create({
+			return PromiseArray.create({
 				promise: Promise.resolve([])
 			});
 		}
@@ -291,7 +305,7 @@ EG.Store = Em.Object.extend({
 			recordRequestCache.savePendingRequest(typeKey, ids, promise);
 		}
 
-		return EG.PromiseArray.create({
+		return PromiseArray.create({
 			promise: promise.then(function() {
 				return map.call(ids, function(id) {
 					return _this.getRecord(typeKey, id);
@@ -326,7 +340,7 @@ EG.Store = Em.Object.extend({
 			recordRequestCache.savePendingRequest(typeKey, promise);
 		}
 
-		return EG.PromiseArray.create({
+		return PromiseArray.create({
 			promise: promise.then(function() {
 				return _this.cachedRecordsFor(typeKey);
 			})
@@ -356,7 +370,7 @@ EG.Store = Em.Object.extend({
 		}
 
 		var _this = this;
-		return EG.PromiseArray.create({
+		return PromiseArray.create({
 			promise: promise.then(function(payload) {
 				var records = payload.meta.matchedRecords;
 				_this.pushPayload(payload);
@@ -381,7 +395,7 @@ EG.Store = Em.Object.extend({
 		}
 
 		if (!record.isInitialized()) {
-			throw new Em.Error('Can\'t save an uninitialized record.');
+			throw new Ember.Error('Can\'t save an uninitialized record.');
 		}
 
 		var _this = this;
@@ -389,13 +403,13 @@ EG.Store = Em.Object.extend({
 
 		return this.adapterFor(typeKey).createRecord(record).then(function(payload) {
 			var tempId = record.get('id');
-			var newId = Em.get(payload, 'meta.createdRecord.id');
+			var newId = Ember.get(payload, 'meta.createdRecord.id');
 
 			if (!newId) {
 				if (payload[typeKey].length === 1) {
 					newId = payload[typeKey][0].id;
 				} else {
-					throw new Em.Error('Missing `createdRecord` meta attribute.');
+					throw new Ember.Error('Missing `createdRecord` meta attribute.');
 				}
 			}
 
@@ -451,7 +465,7 @@ EG.Store = Em.Object.extend({
 	 */
 	deleteRecord: function(record) {
 		if (record.get('isCreating')) {
-			return Em.RSVP.reject('Can\'t delete a record before it\'s created.');
+			return Promise.reject('Can\'t delete a record before it\'s created.');
 		}
 
 		var _this = this;
@@ -460,7 +474,7 @@ EG.Store = Em.Object.extend({
 
 		if (record.get('isNew')) {
 			this.deleteRecordFromStore(typeKey, id);
-			return Em.RSVP.resolve();
+			return Promise.resolve();
 		}
 
 		return this.adapterFor(typeKey).deleteRecord(record).then(function(payload) {
@@ -495,7 +509,7 @@ EG.Store = Em.Object.extend({
 	 */
 	reloadRecord: function(record) {
 		if (record.get('isDirty') && !this.get('reloadDirty')) {
-			throw new Em.Error('Can\'t reload a record while it\'s dirty and `reloadDirty` is turned off.');
+			throw new Ember.Error('Can\'t reload a record while it\'s dirty and `reloadDirty` is turned off.');
 		}
 
 		return this.adapterFor(record.typeKey).findRecord(record.typeKey, record.get('id')).then(function(payload) {
@@ -508,7 +522,7 @@ EG.Store = Em.Object.extend({
 	 * @method extractPayload
 	 * @deprecated Renamed to `pushPayload` to be more familiar to Ember-Data users.
 	 */
-	extractPayload: EG.deprecateMethod('`extractPayload` is deprecated in favor of `pushPayload`', 'pushPayload'),
+	extractPayload: deprecateMethod('`extractPayload` is deprecated in favor of `pushPayload`', 'pushPayload'),
 
 	/**
 	 * Takes a normalized payload from the server and load the
@@ -575,20 +589,20 @@ EG.Store = Em.Object.extend({
 	 * @param {Object} payload
 	 */
 	pushPayload: function(payload) {
-		if (!payload || Em.keys(payload).length === 0) {
+		if (!payload || Ember.keys(payload).length === 0) {
 			return;
 		}
 
-		Em.changeProperties(function() {
+		Ember.changeProperties(function() {
 			var reloadDirty = this.get('reloadDirty');
 
-			forEach.call(Em.get(payload, 'meta.deletedRecords') || [], function(record) {
+			forEach.call(Ember.get(payload, 'meta.deletedRecords') || [], function(record) {
 				this.deleteRecordFromStore(record.type, record.id);
 			}, this);
 
 			delete payload.meta;
 
-			Em.keys(payload).forEach(function(typeKey) {
+			Ember.keys(payload).forEach(function(typeKey) {
 				var model = this.modelFor(typeKey);
 
 				payload[typeKey].forEach(function(json) {
@@ -623,10 +637,10 @@ EG.Store = Em.Object.extend({
 	 */
 	unloadRecord: function(record, discardChanges) {
 		if (!discardChanges && record.get('isDirty')) {
-			throw new Em.Error('Can\'t unload a dirty record.');
+			throw new Ember.Error('Can\'t unload a dirty record.');
 		}
 
-		Em.changeProperties(function() {
+		Ember.changeProperties(function() {
 			record.rollback();
 
 			this.queueConnectedRelationships(record);
@@ -636,3 +650,8 @@ EG.Store = Em.Object.extend({
 	}
 
 });
+
+Store.reopen(LookupMethods);
+Store.reopen(RelationshipMethods);
+
+export default Store;
