@@ -14,6 +14,7 @@
 	"camelcase": false,
 	"curly": true,
 	"eqeqeq": true,
+	"esnext": true,
 	"forin": true,
 	"immed": false,
 	"latedef": false,

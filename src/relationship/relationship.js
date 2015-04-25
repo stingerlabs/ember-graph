@@ -1,11 +1,16 @@
-var CLIENT_STATE = 'client';
-var SERVER_STATE = 'server';
-var DELETED_STATE = 'deleted';
+import Ember from 'ember';
 
-EG.Relationship = Em.Object.extend({
+import { generateUUID } from 'ember-graph/util/util';
+import { RelationshipStates } from 'ember-graph/constants';
+
+var CLIENT_STATE = RelationshipStates.CLIENT_STATE;
+var SERVER_STATE = RelationshipStates.SERVER_STATE;
+var DELETED_STATE = RelationshipStates.DELETED_STATE;
+
+var Relationship = Ember.Object.extend({
 
 	_state: CLIENT_STATE,
-	state: Em.computed(function(key, value) {
+	state: Ember.computed(function(key, value) {
 		if (arguments.length > 1) {
 			switch (value) {
 				case CLIENT_STATE:
@@ -14,7 +19,7 @@ EG.Relationship = Em.Object.extend({
 					this.set('_state', value);
 					break;
 				default:
-					Em.assert('Invalid relationship state: ' + value);
+					Ember.assert('Invalid relationship state: ' + value);
 					break;
 			}
 		}
@@ -37,10 +42,11 @@ EG.Relationship = Em.Object.extend({
 	relationship2: null,
 
 	init: function(type1, id1, name1, type2, id2, name2, state) { // jshint ignore:line
-		Em.assert('Invalid type or ID', type1 && id1 && type2 && id2);
-		Em.assert('First relationship must have a name', name1);
-		Em.assert('Second relationship must have a name or be null', name2 === null || Em.typeOf(name2) === 'string');
-		Em.assert('Invalid state', state === CLIENT_STATE || state === SERVER_STATE || state === DELETED_STATE);
+		Ember.assert('Invalid type or ID', type1 && id1 && type2 && id2);
+		Ember.assert('First relationship must have a name', name1);
+		Ember.assert('Second relationship must have a name or be null',
+			name2 === null || Ember.typeOf(name2) === 'string');
+		Ember.assert('Invalid state', state === CLIENT_STATE || state === SERVER_STATE || state === DELETED_STATE);
 
 		this.setProperties({
 			id: EG.generateUUID(),
@@ -134,9 +140,11 @@ EG.Relationship = Em.Object.extend({
 	}
 });
 
-EG.Relationship.reopenClass({
+Relationship.reopenClass({
 	// TODO: NEW_STATE, SAVED_STATE, DELETED_STATE
 	CLIENT_STATE: CLIENT_STATE,
 	SERVER_STATE: SERVER_STATE,
 	DELETED_STATE: DELETED_STATE
 });
+
+export default Relationship;

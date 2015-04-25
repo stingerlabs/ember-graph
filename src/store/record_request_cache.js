@@ -1,4 +1,6 @@
-EG.RecordRequestCache = Em.Object.extend({
+import Ember from 'ember';
+
+export default Ember.Object.extend({
 
 	cache: null,
 
@@ -8,7 +10,7 @@ EG.RecordRequestCache = Em.Object.extend({
 
 	_getAndCreateTypeCache: function(typeKey) {
 		if (!this.get('cache.' + typeKey)) {
-			var cache = Em.Object.create({
+			var cache = Ember.Object.create({
 				all: null,
 				single: {},
 				multiple: {},
@@ -25,7 +27,7 @@ EG.RecordRequestCache = Em.Object.extend({
 		var options = (arguments.length > 2 ? arguments[1] : undefined);
 		var request = (arguments.length > 2 ? arguments[2] : arguments[1]);
 
-		switch(Em.typeOf(options)) {
+		switch(Ember.typeOf(options)) {
 			case 'string':
 			case 'number':
 				this._savePendingSingleRequest(typeKey, options + '', request);
@@ -86,7 +88,7 @@ EG.RecordRequestCache = Em.Object.extend({
 	},
 
 	getPendingRequest: function(typeKey, options) {
-		switch (Em.typeOf(options)) {
+		switch (Ember.typeOf(options)) {
 			case 'string':
 			case 'number':
 				return this._getPendingSingleRequest(typeKey, options + '');

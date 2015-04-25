@@ -1,9 +1,12 @@
+import Ember from 'ember';
+import AttributeType from 'ember-graph/attribute_type/type';
+
 /**
  * @class ArrayType
  * @extends AttributeType
  * @constructor
  */
-EG.ArrayType = EG.AttributeType.extend({
+export default AttributeType.extend({
 
 	/**
 	 * If the object is an array, it's returned. Otherwise, `null` is returned.
@@ -14,12 +17,12 @@ EG.ArrayType = EG.AttributeType.extend({
 	 * @returns {Array}
 	 */
 	serialize: function(arr) {
-		if (Em.isNone(obj)) {
+		if (Ember.isNone(obj)) {
 			return null;
 		}
 
 		obj = (obj.toArray ? obj.toArray() : obj);
-		return (Em.isArray(obj) ? obj : null);
+		return (Ember.isArray(obj) ? obj : null);
 	},
 
 	/**
@@ -31,7 +34,7 @@ EG.ArrayType = EG.AttributeType.extend({
 	 * @returns {Array}
 	 */
 	deserialize: function(arr) {
-		return (Em.isArray(arr) ? arr : null);
+		return (Ember.isArray(arr) ? arr : null);
 	},
 
 	/**
@@ -43,10 +46,10 @@ EG.ArrayType = EG.AttributeType.extend({
 	 * @returns {Boolean}
 	 */
 	isEqual: function(a, b) {
-		if (!Em.isArray(a) || !Em.isArray(b)) {
+		if (!Ember.isArray(a) || !Ember.isArray(b)) {
 			return false;
 		}
 
-		return Em.compare(a.toArray(), b.toArray()) === 0;
+		return Ember.compare(a.toArray(), b.toArray()) === 0;
 	}
 });

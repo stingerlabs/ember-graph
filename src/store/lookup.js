@@ -1,4 +1,8 @@
-EG.Store.reopen({
+import Ember from 'ember';
+
+import { deprecateMethod } from 'ember-graph/util/util';
+
+export default {
 
 	/**
 	 * Stores the models used so far. This not ony caches them so we don't
@@ -41,7 +45,7 @@ EG.Store.reopen({
 	 */
 	serializerCache: {},
 
-	initializeLookupCaches: Em.on('init', function() {
+	initializeLookupCaches: Ember.on('init', function() {
 		this.setProperties({
 			modelCache: {},
 			attributeTypeCache: {},
@@ -50,7 +54,7 @@ EG.Store.reopen({
 		});
 	}),
 
-	modelForType: EG.deprecateMethod('`modelForType` deprecated in favor of `modelFor`', 'modelFor'),
+	modelForType: deprecateMethod('`modelForType` deprecated in favor of `modelFor`', 'modelFor'),
 
 	/**
 	 * Looks up the model for the specified typeKey. The `typeKey` property
@@ -67,7 +71,7 @@ EG.Store.reopen({
 		if (!modelCache[typeKey]) {
 			var model = this.get('container').lookupFactory('model:' + typeKey);
 			if (!model) {
-				throw new Em.Error('Cannot find model class with typeKey: ' + typeKey);
+				throw new Ember.Error('Cannot find model class with typeKey: ' + typeKey);
 			}
 
 			model.reopen({ typeKey: typeKey });
@@ -92,7 +96,7 @@ EG.Store.reopen({
 			attributeTypeCache[typeName] = this.get('container').lookup('type:' + typeName);
 
 			if (!attributeTypeCache[typeName]) {
-				throw new Em.Error('Cannot find attribute type with name: ' + typeName);
+				throw new Ember.Error('Cannot find attribute type with name: ' + typeName);
 			}
 		}
 
@@ -154,4 +158,4 @@ EG.Store.reopen({
 		return serializerCache[typeKey];
 	}
 
-});
+};

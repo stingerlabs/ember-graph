@@ -1,22 +1,22 @@
-EG.String = {
-	startsWith: function(string, prefix) {
-		return string.indexOf(prefix) === 0;
-	},
+import Ember from 'ember';
 
-	endsWith: function(string, suffix) {
-		return string.indexOf(suffix, string.length - suffix.length) >= 0;
-	},
+function startsWith(string, prefix) {
+	return string.indexOf(prefix) === 0;
+}
 
-	capitalize: function(string) {
-		return string[0].toLocaleUpperCase() + string.substring(1);
-	},
+function endsWith(string, suffix) {
+	return string.indexOf(suffix, string.length - suffix.length) >= 0;
+}
 
-	decapitalize: function(string) {
-		return string[0].toLocaleLowerCase() + string.substring(1);
-	}
-};
+function capitalize(string) {
+	return string[0].toLocaleUpperCase() + string.substring(1);
+}
 
-if (Em.EXTEND_PROTOTYPES === true || Em.EXTEND_PROTOTYPES.String) {
+function decapitalize(string) {
+	return string[0].toLocaleLowerCase() + string.substring(1);
+}
+
+if (Ember.EXTEND_PROTOTYPES === true || Ember.EXTEND_PROTOTYPES.String) {
 
 	/**
 	 * Polyfill for String.prototype.startsWith
@@ -27,7 +27,7 @@ if (Em.EXTEND_PROTOTYPES === true || Em.EXTEND_PROTOTYPES.String) {
 	 * @namespace String
 	 */
 	String.prototype.startsWith = String.prototype.startsWith || function(prefix) {
-		return EG.String.startsWith(this, prefix);
+		return startsWith(this, prefix);
 	};
 
 	/**
@@ -39,7 +39,7 @@ if (Em.EXTEND_PROTOTYPES === true || Em.EXTEND_PROTOTYPES.String) {
 	 * @namespace String
 	 */
 	String.prototype.endsWith = String.prototype.endsWith || function(suffix) {
-		return EG.String.endsWith(this, suffix);
+		return endsWith(this, suffix);
 	};
 
 	/**
@@ -50,7 +50,7 @@ if (Em.EXTEND_PROTOTYPES === true || Em.EXTEND_PROTOTYPES.String) {
 	 * @namespace String
 	 */
 	String.prototype.capitalize = String.prototype.capitalize || function() {
-		return EG.String.capitalize(this);
+		return capitalize(this);
 	};
 
 	/**
@@ -61,6 +61,13 @@ if (Em.EXTEND_PROTOTYPES === true || Em.EXTEND_PROTOTYPES.String) {
 	 * @namespace String
 	 */
 	String.prototype.decapitalize = String.prototype.decapitalize || function() {
-		return EG.String.decapitalize(this);
+		return decapitalize(this);
 	};
 }
+
+export {
+	startsWith,
+	endsWith,
+	capitalize,
+	decapitalize
+};

@@ -1,9 +1,12 @@
+import Ember from 'ember';
+import AttributeType from 'ember-graph/attribute_type/type';
+
 /**
  * @class BooleanType
  * @extends AttributeType
  * @constructor
  */
-EG.BooleanType = EG.AttributeType.extend({
+export default AttributeType.extend({
 
 	/**
 	 * @property defaultValue
@@ -45,11 +48,11 @@ EG.BooleanType = EG.AttributeType.extend({
 	 * @return {Boolean}
 	 */
 	coerceToBoolean: function(obj) {
-		if (Em.typeOf(obj) === 'boolean' && obj == true) { // jshint ignore:line
+		if (Ember.typeOf(obj) === 'boolean' && obj == true) { // jshint ignore:line
 			return true;
 		}
 
-		if (Em.typeOf(obj) === 'string' && obj == 'true') {  // jshint ignore:line
+		if (Ember.typeOf(obj) === 'string' && obj == 'true') {  // jshint ignore:line
 			return true;
 		}
 

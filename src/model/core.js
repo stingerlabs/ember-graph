@@ -1,4 +1,9 @@
-var forEach = Em.ArrayPolyfills.forEach;
+import Ember from 'ember';
+import EmberGraphSet from 'ember-graph/util/set';
+
+import { deprecateProperty } from 'ember-graph/util/util';
+
+var forEach = Ember.ArrayPolyfills.forEach;
 
 var createAttribute = function(attributeName, options) {
 	var meta = {
@@ -18,7 +23,7 @@ var createAttribute = function(attributeName, options) {
 		isEqual: options.isEqual
 	};
 
-	return Em.computed(function(key, value) {
+	return Ember.computed(function(key, value) {
 		var meta = this.constructor.metaForAttribute(key);
 		var server = this.get('serverAttributes.' + key);
 		var client = this.get('clientAttributes.' + key);
@@ -26,12 +31,12 @@ var createAttribute = function(attributeName, options) {
 
 		// New records can modify read only attributes. But not if they're server only
 		if (arguments.length > 1 && meta.isReadOnly && !this.get('isNew')) {
-			throw new Em.Error('Cannot set read-only property "' + key + '" on object: ' + this);
+			throw new Ember.Error('Cannot set read-only property "' + key + '" on object: ' + this);
 		}
 
-		Em.runInDebug(function() {
+		Ember.runInDebug(function() {
 			if (arguments.length > 1 && value === undefined) {
-				Em.warn('`undefined` is not a valid property value.');
+				Ember.warn('`undefined` is not a valid property value.');
 			}
 		});
 
@@ -62,7 +67,7 @@ var createAttribute = function(attributeName, options) {
  * @class CoreModel
  * @abstract
  */
-EG.CoreModel = Em.Object.extend({
+var CoreModel = Ember.Object.extend({
 
 	/**
 	 * The latest attributes from the server. When rolling back attributes,
@@ -95,18 +100,18 @@ EG.CoreModel = Em.Object.extend({
 	 * @property areAttributesDirty
 	 * @type Boolean
 	 */
-	areAttributesDirty: Em.computed(function() {
-		return Em.keys(this.get('clientAttributes') || {}).length > 0;
+	areAttributesDirty: Ember.computed(function() {
+		return Ember.keys(this.get('clientAttributes') || {}).length > 0;
 	}).property('clientAttributes'),
 
-	_areAttributesDirty: EG.deprecateProperty('`_areAttributeDirty` is now `areAttributesDirty`', 'areAttributesDirty'),
+	_areAttributesDirty: deprecateProperty('`_areAttributeDirty` is now `areAttributesDirty`', 'areAttributesDirty'),
 
 	init: function() {
 		this._super();
 
 		this.setProperties({
-			serverAttributes: Em.Object.create(),
-			clientAttributes: Em.Object.create()
+			serverAttributes: Ember.Object.create(),
+			clientAttributes: Ember.Object.create()
 		});
 	},
 
@@ -142,7 +147,7 @@ EG.CoreModel = Em.Object.extend({
 	 * @method rollbackAttributes
 	 */
 	rollbackAttributes: function() {
-		this.set('clientAttributes', Em.Object.create());
+		this.set('clientAttributes', Ember.Object.create());
 	},
 
 	/**
@@ -152,7 +157,7 @@ EG.CoreModel = Em.Object.extend({
 		var serverAttributes = this.get('serverAttributes');
 
 		this.constructor.eachAttribute(function(attributeName, meta) {
-			Em.assert('Your JSON is missing the \'' + attributeName + '\' property.',
+			Ember.assert('Your JSON is missing the \'' + attributeName + '\' property.',
 				!meta.isRequired || json.hasOwnProperty(attributeName));
 
 			// TODO: Why is there here? I thought we weren't allowing this.
@@ -220,7 +225,7 @@ EG.CoreModel = Em.Object.extend({
 
 });
 
-EG.CoreModel.reopenClass({
+CoreModel.reopenClass({
 
 	/**
 	 * At extend time, this method goes though and declares properties
@@ -236,18 +241,18 @@ EG.CoreModel.reopenClass({
 	declareAttributes: function(attributes) {
 		var obj = {};
 
-		Em.runInDebug(function() {
-			var RESERVED_NAMES = EG.Set.create();
+		Ember.runInDebug(function() {
+			var RESERVED_NAMES = EmberGraphSet.create();
 			RESERVED_NAMES.addObjects(['id', 'type', 'content', 'length', 'model']);
 
-			forEach.call(Em.keys(attributes), function(name) {
-				Em.assert('`' + name + '` cannot be used as an attribute name.', !RESERVED_NAMES.contains(name));
-				Em.assert('An attribute name cannot start with an underscore.', name.charAt(0) !== '_');
-				Em.assert('Attribute names must start with a lowercase letter.', name.charAt(0).match(/[a-z]/));
+			forEach.call(Ember.keys(attributes), function(name) {
+				Ember.assert('`' + name + '` cannot be used as an attribute name.', !RESERVED_NAMES.contains(name));
+				Ember.assert('An attribute name cannot start with an underscore.', name.charAt(0) !== '_');
+				Ember.assert('Attribute names must start with a lowercase letter.', name.charAt(0).match(/[a-z]/));
 			});
 		});
 
-		forEach.call(Em.keys(attributes), function(name) {
+		forEach.call(Ember.keys(attributes), function(name) {
 			obj[name] = createAttribute(name, attributes[name].options);
 		});
 
@@ -262,8 +267,8 @@ EG.CoreModel.reopenClass({
 	 * @static
 	 * @readOnly
 	 */
-	attributes: Em.computed(function() {
-		var attributes = EG.Set.create();
+	attributes: Ember.computed(function() {
+		var attributes = EmberGraphSet.create();
 
 		this.eachComputedProperty(function(name, meta) {
 			if (meta.isAttribute) {
@@ -284,7 +289,7 @@ EG.CoreModel.reopenClass({
 	 * @return {Object}
 	 * @static
 	 */
-	metaForAttribute: Em.aliasMethod('metaForProperty'),
+	metaForAttribute: Ember.aliasMethod('metaForProperty'),
 
 	/**
 	 * @method isAttribute
@@ -293,7 +298,7 @@ EG.CoreModel.reopenClass({
 	 * @static
 	 */
 	isAttribute: function(propertyName) {
-		return Em.get(this, 'attributes').contains(propertyName);
+		return Ember.get(this, 'attributes').contains(propertyName);
 	},
 
 	/**
@@ -313,3 +318,5 @@ EG.CoreModel.reopenClass({
 	}
 
 });
+
+export default CoreModel;

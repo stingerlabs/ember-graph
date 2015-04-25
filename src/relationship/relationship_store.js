@@ -1,16 +1,20 @@
-var map = Em.ArrayPolyfills.map;
-var forEach = Em.ArrayPolyfills.forEach;
+import Ember from 'ember';
+import Relationship from 'ember-graph/relationship/relationship';
+import EmberGraphSet from 'ember-graph/util/set';
 
-var CLIENT_STATE = EG.Relationship.CLIENT_STATE;
-var SERVER_STATE = EG.Relationship.SERVER_STATE;
-var DELETED_STATE = EG.Relationship.DELETED_STATE;
+var map = Ember.ArrayPolyfills.map;
+var forEach = Ember.ArrayPolyfills.forEach;
+
+var CLIENT_STATE = Relationship.CLIENT_STATE;
+var SERVER_STATE = Relationship.SERVER_STATE;
+var DELETED_STATE = Relationship.DELETED_STATE;
 
 var STATE_MAP = {};
 STATE_MAP[CLIENT_STATE] = 'client';
 STATE_MAP[SERVER_STATE] = 'server';
 STATE_MAP[DELETED_STATE] = 'deleted';
 
-var RelationshipMap = Em.Object.extend({
+var RelationshipMap = Ember.Object.extend({
 
 	length: 0,
 
@@ -19,7 +23,7 @@ var RelationshipMap = Em.Object.extend({
 			this.set(name + '.' + relationship.get('id'), relationship);
 			this.notifyPropertyChange(name);
 		} else {
-			var o = Em.Object.create();
+			var o = Ember.Object.create();
 			o.set(relationship.get('id'), relationship);
 			this.set(name, o);
 		}
@@ -28,7 +32,7 @@ var RelationshipMap = Em.Object.extend({
 	},
 
 	removeRelationship: function(id) {
-		forEach.call(Em.keys(this), function(key) {
+		forEach.call(Ember.keys(this), function(key) {
 			if (key === 'length') {
 				return;
 			}
@@ -45,15 +49,15 @@ var RelationshipMap = Em.Object.extend({
 	getRelationships: function(name) {
 		var relationships = this.get(name) || {};
 
-		return map.call(Em.keys(relationships), function(key) {
+		return map.call(Ember.keys(relationships), function(key) {
 			return relationships[key];
 		});
 	},
 
 	getAllRelationships: function() {
 		var relationships = [];
-		var keys = EG.Set.create();
-		keys.addObjects(Em.keys(this));
+		var keys = EmberGraphSet.create();
+		keys.addObjects(Ember.keys(this));
 		keys = keys.without('length');
 
 		forEach.call(keys, function(key) {
@@ -64,16 +68,16 @@ var RelationshipMap = Em.Object.extend({
 	},
 
 	clearRelationships: function(name) {
-		this.set(name, Em.Object.create());
+		this.set(name, Ember.Object.create());
 		this.recalculateLength();
 	},
 
 	recalculateLength: function() {
 		var length = 0;
 
-		forEach.call(Em.keys(this), function(key) {
+		forEach.call(Ember.keys(this), function(key) {
 			if (key !== 'length') {
-				length += Em.keys(this[key]).length;
+				length += Ember.keys(this[key]).length;
 			}
 		}, this);
 
@@ -82,7 +86,7 @@ var RelationshipMap = Em.Object.extend({
 
 });
 
-EG.RelationshipStore = Em.Object.extend({
+export default Ember.Object.extend({
 
 	server: null,
 
@@ -90,7 +94,7 @@ EG.RelationshipStore = Em.Object.extend({
 
 	deleted: null,
 
-	initializeMaps: Em.on('init', function() {
+	initializeMaps: Ember.on('init', function() {
 		this.setProperties({
 			server: RelationshipMap.create(),
 			client: RelationshipMap.create(),
@@ -107,8 +111,8 @@ EG.RelationshipStore = Em.Object.extend({
 	},
 
 	removeRelationship: function(id) {
-		if (Em.typeOf(id) !== 'string') {
-			id = Em.get(id, 'id');
+		if (Ember.typeOf(id) !== 'string') {
+			id = Ember.get(id, 'id');
 		}
 
 		this.get('server').removeRelationship(id);

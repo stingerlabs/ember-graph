@@ -1,7 +1,12 @@
-var filter = Em.ArrayPolyfills.filter;
-var forEach = Em.ArrayPolyfills.forEach;
-var indexOf = Em.ArrayPolyfills.indexOf;
+import Ember from 'ember';
+import Model from 'ember-graph/model/model';
 
+import { abstractMethod } from 'ember-graph/util/util';
+import { startsWith } from 'ember-graph/util/string';
+
+var filter = Ember.ArrayPolyfills.filter;
+var forEach = Ember.ArrayPolyfills.forEach;
+var indexOf = Ember.ArrayPolyfills.indexOf;
 
 var ADD_OP_NAME_REGEX = /^\/links\/([^/]+)/i;
 var REMOVE_OP_REGEX = /^\/links\/([^/]+)\/.+/i;
@@ -48,7 +53,7 @@ function getRelationshipNameFromChangePath(path, op) {
  * }
  * ```
  */
-EG.EmberGraphAdapter.reopen({
+export default {
 
 	/**
 	 * Return a copy of the database from the storage location in JSON form.
@@ -67,7 +72,7 @@ EG.EmberGraphAdapter.reopen({
 	 * @protected
 	 * @for EmberGraphAdapter
 	 */
-	getDatabase: EG.abstractMethod('getDatabase'),
+	getDatabase: abstractMethod('getDatabase'),
 
 	/**
 	 * Store the updated version of the database in the storage location.
@@ -78,7 +83,7 @@ EG.EmberGraphAdapter.reopen({
 	 * @protected
 	 * @for EmberGraphAdapter
 	 */
-	setDatabase: EG.abstractMethod('saveDatabase'),
+	setDatabase: abstractMethod('saveDatabase'),
 
 	/**
 	 * Determines if the given database contains the given record.
@@ -113,7 +118,7 @@ EG.EmberGraphAdapter.reopen({
 	 */
 	getRecordFromDatabase: function(typeKey, id, db) {
 		var model = this.get('store').modelFor(typeKey);
-		var json = Em.copy(db.records[typeKey][id], true);
+		var json = Ember.copy(db.records[typeKey][id], true);
 		json.id = id;
 		json.links = {};
 
@@ -123,7 +128,7 @@ EG.EmberGraphAdapter.reopen({
 			if (relationship.t1 === typeKey && relationship.i1 === id && relationship.n1 !== null) {
 				meta = model.metaForRelationship(relationship.n1);
 
-				if (meta.kind === EG.Model.HAS_ONE_KEY) {
+				if (meta.kind === Model.HAS_ONE_KEY) {
 					json.links[relationship.n1] = { type: relationship.t2, id: relationship.i2 };
 				} else {
 					json.links[relationship.n1] = json.links[relationship.n1] || [];
@@ -132,7 +137,7 @@ EG.EmberGraphAdapter.reopen({
 			} else if (relationship.t2 === typeKey && relationship.i2 === id && relationship.n2 !== null) {
 				meta = model.metaForRelationship(relationship.n2);
 
-				if (meta.kind === EG.Model.HAS_ONE_KEY) {
+				if (meta.kind === Model.HAS_ONE_KEY) {
 					json.links[relationship.n2] = { type: relationship.t1, id: relationship.i1 };
 				} else {
 					json.links[relationship.n2] = json.links[relationship.n2] || [];
@@ -143,7 +148,7 @@ EG.EmberGraphAdapter.reopen({
 
 		model.eachRelationship(function(name, meta) {
 			if (!json.links[name]) {
-				if (meta.kind === EG.Model.HAS_ONE_KEY) {
+				if (meta.kind === Model.HAS_ONE_KEY) {
 					json.links[name] = null;
 				} else {
 					json.links[name] = [];
@@ -179,7 +184,7 @@ EG.EmberGraphAdapter.reopen({
 		});
 
 		model.eachRelationship(function(name, meta) {
-			if (meta.kind === EG.Model.HAS_ONE_KEY) {
+			if (meta.kind === Model.HAS_ONE_KEY) {
 				if (json.links[name]) {
 					var relationship = {
 						t1: typeKey, i1: id, n1: name,
@@ -221,7 +226,7 @@ EG.EmberGraphAdapter.reopen({
 		forEach.call(changes, function(change) {
 			switch (change.op) {
 				case 'replace':
-					if (EG.String.startsWith(change.path, '/links/')) {
+					if (startsWith(change.path, '/links/')) {
 						var hasOneName = change.path.substring('/links/'.length);
 
 						if (change.value === null) {
@@ -289,7 +294,7 @@ EG.EmberGraphAdapter.reopen({
 			var inverseModel = this.get('store').modelFor(relationship.t2);
 			var inverseMeta = inverseModel.metaForRelationship(relationship.n2);
 
-			if (inverseMeta.kind === EG.Model.HAS_ONE_KEY) {
+			if (inverseMeta.kind === Model.HAS_ONE_KEY) {
 				db = this.clearHasOneRelationshipInDatabase(relationship.t2, relationship.i2, relationship.n2, db);
 			}
 		}
@@ -338,7 +343,7 @@ EG.EmberGraphAdapter.reopen({
 			var inverseModel = this.get('store').modelFor(relationship.t2);
 			var inverseMeta = inverseModel.metaForRelationship(relationship.n2);
 
-			if (inverseMeta.kind === EG.Model.HAS_ONE_KEY) {
+			if (inverseMeta.kind === Model.HAS_ONE_KEY) {
 				db = this.clearHasOneRelationshipInDatabase(relationship.t2, relationship.i2, relationship.n2, db);
 			}
 		}
@@ -389,4 +394,4 @@ EG.EmberGraphAdapter.reopen({
 		});
 	}
 
-});
+};

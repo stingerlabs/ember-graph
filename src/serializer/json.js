@@ -1,5 +1,12 @@
+import Ember from 'ember';
+import Model from 'ember-graph/model/model';
+import Serializer from 'ember-graph/serializer/serializer';
+import EmberGraphSet from 'ember-graph/util/set';
+
+import { mapBy } from 'ember-graph/util/array';
+import { pluralize, singularize } from 'ember-graph/util/inflector';
+
 var map = Ember.ArrayPolyfills.map;
-var mapBy = EG.ArrayPolyfills.mapBy;
 var filter = Ember.ArrayPolyfills.filter;
 var forEach = Ember.ArrayPolyfills.forEach;
 
@@ -12,7 +19,7 @@ var forEach = Ember.ArrayPolyfills.forEach;
  * @extends Serializer
  * @constructor
  */
-EG.JSONSerializer = EG.Serializer.extend({
+export default Serializer.extend({
 
 	/**
 	 * This property can be overridden if you're using polymorphic relationships
@@ -32,10 +39,10 @@ EG.JSONSerializer = EG.Serializer.extend({
 				return this.serializeDelta(record, options);
 			case 'createRecord':
 				var json = {};
-				json[EG.String.pluralize(record.typeKey)] = [this.serializeRecord(record, options)];
+				json[pluralize(record.typeKey)] = [this.serializeRecord(record, options)];
 				return json;
 			default:
-				throw new Em.Error('Invalid request type for JSON serializer.');
+				throw new Ember.Error('Invalid request type for JSON serializer.');
 		}
 	},
 
@@ -139,8 +146,8 @@ EG.JSONSerializer = EG.Serializer.extend({
 			return null;
 		}
 
-		if (meta.kind === EG.Model.HAS_ONE_KEY) {
-			if (value === null || EG.Model.isTemporaryId(value.id)) {
+		if (meta.kind === Model.HAS_ONE_KEY) {
+			if (value === null || Model.isTemporaryId(value.id)) {
 				return { name: name, value: null };
 			}
 
@@ -150,7 +157,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 			};
 		} else {
 			value = filter.call(value, function(v) {
-				return !EG.Model.isTemporaryId(v.id);
+				return !Model.isTemporaryId(v.id);
 			});
 
 			return {
@@ -213,7 +220,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 		var changes = record.changedAttributes();
 		var store = this.get('store');
 
-		return map.call(Em.keys(changes), function(attributeName) {
+		return map.call(Ember.keys(changes), function(attributeName) {
 			var meta = record.constructor.metaForAttribute(attributeName);
 			var type = store.attributeTypeFor(meta.type);
 			var value = type.serialize(changes[attributeName][1]);
@@ -236,29 +243,29 @@ EG.JSONSerializer = EG.Serializer.extend({
 		var changes = record.changedRelationships();
 		var polymorphicRelationships = this.get('polymorphicRelationships');
 
-		forEach.call(Em.keys(changes), function(relationshipName) {
+		forEach.call(Ember.keys(changes), function(relationshipName) {
 			var values = changes[relationshipName];
 			var meta = record.constructor.metaForRelationship(relationshipName);
 
-			if (meta.kind === EG.Model.HAS_ONE_KEY) {
+			if (meta.kind === Model.HAS_ONE_KEY) {
 				operations.push({
 					op: 'replace',
 					path: '/links/' + relationshipName,
 					value: (polymorphicRelationships ? values[1] : (values[1] === null ? null : values[1].id))
 				});
-			} else if (meta.kind === EG.Model.HAS_MANY_KEY) {
-				var originalSet = EG.Set.create();
+			} else if (meta.kind === Model.HAS_MANY_KEY) {
+				var originalSet = EmberGraphSet.create();
 				originalSet.addObjects(map.call(values[0], function(value) {
 					return value.type + ':' + value.id;
 				}));
 
-				var currentSet = EG.Set.create();
+				var currentSet = EmberGraphSet.create();
 				currentSet.addObjects(map.call(values[1], function(value) {
 					return value.type + ':' + value.id;
 				}));
 
 				forEach.call(values[1], function(value) {
-					if (!originalSet.contains(value.type + ':' + value.id) && !EG.Model.isTemporaryId(value.id)) {
+					if (!originalSet.contains(value.type + ':' + value.id) && !Model.isTemporaryId(value.id)) {
 						operations.push({
 							op: 'add',
 							path: '/links/' + relationshipName,
@@ -268,7 +275,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 				});
 
 				forEach.call(values[0], function(value) {
-					if (!currentSet.contains(value.type + ':' + value.id)  && !EG.Model.isTemporaryId(value.id)) {
+					if (!currentSet.contains(value.type + ':' + value.id)  && !Model.isTemporaryId(value.id)) {
 						operations.push({
 							op: 'remove',
 							path: '/links/' + relationshipName + '/' + value.id,
@@ -286,7 +293,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 		var store = this.get('store');
 		var normalized = this.transformPayload(payload || {}, options || {});
 
-		forEach.call(Em.keys(normalized), function(typeKey) {
+		forEach.call(Ember.keys(normalized), function(typeKey) {
 			if (typeKey === 'meta') {
 				return;
 			}
@@ -313,11 +320,11 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * @protected
 	 */
 	transformPayload: function(payload, options) {
-		if (!payload || Em.keys(payload).length === 0) {
+		if (!payload || Ember.keys(payload).length === 0) {
 			return {};
 		}
 
-		payload = Em.copy(payload, true);
+		payload = Ember.copy(payload, true);
 
 		var normalized = {
 			meta: {
@@ -330,25 +337,25 @@ EG.JSONSerializer = EG.Serializer.extend({
 		// TODO: Query multiple types
 		if (options.requestType === 'findQuery') {
 			normalized.meta.matchedRecords =
-				map.call(payload[EG.String.pluralize(options.recordType)], function(record) {
+				map.call(payload[pluralize(options.recordType)], function(record) {
 					return { type: options.recordType, id: record.id + '' };
 				});
 		} else if (options.requestType === 'createRecord') {
 			normalized.meta.createdRecord = {
 				type: options.recordType,
-				id: payload[EG.String.pluralize(options.recordType)][0].id + ''
+				id: payload[pluralize(options.recordType)][0].id + ''
 			};
 		}
 
-		forEach.call(Em.keys(payload), function(key) {
+		forEach.call(Ember.keys(payload), function(key) {
 			if (key !== 'linked' && key !== 'meta') {
-				normalized[EG.String.singularize(key)] = payload[key];
+				normalized[singularize(key)] = payload[key];
 				delete payload[key];
 			}
 		});
 
-		forEach.call(Em.keys(payload.linked || {}), function(key) {
-			var singular = EG.String.singularize(key);
+		forEach.call(Ember.keys(payload.linked || {}), function(key) {
+			var singular = singularize(key);
 			normalized[singular] = (normalized[singular] || []).concat(payload.linked[key] || []);
 		});
 
@@ -367,8 +374,8 @@ EG.JSONSerializer = EG.Serializer.extend({
 	 * @protected
 	 */
 	deserializeRecord: function(model, json, options) {
-		if (Em.typeOf(json.id) !== 'string' && Em.typeOf(json.id) !== 'number') {
-			throw new Em.Error('Your JSON has an invalid ID: ' + JSON.stringify(json));
+		if (Ember.typeOf(json.id) !== 'string' && Ember.typeOf(json.id) !== 'number') {
+			throw new Ember.Error('Your JSON has an invalid ID: ' + JSON.stringify(json));
 		}
 
 		var record = {
@@ -431,7 +438,7 @@ EG.JSONSerializer = EG.Serializer.extend({
 		if (value === undefined) {
 			if (meta.isRequired) {
 				var error = { id: json.id, typeKey: model.typeKey, name: name };
-				throw new Em.Error('Attribute was missing: ' + JSON.stringify(error));
+				throw new Ember.Error('Attribute was missing: ' + JSON.stringify(error));
 			}
 
 			return {
@@ -479,12 +486,12 @@ EG.JSONSerializer = EG.Serializer.extend({
 
 		if (value === undefined) {
 			if (meta.isRequired) {
-				throw new Em.Error('Missing `' + name + '` relationship: ' + JSON.stringify(json));
+				throw new Ember.Error('Missing `' + name + '` relationship: ' + JSON.stringify(json));
 			}
 
 			return { name: name, value: meta.getDefaultValue() };
 		} else {
-			if (meta.kind === EG.Model.HAS_MANY_KEY) {
+			if (meta.kind === Model.HAS_MANY_KEY) {
 				return this.deserializeHasManyRelationship(model, name, value);
 			} else {
 				return this.deserializeHasOneRelationship(model, name, value);

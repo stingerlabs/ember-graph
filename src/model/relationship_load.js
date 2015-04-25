@@ -1,19 +1,27 @@
-var map = Em.ArrayPolyfills.map;
-var filter = Em.ArrayPolyfills.filter;
-var reduce = EG.ArrayPolyfills.reduce;
-var forEach = Em.ArrayPolyfills.forEach;
+import Ember from 'ember';
 
-var HAS_ONE_KEY = EG.Model.HAS_ONE_KEY;
-var HAS_MANY_KEY = EG.Model.HAS_MANY_KEY;
+import { values as objectValues } from 'ember-graph/util/util';
+import { reduce } from 'ember-graph/util/array';
+import {
+	RelationshipTypes,
+	RelationshipStates
+} from 'ember-graph/constants';
 
-var CLIENT_STATE = EG.Relationship.CLIENT_STATE;
-var SERVER_STATE = EG.Relationship.SERVER_STATE;
-var DELETED_STATE = EG.Relationship.DELETED_STATE;
+var map = Ember.ArrayPolyfills.map;
+var filter = Ember.ArrayPolyfills.filter;
+var forEach = Ember.ArrayPolyfills.forEach;
+
+var HAS_ONE_KEY = RelationshipTypes.HAS_ONE_KEY;
+var HAS_MANY_KEY = RelationshipTypes.HAS_MANY_KEY;
+
+var CLIENT_STATE = RelationshipStates.CLIENT_STATE;
+var SERVER_STATE = RelationshipStates.SERVER_STATE;
+var DELETED_STATE = RelationshipStates.DELETED_STATE;
 
 // TODO: This can probably be moved into the store to be more model-agnostic
 // Idea: load attributes into records directly, but load relationships into store
 // Split the data apart in `pushPayload`
-EG.Model.reopen({
+export default {
 
 	/**
 	 * Sets up relationships given to the constructor for this record.
@@ -33,7 +41,7 @@ EG.Model.reopen({
 
 			if (meta.kind === HAS_MANY_KEY) {
 				forEach.call(value, function(v) {
-					switch (Em.typeOf(v)) {
+					switch (Ember.typeOf(v)) {
 						case 'string':
 							this.addToRelationship(name, v);
 							break;
@@ -46,7 +54,7 @@ EG.Model.reopen({
 					}
 				}, this);
 			} else {
-				switch (Em.typeOf(value)) {
+				switch (Ember.typeOf(value)) {
 					case 'string':
 						this.setHasOneRelationship(name, value);
 						break;
@@ -83,7 +91,7 @@ EG.Model.reopen({
 
 			// TODO: I don't much like this here. Same for the attributes one.
 			if (meta.isRequired && json[name] === undefined) {
-				throw new Em.Error('Your JSON is missing the required `' + name + '` relationship.');
+				throw new Ember.Error('Your JSON is missing the required `' + name + '` relationship.');
 			}
 
 			if (json[name] === undefined) {
@@ -132,9 +140,9 @@ EG.Model.reopen({
 		}, this);
 	},
 
-	disconnectHasOneFromNull: Em.aliasMethod('disconnectHasOneFromHasMany'),
+	disconnectHasOneFromNull: Ember.aliasMethod('disconnectHasOneFromHasMany'),
 
-	disconnectHasOneFromHasOne: Em.aliasMethod('disconnectHasOneFromHasMany'),
+	disconnectHasOneFromHasOne: Ember.aliasMethod('disconnectHasOneFromHasMany'),
 
 	disconnectHasOneFromHasMany: function(name, meta) {
 		var store = this.get('store');
@@ -162,7 +170,7 @@ EG.Model.reopen({
 		}
 	},
 
-	connectHasOneToNull: Em.aliasMethod('connectHasOneToHasMany'),
+	connectHasOneToNull: Ember.aliasMethod('connectHasOneToHasMany'),
 
 	connectHasOneToHasOne: function(name, meta, value) {
 		// TODO: This is going to be LONG. But make it right, then make it good
@@ -693,7 +701,7 @@ EG.Model.reopen({
 		}
 	},
 
-	connectHasManyToNull: Em.aliasMethod('connectHasManyToHasMany'),
+	connectHasManyToNull: Ember.aliasMethod('connectHasManyToHasMany'),
 
 	connectHasManyToHasOne: function(name, meta, values) {
 		var thisType = this.typeKey;
@@ -747,7 +755,7 @@ EG.Model.reopen({
 		}, this);
 
 		// We've narrowed it down to relationships that have to be created from scratch. (Possibly with conflicts.)
-		EG.values(valueMap, function(key, value) {
+		objectValues(valueMap, function(key, value) {
 			var conflicts = store.sortHasOneRelationships(value.type, value.id, meta.inverse);
 
 			if (!conflicts[SERVER_STATE] && !conflicts[CLIENT_STATE] && conflicts[DELETED_STATE].length <= 0) {
@@ -848,8 +856,8 @@ EG.Model.reopen({
 		}, this);
 
 		// We've narrowed it down to relationships that have to be created from scratch.
-		EG.values(valueMap, function(key, value) {
+		objectValues(valueMap, function(key, value) {
 			store.createRelationship(thisType, thisId, name, value.type, value.id, meta.inverse, SERVER_STATE);
 		});
 	}
-});
+};

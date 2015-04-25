@@ -1,3 +1,5 @@
+import Ember from 'ember';
+
 /**
  * Specifies the details of a custom attribute type.
  * Comes with reasonable defaults that can be used for some extended types.
@@ -5,7 +7,7 @@
  * @class AttributeType
  * @constructor
  */
-EG.AttributeType = Em.Object.extend({
+export default Ember.Object.extend({
 
 	/**
 	 * The default value to use if a value of this type is missing.

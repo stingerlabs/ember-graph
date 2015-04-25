@@ -1,3 +1,6 @@
+import Ember from 'ember';
+import AttributeType from 'ember-graph/attribute_type/type';
+
 /**
  * Will coerce any type to a number (0 being the default). `null` is not a valid value.
  *
@@ -5,7 +8,7 @@
  * @extends AttributeType
  * @constructor
  */
-EG.NumberType = EG.AttributeType.extend({
+export default AttributeType.extend({
 
 	/**
 	 * @property defaultValue
@@ -52,7 +55,7 @@ EG.NumberType = EG.AttributeType.extend({
 			return Number(obj).valueOf();
 		}
 
-		if (Em.typeOf(obj) === 'string') {
+		if (Ember.typeOf(obj) === 'string') {
 			var parsed = Number(obj).valueOf();
 			if (this.isValidNumber(parsed)) {
 				return parsed;
@@ -71,6 +74,6 @@ EG.NumberType = EG.AttributeType.extend({
 	 * @protected
 	 */
 	isValidNumber: function(num) {
-		return (Em.typeOf(num) === 'number' && !isNaN(num) && isFinite(num));
+		return (Ember.typeOf(num) === 'number' && !isNaN(num) && isFinite(num));
 	}
 });

@@ -1,3 +1,5 @@
+import Ember from 'ember';
+
 /**
  * Ember's ObjectProxy combined with the PromiseProxyMixin.
  * Acts as an object and proxies all properties to the
@@ -8,7 +10,7 @@
  * @uses PromiseProxyMixin
  * @constructor
  */
-EG.PromiseObject = Em.ObjectProxy.extend(Em.PromiseProxyMixin);
+var PromiseObject = Ember.ObjectProxy.extend(Ember.PromiseProxyMixin);
 
 /**
  * Ember's ArrayProxy combined with the PromiseProxyMixin.
@@ -20,7 +22,7 @@ EG.PromiseObject = Em.ObjectProxy.extend(Em.PromiseProxyMixin);
  * @uses PromiseProxyMixin
  * @constructor
  */
-EG.PromiseArray = Em.ArrayProxy.extend(Em.PromiseProxyMixin);
+var PromiseArray = Ember.ArrayProxy.extend(Ember.PromiseProxyMixin);
 
 /**
  * Acts just like `PromiseObject` only it's able to hold the
@@ -42,7 +44,7 @@ EG.PromiseArray = Em.ArrayProxy.extend(Em.PromiseProxyMixin);
  * @extends PromiseObject
  * @constructor
  */
-EG.ModelPromiseObject = EG.PromiseObject.extend({
+var ModelPromiseObject = PromiseObject.extend({
 	__modelId: null,
 	__modelTypeKey: null,
 
@@ -106,7 +108,13 @@ EG.ModelPromiseObject = EG.PromiseObject.extend({
 		if (model && typeof model.destroy === 'function') {
 			return model.destroy();
 		} else {
-			return Em.RSVP.Promise.reject('Can\'t destroy a record that is still loading.');
+			return Ember.RSVP.Promise.reject('Can\'t destroy a record that is still loading.');
 		}
 	}
 });
+
+export {
+	PromiseObject,
+	PromiseArray,
+	ModelPromiseObject
+};

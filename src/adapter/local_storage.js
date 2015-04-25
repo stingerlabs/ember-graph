@@ -1,4 +1,7 @@
-var Promise = Em.RSVP.Promise;
+import Ember from 'ember';
+import EmberGraphAdapter from 'ember-graph/adapter/ember_graph/adapter';
+
+var Promise = Ember.RSVP.Promise; // jshint ignore:line
 
 /**
  * This adapter will store all of your application data in the browser's
@@ -20,7 +23,7 @@ var Promise = Em.RSVP.Promise;
  * @class LocalStorageAdapter
  * @extends EmberGraphAdapter
  */
-EG.LocalStorageAdapter = EG.EmberGraphAdapter.extend({
+export default EmberGraphAdapter.extend({
 
 	/**
 	 * @property localStorageKey

@@ -32,17 +32,17 @@
 			}
 		</script>
 
-		<script type="text/javascript" src="../lib/jquery/dist/jquery.js"></script>
-		<script type="text/javascript" src="../lib/ember/<%= emberFile %>"></script>
+		<script src="../lib/jquery/dist/jquery.js"></script>
+		<script src="../lib/ember/<%= emberFile %>"></script>
 
-		<script type="text/javascript" src="../lib/qunit/qunit/qunit.js"></script>
+		<script src="../lib/qunit/qunit/qunit.js"></script>
 
 		<script src="../dist/<%= sourceFile %>"></script>
 
 		<script src="configuration.js"></script>
 
 		<% _.each(files, function(filepath) { %>
-			<script type="text/javascript" src="../<%= filepath %>"></script>
+			<script src="../<%= filepath %>"></script>
 		<% }); %>
 
 	</body>

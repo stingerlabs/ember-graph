@@ -1,4 +1,7 @@
-var Promise = Em.RSVP.Promise;
+import Ember from 'ember';
+import EmberGraphAdapter from 'ember-graph/adapter/ember_graph/adapter';
+
+var Promise = Ember.RSVP.Promise; // jshint ignore:line
 
 /**
  * This adapter stores all of your changes in memory, mainly for testing
@@ -18,7 +21,7 @@ var Promise = Em.RSVP.Promise;
  * @class MemoryAdapter
  * @extends EmberGraphAdapter
  */
-EG.MemoryAdapter = EG.EmberGraphAdapter.extend({
+export default EmberGraphAdapter.extend({
 
 	database: null,
 

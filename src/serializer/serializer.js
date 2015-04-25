@@ -1,3 +1,7 @@
+import Ember from 'ember';
+
+import { abstractMethod } from 'ember-graph/util/util';
+
 /**
  * An interface for a serializer. A serializer is used to convert
  * objects back and forth between the JSON that the server uses,
@@ -5,7 +9,7 @@
  *
  * @class Serializer
  */
-EG.Serializer = Em.Object.extend({
+export default Ember.Object.extend({
 
 	/**
 	 * The store that the records will be loaded into. This
@@ -35,7 +39,7 @@ EG.Serializer = Em.Object.extend({
 	 * @return {JSON} JSON payload to send to server
 	 * @abstract
 	 */
-	serialize: EG.abstractMethod('serialize'),
+	serialize: abstractMethod('serialize'),
 
 	/**
 	 * Takes a payload from the server and converts it into a normalized
@@ -81,5 +85,5 @@ EG.Serializer = Em.Object.extend({
 	 * @return {Object} Normalized JSON payload
 	 * @abstract
 	 */
-	deserialize: EG.abstractMethod('deserialize')
+	deserialize: abstractMethod('deserialize')
 });

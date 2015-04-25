@@ -1,4 +1,10 @@
-var Promise = Em.RSVP.Promise;
+import Ember from 'ember';
+import Adapter from 'ember-graph/adapter/adapter';
+import LoadMethods from 'ember-graph/adapter/ember_graph/load';
+import ServerMethods from 'ember-graph/adapter/ember_graph/server';
+import DatabaseMethods from 'ember-graph/adapter/ember_graph/database';
+
+var Promise = Ember.RSVP.Promise; // jshint ignore:line
 
 /**
  * This class acts as a base adapter for synchronous storage forms. Specifically,
@@ -40,7 +46,7 @@ var Promise = Em.RSVP.Promise;
  * @extends Adapter
  * @category abstract
  */
-EG.EmberGraphAdapter = EG.Adapter.extend({
+var EmberGraphAdapter = Adapter.extend({
 
 	/**
 	 * Since we control both the client and 'server', we'll
@@ -51,7 +57,7 @@ EG.EmberGraphAdapter = EG.Adapter.extend({
 	 * @protected
 	 * @final
 	 */
-	serializer: Em.computed(function() {
+	serializer: Ember.computed(function() {
 		return this.get('container').lookup('serializer:ember_graph');
 	}).property().readOnly(),
 
@@ -127,3 +133,9 @@ EG.EmberGraphAdapter = EG.Adapter.extend({
 	}
 
 });
+
+EmberGraphAdapter.reopen(LoadMethods);
+EmberGraphAdapter.reopen(ServerMethods);
+EmberGraphAdapter.reopen(DatabaseMethods);
+
+export default EmberGraphAdapter;

@@ -1,14 +1,28 @@
-var map = Em.ArrayPolyfills.map;
-var reduce = Em.ArrayPolyfills.reduce;
-var filter = Em.ArrayPolyfills.filter;
-var forEach = Em.ArrayPolyfills.forEach;
+import Ember from 'ember';
+import Relationship from 'ember-graph/relationship/relationship';
+import RelationshipStore from 'ember-graph/relationship/relationship_store';
+import EmberGraphSet from 'ember-graph/util/set';
 
-var HAS_ONE_KEY = EG.Model.HAS_ONE_KEY = 'hasOne';
-var HAS_MANY_KEY = EG.Model.HAS_MANY_KEY = 'hasMany';
+import {
+	groupRecords,
+	arrayContentsEqual
+} from 'ember-graph/util/util';
 
-var CLIENT_STATE = EG.Relationship.CLIENT_STATE;
-var SERVER_STATE = EG.Relationship.SERVER_STATE;
-var DELETED_STATE = EG.Relationship.DELETED_STATE;
+import {
+	RelationshipTypes
+} from 'ember-graph/constants';
+
+var map = Ember.ArrayPolyfills.map;
+var reduce = Ember.ArrayPolyfills.reduce;
+var filter = Ember.ArrayPolyfills.filter;
+var forEach = Ember.ArrayPolyfills.forEach;
+
+var HAS_ONE_KEY = RelationshipTypes.HAS_ONE_KEY;
+var HAS_MANY_KEY = RelationshipTypes.HAS_MANY_KEY;
+
+var CLIENT_STATE = Relationship.CLIENT_STATE;
+var SERVER_STATE = Relationship.SERVER_STATE;
+var DELETED_STATE = Relationship.DELETED_STATE;
 
 var HAS_ONE_GETTER = function(key) {
 	return this.getHasOneValue(key.substring(1), false);
@@ -19,8 +33,8 @@ var HAS_MANY_GETTER = function(key) {
 };
 
 var createRelationship = function(name, kind, options) {
-	Em.assert('Invalid relatedType', Em.typeOf(options.relatedType) === 'string');
-	Em.assert('Invalid inverse', options.inverse === null || Em.typeOf(options.inverse) === 'string');
+	Ember.assert('Invalid relatedType', Ember.typeOf(options.relatedType) === 'string');
+	Ember.assert('Invalid inverse', options.inverse === null || Ember.typeOf(options.inverse) === 'string');
 
 	var meta = {
 		isRelationship: false, // the 'real' relationship (without _) is the relationship
@@ -39,18 +53,18 @@ var createRelationship = function(name, kind, options) {
 		}
 	};
 
-	Em.assert('defaultValue for hasMany must be an array.',
-			meta.kind === HAS_ONE_KEY || Em.isArray(meta.getDefaultValue()));
-	Em.assert('defaultValue for hasOne must be null or a string.',
+	Ember.assert('defaultValue for hasMany must be an array.',
+			meta.kind === HAS_ONE_KEY || Ember.isArray(meta.getDefaultValue()));
+	Ember.assert('defaultValue for hasOne must be null or a string.',
 			meta.kind === HAS_MANY_KEY || meta.getDefaultValue() === null ||
-			Em.typeOf(meta.getDefaultValue()) === 'string');
+			Ember.typeOf(meta.getDefaultValue()) === 'string');
 
-	return Em.computed(meta.kind === HAS_MANY_KEY ? HAS_MANY_GETTER : HAS_ONE_GETTER).
+	return Ember.computed(meta.kind === HAS_MANY_KEY ? HAS_MANY_GETTER : HAS_ONE_GETTER).
 		property('relationships.client.' + name, 'relationships.deleted.' + name, 'relationships.server.' + name).
 		meta(meta).readOnly();
 };
 
-EG.Model.reopenClass({
+var RelationshipClassMethods = {
 
 	/**
 	 * Fetch the metadata for a relationship property.
@@ -61,7 +75,7 @@ EG.Model.reopenClass({
 	 * @return {Object}
 	 * @static
 	 */
-	metaForRelationship: Em.aliasMethod('metaForProperty'),
+	metaForRelationship: Ember.aliasMethod('metaForProperty'),
 
 	/**
 	 * Determines the kind (multiplicity) of the given relationship.
@@ -96,20 +110,20 @@ EG.Model.reopenClass({
 	declareRelationships: function(relationships) {
 		var obj = {};
 
-		Em.runInDebug(function() {
-			var disallowedNames = EG.Set.create();
+		Ember.runInDebug(function() {
+			var disallowedNames = EmberGraphSet.create();
 			disallowedNames.addObjects(['id', 'type', 'content', 'length', 'model']);
 
-			forEach.call(Em.keys(relationships), function(name) {
-				Em.assert('`' + name + '` cannot be used as a relationship name.', !disallowedNames.contains(name));
-				Em.assert('A relationship name cannot start with an underscore.', name.charAt(0) !== '_');
-				Em.assert('Relationship names must start with a lowercase letter.', name.charAt(0).match(/[a-z]/));
+			forEach.call(Ember.keys(relationships), function(name) {
+				Ember.assert('`' + name + '` cannot be used as a relationship name.', !disallowedNames.contains(name));
+				Ember.assert('A relationship name cannot start with an underscore.', name.charAt(0) !== '_');
+				Ember.assert('Relationship names must start with a lowercase letter.', name.charAt(0).match(/[a-z]/));
 			});
 		});
 
-		forEach.call(Em.keys(relationships), function(name) {
+		forEach.call(Ember.keys(relationships), function(name) {
 			obj['_' + name] = createRelationship(name, relationships[name].kind, relationships[name].options);
-			var meta = Em.copy(obj['_' + name].meta(), true);
+			var meta = Ember.copy(obj['_' + name].meta(), true);
 			var relatedType = meta.relatedType;
 
 			var relationship;
@@ -123,7 +137,7 @@ EG.Model.reopenClass({
 			} else if (!meta.isPolymorphic) {
 				relationship = function(key) {
 					var value = this.get('_' + key);
-					var ids = Em.ArrayPolyfills.map.call(value, function(item) {
+					var ids = Ember.ArrayPolyfills.map.call(value, function(item) {
 						return item.id;
 					});
 					return this.get('store').find(relatedType, ids);
@@ -132,15 +146,15 @@ EG.Model.reopenClass({
 				relationship = function(key) {
 					var store = this.get('store');
 					var value = this.get('_' + key);
-					var groups = EG.groupRecords(value);
-					var promises = Em.ArrayPolyfills.map.call(groups, function(group) {
-						var ids = Em.ArrayPolyfills.map.call(group, function(item) {
+					var groups = groupRecords(value);
+					var promises = Ember.ArrayPolyfills.map.call(groups, function(group) {
+						var ids = Ember.ArrayPolyfills.map.call(group, function(item) {
 							return item.id;
 						});
 						return store.find(group[0].type, ids);
 					});
-					return Em.RSVP.Promise.all(promises).then(function(groups) {
-						return Em.ArrayPolyfills.reduce.call(groups, function(array, group) {
+					return Ember.RSVP.Promise.all(promises).then(function(groups) {
+						return Ember.ArrayPolyfills.reduce.call(groups, function(array, group) {
 							return array.concat(group);
 						}, []);
 					});
@@ -148,17 +162,17 @@ EG.Model.reopenClass({
 			}
 
 			meta.isRelationship = true;
-			obj[name] = Em.computed(relationship).property('_' + name).readOnly().meta(meta);
+			obj[name] = Ember.computed(relationship).property('_' + name).readOnly().meta(meta);
 		});
 
 		this.reopen(obj);
 	}
 
-});
+};
 
-EG.Model.reopen({
+var RelationshipPublicMethods = {
 
-	areRelationshipsDirty: Em.computed(function() {
+	areRelationshipsDirty: Ember.computed(function() {
 		return this.get('relationships.client.length') > 0 || this.get('relationships.deleted.length') > 0;
 	}).property('relationships.client.length', 'relationships.deleted.length'),
 
@@ -197,7 +211,7 @@ EG.Model.reopen({
 					return value.type + ':' + value.id;
 				});
 
-				if (!EG.arrayContentsEqual(oldVal, newVal)) {
+				if (!arrayContentsEqual(oldVal, newVal)) {
 					changes[name] = [oldVal, newVal];
 				}
 			} else {
@@ -225,7 +239,7 @@ EG.Model.reopen({
 	 * @for Model
 	 */
 	rollbackRelationships: function() {
-		Em.changeProperties(function() {
+		Ember.changeProperties(function() {
 			var store = this.get('store');
 
 			var client = this.get('relationships').getRelationshipsByState(CLIENT_STATE);
@@ -256,23 +270,23 @@ EG.Model.reopen({
 	addToRelationship: function(relationshipName, id, polymorphicType) {
 		var meta = this.constructor.metaForRelationship(relationshipName);
 		if (meta.kind !== HAS_MANY_KEY) {
-			throw new Em.Error('`addToRelationship` called on hasOne relationship.');
+			throw new Ember.Error('`addToRelationship` called on hasOne relationship.');
 		}
 
 		if (meta.isReadOnly && !this.get('isNew')) {
-			throw new Em.Error('Can\'t modify a read-only relationship.');
+			throw new Ember.Error('Can\'t modify a read-only relationship.');
 		}
 
-		Em.changeProperties(function() {
+		Ember.changeProperties(function() {
 			this.set('initializedRelationships.' + relationshipName, true);
 
 			var i, store = this.get('store');
 
 			// If the type wasn't provided, fill it in based on the inverse
-			if (Em.typeOf(id) !== 'string') {
-				polymorphicType = Em.get(id, 'typeKey');
-				id = Em.get(id, 'id');
-			} else if (Em.typeOf(polymorphicType) !== 'string') {
+			if (Ember.typeOf(id) !== 'string') {
+				polymorphicType = Ember.get(id, 'typeKey');
+				id = Ember.get(id, 'id');
+			} else if (Ember.typeOf(polymorphicType) !== 'string') {
 				polymorphicType = meta.relatedType;
 			}
 
@@ -342,19 +356,19 @@ EG.Model.reopen({
 	removeFromRelationship: function(relationshipName, id, polymorphicType) {
 		var meta = this.constructor.metaForRelationship(relationshipName);
 		if (meta.kind !== HAS_MANY_KEY) {
-			throw new Em.Error('`removeFromRelationship` called on hasOne relationship.');
+			throw new Ember.Error('`removeFromRelationship` called on hasOne relationship.');
 		}
 
 		if (meta.isReadOnly && !this.get('isNew')) {
-			throw new Em.Error('Can\'t modify a read-only relationship.');
+			throw new Ember.Error('Can\'t modify a read-only relationship.');
 		}
 
-		Em.changeProperties(function() {
+		Ember.changeProperties(function() {
 			// If the type wasn't provided, fill it in based on the inverse
-			if (Em.typeOf(id) !== 'string') {
-				polymorphicType = Em.get(id, 'typeKey');
-				id = Em.get(id, 'id');
-			} else if (Em.typeOf(polymorphicType) !== 'string') {
+			if (Ember.typeOf(id) !== 'string') {
+				polymorphicType = Ember.get(id, 'typeKey');
+				id = Ember.get(id, 'id');
+			} else if (Ember.typeOf(polymorphicType) !== 'string') {
 				polymorphicType = meta.relatedType;
 			}
 
@@ -389,23 +403,23 @@ EG.Model.reopen({
 	setHasOneRelationship: function(relationshipName, id, polymorphicType) {
 		var meta = this.constructor.metaForRelationship(relationshipName);
 		if (meta.kind !== HAS_ONE_KEY) {
-			throw new Em.Error('`setHasOneRelationship` called on hasMany relationship.');
+			throw new Ember.Error('`setHasOneRelationship` called on hasMany relationship.');
 		}
 
 		if (meta.isReadOnly && !this.get('isNew')) {
-			throw new Em.Error('Can\'t modify a read-only relationship.');
+			throw new Ember.Error('Can\'t modify a read-only relationship.');
 		}
 
-		Em.changeProperties(function() {
+		Ember.changeProperties(function() {
 			this.set('initializedRelationships.' + relationshipName, true);
 
 			var store = this.get('store');
 
 			// If the type wasn't provided, fill it in based on the inverse
-			if (Em.typeOf(id) !== 'string') {
+			if (Ember.typeOf(id) !== 'string') {
 				polymorphicType = id.typeKey;
 				id = id.get('id');
-			} else if (Em.typeOf(polymorphicType) !== 'string') {
+			} else if (Ember.typeOf(polymorphicType) !== 'string') {
 				polymorphicType = meta.relatedType;
 			}
 
@@ -486,14 +500,14 @@ EG.Model.reopen({
 	clearHasOneRelationship: function(relationshipName) {
 		var meta = this.constructor.metaForRelationship(relationshipName);
 		if (meta.kind !== HAS_ONE_KEY) {
-			throw new Em.Error('`clearHasOneRelationship` called on hasMany relationship.');
+			throw new Ember.Error('`clearHasOneRelationship` called on hasMany relationship.');
 		}
 
 		if (meta.isReadOnly && !this.get('isNew')) {
-			throw new Em.Error('Can\'t modify a read-only relationship.');
+			throw new Ember.Error('Can\'t modify a read-only relationship.');
 		}
 
-		Em.changeProperties(function() {
+		Ember.changeProperties(function() {
 			var relationship = this.getHasOneRelationship(relationshipName, false);
 			if (relationship) {
 				if (relationship.get('state') === CLIENT_STATE) {
@@ -538,9 +552,9 @@ EG.Model.reopen({
 		return !this.get('isNew') || !!this.get('initializedRelationships.' + relationshipName);
 	}
 
-});
+};
 
-EG.Model.reopen({
+var RelationshipPrivateMethods = {
 
 	/**
 	 * Stores all of the relationships currently connected to this record.
@@ -560,9 +574,9 @@ EG.Model.reopen({
 	 */
 	initializedRelationships: null,
 
-	initializeRelationshipStoreAndStatus: Em.on('init', function() {
+	initializeRelationshipStoreAndStatus: Ember.on('init', function() {
 		this.setProperties({
-			relationships: EG.RelationshipStore.create(),
+			relationships: RelationshipStore.create(),
 			initializedRelationships: {}
 		});
 	}),
@@ -613,4 +627,12 @@ EG.Model.reopen({
 		}, this);
 	}
 
-});
+};
+
+export {
+	RelationshipClassMethods,
+	RelationshipPublicMethods,
+	RelationshipPrivateMethods,
+	HAS_ONE_KEY,
+	HAS_MANY_KEY
+};

@@ -1,3 +1,6 @@
+import Ember from 'ember';
+import Model from 'ember-graph/model/model';
+
 /**
  * Extends Ember's `DataAdapter` class to provide debug functionality for the Ember Inspector.
  *
@@ -6,9 +9,9 @@
  * @class DataAdapter
  * @private
  */
-EG.DataAdapter = Em.DataAdapter.extend({
+export default Ember.DataAdapter.extend({
 
-	containerDebugAdapter: Em.computed(function() {
+	containerDebugAdapter: Ember.computed(function() {
 		return this.get('container').lookup('container-debug-adapter:main');
 	}).property(),
 
@@ -21,7 +24,7 @@ EG.DataAdapter = Em.DataAdapter.extend({
 	},
 
 	detect: function(modelClass) {
-		return (modelClass !== EG.Model && EG.Model.detect(modelClass));
+		return (modelClass !== Model && Model.detect(modelClass));
 	},
 
 	columnsForType: function(modelClass) {
@@ -33,7 +36,7 @@ EG.DataAdapter = Em.DataAdapter.extend({
 				return;
 			}
 
-			var desc = Em.String.capitalize(Em.String.underscore(name).replace(/_/g, ' '));
+			var desc = Ember.String.capitalize(Ember.String.underscore(name).replace(/_/g, ' '));
 			columns.push({ name: name, desc: desc });
 		});
 
@@ -41,7 +44,7 @@ EG.DataAdapter = Em.DataAdapter.extend({
 	},
 
 	getRecords: function(modelClass) {
-		var typeKey = Em.get(modelClass, 'typeKey');
+		var typeKey = Ember.get(modelClass, 'typeKey');
 		return this.get('store').getLiveRecordArray(typeKey);
 	},
 
@@ -88,20 +91,20 @@ EG.DataAdapter = Em.DataAdapter.extend({
 
 	observeRecord: function(record, recordUpdated) {
 		var _this = this;
-		var releaseMethods = Em.A();
-		var propertiesToObserve = Em.A(['id', 'isNew', 'isDirty']);
+		var releaseMethods = Ember.A();
+		var propertiesToObserve = Ember.A(['id', 'isNew', 'isDirty']);
 
-		propertiesToObserve.addObjects(Em.get(record.constructor, 'attributes').toArray());
+		propertiesToObserve.addObjects(Ember.get(record.constructor, 'attributes').toArray());
 
 		propertiesToObserve.forEach(function(name) {
 			var handler = function() {
 				recordUpdated(_this.wrapRecord(record));
 			};
 
-			Em.addObserver(record, name, handler);
+			Ember.addObserver(record, name, handler);
 
 			releaseMethods.push(function() {
-				Em.removeObserver(record, name, handler);
+				Ember.removeObserver(record, name, handler);
 			});
 		});
 

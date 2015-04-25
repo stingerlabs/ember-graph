@@ -1,3 +1,18 @@
+import Ember from 'ember';
+import CoreModel from 'ember-graph/model/core';
+import StateProperties from 'ember-graph/model/states';
+import RelationshipLoadMethods from 'ember-graph/model/relationship_load';
+
+import { generateUUID } from 'ember-graph/util/util';
+import { startsWith } from 'ember-graph/util/string';
+import {
+	RelationshipClassMethods,
+	RelationshipPublicMethods,
+	RelationshipPrivateMethods,
+	HAS_ONE_KEY,
+	HAS_MANY_KEY
+} from 'ember-graph/model/relationship';
+
 /**
  * Models are the classes that represent your domain data.
  * Each type of object in your domain should have its own
@@ -17,7 +32,7 @@
  * @extends CoreModel
  * @uses Ember.Evented
  */
-EG.Model = EG.CoreModel.extend(Em.Evented, {
+var Model = CoreModel.extend(Ember.Evented, {
 
 	/**
 	 * This property is available on every model instance and every
@@ -47,7 +62,7 @@ EG.Model = EG.CoreModel.extend(Em.Evented, {
 	 * @type String
 	 * @final
 	 */
-	id: Em.computed(function(key, value) {
+	id: Ember.computed(function(key, value) {
 		var id = this.get('_id');
 
 		if (arguments.length > 1) {
@@ -56,7 +71,7 @@ EG.Model = EG.CoreModel.extend(Em.Evented, {
 			if (id === null) {
 				this.set('_id', value);
 				return value;
-			} else if (EG.String.startsWith(id, prefix) && !EG.String.startsWith(value, prefix)) {
+			} else if (startsWith(id, prefix) && !startsWith(value, prefix)) {
 				this.set('_id', value);
 				return value;
 			} else {
@@ -85,7 +100,7 @@ EG.Model = EG.CoreModel.extend(Em.Evented, {
 	 * @param {Object} json
 	 * @deprecated Use `loadDataFromServer` instead
 	 */
-	loadData: Em.aliasMethod('loadDataFromServer'),
+	loadData: Ember.aliasMethod('loadDataFromServer'),
 
 	/**
 	 * Takes a payload from the server and merges the data into the current data.
@@ -98,7 +113,7 @@ EG.Model = EG.CoreModel.extend(Em.Evented, {
 	 */
 	loadDataFromServer: function(json) {
 		json = json || {};
-		Em.assert('The record `' + this.typeKey + ':' + this.get('id') + '` was attempted to be reloaded ' +
+		Ember.assert('The record `' + this.typeKey + ':' + this.get('id') + '` was attempted to be reloaded ' +
 			'while dirty with `reloadDirty` disabled.', !this.get('isDirty') || this.get('store.reloadDirty'));
 
 		this.loadAttributesFromServer(json);
@@ -187,7 +202,7 @@ EG.Model = EG.CoreModel.extend(Em.Evented, {
 			return;
 		}
 
-		return (this.typeKey === Em.get(other, 'typeKey') && this.get('id') === Em.get(other, 'id'));
+		return (this.typeKey === Ember.get(other, 'typeKey') && this.get('id') === Ember.get(other, 'id'));
 	},
 
 	/**
@@ -210,7 +225,7 @@ EG.Model = EG.CoreModel.extend(Em.Evented, {
 	}
 });
 
-EG.Model.reopenClass({
+Model.reopenClass({
 
 	/**
 	 * The prefix added to generated IDs to show that the prefix wasn't given
@@ -229,7 +244,7 @@ EG.Model.reopenClass({
 	 * @static
 	 */
 	isTemporaryId: function(id) {
-		return EG.String.startsWith(id, this.temporaryIdPrefix);
+		return startsWith(id, this.temporaryIdPrefix);
 	},
 
 	/**
@@ -244,7 +259,7 @@ EG.Model.reopenClass({
 	create: function(store) {
 		var record = this._super();
 		record.set('store', store);
-		record.set('_id', Em.get(this, 'temporaryIdPrefix') + EG.generateUUID());
+		record.set('_id', Ember.get(this, 'temporaryIdPrefix') + generateUUID());
 		return record;
 	},
 
@@ -259,8 +274,8 @@ EG.Model.reopenClass({
 		var relationships = {};
 
 		// Ember.Mixin doesn't have a `detectInstance` method
-		if (!(options instanceof Em.Mixin)) {
-			Em.keys(options).forEach(function(key) {
+		if (!(options instanceof Ember.Mixin)) {
+			Ember.keys(options).forEach(function(key) {
 				var value = options[key];
 
 				if (options[key]) {
@@ -292,7 +307,7 @@ EG.Model.reopenClass({
 	 * @static
 	 */
 	isEqual: function(a, b) {
-		if (Em.isNone(a) || Em.isNone(b)) {
+		if (Ember.isNone(a) || Ember.isNone(b)) {
 			return false;
 		}
 
@@ -304,15 +319,26 @@ EG.Model.reopenClass({
 			return b.isEqual(a);
 		}
 
-		if (this.detectInstance(Em.get(a, 'content'))) {
-			return Em.get(a, 'content').isEqual(b);
+		if (this.detectInstance(Ember.get(a, 'content'))) {
+			return Ember.get(a, 'content').isEqual(b);
 		}
 
-		if (this.detectInstance(Em.get(b, 'content'))) {
-			return Em.get(b, 'content').isEqual(a);
+		if (this.detectInstance(Ember.get(b, 'content'))) {
+			return Ember.get(b, 'content').isEqual(a);
 		}
 
 		return false;
 	}
 });
 
+Model.reopen(StateProperties);
+Model.reopen(RelationshipPublicMethods);
+Model.reopen(RelationshipPrivateMethods);
+Model.reopen(RelationshipLoadMethods);
+Model.reopenClass(RelationshipClassMethods);
+Model.reopenClass({
+	HAS_ONE_KEY: HAS_ONE_KEY,
+	HAS_MANY_KEY: HAS_MANY_KEY
+});
+
+export default Model;

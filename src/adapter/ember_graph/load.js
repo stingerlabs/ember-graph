@@ -1,11 +1,17 @@
-var Promise = Em.RSVP.Promise;
+import Ember from 'ember';
+import Model from 'ember-graph/model/model';
+import EmberGraphSet from 'ember-graph/util/set';
 
-var map = Em.ArrayPolyfills.map;
-var filter = Em.ArrayPolyfills.filter;
-var forEach = Em.ArrayPolyfills.forEach;
-var typeOf = Em.typeOf;
+import { values } from 'ember-graph/util/util';
 
-EG.EmberGraphAdapter.reopen({
+var Promise = Ember.RSVP.Promise; // jshint ignore:line
+
+var map = Ember.ArrayPolyfills.map;
+var filter = Ember.ArrayPolyfills.filter;
+var forEach = Ember.ArrayPolyfills.forEach;
+var typeOf = Ember.typeOf;
+
+export default {
 
 	/**
 	 * Determines whether or not to bootstrap the database
@@ -64,7 +70,7 @@ EG.EmberGraphAdapter.reopen({
 		var payload = this.getInitialPayload();
 
 		try {
-			var db = this.convertAndVerifyPayload(Em.copy(payload, true));
+			var db = this.convertAndVerifyPayload(Ember.copy(payload, true));
 			return this.setDatabase(db);
 		} catch (error) {
 			console.error('There was an error while trying to initialize your database.');
@@ -101,7 +107,7 @@ EG.EmberGraphAdapter.reopen({
 		var store = this.get('store');
 		var databaseRecords = {};
 
-		EG.values(payload, function(typeKey, records) {
+		values(payload, function(typeKey, records) {
 			databaseRecords[typeKey] = {};
 
 			var model = store.modelFor(typeKey);
@@ -133,7 +139,7 @@ EG.EmberGraphAdapter.reopen({
 
 			if (record[name] === undefined) {
 				if (meta.isRequired) {
-					throw new Em.Error(Em.get(model, 'typeKey') + ':' + record.id + ' is missing `' + name + '`');
+					throw new Ember.Error(Ember.get(model, 'typeKey') + ':' + record.id + ' is missing `' + name + '`');
 				} else {
 					json[name] = type.serialize(meta.getDefaultValue());
 				}
@@ -155,7 +161,7 @@ EG.EmberGraphAdapter.reopen({
 	extractRelationships: function(payload) {
 		var store = this.get('store');
 		var relationships = [];
-		var createdRelationships = EG.Set.create();
+		var createdRelationships = EmberGraphSet.create();
 
 		function addRelationship(r) {
 			var one = r.t1 + ':' + r.i1 + ':' + r.n1;
@@ -168,7 +174,7 @@ EG.EmberGraphAdapter.reopen({
 			}
 		}
 
-		EG.values(payload, function(typeKey, records) {
+		values(payload, function(typeKey, records) {
 			var model = store.modelFor(typeKey);
 
 			forEach.call(records, function(record) {
@@ -182,20 +188,20 @@ EG.EmberGraphAdapter.reopen({
 
 	extractRelationshipsFromRecord: function(model, record) {
 		var relationships = [];
-		var typeKey = Em.get(model, 'typeKey');
+		var typeKey = Ember.get(model, 'typeKey');
 
 		model.eachRelationship(function(name, meta) {
 			var value = record[name];
 
 			if (value === undefined) {
 				if (meta.isRequired) {
-					throw new Em.Error(typeKey + ':' + record.id + ' is missing `' + name + '`');
+					throw new Ember.Error(typeKey + ':' + record.id + ' is missing `' + name + '`');
 				} else {
 					value = meta.getDefaultValue();
 				}
 			}
 
-			if (meta.kind === EG.Model.HAS_ONE_KEY) {
+			if (meta.kind === Model.HAS_ONE_KEY) {
 				if (value !== null) {
 					if (typeOf(value) === 'string' || typeOf(value) === 'number') {
 						value = { type: meta.relatedType, id: value + '' };
@@ -243,31 +249,31 @@ EG.EmberGraphAdapter.reopen({
 			return (one < two ? one + '::' + two : two  + '::' + one);
 		}
 
-		var relationshipSet = EG.Set.create();
+		var relationshipSet = EmberGraphSet.create();
 		relationshipSet.addObjects(map.call(db.relationships, relationshipToString));
-		if (Em.get(relationshipSet, 'length') !== db.relationships.length) {
-			throw new Em.Error('An invalid set of relationships was generated.');
+		if (Ember.get(relationshipSet, 'length') !== db.relationships.length) {
+			throw new Ember.Error('An invalid set of relationships was generated.');
 		}
 
 		forEach.call(db.relationships, function(relationship) {
 			if (!db.records[relationship.t1][relationship.i1]) {
-				throw new Em.Error(relationship.t1 + ':' + relationship.i1 + ' doesn\'t exist');
+				throw new Ember.Error(relationship.t1 + ':' + relationship.i1 + ' doesn\'t exist');
 			}
 
 			if (!db.records[relationship.t2][relationship.i2]) {
-				throw new Em.Error(relationship.t2 + ':' + relationship.i2 + ' doesn\'t exist');
+				throw new Ember.Error(relationship.t2 + ':' + relationship.i2 + ' doesn\'t exist');
 			}
 		});
 
-		EG.values(db.records, function(typeKey, records) {
+		values(db.records, function(typeKey, records) {
 			var model = this.get('store').modelFor(typeKey);
 
 			model.eachRelationship(function(name, meta) {
-				if (meta.kind !== EG.Model.HAS_ONE_KEY) {
+				if (meta.kind !== Model.HAS_ONE_KEY) {
 					return;
 				}
 
-				EG.values(records, function(id, record) {
+				values(records, function(id, record) {
 					var relationships = filterRelationships(typeKey, id, name);
 
 					if (relationships.length > 1) {
@@ -278,4 +284,4 @@ EG.EmberGraphAdapter.reopen({
 		}, this);
 	}
 
-});
+};
