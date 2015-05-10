@@ -1,6 +1,8 @@
 import Ember from 'ember';
 import AttributeType from 'ember-graph/attribute_type/type';
 
+var map = Ember.ArrayPolyfills.map;
+
 /**
  * Represents an enumeration or multiple choice type. This class cannot be
  * instantiated directly, you must extend the class, overriding both the
@@ -42,11 +44,10 @@ export default AttributeType.extend({
 	 * @final
 	 */
 	valueSet: Ember.computed(function() {
-		var set = EG.Set.create();
+		const set = EG.Set.create();
+		const values = this.get('values');
 
-		set.addObjects(this.get('values').map(function(value) {
-			return value.toLocaleLowerCase();
-		}));
+		set.addObjects(map.call(values, (value) => value.toLocaleLowerCase()));
 
 		return set;
 	}).property('values'),

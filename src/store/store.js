@@ -593,20 +593,20 @@ var Store = Ember.Object.extend({
 			return;
 		}
 
-		Ember.changeProperties(function() {
+		Ember.changeProperties(() => {
 			var reloadDirty = this.get('reloadDirty');
 
-			forEach.call(Ember.get(payload, 'meta.deletedRecords') || [], function(record) {
+			forEach.call(Ember.get(payload, 'meta.deletedRecords') || [], (record) => {
 				this.deleteRecordFromStore(record.type, record.id);
-			}, this);
+			});
 
 			delete payload.meta;
 
-			Ember.keys(payload).forEach(function(typeKey) {
-				var model = this.modelFor(typeKey);
+			forEach.call(Ember.keys(payload), (typeKey) => {
+				const model = this.modelFor(typeKey);
 
-				payload[typeKey].forEach(function(json) {
-					var record = this.getRecord(typeKey, json.id);
+				forEach.call(payload[typeKey], (json) => {
+					let record = this.getRecord(typeKey, json.id);
 
 					if (record) {
 						if (!record.get('isDirty') || reloadDirty) {
@@ -620,9 +620,9 @@ var Store = Ember.Object.extend({
 						this.connectQueuedRelationships(record);
 						record.loadDataFromServer(json);
 					}
-				}, this);
-			}, this);
-		}, this);
+				});
+			});
+		});
 	},
 
 	/**

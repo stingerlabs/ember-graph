@@ -1,5 +1,7 @@
 import Ember from 'ember';
 
+const map = Ember.ArrayPolyfills.map;
+
 export default Ember.Object.extend({
 
 	cache: null,
@@ -58,9 +60,7 @@ export default Ember.Object.extend({
 
 	_savePendingManyRequest: function(typeKey, ids, request) {
 		var cache = this._getAndCreateTypeCache(typeKey).get('multiple');
-		var idString = ids.map(function(id) {
-			return id + '';
-		}).sort().join(',');
+		var idString = map.call(ids, (id) => id + '').sort().join(',');
 
 		cache[idString] = request;
 
@@ -136,9 +136,7 @@ export default Ember.Object.extend({
 			return all;
 		}
 
-		var idString = ids.map(function(id) {
-			return id + '';
-		}).sort().join(',');
+		var idString = map.call(ids, (id) => id + '').sort().join(',');
 
 		var multiple = cache.get('multiple');
 		for (var key in multiple) {

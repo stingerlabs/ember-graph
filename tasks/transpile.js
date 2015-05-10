@@ -117,7 +117,6 @@ function transpileFile(filePath) {
 			'es6.blockScoping',
 			'es6.constants',
 			'es6.destructuring',
-			'es6.forOf',
 			'es6.modules',
 			'es6.parameters.default',
 			'es6.parameters.rest',
