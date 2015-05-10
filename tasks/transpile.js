@@ -59,7 +59,7 @@ function cleanCache() {
 }
 
 function concatenateFiles() {
-	fs.writeFileSync(OUTPUT_FILE_PATH, '(function() {\n\n');
+	fs.writeFileSync(OUTPUT_FILE_PATH, '(function() {\n\'use strict\';\n\n');
 
 	var beforeLoadScriptContents = fs.readFileSync(BEFORE_LOAD_SCRIPT, 'utf8');
 	fs.appendFileSync(OUTPUT_FILE_PATH, beforeLoadScriptContents);
