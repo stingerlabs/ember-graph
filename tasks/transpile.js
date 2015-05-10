@@ -107,12 +107,25 @@ function transpileFile(filePath) {
 	var fileContents = fs.readFileSync(filePath, 'utf8');
 	var options = {
 		filename: path.relative(SOURCE_DIRECTORY, filePath),
-		whitelist: ['es6.modules'],
 		nonStandard: false,
 		sourceRoot: SOURCE_DIRECTORY,
 		moduleRoot: 'ember-graph',
 		modules: 'amdStrict',
-		moduleIds: true
+		moduleIds: true,
+		whitelist: [
+			'es6.arrowFunctions',
+			'es6.blockScoping',
+			'es6.constants',
+			'es6.destructuring',
+			'es6.forOf',
+			'es6.modules',
+			'es6.parameters.default',
+			'es6.parameters.rest',
+			'es6.properties.computed',
+			'es6.properties.shorthand',
+			'es6.spread',
+			'es6.templateLiterals'
+		]
 	};
 
 	return babel.transform(fileContents, options).code;
