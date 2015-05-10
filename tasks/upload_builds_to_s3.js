@@ -1,14 +1,14 @@
 'use strict';
 
 var fs = require('fs');
-var sh = require('execSync');
 var AWS = require('aws-sdk');
 var AdmZip = require('adm-zip');
+var execSync = require('child_process').execSync;
 
 module.exports = function(grunt) {
 	grunt.registerTask('upload_builds_to_s3', function() {
 		var done = this.async();
-		var hash = sh.exec('git rev-parse HEAD').stdout.trim();
+		var hash = execSync('git rev-parse HEAD').toString();
 		var debugBuild = fs.readFileSync('./dist/ember-graph.js', { encoding: 'utf8' });
 		var productionBuild = fs.readFileSync('./dist/ember-graph.prod.js', { encoding: 'utf8' });
 		var minifiedBuild = fs.readFileSync('./dist/ember-graph.min.js', { encoding: 'utf8' });
