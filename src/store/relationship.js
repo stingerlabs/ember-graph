@@ -22,8 +22,7 @@ export default {
 	}),
 
 	createRelationship: function(type1, id1, name1, type2, id2, name2, state) { // jshint ignore:line
-		// TODO: Use create()
-		var relationship = new Relationship(type1, id1, name1, type2, id2, name2, state);
+		var relationship = Relationship.create(type1, id1, name1, type2, id2, name2, state);
 
 		var queuedRelationships = this.get('queuedRelationships');
 		var record1 = this.getRecord(type1, id1);

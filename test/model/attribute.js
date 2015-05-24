@@ -27,7 +27,8 @@
 		expect(1);
 
 		var TestModel = store.modelFor('test');
-		var expectedAttributes = new EG.Set(['name', 'posts', 'birthday']);
+		var expectedAttributes = EG.Set.create();
+		expectedAttributes.addObjects(['name', 'posts', 'birthday']);
 
 		ok(Em.get(TestModel, 'attributes').isEqual(expectedAttributes));
 	});

@@ -513,8 +513,10 @@
 		promise.then(function(posts) {
 			start(0);
 
-			var set1 = new EG.Set(posts);
-			var set2 = new EG.Set([post1, post2]);
+			var set1 = EG.Set.create();
+			set1.addObjects(posts);
+			var set2 = EG.Set.create();
+			set2.addObjects([post1, post2]);
 
 			ok(posts.length === 2);
 			ok(set1.isEqual(set2));

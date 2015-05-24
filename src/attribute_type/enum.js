@@ -1,4 +1,5 @@
 import Ember from 'ember';
+import EmberGraphSet from 'ember-graph/util/set';
 import AttributeType from 'ember-graph/attribute_type/type';
 
 var map = Ember.ArrayPolyfills.map;
@@ -44,7 +45,7 @@ export default AttributeType.extend({
 	 * @final
 	 */
 	valueSet: Ember.computed(function() {
-		const set = EG.Set.create();
+		const set = EmberGraphSet.create();
 		const values = this.get('values');
 
 		set.addObjects(map.call(values, (value) => value.toLocaleLowerCase()));

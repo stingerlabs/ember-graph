@@ -118,7 +118,8 @@
 		store.find(typeKey, ['1', '2', '4']).then(function(resolvedRecords) {
 			start();
 
-			var set = new EG.Set(resolvedRecords);
+			var set = EG.Set.create();
+			set.addObjects(resolvedRecords);
 			ok(Em.get(set, 'length') === 3);
 			ok(store.getRecord(typeKey, '1'));
 			ok(store.getRecord(typeKey, '2'));
@@ -132,7 +133,8 @@
 		store.find(typeKey).then(function(resolvedRecords) {
 			start();
 
-			var set = new EG.Set(resolvedRecords);
+			var set = EG.Set.create();
+			set.addObjects(resolvedRecords);
 
 			ok(Em.get(set, 'length') === 4);
 			ok(store.getRecord(typeKey, '1'));

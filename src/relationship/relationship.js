@@ -41,25 +41,6 @@ var Relationship = Ember.Object.extend({
 
 	relationship2: null,
 
-	init: function(type1, id1, name1, type2, id2, name2, state) { // jshint ignore:line
-		Ember.assert('Invalid type or ID', type1 && id1 && type2 && id2);
-		Ember.assert('First relationship must have a name', name1);
-		Ember.assert('Second relationship must have a name or be null',
-			name2 === null || Ember.typeOf(name2) === 'string');
-		Ember.assert('Invalid state', state === CLIENT_STATE || state === SERVER_STATE || state === DELETED_STATE);
-
-		this.setProperties({
-			id: EG.generateUUID(),
-			type1: type1,
-			id1: id1,
-			relationship1: name1,
-			type2: type2,
-			id2: id2,
-			relationship2: name2,
-			state: state
-		});
-	},
-
 	isConnectedTo: function(record) {
 		if (this.get('type1') === record.typeKey && this.get('id1') === record.get('id')) {
 			return true;
@@ -144,7 +125,18 @@ Relationship.reopenClass({
 	// TODO: NEW_STATE, SAVED_STATE, DELETED_STATE
 	CLIENT_STATE: CLIENT_STATE,
 	SERVER_STATE: SERVER_STATE,
-	DELETED_STATE: DELETED_STATE
+	DELETED_STATE: DELETED_STATE,
+
+	create(type1, id1, relationship1, type2, id2, relationship2, state) { // jshint ignore:line
+		Ember.assert('Invalid type or ID', type1 && id1 && type2 && id2);
+		Ember.assert('First relationship must have a name', relationship1);
+		Ember.assert('Second relationship must have a name or be null',
+			relationship2 === null || Ember.typeOf(relationship2) === 'string');
+		Ember.assert('Invalid state', state === CLIENT_STATE || state === SERVER_STATE || state === DELETED_STATE);
+
+		const id = generateUUID();
+		return this._super({ id, type1, id1, relationship1, type2, id2, relationship2, state });
+	}
 });
 
 export default Relationship;

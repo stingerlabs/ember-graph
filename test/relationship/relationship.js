@@ -38,7 +38,7 @@
 		var post = store.getRecord('post', '2');
 		var other = store.getRecord('post', '1');
 
-		var relationship = new EG.Relationship('user', '1', 'posts', 'post', '2', 'author', CLIENT_STATE);
+		var relationship = EG.Relationship.create('user', '1', 'posts', 'post', '2', 'author', CLIENT_STATE);
 
 		strictEqual(relationship.otherType(user), 'post');
 		strictEqual(relationship.otherType(post), 'user');

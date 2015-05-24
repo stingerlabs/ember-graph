@@ -11,7 +11,7 @@
 
 	module('Relationship Store Test', {
 		setup: function() {
-			store = new EG.RelationshipStore();
+			store = EG.RelationshipStore.create();
 		}
 	});
 
@@ -27,11 +27,11 @@
 		strictEqual(store.get('client.length'), 0);
 		strictEqual(store.get('deleted.length'), 0);
 
-		var r1 = new Relationship('user', '1', 'posts', 'post', '1', 'author', SERVER_STATE);
-		var r2 = new Relationship('user', '1', 'posts', 'post', '2', 'author', SERVER_STATE);
-		var r3 = new Relationship('user', '1', 'posts', 'post', '3', 'author', DELETED_STATE);
-		var r4 = new Relationship('user', '1', 'posts', 'post', '4', 'author', CLIENT_STATE);
-		var r5 = new Relationship('user', '1', 'posts', 'post', '5', 'author', CLIENT_STATE);
+		var r1 = Relationship.create('user', '1', 'posts', 'post', '1', 'author', SERVER_STATE);
+		var r2 = Relationship.create('user', '1', 'posts', 'post', '2', 'author', SERVER_STATE);
+		var r3 = Relationship.create('user', '1', 'posts', 'post', '3', 'author', DELETED_STATE);
+		var r4 = Relationship.create('user', '1', 'posts', 'post', '4', 'author', CLIENT_STATE);
+		var r5 = Relationship.create('user', '1', 'posts', 'post', '5', 'author', CLIENT_STATE);
 
 		store.addRelationship('posts', r1);
 		store.addRelationship('posts', r2);
@@ -52,11 +52,11 @@
 	test('Remove relationships', function() {
 		expect(13);
 
-		var r1 = new Relationship('user', '1', 'posts', 'post', '1', 'author', SERVER_STATE);
-		var r2 = new Relationship('user', '1', 'posts', 'post', '2', 'author', SERVER_STATE);
-		var r3 = new Relationship('user', '1', 'posts', 'post', '3', 'author', DELETED_STATE);
-		var r4 = new Relationship('user', '1', 'posts', 'post', '4', 'author', CLIENT_STATE);
-		var r5 = new Relationship('user', '1', 'posts', 'post', '5', 'author', CLIENT_STATE);
+		var r1 = Relationship.create('user', '1', 'posts', 'post', '1', 'author', SERVER_STATE);
+		var r2 = Relationship.create('user', '1', 'posts', 'post', '2', 'author', SERVER_STATE);
+		var r3 = Relationship.create('user', '1', 'posts', 'post', '3', 'author', DELETED_STATE);
+		var r4 = Relationship.create('user', '1', 'posts', 'post', '4', 'author', CLIENT_STATE);
+		var r5 = Relationship.create('user', '1', 'posts', 'post', '5', 'author', CLIENT_STATE);
 
 		store.addRelationship('posts', r1);
 		store.addRelationship('posts', r2);

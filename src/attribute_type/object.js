@@ -1,4 +1,5 @@
 import Ember from 'ember';
+import EmberGraphSet from 'ember-graph/util/set';
 import AttributeType from 'ember-graph/attribute_type/type';
 
 /**
@@ -83,8 +84,8 @@ export default AttributeType.extend({
 	 */
 	deepCompare: function(a, b) {
 		if (this.isObject(a) && this.isObject(b)) {
-			var aKeys = EG.Set.create();
-			var bKeys = EG.Set.create();
+			var aKeys = EmberGraphSet.create();
+			var bKeys = EmberGraphSet.create();
 
 			aKeys.addObjects(Ember.keys(a));
 			bKeys.addObjects(Ember.keys(b));
