@@ -24,7 +24,7 @@ export default AttributeType.extend({
 	 * @final
 	 */
 	defaultValue: Ember.computed(function() {
-		throw new Error('You must override the `defaultValue` in an enumeration type.');
+		throw new Ember.Error('You must override the `defaultValue` in an enumeration type.');
 	}).property(),
 
 	/**
@@ -82,7 +82,7 @@ export default AttributeType.extend({
 			if (this.isValidValue(defaultValue)) {
 				return defaultValue;
 			} else {
-				throw new Error('The default value you provided isn\'t a valid value.');
+				throw new Ember.Error('The default value you provided isn\'t a valid value.');
 			}
 		}
 	},

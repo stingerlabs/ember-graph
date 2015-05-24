@@ -277,7 +277,7 @@ export default {
 					var relationships = filterRelationships(typeKey, id, name);
 
 					if (relationships.length > 1) {
-						throw new Error('Too many relationships connected to ' + typeKey + ':' + id + ':' + name);
+						throw new Ember.Error('Too many relationships connected to ' + typeKey + ':' + id + ':' + name);
 					}
 				});
 			});

@@ -77,7 +77,7 @@ var Model = CoreModel.extend(Ember.Evented, {
 				this.set('_id', value);
 				return value;
 			} else {
-				throw new Error('Cannot change the \'id\' property of a model.');
+				throw new Ember.Error('Cannot change the \'id\' property of a model.');
 			}
 		}
 

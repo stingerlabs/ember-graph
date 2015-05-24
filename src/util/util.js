@@ -20,7 +20,7 @@ import { reduce } from 'ember-graph/util/array';
  */
 function abstractMethod(methodName) {
 	return function() {
-		throw new Error('You failed to implement the abstract `' + methodName + '` method.');
+		throw new Ember.Error('You failed to implement the abstract `' + methodName + '` method.');
 	};
 }
 
@@ -41,7 +41,7 @@ function abstractMethod(methodName) {
  */
 function abstractProperty(propertyName) {
 	return Ember.computed(function() {
-		throw new Error('You failed to override the abstract `' + propertyName + '` property.');
+		throw new Ember.Error('You failed to override the abstract `' + propertyName + '` property.');
 	}).property();
 }
 
