@@ -3,9 +3,11 @@ import Ember from 'ember';
 import Adapter from 'ember-graph/adapter/adapter';
 
 import { pluralize } from 'ember-graph/util/inflector';
+import { reduce } from 'ember-graph/util/array';
 
 var Promise = Ember.RSVP.Promise; // jshint ignore:line
 var forEach = Ember.ArrayPolyfills.forEach;
+var map = Ember.ArrayPolyfills.map;
 
 /**
  * An adapter that communicates with REST back-ends. The requests made all follow the
@@ -18,6 +20,8 @@ var forEach = Ember.ArrayPolyfills.forEach;
  * @constructor
  */
 export default Adapter.extend({
+
+	urlLengthLimit: 2048,
 
 	/**
 	 * Sends a `POST` request to `/{pluralized_type}` with the serialized record as the body.
@@ -63,11 +67,20 @@ export default Adapter.extend({
 	 * @return {Promise} A promise that resolves to an array of requested records
 	 */
 	findMany: function(typeKey, ids) {
-		var _this = this;
-		var url = this.buildUrl(typeKey, ids.join(','));
+		const url = this.buildUrl(typeKey, ids.join(','));
 
-		return this.ajax(url, 'GET').then(function(payload) {
-			return _this.deserialize(payload, { requestType: 'findMany', recordType: typeKey, ids: ids });
+		if (window.location.origin.length + url.length <= this.get('urlLengthLimit')) {
+			return this.ajax(url, 'GET').then((payload) => {
+				return this.deserialize(payload, { requestType: 'findMany', recordType: typeKey, ids: ids });
+			});
+		}
+
+		const urls = this.buildMultipleUrls(typeKey, ids);
+		const promises = map.call(urls, (url) => this.ajax(url, 'GET'));
+
+		Promise.all(promises).then((payloads) => {
+			const payload = this.mergePayloads(payloads);
+			return this.deserialize(payload, { requestType: 'findMany', recordType: typeKey, ids });
 		});
 	},
 
@@ -185,6 +198,46 @@ export default Adapter.extend({
 		}
 
 		return url;
+	},
+
+	buildMultipleUrls(typeKey, ids) {
+		const base = this.get('prefix') + '/' + pluralize(typeKey) + '/';
+		const baseLength = (window.location.origin.length + base.length);
+		const lengthLimit = this.get('urlLengthLimit');
+
+		const idArrays = reduce.call(ids, (idArrays, id) => {
+			const idArray = idArrays[idArrays.length - 1];
+
+			if (baseLength + idArray.join(',').length + id.length + 1 <= lengthLimit) {
+				idArray.push(id);
+			} else {
+				idArrays.push([id]);
+			}
+
+			return idArrays;
+		}, [[]]);
+
+		return map.call(idArrays, (idArray) => base + idArray.join(','));
+	},
+
+	mergePayloads(payloads) {
+		const mergeObjects = (a, b) => {
+			const merged = Ember.merge(Ember.copy(a, true), b);
+
+			for (let key in b) {
+				if (b.hasOwnProperty(key) && a.hasOwnProperty(key)) {
+					if (Ember.isArray(b[key])) {
+						merged[key] = a[key].concat(b[key]);
+					} else if (b[key] && typeof b[key] === 'object') {
+						merged[key] = mergeObjects(a[key], b[key]);
+					}
+				}
+			}
+
+			return merged;
+		};
+
+		return reduce.call(payloads, mergeObjects, {});
 	},
 
 	/**
