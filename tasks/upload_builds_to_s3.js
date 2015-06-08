@@ -9,11 +9,13 @@ module.exports = function(grunt) {
 	grunt.registerTask('upload_builds_to_s3', function() {
 		var done = this.async();
 		var hash = execSync('git rev-parse HEAD').toString().trim();
+		var bowerConfig = fs.readFileSync('./bower.json', { encoding: 'utf8' });
 		var debugBuild = fs.readFileSync('./dist/ember-graph.js', { encoding: 'utf8' });
 		var productionBuild = fs.readFileSync('./dist/ember-graph.prod.js', { encoding: 'utf8' });
 		var minifiedBuild = fs.readFileSync('./dist/ember-graph.min.js', { encoding: 'utf8' });
 
 		var zip = new AdmZip();
+		zip.addFile('bower.json', new Buffer(bowerConfig));
 		zip.addFile('ember-graph.js', new Buffer(debugBuild));
 		zip.addFile('ember-graph.prod.js', new Buffer(productionBuild));
 		zip.addFile('ember-graph.min.js', new Buffer(minifiedBuild));
