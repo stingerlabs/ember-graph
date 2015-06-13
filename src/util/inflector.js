@@ -26,11 +26,11 @@ import Ember from 'ember';
  THE SOFTWARE.
  */
 
-var uncountableWords = [
+const uncountableWords = [
 	'equipment', 'information', 'rice', 'money', 'species', 'series', 'fish', 'sheep', 'moose', 'deer', 'news'
 ];
 
-var pluralRules = [
+const pluralRules = [
 	[/(m)an$/gi,                 '$1en'],
 	[/(pe)rson$/gi,              '$1ople'],
 	[/(child)$/gi,               '$1ren'],
@@ -53,7 +53,7 @@ var pluralRules = [
 	[/$/gi,                      's']
 ];
 
-var singularRules = [
+const singularRules = [
 	[/(m)en$/gi,                                                        '$1an'],
 	[/(pe)ople$/gi,                                                     '$1rson'],
 	[/(child)ren$/gi,                                                   '$1'],
@@ -82,12 +82,12 @@ var singularRules = [
 	[/s$/gi,                                                            '']
 ];
 
-var apply = function(str, rules) {
+const apply = function(str, rules) {
 	if (uncountableWords.indexOf(str) >= 0) {
 		return str;
 	}
 
-	for (var i = 0; i < rules.length; i = i + 1) {
+	for (let i = 0; i < rules.length; i = i + 1) {
 		if (str.match(rules[i][0])) {
 			return str.replace(rules[i][0], rules[i][1]);
 		}
@@ -96,7 +96,7 @@ var apply = function(str, rules) {
 	return str;
 };
 
-var PLURALIZE_CACHE = {};
+const PLURALIZE_CACHE = {};
 function pluralize(str) {
 	if (!PLURALIZE_CACHE[str]) {
 		PLURALIZE_CACHE[str] = apply(str, pluralRules);
@@ -105,13 +105,21 @@ function pluralize(str) {
 	return PLURALIZE_CACHE[str];
 }
 
-var SINGULARIZE_CACHE = {};
+const SINGULARIZE_CACHE = {};
 function singularize(str) {
 	if (!SINGULARIZE_CACHE[str]) {
 		SINGULARIZE_CACHE[str] = apply(str, singularRules);
 	}
 
 	return SINGULARIZE_CACHE[str];
+}
+
+function overridePluralRule(singular, plural) {
+	PLURALIZE_CACHE[singular] = plural;
+}
+
+function overrideSingularRule(plural, singular) {
+	SINGULARIZE_CACHE[plural] = singular;
 }
 
 if (Ember.EXTEND_PROTOTYPES === true || Ember.EXTEND_PROTOTYPES.String) {
@@ -126,5 +134,7 @@ if (Ember.EXTEND_PROTOTYPES === true || Ember.EXTEND_PROTOTYPES.String) {
 
 export {
 	pluralize,
-	singularize
+	singularize,
+	overridePluralRule,
+	overrideSingularRule
 };

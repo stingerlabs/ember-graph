@@ -134,3 +134,10 @@ import RecordCache from 'ember-graph/store/record_cache';
 EmberGraph.RecordCache = RecordCache;
 import RecordRequestCache from 'ember-graph/store/record_request_cache';
 EmberGraph.RecordRequestCache = RecordRequestCache;
+
+// Inflector
+import {
+	overridePluralRule,
+	overrideSingularRule
+} from 'ember-graph/util/inflector';
+EmberGraph.Inflector = { singularize, pluralize, overridePluralRule, overrideSingularRule };
