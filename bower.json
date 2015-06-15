@@ -2,7 +2,7 @@
 	"name": "ember-graph",
 	"main": "ember-graph.js",
 	"dependencies": {
-		"ember": ">=1.5.0"
+		"ember": ">=1.13.0"
 	},
 	"devDependencies": {
 		"qunit": "1.15"
