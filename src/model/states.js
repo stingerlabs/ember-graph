@@ -1,5 +1,7 @@
 import Ember from 'ember';
 
+import { computed } from 'ember-graph/util/computed';
+
 export default {
 
 	/**
@@ -51,9 +53,11 @@ export default {
 	 * @final
 	 * @for Model
 	 */
-	isLoaded: Ember.computed(function() {
-		return this.get('store') !== null;
-	}).property('store'),
+	isLoaded: computed('store', {
+		get() {
+			return (this.get('store') !== null);
+		}
+	}),
 
 	/**
 	 * Denotes that the record has attribute or relationship changes that have not been saved to the server yet.
@@ -86,9 +90,11 @@ export default {
 	 * @final
 	 * @for Model
 	 */
-	isNew: Ember.computed(function() {
-		return EG.String.startsWith(this.get('_id'), this.constructor.temporaryIdPrefix);
-	}).property('_id'),
+	isNew: computed('_id', {
+		get() {
+			return EG.String.startsWith(this.get('_id'), this.constructor.temporaryIdPrefix);
+		}
+	}),
 
 	/**
 	 * Denotes that the record is currently waiting for the server to respond to an operation.

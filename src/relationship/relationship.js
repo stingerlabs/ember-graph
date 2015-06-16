@@ -2,6 +2,7 @@ import Ember from 'ember';
 
 import { generateUUID } from 'ember-graph/util/util';
 import { RelationshipStates } from 'ember-graph/constants';
+import { computed } from 'ember-graph/util/computed';
 
 var CLIENT_STATE = RelationshipStates.CLIENT_STATE;
 var SERVER_STATE = RelationshipStates.SERVER_STATE;
@@ -10,8 +11,11 @@ var DELETED_STATE = RelationshipStates.DELETED_STATE;
 var Relationship = Ember.Object.extend({
 
 	_state: CLIENT_STATE,
-	state: Ember.computed(function(key, value) {
-		if (arguments.length > 1) {
+	state: computed('_state', {
+		get() {
+			return this.get('_state');
+		},
+		set(key, value) {
 			switch (value) {
 				case CLIENT_STATE:
 				case SERVER_STATE:
@@ -23,9 +27,7 @@ var Relationship = Ember.Object.extend({
 					break;
 			}
 		}
-
-		return this.get('_state');
-	}).property('_state'),
+	}),
 
 	id: null,
 

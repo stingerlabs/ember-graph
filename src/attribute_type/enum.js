@@ -2,6 +2,8 @@ import Ember from 'ember';
 import EmberGraphSet from 'ember-graph/util/set';
 import AttributeType from 'ember-graph/attribute_type/type';
 
+import { computed } from 'ember-graph/util/computed';
+
 var map = Ember.ArrayPolyfills.map;
 
 /**
@@ -24,9 +26,11 @@ export default AttributeType.extend({
 	 * @type String
 	 * @final
 	 */
-	defaultValue: Ember.computed(function() {
-		throw new Ember.Error('You must override the `defaultValue` in an enumeration type.');
-	}).property(),
+	defaultValue: computed({
+		get() {
+			throw new Ember.Error('You must override the `defaultValue` in an enumeration type.');
+		}
+	}),
 
 	/**
 	 * @property values
@@ -44,14 +48,16 @@ export default AttributeType.extend({
 	 * @default []
 	 * @final
 	 */
-	valueSet: Ember.computed(function() {
-		const set = EmberGraphSet.create();
-		const values = this.get('values');
+	valueSet: computed('values', {
+		get() {
+			const set = EmberGraphSet.create();
+			const values = this.get('values');
 
-		set.addObjects(map.call(values, (value) => value.toLocaleLowerCase()));
+			set.addObjects(map.call(values, (value) => value.toLocaleLowerCase()));
 
-		return set;
-	}).property('values'),
+			return set;
+		}
+	}),
 
 	/**
 	 * Determines if the given option is a valid enum value.

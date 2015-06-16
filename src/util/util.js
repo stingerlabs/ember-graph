@@ -2,6 +2,7 @@ import Ember from 'ember';
 import EmberGraphSet from 'ember-graph/util/set';
 
 import { reduce } from 'ember-graph/util/array';
+import { computed } from 'ember-graph/util/computed';
 
 /**
  * Denotes that method must be implemented in a subclass.
@@ -40,9 +41,11 @@ function abstractMethod(methodName) {
  * @namespace EmberGraph
  */
 function abstractProperty(propertyName) {
-	return Ember.computed(function() {
-		throw new Ember.Error('You failed to override the abstract `' + propertyName + '` property.');
-	}).property();
+	return computed({
+		get() {
+			throw new Ember.Error('You failed to override the abstract `' + propertyName + '` property.');
+		}
+	});
 }
 
 /**
@@ -152,15 +155,15 @@ function deprecateMethod(message, method) {
  * @namespace EmberGraph
  */
 function deprecateProperty(message, property) {
-	return Ember.computed(function(key, value) {
-		Ember.deprecate(message);
-
-		if (arguments.length > 1) {
+	return computed(property, {
+		get() {
+			Ember.deprecate(message);
+			return this.get(property);
+		},
+		set(key, value) {
 			this.set(property, value);
 		}
-
-		return this.get(property);
-	}).property(property);
+	});
 }
 
 export {

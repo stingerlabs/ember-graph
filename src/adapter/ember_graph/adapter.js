@@ -4,6 +4,8 @@ import LoadMethods from 'ember-graph/adapter/ember_graph/load';
 import ServerMethods from 'ember-graph/adapter/ember_graph/server';
 import DatabaseMethods from 'ember-graph/adapter/ember_graph/database';
 
+import { computed } from 'ember-graph/util/computed';
+
 var Promise = Ember.RSVP.Promise; // jshint ignore:line
 
 /**
@@ -57,9 +59,11 @@ var EmberGraphAdapter = Adapter.extend({
 	 * @protected
 	 * @final
 	 */
-	serializer: Ember.computed(function() {
-		return this.get('container').lookup('serializer:ember_graph');
-	}).property().readOnly(),
+	serializer: computed({
+		get() {
+			return this.get('container').lookup('serializer:ember_graph');
+		}
+	}),
 
 	createRecord: function(record) {
 		var _this = this;

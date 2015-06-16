@@ -1,18 +1,20 @@
 import Ember from 'ember';
 
 import { PromiseObject } from 'ember-graph/data/promise_object';
+import { computed } from 'ember-graph/util/computed';
 
 var forEach = Ember.ArrayPolyfills.forEach;
 
 export default Ember.Object.extend({
 
-	cacheTimeout: Ember.computed(function(key, value) {
-		if (arguments.length > 1) {
+	cacheTimeout: computed('_cacheTimeout', {
+		get() {
+			return this.get('_cacheTimeout');
+		},
+		set(key, value) {
 			this.set('_cacheTimeout', typeof value === 'number' ? value : Infinity);
 		}
-
-		return this.get('_cacheTimeout');
-	}).property('_cacheTimeout'),
+	}),
 
 	records: {},
 
