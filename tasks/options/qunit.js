@@ -9,5 +9,5 @@ module.exports = {
 		}
 	},
 
-	all: ['test/index.html']
+	all: ['test/*.html']
 };

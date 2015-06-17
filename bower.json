@@ -5,6 +5,8 @@
 		"ember": ">=1.8.0"
 	},
 	"devDependencies": {
-		"qunit": "1.15"
+		"qunit": "1.15",
+		"ember-1.8.0": "ember#1.8.0",
+		"ember-1.13.0": "ember#1.13.0"
 	}
 }

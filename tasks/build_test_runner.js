@@ -1,25 +1,43 @@
 'use strict';
 
+var EMBER_VERSIONS = {
+	'1.8.0': {
+		development: 'ember-1.8.0/ember.js',
+		production: 'ember-1.8.0/ember.prod.js'
+	},
+	'1.13.0': {
+		development: 'ember-1.13.0/ember.debug.js',
+		production: 'ember-1.13.0/ember.debug.js'
+	}
+};
+
 module.exports = function(grunt) {
-	function buildRunner(release) {
+	function buildRunners(release) {
 		var template = grunt.file.read('test/template.html.tmpl');
-		var newNamingScheme = grunt.file.exists('lib/ember/ember.debug.js');
+
 		var renderingContext = {
 			data: {
 				sourceFile: (release ? 'ember-graph.min.js' : 'ember-graph.js'),
-				emberFile: (release ? 'ember.prod.js' : (newNamingScheme ? 'ember.debug.js' : 'ember.js')),
 				files: this.filesSrc // jshint ignore:line
 			}
 		};
 
-		grunt.file.write('test/index.html', grunt.template.process(template, renderingContext));
+		renderingContext.data.emberFile =
+			(release ? EMBER_VERSIONS['1.8.0'].production : EMBER_VERSIONS['1.8.0'].development);
+		renderingContext.data.includeHandlebars = true;
+		grunt.file.write('test/ember-1.8.0.html', grunt.template.process(template, renderingContext));
+
+		renderingContext.data.emberFile =
+			(release ? EMBER_VERSIONS['1.13.0'].production : EMBER_VERSIONS['1.13.0'].development);
+		renderingContext.data.includeHandlebars = false;
+		grunt.file.write('test/ember-1.13.0.html', grunt.template.process(template, renderingContext));
 	}
 
 	grunt.registerMultiTask('build_test_runner', function() {
-		buildRunner.call(this, false);
+		buildRunners.call(this, false);
 	});
 
 	grunt.registerMultiTask('build_release_test_runner', function() {
-		buildRunner.call(this, true);
+		buildRunners.call(this, true);
 	});
 };
