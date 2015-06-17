@@ -3,6 +3,8 @@ import Relationship from 'ember-graph/relationship/relationship';
 import RelationshipStore from 'ember-graph/relationship/relationship_store';
 import EmberGraphSet from 'ember-graph/util/set';
 
+import { computed } from 'ember-graph/util/computed';
+
 import {
 	groupRecords,
 	arrayContentsEqual
@@ -59,9 +61,8 @@ var createRelationship = function(name, kind, options) {
 			meta.kind === HAS_MANY_KEY || meta.getDefaultValue() === null ||
 			Ember.typeOf(meta.getDefaultValue()) === 'string');
 
-	return Ember.computed(meta.kind === HAS_MANY_KEY ? HAS_MANY_GETTER : HAS_ONE_GETTER).
-		property('relationships.client.' + name, 'relationships.deleted.' + name, 'relationships.server.' + name).
-		meta(meta).readOnly();
+	return computed(`relationships.{client,deleted,server}.${name}`,
+		{ 'get': meta.kind === HAS_MANY_KEY ? HAS_MANY_GETTER : HAS_ONE_GETTER }).meta(meta);
 };
 
 var RelationshipClassMethods = {
@@ -162,7 +163,7 @@ var RelationshipClassMethods = {
 			}
 
 			meta.isRelationship = true;
-			obj[name] = Ember.computed(relationship).property('_' + name).readOnly().meta(meta);
+			obj[name] = computed(`_${name}`, { 'get': relationship }).meta(meta);
 		});
 
 		this.reopen(obj);
@@ -172,9 +173,11 @@ var RelationshipClassMethods = {
 
 var RelationshipPublicMethods = {
 
-	areRelationshipsDirty: Ember.computed(function() {
-		return this.get('relationships.client.length') > 0 || this.get('relationships.deleted.length') > 0;
-	}).property('relationships.client.length', 'relationships.deleted.length'),
+	areRelationshipsDirty: computed('relationships.{client,deleted}.length', {
+		get() {
+			return this.get('relationships.client.length') > 0 || this.get('relationships.deleted.length') > 0;
+		}
+	}),
 
 	/**
 	 * Gets all of the dirty relationships for the model. The object returned

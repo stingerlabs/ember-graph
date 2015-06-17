@@ -1,5 +1,7 @@
 import Ember from 'ember';
 
+import { computed } from 'ember-graph/util/computed';
+
 /**
  * Ember's ObjectProxy combined with the PromiseProxyMixin.
  * Acts as an object and proxies all properties to the
@@ -48,41 +50,47 @@ var ModelPromiseObject = PromiseObject.extend({
 	__modelId: null,
 	__modelTypeKey: null,
 
-	id: function(key, value) {
-		var content = this.get('content');
+	id: computed('__modelId', 'content.id', {
+		get() {
+			const content = this.get('content');
 
-		if (arguments.length > 1) {
+			if (content && content.get) {
+				return content.get('id');
+			} else {
+				return this.get('__modelId');
+			}
+		},
+		set(key, value) {
+			const content = this.get('content');
+
 			if (content && content.set) {
 				content.set('id', value);
 			} else {
 				this.set('__modelId', value);
 			}
 		}
+	}),
 
-		if (content && content.get) {
-			return content.get('id');
-		} else {
-			return this.get('__modelId');
-		}
-	}.property('__modelId', 'content.id'),
+	typeKey: computed('__modelTypeKey', 'content.typeKey', {
+		get() {
+			const content = this.get('content');
 
-	typeKey: function(key, value) {
-		var content = this.get('content');
+			if (content && content.get) {
+				return content.get('typeKey');
+			} else {
+				return this.get('__modelTypeKey');
+			}
+		},
+		set(key, value) {
+			const content = this.get('content');
 
-		if (arguments.length > 1) {
 			if (content && content.set) {
 				content.set('typeKey', value);
 			} else {
 				this.set('__modelTypeKey', value);
 			}
 		}
-
-		if (content && content.get) {
-			return content.get('typeKey');
-		} else {
-			return this.get('__modelTypeKey');
-		}
-	}.property('__modelTypeKey', 'content.typeKey'),
+	}),
 
 	/**
 	 * Returns the underlying model for this promise. If the promise

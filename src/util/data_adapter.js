@@ -1,6 +1,8 @@
 import Ember from 'ember';
 import Model from 'ember-graph/model/model';
 
+import { computed } from 'ember-graph/util/computed';
+
 const forEach = Ember.ArrayPolyfills.forEach;
 
 /**
@@ -11,11 +13,13 @@ const forEach = Ember.ArrayPolyfills.forEach;
  * @class DataAdapter
  * @private
  */
-export default Ember.DataAdapter.extend({
+const EmberGraphDataAdapter = Ember.DataAdapter && Ember.DataAdapter.extend({
 
-	containerDebugAdapter: Ember.computed(function() {
-		return this.get('container').lookup('container-debug-adapter:main');
-	}).property(),
+	containerDebugAdapter: computed({
+		get() {
+			return this.get('container').lookup('container-debug-adapter:main');
+		}
+	}),
 
 	getFilters: function() {
 		return [
@@ -111,3 +115,7 @@ export default Ember.DataAdapter.extend({
 		};
 	}
 });
+
+const DataAdapter = (Ember.DataAdapter ? EmberGraphDataAdapter : null);
+
+export default DataAdapter;

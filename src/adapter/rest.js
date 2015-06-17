@@ -4,6 +4,7 @@ import Adapter from 'ember-graph/adapter/adapter';
 
 import { pluralize } from 'ember-graph/util/inflector';
 import { reduce } from 'ember-graph/util/array';
+import { computed } from 'ember-graph/util/computed';
 
 var Promise = Ember.RSVP.Promise; // jshint ignore:line
 var forEach = Ember.ArrayPolyfills.forEach;
@@ -253,9 +254,11 @@ export default Adapter.extend({
 	 * @type String
 	 * @default ''
 	 */
-	prefix: Ember.computed(function() {
-		return '';
-	}).property(),
+	prefix: computed({
+		get() {
+			return '';
+		}
+	}),
 
 	/**
 	 * This method sends the request to the server.

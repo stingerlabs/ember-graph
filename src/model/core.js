@@ -2,6 +2,7 @@ import Ember from 'ember';
 import EmberGraphSet from 'ember-graph/util/set';
 
 import { deprecateProperty } from 'ember-graph/util/util';
+import { computed } from 'ember-graph/util/computed';
 
 var forEach = Ember.ArrayPolyfills.forEach;
 
@@ -23,40 +24,40 @@ var createAttribute = function(attributeName, options) {
 		isEqual: options.isEqual
 	};
 
-	return Ember.computed(function(key, value) {
-		var meta = this.constructor.metaForAttribute(key);
-		var server = this.get('serverAttributes.' + key);
-		var client = this.get('clientAttributes.' + key);
-		var current = (client === undefined ? server : client);
+	return computed(`clientAttributes.${attributeName}`, `serverAttributes.${attributeName}`, {
+		get(key) {
+			const meta = this.constructor.metaForAttribute(key);
+			const server = this.get(`serverAttributes.${key}`);
+			const client = this.get(`clientAttributes.${key}`);
+			return (client === undefined ? server : client);
+		},
 
-		// New records can modify read only attributes. But not if they're server only
-		if (arguments.length > 1 && meta.isReadOnly && !this.get('isNew')) {
-			throw new Ember.Error('Cannot set read-only property "' + key + '" on object: ' + this);
-		}
+		set(key, value) {
+			const meta = this.constructor.metaForAttribute(key);
 
-		Ember.runInDebug(function() {
-			if (arguments.length > 1 && value === undefined) {
-				Ember.warn('`undefined` is not a valid property value.');
+			// New records can modify read only attributes. But not if they're server only
+			if (meta.isReadOnly && !this.get('isNew')) {
+				throw new Ember.Error('Cannot set read-only property "' + key + '" on object: ' + this);
 			}
-		});
 
-		if (value !== undefined) {
-			var scope = meta.isEqual ? meta : this.get('store').attributeTypeFor(meta.type);
+			if (value === undefined) {
+				Ember.warn('`undefined` is not a valid property value.');
+				return;
+			}
 
-			if (scope.isEqual(server, value)) {
+			const isEqualScope = meta.isEqual ? meta : this.get('store').attributeTypeFor(meta.type);
+
+			if (isEqualScope.isEqual(this.get(`serverAttributes.${key}`), value)) {
 				delete this.get('clientAttributes')[key];
 			} else {
-				this.set('clientAttributes.' + key, value);
+				this.set(`clientAttributes.${key}`, value);
 			}
 
 			// This only notifies observers of the object itself, not the properties.
 			// At this point in time, that's only the `_areAttributesDirty` property.
 			this.notifyPropertyChange('clientAttributes');
-			return value;
 		}
-
-		return current;
-	}).property('clientAttributes.' + attributeName, 'serverAttributes.' + attributeName).meta(meta);
+	}).meta(meta);
 };
 
 /**
@@ -100,9 +101,11 @@ var CoreModel = Ember.Object.extend({
 	 * @property areAttributesDirty
 	 * @type Boolean
 	 */
-	areAttributesDirty: Ember.computed(function() {
-		return Ember.keys(this.get('clientAttributes') || {}).length > 0;
-	}).property('clientAttributes'),
+	areAttributesDirty: computed('clientAttributes',{
+		get() {
+			return Ember.keys(this.get('clientAttributes') || {}).length > 0;
+		}
+	}),
 
 	_areAttributesDirty: deprecateProperty('`_areAttributeDirty` is now `areAttributesDirty`', 'areAttributesDirty'),
 
@@ -267,17 +270,19 @@ CoreModel.reopenClass({
 	 * @static
 	 * @readOnly
 	 */
-	attributes: Ember.computed(function() {
-		var attributes = EmberGraphSet.create();
+	attributes: computed({
+		get() {
+			const attributes = EmberGraphSet.create();
 
-		this.eachComputedProperty(function(name, meta) {
-			if (meta.isAttribute) {
-				attributes.addObject(name);
-			}
-		});
+			this.eachComputedProperty(function(name, meta) {
+				if (meta.isAttribute) {
+					attributes.addObject(name);
+				}
+			});
 
-		return attributes;
-	}).property(),
+			return attributes;
+		}
+	}),
 
 	/**
 	 * Returns the metadata for the given property name. This should

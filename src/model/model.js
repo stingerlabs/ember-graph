@@ -5,6 +5,7 @@ import RelationshipLoadMethods from 'ember-graph/model/relationship_load';
 
 import { generateUUID } from 'ember-graph/util/util';
 import { startsWith } from 'ember-graph/util/string';
+import { computed } from 'ember-graph/util/computed';
 import {
 	RelationshipClassMethods,
 	RelationshipPublicMethods,
@@ -64,25 +65,21 @@ var Model = CoreModel.extend(Ember.Evented, {
 	 * @type String
 	 * @final
 	 */
-	id: Ember.computed(function(key, value) {
-		var id = this.get('_id');
+	id: computed('_id', {
+		get() {
+			return this.get('_id');
+		},
+		set(key, value) {
+			const id = this.get('_id');
+			const prefix = this.constructor.temporaryIdPrefix;
 
-		if (arguments.length > 1) {
-			var prefix = this.constructor.temporaryIdPrefix;
-
-			if (id === null) {
+			if (id === null || (startsWith(id, prefix) && !startsWith(value, prefix))) {
 				this.set('_id', value);
-				return value;
-			} else if (startsWith(id, prefix) && !startsWith(value, prefix)) {
-				this.set('_id', value);
-				return value;
 			} else {
 				throw new Ember.Error('Cannot change the \'id\' property of a model.');
 			}
 		}
-
-		return id;
-	}).property('_id'),
+	}),
 
 	/**
 	 * @property store

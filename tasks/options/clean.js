@@ -1,5 +1,5 @@
 'use strict';
 
 module.exports = {
-	test: ['test/index.html']
+	test: ['test/*.html']
 };

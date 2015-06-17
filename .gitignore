@@ -1,5 +1,5 @@
 node_modules/*
-test/index.html
+test/*.html
 .idea/*
 lib/*
 doc/*

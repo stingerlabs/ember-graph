@@ -210,12 +210,10 @@
 	test('Look up per-type adapters', function() {
 		expect(3);
 
-		var container = store.get('container');
-
 		var UserAdapter = EG.Adapter.extend({});
 		var ForumAdminAdapter = EG.Adapter.extend({});
-		container.register('adapter:user', UserAdapter);
-		container.register('adapter:forum_admin', ForumAdminAdapter);
+		store.__registry__.register('adapter:user', UserAdapter);
+		store.__registry__.register('adapter:forum_admin', ForumAdminAdapter);
 
 		ok(UserAdapter.detectInstance(store.adapterFor('user')));
 		ok(ForumAdminAdapter.detectInstance(store.adapterFor('forum_admin')));
