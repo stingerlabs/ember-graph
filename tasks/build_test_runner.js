@@ -7,7 +7,7 @@ var EMBER_VERSIONS = {
 	},
 	'1.13.0': {
 		development: 'ember-1.13.0/ember.debug.js',
-		production: 'ember-1.13.0/ember.debug.js'
+		production: 'ember-1.13.0/ember.prod.js'
 	}
 };
 
