@@ -13,7 +13,7 @@ const forEach = Ember.ArrayPolyfills.forEach;
  * @class DataAdapter
  * @private
  */
-export default Ember.DataAdapter.extend({
+const EmberGraphDataAdapter = Ember.DataAdapter && Ember.DataAdapter.extend({
 
 	containerDebugAdapter: computed({
 		get() {
@@ -115,3 +115,7 @@ export default Ember.DataAdapter.extend({
 		};
 	}
 });
+
+const DataAdapter = (Ember.DataAdapter ? EmberGraphDataAdapter : null);
+
+export default DataAdapter;
