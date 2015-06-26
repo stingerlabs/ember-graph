@@ -20,7 +20,7 @@ export default {
 	 * to return `true`. Use a computed property if deciding to
 	 * initialize requires application logic.
 	 *
-	 * @method shouldBootstrapDatabase
+	 * @method shouldInitializeDatabase
 	 * @return {Boolean}
 	 * @protected
 	 * @for EmberGraphAdapter
