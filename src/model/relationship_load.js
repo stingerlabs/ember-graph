@@ -619,6 +619,11 @@ export default {
 		if (relationships[CLIENT_STATE] && relationships[CLIENT_STATE].otherType(this) === value.type &&
 			relationships[CLIENT_STATE].otherId(this) === value.id) {
 			store.changeRelationshipState(relationships[CLIENT_STATE], SERVER_STATE);
+
+			if (relationships[DELETED_STATE].length > 0) {
+				relationships[DELETED_STATE].forEach(store.deleteRelationship.bind(store));
+			}
+
 			return;
 		}
 
