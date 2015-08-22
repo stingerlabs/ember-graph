@@ -1,7 +1,6 @@
 import Ember from 'ember';
 import EmberGraphSet from 'ember-graph/util/set';
 
-import { reduce } from 'ember-graph/util/array';
 import { computed } from 'ember-graph/util/computed';
 
 /**
@@ -90,7 +89,7 @@ function arrayContentsEqual(a, b) {
  * @namespace EmberGraph
  */
 function groupRecords(records) {
-	var groups = reduce.call(records, function(groups, record) {
+	var groups = records.reduce(function(groups, record) {
 		if (groups[record.type]) {
 			groups[record.type].push(record);
 		} else {
@@ -100,7 +99,7 @@ function groupRecords(records) {
 		return groups;
 	}, {});
 
-	return reduce.call(Ember.keys(groups), function(array, key) {
+	return Ember.keys(groups).reduce(function(array, key) {
 		if (groups[key].length > 0) {
 			array.push(groups[key]);
 		}

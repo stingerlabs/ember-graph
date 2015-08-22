@@ -14,10 +14,6 @@ import {
 	RelationshipTypes
 } from 'ember-graph/constants';
 
-var map = Ember.ArrayPolyfills.map;
-var reduce = Ember.ArrayPolyfills.reduce;
-var filter = Ember.ArrayPolyfills.filter;
-var forEach = Ember.ArrayPolyfills.forEach;
 
 var HAS_ONE_KEY = RelationshipTypes.HAS_ONE_KEY;
 var HAS_MANY_KEY = RelationshipTypes.HAS_MANY_KEY;
@@ -115,14 +111,14 @@ var RelationshipClassMethods = {
 			var disallowedNames = EmberGraphSet.create();
 			disallowedNames.addObjects(['id', 'type', 'content', 'length', 'model']);
 
-			forEach.call(Ember.keys(relationships), function(name) {
+			Ember.keys(relationships).forEach(function(name) {
 				Ember.assert('`' + name + '` cannot be used as a relationship name.', !disallowedNames.contains(name));
 				Ember.assert('A relationship name cannot start with an underscore.', name.charAt(0) !== '_');
 				Ember.assert('Relationship names must start with a lowercase letter.', name.charAt(0).match(/[a-z]/));
 			});
 		});
 
-		forEach.call(Ember.keys(relationships), function(name) {
+		Ember.keys(relationships).forEach(function(name) {
 			obj['_' + name] = createRelationship(name, relationships[name].kind, relationships[name].options);
 			var meta = Ember.copy(obj['_' + name].meta(), true);
 			var relatedType = meta.relatedType;
@@ -138,9 +134,7 @@ var RelationshipClassMethods = {
 			} else if (!meta.isPolymorphic) {
 				relationship = function(key) {
 					var value = this.get('_' + key);
-					var ids = Ember.ArrayPolyfills.map.call(value, function(item) {
-						return item.id;
-					});
+					var ids = value.map((item) => item.id);
 					return this.get('store').find(relatedType, ids);
 				};
 			} else {
@@ -148,14 +142,14 @@ var RelationshipClassMethods = {
 					var store = this.get('store');
 					var value = this.get('_' + key);
 					var groups = groupRecords(value);
-					var promises = Ember.ArrayPolyfills.map.call(groups, function(group) {
-						var ids = Ember.ArrayPolyfills.map.call(group, function(item) {
+					var promises = groups.map(function(group) {
+						var ids = group.map(function(item) {
 							return item.id;
 						});
 						return store.find(group[0].type, ids);
 					});
 					return Ember.RSVP.Promise.all(promises).then(function(groups) {
-						return Ember.ArrayPolyfills.reduce.call(groups, function(array, group) {
+						return groups.reduce(function(array, group) {
 							return array.concat(group);
 						}, []);
 					});
@@ -205,12 +199,12 @@ var RelationshipPublicMethods = {
 
 			if (meta.kind === HAS_MANY_KEY) {
 				oldVal = this.getHasManyValue(name, true);
-				var oldValSet = map.call(oldVal, function(value) {
+				var oldValSet = oldVal.map(function(value) {
 					return value.type + ':' + value.id;
 				});
 
 				newVal = this.getHasManyValue(name, false);
-				var newValSet = map.call(newVal, function(value) {
+				var newValSet = newVal.map(function(value) {
 					return value.type + ':' + value.id;
 				});
 
@@ -246,12 +240,12 @@ var RelationshipPublicMethods = {
 			var store = this.get('store');
 
 			var client = this.get('relationships').getRelationshipsByState(CLIENT_STATE);
-			forEach.call(client, function(relationship) {
+			client.forEach(function(relationship) {
 				store.deleteRelationship(relationship);
 			});
 
 			var deleted = this.get('relationships').getRelationshipsByState(DELETED_STATE);
-			forEach.call(deleted, function(relationship) {
+			deleted.forEach(function(relationship) {
 				store.changeRelationshipState(relationship, SERVER_STATE);
 			});
 		}, this);
@@ -622,7 +616,7 @@ var RelationshipPrivateMethods = {
 	},
 
 	getHasManyValue: function(name, server) {
-		return map.call(this.getHasManyRelationships(name, server), function(relationship) {
+		return this.getHasManyRelationships(name, server).map(function(relationship) {
 			return {
 				type: relationship.otherType(this),
 				id: relationship.otherId(this)

@@ -1,15 +1,11 @@
 import Ember from 'ember';
 
 import { values as objectValues } from 'ember-graph/util/util';
-import { reduce } from 'ember-graph/util/array';
 import {
 	RelationshipTypes,
 	RelationshipStates
 } from 'ember-graph/constants';
 
-var map = Ember.ArrayPolyfills.map;
-var filter = Ember.ArrayPolyfills.filter;
-var forEach = Ember.ArrayPolyfills.forEach;
 
 var HAS_ONE_KEY = RelationshipTypes.HAS_ONE_KEY;
 var HAS_MANY_KEY = RelationshipTypes.HAS_MANY_KEY;
@@ -40,7 +36,7 @@ export default {
 			this.set('initializedRelationships.' + name, true);
 
 			if (meta.kind === HAS_MANY_KEY) {
-				forEach.call(value, function(v) {
+				value.forEach(function(v) {
 					switch (Ember.typeOf(v)) {
 						case 'string':
 							this.addToRelationship(name, v);
@@ -149,7 +145,7 @@ export default {
 		var relationships = store.sortHasOneRelationships(this.typeKey, this.get('id'), name);
 
 		if (relationships[DELETED_STATE].length > 0) {
-			forEach.call(relationships[DELETED_STATE], function (relationship) {
+			relationships[DELETED_STATE].forEach(function (relationship) {
 				store.deleteRelationship(relationship);
 			}, this);
 		}
@@ -219,7 +215,7 @@ export default {
 			if (!otherValues[SERVER_STATE] && !otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length > 0) {
 				handled = false;
 
-				forEach.call(otherValues[DELETED_STATE], function(relationship) {
+				otherValues[DELETED_STATE].forEach(function(relationship) {
 					if (relationship.otherType(this) === value.type && relationship.otherId(this) === value.id) {
 						if (sideWithClientOnConflict) {
 							// NOOP
@@ -243,7 +239,7 @@ export default {
 			if (!otherValues[SERVER_STATE] && otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length > 0) {
 				handled = false;
 
-				forEach.call(otherValues[DELETED_STATE], function(relationship) {
+				otherValues[DELETED_STATE].forEach(function(relationship) {
 					if (relationship.otherType(this) === value.type && relationship.otherId(this) === value.id) {
 						if (sideWithClientOnConflict) {
 							// NOOP
@@ -301,7 +297,7 @@ export default {
 			if (!otherValues[SERVER_STATE] && !otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length > 0) {
 				handled = false;
 
-				forEach.call(otherValues[DELETED_STATE], function(relationship) {
+				otherValues[DELETED_STATE].forEach(function(relationship) {
 					if (relationship.otherType(this) === value.type && relationship.otherId(this) === value.id) {
 						if (sideWithClientOnConflict) {
 							// NOOP
@@ -325,7 +321,7 @@ export default {
 			if (!otherValues[SERVER_STATE] && otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length > 0) {
 				handled = false;
 
-				forEach.call(otherValues[DELETED_STATE], function(relationship) {
+				otherValues[DELETED_STATE].forEach(function(relationship) {
 					if (relationship.otherType(this) === value.type && relationship.otherId(this) === value.id) {
 						if (sideWithClientOnConflict) {
 							// NOOP
@@ -393,7 +389,7 @@ export default {
 			}
 
 			if (!otherValues[SERVER_STATE] && !otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length > 0) {
-				forEach.call(otherValues[DELETED_STATE], function(relationship) {
+				otherValues[DELETED_STATE].forEach(function(relationship) {
 					store.deleteRelationship(relationship);
 				});
 
@@ -408,7 +404,7 @@ export default {
 			}
 
 			if (!otherValues[SERVER_STATE] && otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length > 0) {
-				forEach.call(otherValues[DELETED_STATE], function(relationship) {
+				otherValues[DELETED_STATE].forEach(function(relationship) {
 					store.deleteRelationship(relationship);
 				});
 
@@ -426,7 +422,7 @@ export default {
 
 		if (!theseValues[SERVER_STATE] && !theseValues[CLIENT_STATE] && theseValues[DELETED_STATE].length > 0) {
 			if (!otherValues[SERVER_STATE] && !otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length <= 0) {
-				forEach.call(theseValues[DELETED_STATE], function(relationship) {
+				theseValues[DELETED_STATE].forEach(function(relationship) {
 					store.deleteRelationship(relationship);
 				});
 
@@ -435,7 +431,7 @@ export default {
 			}
 
 			if (otherValues[SERVER_STATE] && !otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length <= 0) {
-				forEach.call(theseValues[DELETED_STATE], function(relationship) {
+				theseValues[DELETED_STATE].forEach(function(relationship) {
 					store.deleteRelationship(relationship);
 				});
 
@@ -445,7 +441,7 @@ export default {
 			}
 
 			if (!otherValues[SERVER_STATE] && otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length <= 0) {
-				forEach.call(theseValues[DELETED_STATE], function(relationship) {
+				theseValues[DELETED_STATE].forEach(function(relationship) {
 					store.deleteRelationship(relationship);
 				});
 
@@ -462,7 +458,7 @@ export default {
 			if (!otherValues[SERVER_STATE] && !otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length > 0) {
 				handled = null;
 
-				forEach.call(theseValues[DELETED_STATE], function(relationship) {
+				theseValues[DELETED_STATE].forEach(function(relationship) {
 					if (relationship.otherType(this) === value.type && relationship.otherId(this) === value.id) {
 						if (sideWithClientOnConflict) {
 							// NOOP
@@ -476,7 +472,7 @@ export default {
 					}
 				}, this);
 
-				forEach.call(theseValues[DELETED_STATE], function(relationship) {
+				theseValues[DELETED_STATE].forEach(function(relationship) {
 					if (relationship !== handled) {
 						store.deleteRelationship(relationship);
 					}
@@ -492,7 +488,7 @@ export default {
 			if (!otherValues[SERVER_STATE] && otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length > 0) {
 				handled = null;
 
-				forEach.call(theseValues[DELETED_STATE], function(relationship) {
+				theseValues[DELETED_STATE].forEach(function(relationship) {
 					if (relationship.otherType(this) === value.type && relationship.otherId(this) === value.id) {
 						if (sideWithClientOnConflict) {
 							// NOOP
@@ -507,7 +503,7 @@ export default {
 					}
 				}, this);
 
-				forEach.call(theseValues[DELETED_STATE], function(relationship) {
+				theseValues[DELETED_STATE].forEach(function(relationship) {
 					if (relationship !== handled) {
 						store.deleteRelationship(relationship);
 					}
@@ -529,7 +525,7 @@ export default {
 		}
 
 		if (!theseValues[SERVER_STATE] && theseValues[CLIENT_STATE] && theseValues[DELETED_STATE].length > 0) {
-			forEach.call(theseValues[DELETED_STATE], function(relationship) {
+			theseValues[DELETED_STATE].forEach(function(relationship) {
 				store.deleteRelationship(relationship);
 			});
 
@@ -570,7 +566,7 @@ export default {
 			}
 
 			if (!otherValues[SERVER_STATE] && !otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length > 0) {
-				forEach.call(otherValues[DELETED_STATE], function(relationship) {
+				otherValues[DELETED_STATE].forEach(function(relationship) {
 					store.deleteRelationship(relationship);
 				});
 
@@ -585,7 +581,7 @@ export default {
 			}
 
 			if (!otherValues[SERVER_STATE] && otherValues[CLIENT_STATE] && otherValues[DELETED_STATE].length > 0) {
-				forEach.call(otherValues[DELETED_STATE], function(relationship) {
+				otherValues[DELETED_STATE].forEach(function(relationship) {
 					store.deleteRelationship(relationship);
 				});
 
@@ -654,7 +650,7 @@ export default {
 		if (!relationships[SERVER_STATE] && !relationships[CLIENT_STATE] && relationships[DELETED_STATE].length >= 0) {
 			handled = false;
 
-			forEach.call(relationships[DELETED_STATE], function(relationship) {
+			relationships[DELETED_STATE].forEach(function(relationship) {
 				if (relationship.otherType(this) === value.type && relationship.otherId(this) === value.id) {
 					if (sideWithClientOnConflict) {
 						// NOOP
@@ -678,7 +674,7 @@ export default {
 		if (!relationships[SERVER_STATE] && relationships[CLIENT_STATE] && relationships[DELETED_STATE].length >= 0) {
 			handled = false;
 
-			forEach.call(relationships[DELETED_STATE], function(relationship) {
+			relationships[DELETED_STATE].forEach(function(relationship) {
 				if (relationship.otherType(this) === value.type && relationship.otherId(this) === value.id) {
 					if (sideWithClientOnConflict) {
 						// NOOP
@@ -714,14 +710,14 @@ export default {
 		var store = this.get('store');
 		var sideWithClientOnConflict = store.get('sideWithClientOnConflict');
 
-		var valueMap = reduce.call(values, function(map, value) {
+		var valueMap = values.reduce(function(map, value) {
 			map[value.type + ':' + value.id] = value;
 			return map;
 		}, {});
 
 		var relationships = store.relationshipsForRecord(thisType, thisId, name);
 
-		forEach.call(relationships, function(relationship) {
+		relationships.forEach(function(relationship) {
 			var valueKey = relationship.otherType(this) + ':' + relationship.otherId(this);
 
 			if (valueMap[valueKey]) {
@@ -785,7 +781,7 @@ export default {
 			}
 
 			if (!conflicts[SERVER_STATE] && !conflicts[CLIENT_STATE] && conflicts[DELETED_STATE].length > 0) {
-				forEach.call(conflicts[DELETED_STATE], function(relationship) {
+				conflicts[DELETED_STATE].forEach(function(relationship) {
 					store.deleteRelationship(relationship);
 				});
 
@@ -794,7 +790,7 @@ export default {
 			}
 
 			if (!conflicts[SERVER_STATE] && conflicts[CLIENT_STATE] && conflicts[DELETED_STATE].length > 0) {
-				forEach.call(conflicts[DELETED_STATE], function(relationship) {
+				conflicts[DELETED_STATE].forEach(function(relationship) {
 					store.deleteRelationship(relationship);
 				});
 
@@ -815,14 +811,14 @@ export default {
 		var store = this.get('store');
 		var sideWithClientOnConflict = store.get('sideWithClientOnConflict');
 
-		var valueMap = reduce.call(values, function(map, value) {
+		var valueMap = values.reduce(function(map, value) {
 			map[value.type + ':' + value.id] = value;
 			return map;
 		}, {});
 
 		var relationships = store.relationshipsForRecord(thisType, thisId, name);
 
-		forEach.call(relationships, function(relationship) {
+		relationships.forEach(function(relationship) {
 			var valueKey = relationship.otherType(this) + ':' + relationship.otherId(this);
 
 			if (valueMap[valueKey]) {

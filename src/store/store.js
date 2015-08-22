@@ -13,9 +13,6 @@ import { deprecateMethod } from 'ember-graph/util/util';
 
 var Promise = Ember.RSVP.Promise; // jshint ignore:line
 
-var map = Ember.ArrayPolyfills.map;
-var forEach = Ember.ArrayPolyfills.forEach;
-var filter = Ember.ArrayPolyfills.filter;
 
 /**
  * The store is used to manage all records in the application.
@@ -278,7 +275,7 @@ var Store = Ember.Object.extend({
 			});
 		}
 
-		var idsToFetch = filter.call(ids, function(id) {
+		var idsToFetch = ids.filter(function(id) {
 			return (_this.getRecord(typeKey, id) === null);
 		});
 
@@ -307,7 +304,7 @@ var Store = Ember.Object.extend({
 
 		return PromiseArray.create({
 			promise: promise.then(function() {
-				return map.call(ids, function(id) {
+				return ids.map(function(id) {
 					return _this.getRecord(typeKey, id);
 				}).toArray();
 			})
@@ -375,7 +372,7 @@ var Store = Ember.Object.extend({
 				var records = payload.meta.matchedRecords;
 				_this.pushPayload(payload);
 
-				return map.call(records, function(record) {
+				return records.map(function(record) {
 					return _this.getRecord(record.type, record.id);
 				});
 			})
@@ -596,16 +593,16 @@ var Store = Ember.Object.extend({
 		Ember.changeProperties(() => {
 			var reloadDirty = this.get('reloadDirty');
 
-			forEach.call(Ember.get(payload, 'meta.deletedRecords') || [], (record) => {
+			(Ember.get(payload, 'meta.deletedRecords') || []).forEach((record) => {
 				this.deleteRecordFromStore(record.type, record.id);
 			});
 
 			delete payload.meta;
 
-			forEach.call(Ember.keys(payload), (typeKey) => {
+			Ember.keys(payload).forEach((typeKey) => {
 				const model = this.modelFor(typeKey);
 
-				forEach.call(payload[typeKey], (json) => {
+				payload[typeKey].forEach((json) => {
 					let record = this.getRecord(typeKey, json.id);
 
 					if (record) {

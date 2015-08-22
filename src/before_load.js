@@ -11,7 +11,7 @@ var declareModuleLoader = function() {
 		}
 
 		var exports = {};
-		var dependencies = Ember.ArrayPolyfills.map.call(DEFINITIONS[name].dependencies, function(name) {
+		var dependencies = DEFINITIONS[name].dependencies.map(function(name) {
 			if (name === 'exports') {
 				return exports;
 			} else {

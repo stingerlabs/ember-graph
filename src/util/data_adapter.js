@@ -3,7 +3,6 @@ import Model from 'ember-graph/model/model';
 
 import { computed } from 'ember-graph/util/computed';
 
-const forEach = Ember.ArrayPolyfills.forEach;
 
 /**
  * Extends Ember's `DataAdapter` class to provide debug functionality for the Ember Inspector.
@@ -102,7 +101,7 @@ const EmberGraphDataAdapter = Ember.DataAdapter && Ember.DataAdapter.extend({
 
 		propertiesToObserve.addObjects(Ember.get(record.constructor, 'attributes').toArray());
 
-		forEach.call(propertiesToObserve, (name) => {
+		propertiesToObserve.forEach((name) => {
 			var handler = () => this.wrapRecord(record);
 
 			Ember.addObserver(record, name, handler);
@@ -111,7 +110,7 @@ const EmberGraphDataAdapter = Ember.DataAdapter && Ember.DataAdapter.extend({
 		});
 
 		return function() {
-			forEach.call(releaseMethods, (release) => release());
+			releaseMethods.forEach((release) => release());
 		};
 	}
 });

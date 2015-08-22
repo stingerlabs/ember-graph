@@ -3,8 +3,6 @@ import Ember from 'ember';
 import { pluralize } from 'ember-graph/util/inflector';
 import { generateUUID } from 'ember-graph/util/util';
 
-var map = Ember.ArrayPolyfills.map;
-var filter = Ember.ArrayPolyfills.filter;
 
 export default {
 
@@ -66,7 +64,7 @@ export default {
 		var _this = this;
 
 		return this.getDatabase().then(function(db) {
-			var records = map.call(ids, function(id) {
+			var records = ids.map(function(id) {
 				if (Ember.get(db, 'records.' + typeKey + '.' + id)) {
 					return _this.getRecordFromDatabase(typeKey, id, db);
 				} else {
@@ -91,7 +89,7 @@ export default {
 		var _this = this;
 
 		return this.getDatabase().then(function(db) {
-			var records = map.call(Ember.keys(db.records[typeKey] || {}), function(id) {
+			var records = Ember.keys(db.records[typeKey] || {}).map(function(id) {
 				return _this.getRecordFromDatabase(typeKey, id, db);
 			});
 
@@ -140,7 +138,7 @@ export default {
 				delete db.records[typeKey][id];
 			}
 
-			db.relationships = filter.call(db.relationships, function(r) {
+			db.relationships = db.relationships.filter(function(r) {
 				return !((r.t1 === typeKey && r.i1 === id) || (r.t2 === typeKey && r.i2 === id));
 			});
 

@@ -1,8 +1,6 @@
 import Ember from 'ember';
 import Relationship from 'ember-graph/relationship/relationship';
 
-var filter = Ember.ArrayPolyfills.filter;
-var forEach = Ember.ArrayPolyfills.forEach;
 
 var CLIENT_STATE = Relationship.CLIENT_STATE;
 var SERVER_STATE = Relationship.SERVER_STATE;
@@ -80,7 +78,7 @@ export default {
 
 	connectQueuedRelationships: function(record) {
 		var queuedRelationships = this.get('queuedRelationships');
-		var filtered = filter.call(Ember.keys(queuedRelationships), function(id) {
+		var filtered = Ember.keys(queuedRelationships).filter(function(id) {
 			return queuedRelationships[id].isConnectedTo(record);
 		});
 
@@ -88,7 +86,7 @@ export default {
 			return;
 		}
 
-		forEach.call(filtered, function(id) {
+		filtered.forEach(function(id) {
 			var relationship = queuedRelationships[id];
 			this.connectRelationshipTo(record, relationship);
 			delete queuedRelationships[id];
@@ -101,7 +99,7 @@ export default {
 		var queued = this.get('queuedRelationships');
 		var server = record.get('relationships').getRelationshipsByState(SERVER_STATE);
 
-		forEach.call(server, function(relationship) {
+		server.forEach(function(relationship) {
 			this.disconnectRelationshipFrom(record, relationship);
 			queued[relationship.get('id')] = relationship;
 		}, this);
@@ -113,7 +111,7 @@ export default {
 		var data, filtered = [];
 		var all = this.get('allRelationships');
 
-		forEach.call(Ember.keys(all), function(key) {
+		Ember.keys(all).forEach(function(key) {
 			if (all[key].matchesOneSide(type, id, name)) {
 				filtered.push(all[key]);
 			}
@@ -127,7 +125,7 @@ export default {
 			var all = this.get('allRelationships');
 			var keys = Ember.keys(all);
 
-			forEach.call(keys, function(key) {
+			keys.forEach(function(key) {
 				var relationship = all[key];
 
 				if (relationship.get('type1') === type && relationship.get('id1') === id) {
@@ -195,15 +193,15 @@ export default {
 		var values = {};
 		var relationships = this.relationshipsForRecord(type, id, name);
 
-		values[SERVER_STATE] = filter.call(relationships, function(relationship) {
+		values[SERVER_STATE] = relationships.filter(function(relationship) {
 			return relationship.get('state') === SERVER_STATE;
 		})[0] || null;
 
-		values[DELETED_STATE] = filter.call(relationships, function(relationship) {
+		values[DELETED_STATE] = relationships.filter(function(relationship) {
 			return relationship.get('state') === DELETED_STATE;
 		});
 
-		values[CLIENT_STATE] = filter.call(relationships, function(relationship) {
+		values[CLIENT_STATE] = relationships.filter(function(relationship) {
 			return relationship.get('state') === CLIENT_STATE;
 		})[0] || null;
 
@@ -230,7 +228,7 @@ export default {
 	updateRelationshipsWithNewId: function(typeKey, oldId, newId) {
 		var all = this.get('allRelationships');
 
-		forEach.call(Ember.keys(all), function(id) {
+		Ember.keys(all).forEach(function(id) {
 			all[id].changeId(typeKey, oldId, newId);
 		});
 

@@ -4,7 +4,6 @@ import EmberGraphSet from 'ember-graph/util/set';
 import { deprecateProperty } from 'ember-graph/util/util';
 import { computed } from 'ember-graph/util/computed';
 
-var forEach = Ember.ArrayPolyfills.forEach;
 
 var createAttribute = function(attributeName, options) {
 	var meta = {
@@ -248,14 +247,14 @@ CoreModel.reopenClass({
 			var RESERVED_NAMES = EmberGraphSet.create();
 			RESERVED_NAMES.addObjects(['id', 'type', 'content', 'length', 'model']);
 
-			forEach.call(Ember.keys(attributes), function(name) {
+			Ember.keys(attributes).forEach(function(name) {
 				Ember.assert('`' + name + '` cannot be used as an attribute name.', !RESERVED_NAMES.contains(name));
 				Ember.assert('An attribute name cannot start with an underscore.', name.charAt(0) !== '_');
 				Ember.assert('Attribute names must start with a lowercase letter.', name.charAt(0).match(/[a-z]/));
 			});
 		});
 
-		forEach.call(Ember.keys(attributes), function(name) {
+		Ember.keys(attributes).forEach(function(name) {
 			obj[name] = createAttribute(name, attributes[name].options);
 		});
 

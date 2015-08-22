@@ -2,8 +2,6 @@ import Ember from 'ember';
 import Relationship from 'ember-graph/relationship/relationship';
 import EmberGraphSet from 'ember-graph/util/set';
 
-var map = Ember.ArrayPolyfills.map;
-var forEach = Ember.ArrayPolyfills.forEach;
 
 var CLIENT_STATE = Relationship.CLIENT_STATE;
 var SERVER_STATE = Relationship.SERVER_STATE;
@@ -32,7 +30,7 @@ var RelationshipMap = Ember.Object.extend({
 	},
 
 	removeRelationship: function(id) {
-		forEach.call(Ember.keys(this), function(key) {
+		Ember.keys(this).forEach(function(key) {
 			if (key === 'length') {
 				return;
 			}
@@ -49,7 +47,7 @@ var RelationshipMap = Ember.Object.extend({
 	getRelationships: function(name) {
 		var relationships = this.get(name) || {};
 
-		return map.call(Ember.keys(relationships), function(key) {
+		return Ember.keys(relationships).map(function(key) {
 			return relationships[key];
 		});
 	},
@@ -60,7 +58,7 @@ var RelationshipMap = Ember.Object.extend({
 		keys.addObjects(Ember.keys(this));
 		keys = keys.without('length');
 
-		forEach.call(keys, function(key) {
+		keys.forEach(function(key) {
 			relationships = relationships.concat(this.getRelationships(key));
 		}, this);
 
@@ -75,7 +73,7 @@ var RelationshipMap = Ember.Object.extend({
 	recalculateLength: function() {
 		var length = 0;
 
-		forEach.call(Ember.keys(this), function(key) {
+		Ember.keys(this).forEach(function(key) {
 			if (key !== 'length') {
 				length += Ember.keys(this[key]).length;
 			}

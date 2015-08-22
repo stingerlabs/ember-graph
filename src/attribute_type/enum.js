@@ -4,7 +4,6 @@ import AttributeType from 'ember-graph/attribute_type/type';
 
 import { computed } from 'ember-graph/util/computed';
 
-var map = Ember.ArrayPolyfills.map;
 
 /**
  * Represents an enumeration or multiple choice type. This class cannot be
@@ -53,7 +52,7 @@ export default AttributeType.extend({
 			const set = EmberGraphSet.create();
 			const values = this.get('values');
 
-			set.addObjects(map.call(values, (value) => value.toLocaleLowerCase()));
+			set.addObjects(values.map((value) => value.toLocaleLowerCase()));
 
 			return set;
 		}

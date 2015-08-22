@@ -14,7 +14,6 @@ import {
 	HAS_MANY_KEY
 } from 'ember-graph/model/relationship';
 
-const forEach = Ember.ArrayPolyfills.forEach;
 
 /**
  * Models are the classes that represent your domain data.
@@ -274,7 +273,7 @@ Model.reopenClass({
 
 		// Ember.Mixin doesn't have a `detectInstance` method
 		if (!(options instanceof Ember.Mixin)) {
-			forEach.call(Ember.keys(options), function(key) {
+			Ember.keys(options).forEach(function(key) {
 				var value = options[key];
 
 				if (options[key]) {

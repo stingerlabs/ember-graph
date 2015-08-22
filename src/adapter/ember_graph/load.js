@@ -6,9 +6,6 @@ import { values } from 'ember-graph/util/util';
 
 var Promise = Ember.RSVP.Promise; // jshint ignore:line
 
-var map = Ember.ArrayPolyfills.map;
-var filter = Ember.ArrayPolyfills.filter;
-var forEach = Ember.ArrayPolyfills.forEach;
 var typeOf = Ember.typeOf;
 
 export default {
@@ -112,7 +109,7 @@ export default {
 
 			var model = store.modelFor(typeKey);
 
-			forEach.call(records, function(record) {
+			records.forEach(function(record) {
 				databaseRecords[typeKey][record.id] = this.convertRecord(model, record);
 			}, this);
 		}, this);
@@ -177,9 +174,9 @@ export default {
 		values(payload, function(typeKey, records) {
 			var model = store.modelFor(typeKey);
 
-			forEach.call(records, function(record) {
+			records.forEach(function(record) {
 				var recordRelationships = this.extractRelationshipsFromRecord(model, record);
-				forEach.call(recordRelationships, addRelationship);
+				recordRelationships.forEach(addRelationship);
 			}, this);
 		}, this);
 
@@ -213,7 +210,7 @@ export default {
 					});
 				}
 			} else {
-				forEach.call(value, function(other) {
+				value.forEach(function(other) {
 					if (typeOf(other) === 'string' || typeOf(other) === 'number') {
 						other = { type: meta.relatedType, id: other + '' };
 					}
@@ -237,7 +234,7 @@ export default {
 	 */
 	validateDatabase: function(db) {
 		function filterRelationships(typeKey, id, name) {
-			return filter.call(db.relationships, function(r) {
+			return db.relationships.filter(function(r) {
 				return ((r.t1 === typeKey && r.i1 === id && r.n1 === name) ||
 					(r.t2 === typeKey && r.i2 === id && r.n2 === name));
 			});
@@ -250,12 +247,12 @@ export default {
 		}
 
 		var relationshipSet = EmberGraphSet.create();
-		relationshipSet.addObjects(map.call(db.relationships, relationshipToString));
+		relationshipSet.addObjects(db.relationships.map(relationshipToString));
 		if (Ember.get(relationshipSet, 'length') !== db.relationships.length) {
 			throw new Ember.Error('An invalid set of relationships was generated.');
 		}
 
-		forEach.call(db.relationships, function(relationship) {
+		db.relationships.forEach(function(relationship) {
 			if (!db.records[relationship.t1][relationship.i1]) {
 				throw new Ember.Error(relationship.t1 + ':' + relationship.i1 + ' doesn\'t exist');
 			}

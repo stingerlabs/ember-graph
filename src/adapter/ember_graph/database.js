@@ -4,10 +4,6 @@ import Model from 'ember-graph/model/model';
 import { abstractMethod } from 'ember-graph/util/util';
 import { startsWith } from 'ember-graph/util/string';
 
-var filter = Ember.ArrayPolyfills.filter;
-var forEach = Ember.ArrayPolyfills.forEach;
-var indexOf = Ember.ArrayPolyfills.indexOf;
-
 var ADD_OP_NAME_REGEX = /^\/links\/([^/]+)/i;
 var REMOVE_OP_REGEX = /^\/links\/([^/]+)\/.+/i;
 
@@ -122,7 +118,7 @@ export default {
 		json.id = id;
 		json.links = {};
 
-		forEach.call(db.relationships, function(relationship) {
+		db.relationships.forEach(function(relationship) {
 			var meta;
 
 			if (relationship.t1 === typeKey && relationship.i1 === id && relationship.n1 !== null) {
@@ -194,7 +190,7 @@ export default {
 					db = this.setHasOneRelationshipInDatabase(relationship, db);
 				}
 			} else {
-				forEach.call(json.links[name], function(value) {
+				json.links[name].forEach(function(value) {
 					var relationship = {
 						t1: typeKey, i1: id, n1: name,
 						t2: value.type, i2: value.id, n2: meta.inverse
@@ -223,7 +219,7 @@ export default {
 	applyChangesToDatabase: function(typeKey, id, changes, db) {
 		var model = this.get('store').modelFor(typeKey);
 
-		forEach.call(changes, function(change) {
+		changes.forEach(function(change) {
 			switch (change.op) {
 				case 'replace':
 					if (startsWith(change.path, '/links/')) {
@@ -282,7 +278,7 @@ export default {
 	addHasManyRelationshipToDatabase: function(relationship, db) {
 		var relationships = this.getRelationshipsFor(relationship.t1, relationship.i1, relationship.n1, db);
 
-		var connected = filter.call(relationships, function(r) {
+		var connected = relationships.filter(function(r) {
 			return (relationship.t2 === r.t2 && relationship.i2 === r.i2 && relationship.n2 === r.n2);
 		});
 
@@ -318,7 +314,7 @@ export default {
 	removeHasManyRelationshipFromDatabase: function(relationship, db) {
 		var relationships = this.getRelationshipsFor(relationship.t1, relationship.i1, relationship.n1, db);
 
-		db.relationships = filter.call(db.relationships, function(r) {
+		db.relationships = db.relationships.filter(function(r) {
 			return !(relationship.t2 === r.t2 && relationship.i2 === r.i2 && relationship.n2 === r.n2);
 		});
 
@@ -368,8 +364,8 @@ export default {
 	clearHasOneRelationshipInDatabase: function(typeKey, id, name, db) {
 		var relationships = this.getRelationshipsFor(typeKey, id, name, db);
 
-		forEach.call(relationships, function(relationship) {
-			db.relationships.splice(indexOf.call(db.relationships, relationship), 1);
+		relationships.forEach(function(relationship) {
+			db.relationships.splice(db.relationships.indexOf(relationship), 1);
 		});
 
 		return db;
@@ -388,7 +384,7 @@ export default {
 	 * @for EmberGraphAdapter
 	 */
 	getRelationshipsFor: function(typeKey, id, name, db) {
-		return filter.call(db.relationships, function(relationship) {
+		return db.relationships.filter(function(relationship) {
 			return ((relationship.t1 === typeKey && relationship.i1 === id && relationship.n1 === name) ||
 				(relationship.t2 === typeKey && relationship.i2 === id && relationship.n2 === name));
 		});

@@ -3,7 +3,6 @@ import Ember from 'ember';
 import { PromiseObject } from 'ember-graph/data/promise_object';
 import { computed } from 'ember-graph/util/computed';
 
-var forEach = Ember.ArrayPolyfills.forEach;
 
 export default Ember.Object.extend({
 
@@ -44,7 +43,7 @@ export default Ember.Object.extend({
 		var found = [];
 		var cutoff = (new Date()).getTime() - this.get('cacheTimeout');
 
-		forEach.call(Ember.keys(records), function(key) {
+		Ember.keys(records).forEach(function(key) {
 			if (key.indexOf(typeKey) === 0 && records[key].timestamp >= cutoff) {
 				found.push(records[key].record);
 			}

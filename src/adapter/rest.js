@@ -3,12 +3,9 @@ import Ember from 'ember';
 import Adapter from 'ember-graph/adapter/adapter';
 
 import { pluralize } from 'ember-graph/util/inflector';
-import { reduce } from 'ember-graph/util/array';
 import { computed } from 'ember-graph/util/computed';
 
 var Promise = Ember.RSVP.Promise; // jshint ignore:line
-var forEach = Ember.ArrayPolyfills.forEach;
-var map = Ember.ArrayPolyfills.map;
 
 /**
  * An adapter that communicates with REST back-ends. The requests made all follow the
@@ -77,7 +74,7 @@ export default Adapter.extend({
 		}
 
 		const urls = this.buildMultipleUrls(typeKey, ids);
-		const promises = map.call(urls, (url) => this.ajax(url, 'GET'));
+		const promises = urls.map((url) => this.ajax(url, 'GET'));
 
 		Promise.all(promises).then((payloads) => {
 			const payload = this.mergePayloads(payloads);
@@ -113,7 +110,7 @@ export default Adapter.extend({
 		var _this = this;
 		var options = {};
 
-		forEach.call(Ember.keys(query), function(key) {
+		Ember.keys(query).forEach(function(key) {
 			options[key] = '' + query[key];
 		});
 
@@ -193,7 +190,7 @@ export default Adapter.extend({
 		}
 
 		if (options) {
-			forEach.call(Ember.keys(options), function(key, index) {
+			Ember.keys(options).forEach(function(key, index) {
 				url += ((index === 0) ? '?' : '&') + key + '=' + encodeURIComponent(options[key]);
 			});
 		}
@@ -206,7 +203,7 @@ export default Adapter.extend({
 		const baseLength = (window.location.origin.length + base.length);
 		const lengthLimit = this.get('urlLengthLimit');
 
-		const idArrays = reduce.call(ids, (idArrays, id) => {
+		const idArrays = ids.reduce((idArrays, id) => {
 			const idArray = idArrays[idArrays.length - 1];
 
 			if (baseLength + idArray.join(',').length + id.length + 1 <= lengthLimit) {
@@ -218,7 +215,7 @@ export default Adapter.extend({
 			return idArrays;
 		}, [[]]);
 
-		return map.call(idArrays, (idArray) => base + idArray.join(','));
+		return idArrays.map((idArray) => base + idArray.join(','));
 	},
 
 	mergePayloads(payloads) {
@@ -238,7 +235,7 @@ export default Adapter.extend({
 			return merged;
 		};
 
-		return reduce.call(payloads, mergeObjects, {});
+		return payloads.reduce(mergeObjects, {});
 	},
 
 	/**

@@ -6,9 +6,6 @@ import EmberGraphSet from 'ember-graph/util/set';
 import { mapBy } from 'ember-graph/util/array';
 import { pluralize, singularize } from 'ember-graph/util/inflector';
 
-var map = Ember.ArrayPolyfills.map;
-var filter = Ember.ArrayPolyfills.filter;
-var forEach = Ember.ArrayPolyfills.forEach;
 
 /**
  * This serializer was designed to be compatible with the
@@ -156,7 +153,7 @@ export default Serializer.extend({
 				value: (this.get('polymorphicRelationships') ? value : value.id)
 			};
 		} else {
-			value = filter.call(value, function(v) {
+			value = value.filter(function(v) {
 				return !Model.isTemporaryId(v.id);
 			});
 
@@ -220,7 +217,7 @@ export default Serializer.extend({
 		var changes = record.changedAttributes();
 		var store = this.get('store');
 
-		return map.call(Ember.keys(changes), function(attributeName) {
+		return Ember.keys(changes).map(function(attributeName) {
 			var meta = record.constructor.metaForAttribute(attributeName);
 			var type = store.attributeTypeFor(meta.type);
 			var value = type.serialize(changes[attributeName][1]);
@@ -243,7 +240,7 @@ export default Serializer.extend({
 		var changes = record.changedRelationships();
 		var polymorphicRelationships = this.get('polymorphicRelationships');
 
-		forEach.call(Ember.keys(changes), function(relationshipName) {
+		Ember.keys(changes).forEach(function(relationshipName) {
 			var values = changes[relationshipName];
 			var meta = record.constructor.metaForRelationship(relationshipName);
 
@@ -255,16 +252,16 @@ export default Serializer.extend({
 				});
 			} else if (meta.kind === Model.HAS_MANY_KEY) {
 				var originalSet = EmberGraphSet.create();
-				originalSet.addObjects(map.call(values[0], function(value) {
+				originalSet.addObjects(values[0].map(function(value) {
 					return value.type + ':' + value.id;
 				}));
 
 				var currentSet = EmberGraphSet.create();
-				currentSet.addObjects(map.call(values[1], function(value) {
+				currentSet.addObjects(values[1].map(function(value) {
 					return value.type + ':' + value.id;
 				}));
 
-				forEach.call(values[1], function(value) {
+				values[1].forEach(function(value) {
 					if (!originalSet.contains(value.type + ':' + value.id) && !Model.isTemporaryId(value.id)) {
 						operations.push({
 							op: 'add',
@@ -274,7 +271,7 @@ export default Serializer.extend({
 					}
 				});
 
-				forEach.call(values[0], function(value) {
+				values[0].forEach(function(value) {
 					if (!currentSet.contains(value.type + ':' + value.id)  && !Model.isTemporaryId(value.id)) {
 						operations.push({
 							op: 'remove',
@@ -293,14 +290,14 @@ export default Serializer.extend({
 		var store = this.get('store');
 		var normalized = this.transformPayload(payload || {}, options || {});
 
-		forEach.call(Ember.keys(normalized), function(typeKey) {
+		Ember.keys(normalized).forEach(function(typeKey) {
 			if (typeKey === 'meta') {
 				return;
 			}
 
 			var model = store.modelFor(typeKey);
 
-			normalized[typeKey] = map.call(normalized[typeKey], function(json) {
+			normalized[typeKey] = normalized[typeKey].map(function(json) {
 				return this.deserializeRecord(model, json, options);
 			}, this);
 		}, this);
@@ -337,7 +334,7 @@ export default Serializer.extend({
 		// TODO: Query multiple types
 		if (options.requestType === 'findQuery') {
 			normalized.meta.matchedRecords =
-				map.call(payload[pluralize(options.recordType)], function(record) {
+				payload[pluralize(options.recordType)].map(function(record) {
 					return { type: options.recordType, id: record.id + '' };
 				});
 		} else if (options.requestType === 'createRecord') {
@@ -347,14 +344,14 @@ export default Serializer.extend({
 			};
 		}
 
-		forEach.call(Ember.keys(payload), function(key) {
+		Ember.keys(payload).forEach(function(key) {
 			if (key !== 'linked' && key !== 'meta') {
 				normalized[singularize(key)] = payload[key];
 				delete payload[key];
 			}
 		});
 
-		forEach.call(Ember.keys(payload.linked || {}), function(key) {
+		Ember.keys(payload.linked || {}).forEach(function(key) {
 			var singular = singularize(key);
 			normalized[singular] = (normalized[singular] || []).concat(payload.linked[key] || []);
 		});
@@ -545,7 +542,7 @@ export default Serializer.extend({
 		var relatedType = model.metaForRelationship(name).relatedType;
 		var polymorphic = this.get('polymorphicRelationships');
 
-		var mapped =  map.call(values, function(value) {
+		var mapped =  values.map(function(value) {
 			return {
 				type: (polymorphic ? value.type : relatedType),
 				id: (polymorphic ? value.id : value) + ''
