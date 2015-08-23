@@ -89,7 +89,7 @@ export default {
 		var _this = this;
 
 		return this.getDatabase().then(function(db) {
-			var records = Ember.keys(db.records[typeKey] || {}).map(function(id) {
+			var records = Object.keys(db.records[typeKey] || {}).map(function(id) {
 				return _this.getRecordFromDatabase(typeKey, id, db);
 			});
 

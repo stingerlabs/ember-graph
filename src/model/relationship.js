@@ -111,14 +111,14 @@ var RelationshipClassMethods = {
 			var disallowedNames = EmberGraphSet.create();
 			disallowedNames.addObjects(['id', 'type', 'content', 'length', 'model']);
 
-			Ember.keys(relationships).forEach(function(name) {
+			Object.keys(relationships).forEach(function(name) {
 				Ember.assert('`' + name + '` cannot be used as a relationship name.', !disallowedNames.contains(name));
 				Ember.assert('A relationship name cannot start with an underscore.', name.charAt(0) !== '_');
 				Ember.assert('Relationship names must start with a lowercase letter.', name.charAt(0).match(/[a-z]/));
 			});
 		});
 
-		Ember.keys(relationships).forEach(function(name) {
+		Object.keys(relationships).forEach(function(name) {
 			obj['_' + name] = createRelationship(name, relationships[name].kind, relationships[name].options);
 			var meta = Ember.copy(obj['_' + name].meta(), true);
 			var relatedType = meta.relatedType;

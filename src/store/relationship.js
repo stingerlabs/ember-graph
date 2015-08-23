@@ -78,7 +78,7 @@ export default {
 
 	connectQueuedRelationships: function(record) {
 		var queuedRelationships = this.get('queuedRelationships');
-		var filtered = Ember.keys(queuedRelationships).filter(function(id) {
+		var filtered = Object.keys(queuedRelationships).filter(function(id) {
 			return queuedRelationships[id].isConnectedTo(record);
 		});
 
@@ -111,7 +111,7 @@ export default {
 		var data, filtered = [];
 		var all = this.get('allRelationships');
 
-		Ember.keys(all).forEach(function(key) {
+		Object.keys(all).forEach(function(key) {
 			if (all[key].matchesOneSide(type, id, name)) {
 				filtered.push(all[key]);
 			}
@@ -123,7 +123,7 @@ export default {
 	deleteRelationshipsForRecord: function(type, id) {
 		Ember.changeProperties(function() {
 			var all = this.get('allRelationships');
-			var keys = Ember.keys(all);
+			var keys = Object.keys(all);
 
 			keys.forEach(function(key) {
 				var relationship = all[key];
@@ -228,7 +228,7 @@ export default {
 	updateRelationshipsWithNewId: function(typeKey, oldId, newId) {
 		var all = this.get('allRelationships');
 
-		Ember.keys(all).forEach(function(id) {
+		Object.keys(all).forEach(function(id) {
 			all[id].changeId(typeKey, oldId, newId);
 		});
 

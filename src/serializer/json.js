@@ -217,7 +217,7 @@ export default Serializer.extend({
 		var changes = record.changedAttributes();
 		var store = this.get('store');
 
-		return Ember.keys(changes).map(function(attributeName) {
+		return Object.keys(changes).map(function(attributeName) {
 			var meta = record.constructor.metaForAttribute(attributeName);
 			var type = store.attributeTypeFor(meta.type);
 			var value = type.serialize(changes[attributeName][1]);
@@ -240,7 +240,7 @@ export default Serializer.extend({
 		var changes = record.changedRelationships();
 		var polymorphicRelationships = this.get('polymorphicRelationships');
 
-		Ember.keys(changes).forEach(function(relationshipName) {
+		Object.keys(changes).forEach(function(relationshipName) {
 			var values = changes[relationshipName];
 			var meta = record.constructor.metaForRelationship(relationshipName);
 
@@ -290,7 +290,7 @@ export default Serializer.extend({
 		var store = this.get('store');
 		var normalized = this.transformPayload(payload || {}, options || {});
 
-		Ember.keys(normalized).forEach(function(typeKey) {
+		Object.keys(normalized).forEach(function(typeKey) {
 			if (typeKey === 'meta') {
 				return;
 			}
@@ -317,7 +317,7 @@ export default Serializer.extend({
 	 * @protected
 	 */
 	transformPayload: function(payload, options) {
-		if (!payload || Ember.keys(payload).length === 0) {
+		if (!payload || Object.keys(payload).length === 0) {
 			return {};
 		}
 
@@ -344,14 +344,14 @@ export default Serializer.extend({
 			};
 		}
 
-		Ember.keys(payload).forEach(function(key) {
+		Object.keys(payload).forEach(function(key) {
 			if (key !== 'linked' && key !== 'meta') {
 				normalized[singularize(key)] = payload[key];
 				delete payload[key];
 			}
 		});
 
-		Ember.keys(payload.linked || {}).forEach(function(key) {
+		Object.keys(payload.linked || {}).forEach(function(key) {
 			var singular = singularize(key);
 			normalized[singular] = (normalized[singular] || []).concat(payload.linked[key] || []);
 		});

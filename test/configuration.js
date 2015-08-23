@@ -38,7 +38,7 @@
 			registry.register('adapter:application', options.adapter, { singleton: true });
 		}
 
-		Em.keys(models || {}).forEach(function(typeKey) {
+		Object.keys(models || {}).forEach(function(typeKey) {
 			registry.register('model:' + typeKey, models[typeKey]);
 			// Load the model to set the 'typeKey' attributes on it
 			store.modelFor(typeKey);

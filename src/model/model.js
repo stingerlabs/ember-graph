@@ -273,7 +273,7 @@ Model.reopenClass({
 
 		// Ember.Mixin doesn't have a `detectInstance` method
 		if (!(options instanceof Ember.Mixin)) {
-			Ember.keys(options).forEach(function(key) {
+			Object.keys(options).forEach(function(key) {
 				var value = options[key];
 
 				if (options[key]) {

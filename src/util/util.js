@@ -99,7 +99,7 @@ function groupRecords(records) {
 		return groups;
 	}, {});
 
-	return Ember.keys(groups).reduce(function(array, key) {
+	return Object.keys(groups).reduce(function(array, key) {
 		if (groups[key].length > 0) {
 			array.push(groups[key]);
 		}
@@ -119,7 +119,7 @@ function groupRecords(records) {
  * @namespace EmberGraph
  */
 function values(obj, callback, thisArg) {
-	var keys = Ember.keys(obj);
+	var keys = Object.keys(obj);
 
 	for (var i = 0; i < keys.length; ++i) {
 		callback.call(thisArg, keys[i], obj[keys[i]]);

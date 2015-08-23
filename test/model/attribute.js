@@ -191,7 +191,7 @@
 
 		var changed = model.changedAttributes();
 
-		deepEqual(Em.keys(changed), ['posts']);
+		deepEqual(Object.keys(changed), ['posts']);
 		strictEqual(changed.posts[0], 0);
 		strictEqual(changed.posts[1], 25);
 	});
@@ -214,7 +214,7 @@
 
 		var changed = model.changedAttributes();
 
-		deepEqual(Em.keys(changed), []);
+		deepEqual(Object.keys(changed), []);
 		strictEqual(model.get('posts'), 0);
 		strictEqual(model.get('birthday'), null);
 	});

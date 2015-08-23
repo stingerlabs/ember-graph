@@ -87,14 +87,14 @@ export default AttributeType.extend({
 			var aKeys = EmberGraphSet.create();
 			var bKeys = EmberGraphSet.create();
 
-			aKeys.addObjects(Ember.keys(a));
-			bKeys.addObjects(Ember.keys(b));
+			aKeys.addObjects(Object.keys(a));
+			bKeys.addObjects(Object.keys(b));
 
 			if (!aKeys.isEqual(bKeys)) {
 				return false;
 			}
 
-			var keys = Ember.keys(a);
+			var keys = Object.keys(a);
 
 			for (var i = 0; i < keys.length; i = i + 1) {
 				if (!this.deepCompare(a[keys[i]], b[keys[i]])) {

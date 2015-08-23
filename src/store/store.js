@@ -586,7 +586,7 @@ var Store = Ember.Object.extend({
 	 * @param {Object} payload
 	 */
 	pushPayload: function(payload) {
-		if (!payload || Ember.keys(payload).length === 0) {
+		if (!payload || Object.keys(payload).length === 0) {
 			return;
 		}
 
@@ -599,7 +599,7 @@ var Store = Ember.Object.extend({
 
 			delete payload.meta;
 
-			Ember.keys(payload).forEach((typeKey) => {
+			Object.keys(payload).forEach((typeKey) => {
 				const model = this.modelFor(typeKey);
 
 				payload[typeKey].forEach((json) => {

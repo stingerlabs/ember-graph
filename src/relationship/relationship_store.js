@@ -30,7 +30,7 @@ var RelationshipMap = Ember.Object.extend({
 	},
 
 	removeRelationship: function(id) {
-		Ember.keys(this).forEach(function(key) {
+		Object.keys(this).forEach(function(key) {
 			if (key === 'length') {
 				return;
 			}
@@ -47,7 +47,7 @@ var RelationshipMap = Ember.Object.extend({
 	getRelationships: function(name) {
 		var relationships = this.get(name) || {};
 
-		return Ember.keys(relationships).map(function(key) {
+		return Object.keys(relationships).map(function(key) {
 			return relationships[key];
 		});
 	},
@@ -55,7 +55,7 @@ var RelationshipMap = Ember.Object.extend({
 	getAllRelationships: function() {
 		var relationships = [];
 		var keys = EmberGraphSet.create();
-		keys.addObjects(Ember.keys(this));
+		keys.addObjects(Object.keys(this));
 		keys = keys.without('length');
 
 		keys.forEach(function(key) {
@@ -73,9 +73,9 @@ var RelationshipMap = Ember.Object.extend({
 	recalculateLength: function() {
 		var length = 0;
 
-		Ember.keys(this).forEach(function(key) {
+		Object.keys(this).forEach(function(key) {
 			if (key !== 'length') {
-				length += Ember.keys(this[key]).length;
+				length += Object.keys(this[key]).length;
 			}
 		}, this);
 

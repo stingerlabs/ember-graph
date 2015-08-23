@@ -102,7 +102,7 @@ var CoreModel = Ember.Object.extend({
 	 */
 	areAttributesDirty: computed('clientAttributes',{
 		get() {
-			return Ember.keys(this.get('clientAttributes') || {}).length > 0;
+			return Object.keys(this.get('clientAttributes') || {}).length > 0;
 		}
 	}),
 
@@ -247,14 +247,14 @@ CoreModel.reopenClass({
 			var RESERVED_NAMES = EmberGraphSet.create();
 			RESERVED_NAMES.addObjects(['id', 'type', 'content', 'length', 'model']);
 
-			Ember.keys(attributes).forEach(function(name) {
+			Object.keys(attributes).forEach(function(name) {
 				Ember.assert('`' + name + '` cannot be used as an attribute name.', !RESERVED_NAMES.contains(name));
 				Ember.assert('An attribute name cannot start with an underscore.', name.charAt(0) !== '_');
 				Ember.assert('Attribute names must start with a lowercase letter.', name.charAt(0).match(/[a-z]/));
 			});
 		});
 
-		Ember.keys(attributes).forEach(function(name) {
+		Object.keys(attributes).forEach(function(name) {
 			obj[name] = createAttribute(name, attributes[name].options);
 		});
 

@@ -110,7 +110,7 @@ export default Adapter.extend({
 		var _this = this;
 		var options = {};
 
-		Ember.keys(query).forEach(function(key) {
+		Object.keys(query).forEach(function(key) {
 			options[key] = '' + query[key];
 		});
 
@@ -190,7 +190,7 @@ export default Adapter.extend({
 		}
 
 		if (options) {
-			Ember.keys(options).forEach(function(key, index) {
+			Object.keys(options).forEach(function(key, index) {
 				url += ((index === 0) ? '?' : '&') + key + '=' + encodeURIComponent(options[key]);
 			});
 		}

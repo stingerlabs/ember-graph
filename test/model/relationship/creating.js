@@ -54,7 +54,7 @@
 		var tempId = post.get('id');
 
 		var all = store.get('allRelationships');
-		Em.keys(all).forEach(function(id) {
+		Object.keys(all).forEach(function(id) {
 			if (all[id].get('id1') === tempId || all[id].get('id2') === tempId) {
 				ok(true);
 			}
@@ -63,7 +63,7 @@
 		post.save().then(function() {
 			var all = store.get('allRelationships');
 
-			Em.keys(all).forEach(function(id) {
+			Object.keys(all).forEach(function(id) {
 				if (all[id].get('id1') === tempId || all[id].get('id2') === tempId) {
 					ok(false);
 				}

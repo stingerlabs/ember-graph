@@ -43,7 +43,7 @@ export default Ember.Object.extend({
 		var found = [];
 		var cutoff = (new Date()).getTime() - this.get('cacheTimeout');
 
-		Ember.keys(records).forEach(function(key) {
+		Object.keys(records).forEach(function(key) {
 			if (key.indexOf(typeKey) === 0 && records[key].timestamp >= cutoff) {
 				found.push(records[key].record);
 			}
