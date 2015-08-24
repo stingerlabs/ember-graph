@@ -14,10 +14,14 @@ function verifyAtLeastEmberVersion(major, minor, patch) {
 
 	if (emberVersionNumbers[0] < major) {
 		return false;
+	} else if (emberVersionNumbers[0] > major) {
+		return true;
 	}
 
 	if (emberVersionNumbers[1] < minor) {
 		return false;
+	} else if (emberVersionNumbers[1] > minor) {
+		return true;
 	}
 
 	if (emberVersionNumbers[2] < patch) {

@@ -138,7 +138,7 @@
 	});
 
 	test('Setting value to undefined fails', function() {
-		expect(2);
+		expect(1);
 
 		var model = store.createRecord('test', {
 			name: 'Bob',
@@ -146,7 +146,7 @@
 			posts: 0
 		});
 
-		ok(model.set('posts', undefined));
+		model.set('posts', undefined);
 		ok(model.get('posts') === 0);
 	});
 

@@ -8,6 +8,10 @@ var EMBER_VERSIONS = {
 	'1.13.0': {
 		development: 'ember-1.13.0/ember.debug.js',
 		production: 'ember-1.13.0/ember.prod.js'
+	},
+	'2.0.0': {
+		development: 'ember-2.0.0/ember.debug.js',
+		production: 'ember-2.0.0/ember.prod.js'
 	}
 };
 
@@ -31,6 +35,11 @@ module.exports = function(grunt) {
 			(release ? EMBER_VERSIONS['1.13.0'].production : EMBER_VERSIONS['1.13.0'].development);
 		renderingContext.data.includeHandlebars = false;
 		grunt.file.write('test/ember-1.13.0.html', grunt.template.process(template, renderingContext));
+
+		renderingContext.data.emberFile =
+				(release ? EMBER_VERSIONS['2.0.0'].production : EMBER_VERSIONS['2.0.0'].development);
+		renderingContext.data.includeHandlebars = false;
+		grunt.file.write('test/ember-2.0.0.html', grunt.template.process(template, renderingContext));
 	}
 
 	grunt.registerMultiTask('build_test_runner', function() {
