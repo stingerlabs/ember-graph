@@ -31,6 +31,7 @@ after_success:
         CODECLIMATE_REPO_TOKEN=${CODECLIMATE_REPO_TOKEN} codeclimate < report/lcov.info;
 notifications:
     email: false
+sudo: false
 env:
     global:
         - GH_REF: github.com/gordonkristan/ember-graph.git
