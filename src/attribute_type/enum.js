@@ -78,10 +78,10 @@ export default AttributeType.extend({
 	 * @return {String}
 	 */
 	serialize: function(option) {
-		option = option + '';
+		const optionString = option + '';
 
-		if (this.isValidValue(option)) {
-			return option;
+		if (this.isValidValue(optionString)) {
+			return optionString;
 		} else {
 			var defaultValue = this.get('defaultValue');
 

@@ -1,9 +1,6 @@
 (function() {
 	'use strict';
 
-	var HAS_ONE_KEY = EG.Model.HAS_ONE_KEY;
-	var HAS_MANY_KEY = EG.Model.HAS_MANY_KEY;
-
 	var store;
 
 	module('Relationship Functionality Test', {
@@ -50,7 +47,7 @@
 					{ id: '3', author: { type: 'user', id: '2' }, tags: [] },
 					{ id: '4', author: { type: 'user', id: '3' }, tags: [{ type: 'tag', id: '1' },
 						{ type: 'tag', id: '4' }, { type: 'tag', id: '5' }] },
-					{ id: '5', author: { type: 'user', id: '5'}, tags: [{ type: 'tag', id: '1' },
+					{ id: '5', author: { type: 'user', id: '5' }, tags: [{ type: 'tag', id: '1' },
 						{ type: 'tag', id: '4' }, { type: 'tag', id: '5' }] },
 					{ id: '6', author: null, tags: [{ type: 'tag', id: '1' }, { type: 'tag', id: '2' },
 						{ type: 'tag', id: '5' }] },
@@ -97,7 +94,8 @@
 		var user3 = store.getRecord('user', '3');
 		ok(user3.get('_posts').mapBy('id').indexOf('7') >= 0);
 
-		var rid, relationship;
+		var rid;
+		var relationship; // eslint-disable-line no-unused-vars
 		var queued = store.get('queuedRelationships');
 
 		for (var i in queued) {
@@ -131,7 +129,7 @@
 
 		var user = store.getRecord('user', '1');
 		var post = store.createRecord('post',
-			{ author: { type: 'user', id: '1' }, tags: [ { type: 'tag', id: '1' }, { type: 'tag', id: '2' } ] });
+			{ author: { type: 'user', id: '1' }, tags: [{ type: 'tag', id: '1' }, { type: 'tag', id: '2' }] });
 
 		strictEqual(post.get('_author').id, '1');
 		deepEqual(post.get('_tags').mapBy('id').sort(), ['1', '2'].sort());
@@ -374,7 +372,6 @@
 		expect(4);
 
 		var post = store.getRecord('post', '8');
-		var author = post.get('_author');
 		var tags = post.get('_tags');
 
 		post.setHasOneRelationship('author', '1');
@@ -429,7 +426,7 @@
 
 		store.pushPayload({
 			user: [
-				{ id: '1', posts: [{ type: 'post', id: '1' }, { type: 'post', id: '50' }, { type: 'post', id: '51' }]}
+				{ id: '1', posts: [{ type: 'post', id: '1' }, { type: 'post', id: '50' }, { type: 'post', id: '51' }] }
 			]
 		});
 
@@ -441,7 +438,7 @@
 		strictEqual(post2.get('_author'), null);
 	});
 
-	test('Changing a record that isn\'t loaded yet will load changes on load' , function() {
+	test('Changing a record that isn\'t loaded yet will load changes on load', function() {
 		expect(4);
 
 		var user = store.getRecord('user', '3');
@@ -451,7 +448,7 @@
 
 		store.pushPayload({
 			post: [
-				{ id: '7', author: { type: 'user', id: '3' }, tags: []}
+				{ id: '7', author: { type: 'user', id: '3' }, tags: [] }
 			]
 		});
 
@@ -632,7 +629,6 @@
 		var post1 = store.getRecord('post', '1');
 		var post6 = store.getRecord('post', '6');
 		var tag1 = store.getRecord('tag', '1');
-		var tag3 = store.getRecord('tag', '3');
 
 		strictEqual(post6.get('_author'), null);
 		post6.setHasOneRelationship('author', user);

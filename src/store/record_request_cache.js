@@ -1,6 +1,5 @@
 import Ember from 'ember';
 
-
 export default Ember.Object.extend({
 
 	cache: null,
@@ -24,11 +23,11 @@ export default Ember.Object.extend({
 		return this.get('cache.' + typeKey);
 	},
 
-	savePendingRequest: function(typeKey /*, options, request */) {
+	savePendingRequest: function(typeKey /* options, request */) { // eslint-disable-line no-inline-comments
 		var options = (arguments.length > 2 ? arguments[1] : undefined);
 		var request = (arguments.length > 2 ? arguments[2] : arguments[1]);
 
-		switch(Ember.typeOf(options)) {
+		switch (Ember.typeOf(options)) {
 			case 'string':
 			case 'number':
 				this._savePendingSingleRequest(typeKey, options + '', request);

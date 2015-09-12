@@ -4,7 +4,8 @@
 	window.setupStore = function(models, options, store) {
 		options = options || {};
 
-		var container, registry;
+		var container;
+		var registry;
 
 		if (Ember.Registry) {
 			registry = new Ember.Registry();

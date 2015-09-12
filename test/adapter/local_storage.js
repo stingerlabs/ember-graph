@@ -1,7 +1,8 @@
 (function() {
 	'use strict';
 
-	var store, adapter;
+	var store;
+	var adapter;
 	var LOCAL_STORAGE_KEY = 'ember-graph.local_storage_test';
 
 	module('LocalStorageAdapter Test', {

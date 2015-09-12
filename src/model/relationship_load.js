@@ -145,7 +145,7 @@ export default {
 		var relationships = store.sortHasOneRelationships(this.typeKey, this.get('id'), name);
 
 		if (relationships[DELETED_STATE].length > 0) {
-			relationships[DELETED_STATE].forEach(function (relationship) {
+			relationships[DELETED_STATE].forEach(function(relationship) {
 				store.deleteRelationship(relationship);
 			}, this);
 		}
@@ -186,8 +186,6 @@ export default {
 		}
 
 		// Hehe, I'm going to look back on this one day...
-
-		/* jshint ignore:start */
 		var handled;
 
 		if (!theseValues[SERVER_STATE] && !theseValues[CLIENT_STATE] && theseValues[DELETED_STATE].length <= 0) {
@@ -596,7 +594,6 @@ export default {
 				return;
 			}
 		}
-		/* jshint ignore:end */
 	},
 
 	connectHasOneToHasMany: function(name, meta, value) {

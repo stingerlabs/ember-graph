@@ -1,5 +1,6 @@
 import Ember from 'ember';
 
+/* eslint-disable */
 /**
  * Pulled from the Ember 1.13 release.
  *
@@ -219,3 +220,4 @@ export default Ember.CoreObject.extend(Ember.MutableEnumerable, Ember.Copyable, 
 		return ret;
 	}
 });
+/* eslint-enable */

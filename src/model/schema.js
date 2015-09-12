@@ -46,16 +46,18 @@ import Model from 'ember-graph/model/model';
  * @namespace EmberGraph
  */
 var attr = function(options) {
-	if (Ember.typeOf(options) === 'string') {
-		options = { type: options };
+	let optionsObject = options;
+
+	if (Ember.typeOf(optionsObject) === 'string') {
+		optionsObject = { type: optionsObject };
 	}
 
 	Ember.deprecate('The `isEqual` method on attributes is deprecated. ' +
-			'Please use a custom attribute type instead.', !options.isEqual);
+			'Please use a custom attribute type instead.', !optionsObject.isEqual);
 
 	return {
 		isAttribute: true,
-		options: options
+		options: optionsObject
 	};
 };
 
@@ -124,34 +126,6 @@ var hasOne = function(options) {
 		options: options
 	};
 };
-
-var embeddedHasMany = function(options) {
-	return embeddedRelationship(options, false);
-};
-
-var embeddedHasOne = function(options) {
-	return embeddedRelationship(options, true);
-};
-
-function embeddedRelationship(options, hasOne) {
-	if (Ember.typeOf(options) === 'string') {
-		options = { type: options };
-	}
-
-	var properties = {
-		isAttribute: true,
-		isEmbedded: true,
-		options: options
-	};
-
-	if (hasOne) {
-		properties.hasOne = true;
-	} else {
-		properties.hasMany = true;
-	}
-
-	return properties;
-}
 
 export {
 	attr,

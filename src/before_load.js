@@ -1,5 +1,5 @@
 var define = this.define;
-var require = this.require; // jshint ignore:line
+var require = this.require;
 
 var declareModuleLoader = function() {
 	var DEFINITIONS = {};
@@ -34,7 +34,7 @@ var declareModuleLoader = function() {
 		};
 	};
 
-	require = function(name) { // jshint ignore:line
+	require = function(name) {
 		if (!MODULES[name]) {
 			MODULES[name] = evaluateModule(name);
 		}

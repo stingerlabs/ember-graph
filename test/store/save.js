@@ -1,7 +1,7 @@
 (function() {
 	'use strict';
 
-	var store, records;
+	var store;
 	var Promise = Em.RSVP.Promise;
 
 	module('Store Test', {

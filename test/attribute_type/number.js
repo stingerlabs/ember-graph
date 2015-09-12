@@ -9,7 +9,7 @@
 		expect(7);
 
 		strictEqual(500, type.serialize(500));
-		strictEqual(5, type.serialize(new Number(5))); // jshint ignore:line
+		strictEqual(5, type.serialize(new Number(5))); // eslint-disable-line no-new-wrappers
 		strictEqual(0, type.serialize(null));
 		strictEqual(0, type.serialize());
 		strictEqual(0, type.serialize({}));

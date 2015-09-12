@@ -1,7 +1,7 @@
 (function() {
 	'use strict';
 
-	var store, records;
+	var store;
 	var Promise = Em.RSVP.Promise;
 
 	module('Store Unload Test', {
@@ -63,7 +63,7 @@
 			}, {
 				adapter: EG.Adapter.extend({
 					updateRecord: function(record) {
-						return Em.RSVP.Promise.resolve();
+						return Promise.resolve();
 					}
 				})
 			});

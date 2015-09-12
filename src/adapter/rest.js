@@ -5,7 +5,7 @@ import Adapter from 'ember-graph/adapter/adapter';
 import { pluralize } from 'ember-graph/util/inflector';
 import { computed } from 'ember-graph/util/computed';
 
-var Promise = Ember.RSVP.Promise; // jshint ignore:line
+const Promise = Ember.RSVP.Promise;
 
 /**
  * An adapter that communicates with REST back-ends. The requests made all follow the
@@ -275,7 +275,7 @@ export default Adapter.extend({
 			$.ajax({
 				cache: false,
 				contentType: 'application/json',
-				data:(body === undefined ? undefined : (Ember.typeOf(body) === 'string' ? body : JSON.stringify(body))),
+				data: body && (Ember.typeOf(body) === 'string' ? body : JSON.stringify(body)),
 				headers: headers,
 				processData: false,
 				type: verb,

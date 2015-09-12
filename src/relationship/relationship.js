@@ -129,7 +129,7 @@ Relationship.reopenClass({
 	SERVER_STATE: SERVER_STATE,
 	DELETED_STATE: DELETED_STATE,
 
-	create(type1, id1, relationship1, type2, id2, relationship2, state) { // jshint ignore:line
+	create(type1, id1, relationship1, type2, id2, relationship2, state) {
 		Ember.assert('Invalid type or ID', type1 && id1 && type2 && id2);
 		Ember.assert('First relationship must have a name', relationship1);
 		Ember.assert('Second relationship must have a name or be null',

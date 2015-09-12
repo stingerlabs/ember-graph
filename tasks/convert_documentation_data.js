@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 'use strict';
 
 var fs = require('fs');
@@ -7,7 +8,7 @@ var Handlebars = require('handlebars');
 
 marked.setOptions({
 	renderer: renderer,
-	highlight: function (code) {
+	highlight: function(code) {
 		return require('highlight.js').highlightAuto(code).value;
 	}
 });
@@ -187,3 +188,4 @@ function templateAndParseText(text) {
 	text = text || '';
 	return marked(Handlebars.compile(text)());
 }
+/* eslint-enable camelcase */

@@ -25,7 +25,6 @@ var createAttribute = function(attributeName, options) {
 
 	return computed(`clientAttributes.${attributeName}`, `serverAttributes.${attributeName}`, {
 		get(key) {
-			const meta = this.constructor.metaForAttribute(key);
 			const server = this.get(`serverAttributes.${key}`);
 			const client = this.get(`clientAttributes.${key}`);
 			return (client === undefined ? server : client);
@@ -100,7 +99,7 @@ var CoreModel = Ember.Object.extend({
 	 * @property areAttributesDirty
 	 * @type Boolean
 	 */
-	areAttributesDirty: computed('clientAttributes',{
+	areAttributesDirty: computed('clientAttributes', {
 		get() {
 			return Object.keys(this.get('clientAttributes') || {}).length > 0;
 		}

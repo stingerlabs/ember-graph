@@ -1,0 +1,16 @@
+{
+	"extends": "../.eslintrc",
+
+	"env": {
+		"browser": true,
+		"qunit": true
+	},
+
+	"globals": {
+		"EG": false,
+		"EmberGraph": false,
+		"Em": false,
+		"Ember": false,
+		"setupStore": true
+	}
+}

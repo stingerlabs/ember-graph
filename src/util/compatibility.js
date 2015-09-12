@@ -1,3 +1,5 @@
+import Ember from 'ember';
+
 /**
  * This function will return `true` if the current version of
  * Ember is at least the version number specified. If not,

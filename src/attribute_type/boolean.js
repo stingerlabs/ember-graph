@@ -48,11 +48,11 @@ export default AttributeType.extend({
 	 * @return {Boolean}
 	 */
 	coerceToBoolean: function(obj) {
-		if (Ember.typeOf(obj) === 'boolean' && obj == true) { // jshint ignore:line
+		if (Ember.typeOf(obj) === 'boolean' && obj == true) { // eslint-disable-line eqeqeq
 			return true;
 		}
 
-		if (Ember.typeOf(obj) === 'string' && obj == 'true') {  // jshint ignore:line
+		if (Ember.typeOf(obj) === 'string' && obj == 'true') { // eslint-disable-line eqeqeq
 			return true;
 		}
 

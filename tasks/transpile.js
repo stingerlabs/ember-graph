@@ -24,7 +24,7 @@ function transpile() {
 	buildOutput();
 	LAST_TRANSPILE = Date.now();
 	var timeElapsed = LAST_TRANSPILE - startTime;
-	console.log('...done. Finished in ' + Math.ceil(timeElapsed/1000) + ' seconds');
+	console.log('...done. Finished in ' + Math.ceil(timeElapsed / 1000) + ' seconds');
 }
 
 function buildOutput() {

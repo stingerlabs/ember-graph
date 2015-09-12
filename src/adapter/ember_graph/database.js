@@ -312,8 +312,6 @@ export default {
 	 * @for EmberGraphAdapter
 	 */
 	removeHasManyRelationshipFromDatabase: function(relationship, db) {
-		var relationships = this.getRelationshipsFor(relationship.t1, relationship.i1, relationship.n1, db);
-
 		db.relationships = db.relationships.filter(function(r) {
 			return !(relationship.t2 === r.t2 && relationship.i2 === r.i2 && relationship.n2 === r.n2);
 		});

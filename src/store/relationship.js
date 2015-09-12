@@ -1,7 +1,6 @@
 import Ember from 'ember';
 import Relationship from 'ember-graph/relationship/relationship';
 
-
 var CLIENT_STATE = Relationship.CLIENT_STATE;
 var SERVER_STATE = Relationship.SERVER_STATE;
 var DELETED_STATE = Relationship.DELETED_STATE;
@@ -19,7 +18,7 @@ export default {
 		});
 	}),
 
-	createRelationship: function(type1, id1, name1, type2, id2, name2, state) { // jshint ignore:line
+	createRelationship: function(type1, id1, name1, type2, id2, name2, state) {
 		var relationship = Relationship.create(type1, id1, name1, type2, id2, name2, state);
 
 		var queuedRelationships = this.get('queuedRelationships');
@@ -108,7 +107,7 @@ export default {
 	},
 
 	relationshipsForRecord: function(type, id, name) {
-		var data, filtered = [];
+		var filtered = [];
 		var all = this.get('allRelationships');
 
 		Object.keys(all).forEach(function(key) {
@@ -206,7 +205,7 @@ export default {
 		})[0] || null;
 
 		Ember.runInDebug(function() {
-			/* jshint ignore:start */
+			/* eslint-disable */
 			// No relationships at all
 			if (!values[SERVER_STATE] && values[DELETED_STATE].length <= 0 && !values[CLIENT_STATE]) return;
 			// One server relationship, nothing else
@@ -217,9 +216,10 @@ export default {
 			if (!values[SERVER_STATE] && values[DELETED_STATE].length > 0 && values[CLIENT_STATE]) return;
 			// Some deleted relationships, nothing else
 			if (!values[SERVER_STATE] && values[DELETED_STATE].length > 0 && !values[CLIENT_STATE]) return;
+			/* eslint-enable */
+
 			// Everything else is invalid
 			Ember.assert('Invalid hasOne relationship values.');
-			/* jshint ignore:end */
 		});
 
 		return values;

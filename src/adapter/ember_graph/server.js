@@ -15,18 +15,18 @@ export default {
 	 * @for EmberGraphAdapter
 	 */
 	serverCreateRecord: function(typeKey, json) {
-		var _this = this;
-		var newId = null;
+		let newId = null;
 
-		return this.getDatabase().then(function(db) {
-			newId = _this.generateIdForRecord(typeKey, json, db);
-			db = _this.putRecordInDatabase(typeKey, newId, json[pluralize(typeKey)][0], db);
-			return _this.setDatabase(db);
-		}).then(function(db) {
-			var record = _this.getRecordFromDatabase(typeKey, newId, db);
-			var payload = {};
-			payload[pluralize(typeKey)] = [record];
-			return payload;
+		return this.getDatabase().then((db) => {
+			newId = this.generateIdForRecord(typeKey, json, db);
+
+			const modifiedDb = this.putRecordInDatabase(typeKey, newId, json[pluralize(typeKey)][0], db);
+			return this.setDatabase(modifiedDb);
+		}).then((db) => {
+			const record = this.getRecordFromDatabase(typeKey, newId, db);
+			return {
+				[pluralize(typeKey)]: [record]
+			};
 		});
 	},
 
@@ -109,15 +109,13 @@ export default {
 	 * @for EmberGraphAdapter
 	 */
 	serverUpdateRecord: function(typeKey, id, changes) {
-		var _this = this;
-
-		return this.getDatabase().then(function(db) {
-			db = _this.applyChangesToDatabase(typeKey, id, changes, db);
-			return _this.setDatabase(db);
-		}).then(function(db) {
-			var payload = {};
-			payload[pluralize(typeKey)] = [_this.getRecordFromDatabase(typeKey, id, db)];
-			return payload;
+		return this.getDatabase().then((db) => {
+			const modifiedDb = this.applyChangesToDatabase(typeKey, id, changes, db);
+			return this.setDatabase(modifiedDb);
+		}).then((db) => {
+			return {
+				[pluralize(typeKey)]: [this.getRecordFromDatabase(typeKey, id, db)]
+			};
 		});
 	},
 
@@ -130,19 +128,16 @@ export default {
 	 * @for EmberGraphAdapter
 	 */
 	serverDeleteRecord: function(typeKey, id) {
-		var _this = this;
-		var payload = null;
-
-		return this.getDatabase().then(function(db) {
+		return this.getDatabase().then((db) => {
 			if (db.records[typeKey]) {
 				delete db.records[typeKey][id];
 			}
 
-			db.relationships = db.relationships.filter(function(r) {
+			db.relationships = db.relationships.filter((r) => {
 				return !((r.t1 === typeKey && r.i1 === id) || (r.t2 === typeKey && r.i2 === id));
 			});
 
-			return _this.setDatabase(db).then(function() {
+			return this.setDatabase(db).then(() => {
 				return {
 					meta: {
 						deletedRecords: [{ type: typeKey, id: id }]

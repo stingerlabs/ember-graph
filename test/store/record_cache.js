@@ -1,7 +1,8 @@
 (function() {
 	'use strict';
 
-	var store, cache;
+	var store;
+	var cache;
 
 	module('Record Cache Test', {
 		setup: function() {
@@ -64,7 +65,7 @@
 		strictEqual(cache.getRecord('item', '1'), item1);
 
 		var then = Date.now();
-		while (Date.now() - then <= 10) {}
+		while (Date.now() - then <= 10) {} // eslint-disable-line no-empty
 
 		strictEqual(cache.getRecord('item', '1'), null);
 	});

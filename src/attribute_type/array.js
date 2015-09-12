@@ -17,12 +17,11 @@ export default AttributeType.extend({
 	 * @returns {Array}
 	 */
 	serialize: function(arr) {
-		if (Ember.isNone(obj)) {
+		if (Ember.isNone(arr)) {
 			return null;
 		}
 
-		obj = (obj.toArray ? obj.toArray() : obj);
-		return (Ember.isArray(obj) ? obj : null);
+		return (Ember.isArray(arr.toArray ? arr.toArray() : arr) ? arr : null);
 	},
 
 	/**

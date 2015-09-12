@@ -1,7 +1,7 @@
 import Ember from 'ember';
 import EmberGraphAdapter from 'ember-graph/adapter/ember_graph/adapter';
 
-var Promise = Ember.RSVP.Promise; // jshint ignore:line
+const Promise = Ember.RSVP.Promise;
 
 /**
  * This adapter stores all of your changes in memory, mainly for testing
@@ -64,7 +64,7 @@ export default EmberGraphAdapter.extend({
 		this._super();
 	},
 
-	initializeDatabaseOnInit: Em.on('init', function() {
+	initializeDatabaseOnInit: Ember.on('init', function() {
 		this.initializeDatabase();
 	})
 

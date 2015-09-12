@@ -110,7 +110,7 @@ export default Ember.Object.extend({
 
 	removeRelationship: function(id) {
 		if (Ember.typeOf(id) !== 'string') {
-			id = Ember.get(id, 'id');
+			id = Ember.get(id, 'id'); // eslint-disable-line no-param-reassign
 		}
 
 		this.get('server').removeRelationship(id);

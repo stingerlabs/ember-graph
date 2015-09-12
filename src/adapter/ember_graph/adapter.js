@@ -6,7 +6,7 @@ import DatabaseMethods from 'ember-graph/adapter/ember_graph/database';
 
 import { computed } from 'ember-graph/util/computed';
 
-var Promise = Ember.RSVP.Promise; // jshint ignore:line
+var Promise = Ember.RSVP.Promise;
 
 /**
  * This class acts as a base adapter for synchronous storage forms. Specifically,

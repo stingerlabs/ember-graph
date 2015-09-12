@@ -1,3 +1,4 @@
+/* eslint-env node */
 'use strict';
 
 var config = function(moduleName) {
@@ -8,18 +9,18 @@ module.exports = function(grunt) {
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
 
-		build_test_runner: {
+		build_test_runner: { // eslint-disable-line camelcase
 			all: ['test/**/*.js']
 		},
 
-		build_release_test_runner: {
+		build_release_test_runner: { // eslint-disable-line camelcase
 			all: ['test/**/*.js']
 		},
 
 		clean: config('clean'),
 		connect: config('connect'),
+		eslint: config('eslint'),
 		groundskeeper: config('groundskeeper'),
-		jshint: config('jshint'),
 		qunit: config('qunit'),
 		sass: config('sass'),
 		uglify: config('uglify'),
@@ -29,10 +30,10 @@ module.exports = function(grunt) {
 
 	grunt.loadNpmTasks('grunt-contrib-clean');
 	grunt.loadNpmTasks('grunt-contrib-connect');
-	grunt.loadNpmTasks('grunt-contrib-jshint');
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-contrib-watch');
 	grunt.loadNpmTasks('grunt-contrib-yuidoc');
+	grunt.loadNpmTasks('grunt-eslint');
 	grunt.loadNpmTasks('grunt-groundskeeper');
 	grunt.loadNpmTasks('grunt-qunit-istanbul');
 	grunt.loadNpmTasks('grunt-sass');
@@ -41,7 +42,7 @@ module.exports = function(grunt) {
 
 	grunt.registerTask('develop', ['transpile', 'build_test_runner', 'connect:test', 'watch']);
 	grunt.registerTask('test', ['transpile', 'build_test_runner', 'qunit:all', 'clean:test']);
-	grunt.registerTask('release', ['jshint:source', 'transpile', 'groundskeeper:compile',
+	grunt.registerTask('release', ['eslint', 'transpile', 'groundskeeper:compile',
 		'uglify:release', 'build_release_test_runner', 'qunit:all']);
 
 	grunt.registerTask('build_site', ['yuidoc', 'register_handlebars_helpers', 'convert_documentation_data',

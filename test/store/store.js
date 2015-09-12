@@ -3,7 +3,8 @@
 
 	var typeKey = 'storeTest';
 
-	var store, records;
+	var store;
+	var records;
 
 	var Adapter = EG.Adapter.extend({
 

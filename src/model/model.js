@@ -109,8 +109,7 @@ var Model = CoreModel.extend(Ember.Evented, {
 	 * @method loadDataFromServer
 	 * @param {Object} json
 	 */
-	loadDataFromServer: function(json) {
-		json = json || {};
+	loadDataFromServer(json = {}) {
 		Ember.assert('The record `' + this.typeKey + ':' + this.get('id') + '` was attempted to be reloaded ' +
 			'while dirty with `reloadDirty` disabled.', !this.get('isDirty') || this.get('store.reloadDirty'));
 
@@ -127,9 +126,7 @@ var Model = CoreModel.extend(Ember.Evented, {
 	 * @method initializeRecord
 	 * @param {Object} json
 	 */
-	initializeRecord: function(json) {
-		json = json || {};
-
+	initializeRecord: function(json = {}) {
 		this.initializeAttributes(json);
 		this.initializeRelationships(json);
 	},

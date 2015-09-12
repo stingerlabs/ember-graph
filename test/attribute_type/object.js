@@ -14,7 +14,7 @@
 	test('Object constructors work too', function() {
 		expect(1);
 
-		ok(type.isEqual(Object(), Object())); // jshint ignore: line
+		ok(type.isEqual(Object(), Object()));
 	});
 
 	test('Simple objects are equal', function() {

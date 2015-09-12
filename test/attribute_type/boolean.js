@@ -10,12 +10,12 @@
 
 		strictEqual(type.serialize(true), true);
 		strictEqual(type.serialize('true'), true);
-		strictEqual(type.serialize(new Boolean(true)), true); // jshint ignore:line
+		strictEqual(type.serialize(new Boolean(true)), true); // eslint-disable-line no-new-wrappers
 		strictEqual(type.serialize(Boolean(true)), true);
 
 		strictEqual(type.serialize(false), false);
 		strictEqual(type.serialize('false'), false);
-		strictEqual(type.serialize(new Boolean(false)), false); // jshint ignore:line
+		strictEqual(type.serialize(new Boolean(false)), false); // eslint-disable-line no-new-wrappers
 		strictEqual(type.serialize(Boolean(false)), false);
 
 		strictEqual(type.serialize(''), false);

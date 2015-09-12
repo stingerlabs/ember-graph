@@ -4,8 +4,6 @@
 	var store;
 
 	var CLIENT_STATE = EG.Relationship.CLIENT_STATE;
-	var SERVER_STATE = EG.Relationship.SERVER_STATE;
-	var DELETED_STATE = EG.Relationship.DELETED_STATE;
 
 	module('Relationship Object Test', {
 		setup: function() {

@@ -1,3 +1,5 @@
+/* global define require */
+
 var configureAliases = function() {
 	var configureAlias = function(original, alias) {
 		define(alias, ['exports', original], function(exports, original) {

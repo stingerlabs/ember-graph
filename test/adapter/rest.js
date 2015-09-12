@@ -2,7 +2,8 @@
 	'use strict';
 
 	var Promise = Ember.RSVP.Promise;
-	var store, adapter;
+	var store;
+	var adapter;
 
 	module('REST Adapter', {
 		setup: function() {

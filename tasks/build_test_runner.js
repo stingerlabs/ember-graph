@@ -22,7 +22,7 @@ module.exports = function(grunt) {
 		var renderingContext = {
 			data: {
 				sourceFile: (release ? 'ember-graph.min.js' : 'ember-graph.js'),
-				files: this.filesSrc // jshint ignore:line
+				files: this.filesSrc
 			}
 		};
 

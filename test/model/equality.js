@@ -1,9 +1,6 @@
 (function() {
 	'use strict';
 
-	var HAS_ONE_KEY = EG.Model.HAS_ONE_KEY;
-	var HAS_MANY_KEY = EG.Model.HAS_MANY_KEY;
-
 	var store;
 
 	module('Model Equality Test', {
@@ -43,7 +40,14 @@
 
 			store.pushPayload({
 				user: [
-					{ id: '1', posts: [{ type: 'post', id: '1'}, { type: 'post', id: '2'}, { type: 'post', id: '3'}]}
+					{
+						id: '1',
+						posts: [
+							{ type: 'post', id: '1' },
+							{ type: 'post', id: '2' },
+							{ type: 'post', id: '3' }
+						]
+					}
 				],
 				post: [
 					{ id: '1', author: { type: 'use', id: '1' }, tags: [] },

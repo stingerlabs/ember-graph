@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 module.exports = {
 	options: {
 		mangle: true,
@@ -37,3 +38,4 @@ module.exports = {
 		}
 	}
 };
+/* eslint-enable camelcase */

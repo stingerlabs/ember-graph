@@ -198,7 +198,8 @@
 			]
 		};
 
-		var normalized = serializer.deserialize(payload, { requestType: 'findQuery', recordType: 'post', query: query});
+		var serializerOptions = { requestType: 'findQuery', recordType: 'post', query: query };
+		var normalized = serializer.deserialize(payload, serializerOptions);
 
 		deepEqual(normalized, expected);
 	});
@@ -218,7 +219,7 @@
 
 		throws(function() {
 			serializer.deserialize({ posts: [{ id: 0, links: { author: 1, tags: [] } }] }, options);
-		}, /attribute was missing/i ,'Missing attribute');
+		}, /attribute was missing/i, 'Missing attribute');
 
 		throws(function() {
 			serializer.deserialize({ posts: [{ id: 0, title: '', links: { author: 1 } }] }, options);

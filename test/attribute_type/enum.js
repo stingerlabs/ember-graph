@@ -16,8 +16,8 @@
 		strictEqual(type.serialize('green'), 'green');
 		strictEqual(type.serialize(''), 'ORANGE');
 		strictEqual(type.serialize(null), 'ORANGE');
-		strictEqual(type.serialize(new String('INDIGO')), 'INDIGO'); // jshint ignore:line
-		strictEqual(type.serialize(String('violet')), 'violet'); // jshint ignore:line
+		strictEqual(type.serialize(new String('INDIGO')), 'INDIGO'); // eslint-disable-line no-new-wrappers
+		strictEqual(type.serialize(String('violet')), 'violet');
 	});
 
 	test('Values are compared correctly', function() {

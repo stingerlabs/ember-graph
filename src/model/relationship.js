@@ -35,7 +35,8 @@ var createRelationship = function(name, kind, options) {
 	Ember.assert('Invalid inverse', options.inverse === null || Ember.typeOf(options.inverse) === 'string');
 
 	var meta = {
-		isRelationship: false, // the 'real' relationship (without _) is the relationship
+		// the 'real' relationship (without _) is the relationship
+		isRelationship: false,
 		kind: kind,
 		isRequired: (options.hasOwnProperty('defaultValue') ? false : options.isRequired !== false),
 		defaultValue: options.defaultValue,
@@ -191,29 +192,20 @@ var RelationshipPublicMethods = {
 		var changes = {};
 
 		this.constructor.eachRelationship(function(name, meta) {
-			var oldVal, newVal;
-
 			if (meta.isReadOnly) {
 				return;
 			}
 
 			if (meta.kind === HAS_MANY_KEY) {
-				oldVal = this.getHasManyValue(name, true);
-				var oldValSet = oldVal.map(function(value) {
-					return value.type + ':' + value.id;
-				});
-
-				newVal = this.getHasManyValue(name, false);
-				var newValSet = newVal.map(function(value) {
-					return value.type + ':' + value.id;
-				});
+				const oldVal = this.getHasManyValue(name, true);
+				const newVal = this.getHasManyValue(name, false);
 
 				if (!arrayContentsEqual(oldVal, newVal)) {
 					changes[name] = [oldVal, newVal];
 				}
 			} else {
-				oldVal = this.getHasOneValue(name, true);
-				newVal = this.getHasOneValue(name, false);
+				const oldVal = this.getHasOneValue(name, true);
+				const newVal = this.getHasOneValue(name, false);
 
 				if (!oldVal && !newVal) {
 					return;
@@ -277,14 +269,14 @@ var RelationshipPublicMethods = {
 		Ember.changeProperties(function() {
 			this.set('initializedRelationships.' + relationshipName, true);
 
-			var i, store = this.get('store');
+			const store = this.get('store');
 
 			// If the type wasn't provided, fill it in based on the inverse
 			if (Ember.typeOf(id) !== 'string') {
-				polymorphicType = Ember.get(id, 'typeKey');
-				id = Ember.get(id, 'id');
+				polymorphicType = Ember.get(id, 'typeKey'); // eslint-disable-line no-param-reassign
+				id = Ember.get(id, 'id'); // eslint-disable-line no-param-reassign
 			} else if (Ember.typeOf(polymorphicType) !== 'string') {
-				polymorphicType = meta.relatedType;
+				polymorphicType = meta.relatedType; // eslint-disable-line no-param-reassign
 			}
 
 			var otherModel = store.modelFor(polymorphicType);
@@ -293,7 +285,7 @@ var RelationshipPublicMethods = {
 			var serverValues = this.getHasManyRelationships(relationshipName, true);
 
 			// Check to see if the records are already connected
-			for (i = 0; i < currentValues.length; ++i) {
+			for (let i = 0; i < currentValues.length; ++i) {
 				if (currentValues[i].otherType(this) === polymorphicType && currentValues[i].otherId(this) === id) {
 					return;
 				}
@@ -302,7 +294,7 @@ var RelationshipPublicMethods = {
 			// If the inverse is null or a hasMany, we can create the relationship without conflict
 			if (meta.inverse === null || otherMeta.kind === HAS_MANY_KEY) {
 				// Check for delete relationships first
-				for (i = 0; i < serverValues.length; ++i) {
+				for (let i = 0; i < serverValues.length; ++i) {
 					if (serverValues[i].otherType(this) === polymorphicType && serverValues[i].otherId(this) === id) {
 						store.changeRelationshipState(serverValues[i], SERVER_STATE);
 						return;
@@ -324,7 +316,7 @@ var RelationshipPublicMethods = {
 			}
 
 			// Check for any deleted relationships that match the one we need
-			for (i = 0; i < serverValues.length; ++i) {
+			for (let i = 0; i < serverValues.length; ++i) {
 				if (serverValues[i].otherType(this) === polymorphicType && serverValues[i].otherId(this) === id) {
 					store.changeRelationshipState(serverValues[i], SERVER_STATE);
 					return;
@@ -363,10 +355,10 @@ var RelationshipPublicMethods = {
 		Ember.changeProperties(function() {
 			// If the type wasn't provided, fill it in based on the inverse
 			if (Ember.typeOf(id) !== 'string') {
-				polymorphicType = Ember.get(id, 'typeKey');
-				id = Ember.get(id, 'id');
+				polymorphicType = Ember.get(id, 'typeKey'); // eslint-disable-line no-param-reassign
+				id = Ember.get(id, 'id'); // eslint-disable-line no-param-reassign
 			} else if (Ember.typeOf(polymorphicType) !== 'string') {
-				polymorphicType = meta.relatedType;
+				polymorphicType = meta.relatedType; // eslint-disable-line no-param-reassign
 			}
 
 			var relationships = this.getHasManyRelationships(relationshipName, false);
@@ -414,10 +406,10 @@ var RelationshipPublicMethods = {
 
 			// If the type wasn't provided, fill it in based on the inverse
 			if (Ember.typeOf(id) !== 'string') {
-				polymorphicType = id.typeKey;
-				id = id.get('id');
+				polymorphicType = id.typeKey; // eslint-disable-line no-param-reassign
+				id = id.get('id'); // eslint-disable-line no-param-reassign
 			} else if (Ember.typeOf(polymorphicType) !== 'string') {
-				polymorphicType = meta.relatedType;
+				polymorphicType = meta.relatedType; // eslint-disable-line no-param-reassign
 			}
 
 			var otherModel = store.modelFor(polymorphicType);

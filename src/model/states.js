@@ -1,6 +1,7 @@
 import Ember from 'ember';
 
 import { computed } from 'ember-graph/util/computed';
+import { startsWith } from 'ember-graph/util/string';
 
 export default {
 
@@ -92,7 +93,7 @@ export default {
 	 */
 	isNew: computed('_id', {
 		get() {
-			return EG.String.startsWith(this.get('_id'), this.constructor.temporaryIdPrefix);
+			return startsWith(this.get('_id'), this.constructor.temporaryIdPrefix);
 		}
 	}),
 

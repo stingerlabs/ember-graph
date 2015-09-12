@@ -58,7 +58,7 @@ function stripOuterParagraph(text) {
 	text = text.trim();
 
 	if (text.startsWith('<p>') && text.endsWith('</p>')) {
-	 text = text.substring(3, text.length - 4);
+		text = text.substring(3, text.length - 4);
 	}
 
 	return new Handlebars.SafeString(text);

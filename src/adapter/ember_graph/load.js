@@ -4,7 +4,7 @@ import EmberGraphSet from 'ember-graph/util/set';
 
 import { values } from 'ember-graph/util/util';
 
-var Promise = Ember.RSVP.Promise; // jshint ignore:line
+const Promise = Ember.RSVP.Promise;
 
 var typeOf = Ember.typeOf;
 
@@ -70,7 +70,6 @@ export default {
 			var db = this.convertAndVerifyPayload(Ember.copy(payload, true));
 			return this.setDatabase(db);
 		} catch (error) {
-			console.error('There was an error while trying to initialize your database.');
 			return Promise.reject(error);
 		}
 	},
@@ -211,13 +210,15 @@ export default {
 				}
 			} else {
 				value.forEach(function(other) {
-					if (typeOf(other) === 'string' || typeOf(other) === 'number') {
-						other = { type: meta.relatedType, id: other + '' };
+					let otherRecord = other;
+
+					if (typeOf(otherRecord) === 'string' || typeOf(otherRecord) === 'number') {
+						otherRecord = { type: meta.relatedType, id: otherRecord + '' };
 					}
 
 					relationships.push({
 						t1: typeKey, i1: record.id + '', n1: name,
-						t2: other.type, i2: other.id + '', n2: meta.inverse
+						t2: otherRecord.type, i2: otherRecord.id + '', n2: meta.inverse
 					});
 				});
 			}

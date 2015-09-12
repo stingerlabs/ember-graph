@@ -5,14 +5,12 @@ import LookupMethods from 'ember-graph/store/lookup';
 import RelationshipMethods from 'ember-graph/store/relationship';
 
 import {
-	PromiseObject,
 	PromiseArray,
 	ModelPromiseObject
 } from 'ember-graph/data/promise_object';
 import { deprecateMethod } from 'ember-graph/util/util';
 
-var Promise = Ember.RSVP.Promise; // jshint ignore:line
-
+const Promise = Ember.RSVP.Promise;
 
 /**
  * The store is used to manage all records in the application.
@@ -264,9 +262,7 @@ var Store = Ember.Object.extend({
 	 * @return {PromiseArray}
 	 * @private
 	 */
-	_findMany: function(typeKey /*, ids*/) {
-		var ids = arguments[1] || [];
-
+	_findMany: function(typeKey, ids = []) {
 		var _this = this;
 
 		if (ids.length <= 0) {

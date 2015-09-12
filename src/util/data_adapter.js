@@ -95,7 +95,6 @@ const EmberGraphDataAdapter = Ember.DataAdapter && Ember.DataAdapter.extend({
 	},
 
 	observeRecord: function(record, recordUpdated) {
-		var _this = this;
 		var releaseMethods = Ember.A();
 		var propertiesToObserve = Ember.A(['id', 'isNew', 'isDirty']);
 
