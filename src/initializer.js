@@ -7,7 +7,13 @@ Ember.onLoad('Ember.Application', function(Application) {
 		initialize(registry, application) {
 			Ember.libraries.register('Ember Graph');
 
+			const useService = !!Ember.Service;
+
 			application.register('store:main', application.Store || EmberGraph.Store);
+
+			if (useService) {
+				application.register('service:store', application.Store || EmberGraph.Store);
+			}
 
 			application.register('adapter:rest', EmberGraph.RESTAdapter);
 			application.register('adapter:memory', EmberGraph.MemoryAdapter);
@@ -27,6 +33,13 @@ Ember.onLoad('Ember.Application', function(Application) {
 			application.inject('route', 'store', 'store:main');
 			application.inject('adapter', 'store', 'store:main');
 			application.inject('serializer', 'store', 'store:main');
+
+			if (useService) {
+				application.inject('controller', 'store', 'service:store');
+				application.inject('route', 'store', 'service:store');
+				application.inject('adapter', 'store', 'service:store');
+				application.inject('serializer', 'store', 'service:store');
+			}
 
 			if (EmberGraph.DataAdapter) {
 				application.register('data-adapter:main', EmberGraph.DataAdapter);
