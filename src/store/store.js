@@ -19,7 +19,7 @@ const Promise = Ember.RSVP.Promise;
  * @class Store
  * @constructor
  */
-var Store = Ember.Object.extend({
+var Store = (Ember.Service || Ember.Object).extend({
 
 	/**
 	 * The number of milliseconds after a record in the cache expires
