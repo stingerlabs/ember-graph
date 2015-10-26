@@ -8,24 +8,24 @@ export default Ember.Object.extend({
 		this.set('cache', Ember.Object.create());
 	}.on('init'),
 
-	_getAndCreateTypeCache: function(typeKey) {
+	_getAndCreateTypeCache(typeKey) {
 		if (!this.get('cache.' + typeKey)) {
-			var cache = Ember.Object.create({
+			const cache = Ember.Object.create({
 				all: null,
 				single: {},
 				multiple: {},
 				query: {}
 			});
 
-			this.set('cache.' + typeKey, cache);
+			this.set(`cache.${typeKey}`, cache);
 		}
 
-		return this.get('cache.' + typeKey);
+		return this.get(`cache.${typeKey}`);
 	},
 
-	savePendingRequest: function(typeKey /* options, request */) { // eslint-disable-line no-inline-comments
-		var options = (arguments.length > 2 ? arguments[1] : undefined);
-		var request = (arguments.length > 2 ? arguments[2] : arguments[1]);
+	savePendingRequest(typeKey /* options, request */) { // eslint-disable-line no-inline-comments
+		const options = (arguments.length > 2 ? arguments[1] : undefined);
+		const request = (arguments.length > 2 ? arguments[2] : arguments[1]);
 
 		switch (Ember.typeOf(options)) {
 			case 'string':
@@ -44,48 +44,48 @@ export default Ember.Object.extend({
 		}
 	},
 
-	_savePendingSingleRequest: function(typeKey, id, request) {
-		var cache = this._getAndCreateTypeCache(typeKey).get('single');
+	_savePendingSingleRequest(typeKey, id, request) {
+		const cache = this._getAndCreateTypeCache(typeKey).get('single');
 
 		cache[id] = request;
 
-		var callback = function() {
+		const callback = () => {
 			cache[id] = null;
 		};
 
 		request.then(callback, callback);
 	},
 
-	_savePendingManyRequest: function(typeKey, ids, request) {
-		var cache = this._getAndCreateTypeCache(typeKey).get('multiple');
-		var idString = ids.map((id) => id + '').sort().join(',');
+	_savePendingManyRequest(typeKey, ids, request) {
+		const cache = this._getAndCreateTypeCache(typeKey).get('multiple');
+		const idString = ids.map((id) => id + '').sort().join(',');
 
 		cache[idString] = request;
 
-		var callback = function() {
+		const callback = () => {
 			cache[idString] = null;
 		};
 
 		request.then(callback, callback);
 	},
 
-	_savePendingQueryRequest: function(typeKey, query, request) {
+	_savePendingQueryRequest(typeKey, query, request) {
 		// TODO
 	},
 
-	_savePendingAllRequest: function(typeKey, request) {
-		var cache = this._getAndCreateTypeCache(typeKey);
+	_savePendingAllRequest(typeKey, request) {
+		const cache = this._getAndCreateTypeCache(typeKey);
 
 		cache.set('all', request);
 
-		var callback = function() {
+		const callback = () => {
 			cache.set('all', null);
 		};
 
 		request.then(callback, callback);
 	},
 
-	getPendingRequest: function(typeKey, options) {
+	getPendingRequest(typeKey, options) {
 		switch (Ember.typeOf(options)) {
 			case 'string':
 			case 'number':
@@ -101,21 +101,21 @@ export default Ember.Object.extend({
 		}
 	},
 
-	_getPendingSingleRequest: function(typeKey, id) {
-		var cache = this._getAndCreateTypeCache(typeKey);
+	_getPendingSingleRequest(typeKey, id) {
+		const cache = this._getAndCreateTypeCache(typeKey);
 
-		var all = cache.get('all');
+		const all = cache.get('all');
 		if (all) {
 			return all;
 		}
 
-		var single = cache.get('single')[id];
+		const single = cache.get('single')[id];
 		if (single) {
 			return single;
 		}
 
-		var multiple = cache.get('multiple');
-		for (var key in multiple) {
+		const multiple = cache.get('multiple');
+		for (let key in multiple) {
 			if (multiple.hasOwnProperty(key)) {
 				if (key.split(',').indexOf(id) >= 0) {
 					return multiple[key];
@@ -126,17 +126,17 @@ export default Ember.Object.extend({
 		return null;
 	},
 
-	_getPendingManyRequest: function(typeKey, ids) {
-		var cache = this._getAndCreateTypeCache(typeKey);
+	_getPendingManyRequest(typeKey, ids) {
+		const cache = this._getAndCreateTypeCache(typeKey);
 
-		var all = cache.get('all');
+		const all = cache.get('all');
 		if (all) {
 			return all;
 		}
 
-		var idString = ids.map((id) => id + '').sort().join(',');
+		const idString = ids.map((id) => id + '').sort().join(',');
 
-		var multiple = cache.get('multiple');
+		const multiple = cache.get('multiple');
 		for (var key in multiple) {
 			if (multiple.hasOwnProperty(key)) {
 				if (key === idString) {
@@ -148,12 +148,12 @@ export default Ember.Object.extend({
 		return null;
 	},
 
-	_getPendingQueryRequest: function(typeKey, query) {
+	_getPendingQueryRequest(typeKey, query) {
 		// TODO
 		return null;
 	},
 
-	_getPendingAllRequest: function(typeKey) {
+	_getPendingAllRequest(typeKey) {
 		var cache = this._getAndCreateTypeCache(typeKey);
 		return cache.get('all') || null;
 	}

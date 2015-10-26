@@ -1,9 +1,7 @@
 import Ember from 'ember';
 import Relationship from 'ember-graph/relationship/relationship';
 
-var CLIENT_STATE = Relationship.CLIENT_STATE;
-var SERVER_STATE = Relationship.SERVER_STATE;
-var DELETED_STATE = Relationship.DELETED_STATE;
+const { CLIENT_STATE, SERVER_STATE, DELETED_STATE } = Relationship;
 
 export default {
 
@@ -18,12 +16,12 @@ export default {
 		});
 	}),
 
-	createRelationship: function(type1, id1, name1, type2, id2, name2, state) {
-		var relationship = Relationship.create(type1, id1, name1, type2, id2, name2, state);
+	createRelationship(type1, id1, name1, type2, id2, name2, state) {
+		const relationship = Relationship.create(type1, id1, name1, type2, id2, name2, state);
 
-		var queuedRelationships = this.get('queuedRelationships');
-		var record1 = this.getRecord(type1, id1);
-		var record2 = this.getRecord(type2, id2);
+		const queuedRelationships = this.get('queuedRelationships');
+		const record1 = this.getRecord(type1, id1);
+		const record2 = this.getRecord(type2, id2);
 
 		if (record1) {
 			this.connectRelationshipTo(record1, relationship);
@@ -41,14 +39,14 @@ export default {
 		this.get('allRelationships')[relationship.get('id')] = relationship;
 	},
 
-	deleteRelationship: function(relationship) {
-		var record1 = this.getRecord(relationship.get('type1'), relationship.get('id1'));
-		var record2 = this.getRecord(relationship.get('type2'), relationship.get('id2'));
+	deleteRelationship(relationship) {
+		const record1 = this.getRecord(relationship.get('type1'), relationship.get('id1'));
+		const record2 = this.getRecord(relationship.get('type2'), relationship.get('id2'));
 
 		this.disconnectRelationshipFrom(record1, relationship);
 		this.disconnectRelationshipFrom(record2, relationship);
 
-		var queuedRelationships = this.get('queuedRelationships');
+		const queuedRelationships = this.get('queuedRelationships');
 		delete queuedRelationships[relationship.get('id')];
 		this.notifyPropertyChange('queuedRelationships');
 
@@ -58,13 +56,13 @@ export default {
 		relationship.erase();
 	},
 
-	changeRelationshipState: function(relationship, newState) {
+	changeRelationshipState(relationship, newState) {
 		if (relationship.get('state') === newState) {
 			return;
 		}
 
-		var record1 = this.getRecord(relationship.get('type1'), relationship.get('id1'));
-		var record2 = this.getRecord(relationship.get('type2'), relationship.get('id2'));
+		const record1 = this.getRecord(relationship.get('type1'), relationship.get('id1'));
+		const record2 = this.getRecord(relationship.get('type2'), relationship.get('id2'));
 
 		this.disconnectRelationshipFrom(record1, relationship);
 		this.disconnectRelationshipFrom(record2, relationship);
@@ -75,9 +73,9 @@ export default {
 		this.connectRelationshipTo(record2, relationship);
 	},
 
-	connectQueuedRelationships: function(record) {
-		var queuedRelationships = this.get('queuedRelationships');
-		var filtered = Object.keys(queuedRelationships).filter(function(id) {
+	connectQueuedRelationships(record) {
+		const queuedRelationships = this.get('queuedRelationships');
+		const filtered = Object.keys(queuedRelationships).filter((id) => {
 			return queuedRelationships[id].isConnectedTo(record);
 		});
 
@@ -85,32 +83,32 @@ export default {
 			return;
 		}
 
-		filtered.forEach(function(id) {
-			var relationship = queuedRelationships[id];
+		filtered.forEach((id) => {
+			const relationship = queuedRelationships[id];
 			this.connectRelationshipTo(record, relationship);
 			delete queuedRelationships[id];
-		}, this);
+		});
 
 		this.notifyPropertyChange('queuedRelationships');
 	},
 
-	queueConnectedRelationships: function(record) {
-		var queued = this.get('queuedRelationships');
-		var server = record.get('relationships').getRelationshipsByState(SERVER_STATE);
+	queueConnectedRelationships(record) {
+		const queued = this.get('queuedRelationships');
+		const server = record.get('relationships').getRelationshipsByState(SERVER_STATE);
 
-		server.forEach(function(relationship) {
+		server.forEach((relationship) => {
 			this.disconnectRelationshipFrom(record, relationship);
 			queued[relationship.get('id')] = relationship;
-		}, this);
+		});
 
 		this.notifyPropertyChange('queuedRelationships');
 	},
 
-	relationshipsForRecord: function(type, id, name) {
-		var filtered = [];
-		var all = this.get('allRelationships');
+	relationshipsForRecord(type, id, name) {
+		const filtered = [];
+		const all = this.get('allRelationships');
 
-		Object.keys(all).forEach(function(key) {
+		Object.keys(all).forEach((key) => {
 			if (all[key].matchesOneSide(type, id, name)) {
 				filtered.push(all[key]);
 			}
@@ -119,21 +117,21 @@ export default {
 		return filtered;
 	},
 
-	deleteRelationshipsForRecord: function(type, id) {
-		Ember.changeProperties(function() {
-			var all = this.get('allRelationships');
-			var keys = Object.keys(all);
+	deleteRelationshipsForRecord(type, id) {
+		Ember.changeProperties(() => {
+			const all = this.get('allRelationships');
+			const keys = Object.keys(all);
 
-			keys.forEach(function(key) {
-				var relationship = all[key];
+			keys.forEach((key) => {
+				const relationship = all[key];
 
 				if (relationship.get('type1') === type && relationship.get('id1') === id) {
 					this.deleteRelationship(relationship);
 				} else if (relationship.get('type2') === type && relationship.get('id2') === id) {
 					this.deleteRelationship(relationship);
 				}
-			}, this);
-		}, this);
+			});
+		});
 	},
 
 	/**
@@ -141,7 +139,7 @@ export default {
 	 * @param {Relationship} relationship
 	 * @private
 	 */
-	connectRelationshipTo: function(record, relationship) {
+	connectRelationshipTo(record, relationship) {
 		if (!record) {
 			return;
 		}
@@ -154,7 +152,7 @@ export default {
 	 * @param {Relationship} relationship
 	 * @private
 	 */
-	disconnectRelationshipFrom: function(record, relationship) {
+	disconnectRelationshipFrom(record, relationship) {
 		if (!record) {
 			return;
 		}
@@ -188,23 +186,23 @@ export default {
 	 * @param {String} name
 	 * @returns {Object}
 	 */
-	sortHasOneRelationships: function(type, id, name) {
-		var values = {};
-		var relationships = this.relationshipsForRecord(type, id, name);
+	sortHasOneRelationships(type, id, name) {
+		const values = {};
+		const relationships = this.relationshipsForRecord(type, id, name);
 
-		values[SERVER_STATE] = relationships.filter(function(relationship) {
+		values[SERVER_STATE] = relationships.filter((relationship) => {
 			return relationship.get('state') === SERVER_STATE;
 		})[0] || null;
 
-		values[DELETED_STATE] = relationships.filter(function(relationship) {
+		values[DELETED_STATE] = relationships.filter((relationship) => {
 			return relationship.get('state') === DELETED_STATE;
 		});
 
-		values[CLIENT_STATE] = relationships.filter(function(relationship) {
+		values[CLIENT_STATE] = relationships.filter((relationship) => {
 			return relationship.get('state') === CLIENT_STATE;
 		})[0] || null;
 
-		Ember.runInDebug(function() {
+		Ember.runInDebug(() => {
 			/* eslint-disable */
 			// No relationships at all
 			if (!values[SERVER_STATE] && values[DELETED_STATE].length <= 0 && !values[CLIENT_STATE]) return;
@@ -225,10 +223,10 @@ export default {
 		return values;
 	},
 
-	updateRelationshipsWithNewId: function(typeKey, oldId, newId) {
-		var all = this.get('allRelationships');
+	updateRelationshipsWithNewId(typeKey, oldId, newId) {
+		const all = this.get('allRelationships');
 
-		Object.keys(all).forEach(function(id) {
+		Object.keys(all).forEach((id) => {
 			all[id].changeId(typeKey, oldId, newId);
 		});
 

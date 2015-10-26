@@ -65,17 +65,17 @@ export default {
 	 * @param {String} typeKey
 	 * @return {Class}
 	 */
-	modelFor: function(typeKey) {
-		var modelCache = this.get('modelCache');
+	modelFor(typeKey) {
+		const modelCache = this.get('modelCache');
 
 		if (!modelCache[typeKey]) {
-			var model = this.get('container').lookupFactory('model:' + typeKey);
+			const model = this.get('container').lookupFactory(`model:${typeKey}`);
 			if (!model) {
-				throw new Ember.Error('Cannot find model class with typeKey: ' + typeKey);
+				throw new Ember.Error(`Cannot find model class with typeKey: ${typeKey}`);
 			}
 
-			model.reopen({ typeKey: typeKey });
-			model.reopenClass({ typeKey: typeKey });
+			model.reopen({ typeKey });
+			model.reopenClass({ typeKey });
 			modelCache[typeKey] = model;
 		}
 
@@ -89,14 +89,14 @@ export default {
 	 * @param {String} typeName
 	 * @return {AttributeType}
 	 */
-	attributeTypeFor: function(typeName) {
-		var attributeTypeCache = this.get('attributeTypeCache');
+	attributeTypeFor(typeName) {
+		const attributeTypeCache = this.get('attributeTypeCache');
 
 		if (!attributeTypeCache[typeName]) {
-			attributeTypeCache[typeName] = this.get('container').lookup('type:' + typeName);
+			attributeTypeCache[typeName] = this.get('container').lookup(`type:${typeName}`);
 
 			if (!attributeTypeCache[typeName]) {
-				throw new Ember.Error('Cannot find attribute type with name: ' + typeName);
+				throw new Ember.Error(`Cannot find attribute type with name: ${typeName}`);
 			}
 		}
 
@@ -116,15 +116,15 @@ export default {
 	 * @return {Adapter}
 	 * @protected
 	 */
-	adapterFor: function(typeKey) {
-		var adapterCache = this.get('adapterCache');
+	adapterFor(typeKey) {
+		const adapterCache = this.get('adapterCache');
 
 		if (!adapterCache[typeKey]) {
-			var container = this.get('container');
+			const container = this.get('container');
 
-			adapterCache[typeKey] = container.lookup('adapter:' + typeKey) ||
-			container.lookup('adapter:application') ||
-			container.lookup('adapter:rest');
+			adapterCache[typeKey] = container.lookup(`adapter:${typeKey}`) ||
+					container.lookup('adapter:application') ||
+					container.lookup('adapter:rest');
 		}
 
 		return adapterCache[typeKey];
@@ -143,11 +143,11 @@ export default {
 	 * @return {Serializer}
 	 * @protected
 	 */
-	serializerFor: function(typeKey) {
-		var serializerCache = this.get('serializerCache');
+	serializerFor(typeKey) {
+		const serializerCache = this.get('serializerCache');
 
 		if (!serializerCache[typeKey]) {
-			var container = this.get('container');
+			const container = this.get('container');
 
 			serializerCache[typeKey] =
 					container.lookup('serializer:' + (typeKey || 'application')) ||
