@@ -130,10 +130,10 @@ var Store = (Ember.Service || Ember.Object).extend({
 	 * @param {Object} json
 	 * @return {Model}
 	 */
-	createRecord: function(typeKey, json) {
-		var record = this.modelFor(typeKey).create(this);
+	createRecord(typeKey, json = {}) {
+		const record = this.modelFor(typeKey).create(this);
 		this.get('recordCache').storeRecord(record);
-		record.initializeRecord(json || {});
+		record.initializeRecord(json);
 		return record;
 	},
 
@@ -144,7 +144,7 @@ var Store = (Ember.Service || Ember.Object).extend({
 	 * @param {String} typeKey
 	 * @return {Model[]}
 	 */
-	cachedRecordsFor: function(typeKey) {
+	cachedRecordsFor(typeKey) {
 		return this.get('recordCache').getRecords(typeKey);
 	},
 
@@ -157,7 +157,7 @@ var Store = (Ember.Service || Ember.Object).extend({
 	 * @param {String} id
 	 * @return {Model}
 	 */
-	getRecord: function(typeKey, id) {
+	getRecord(typeKey, id) {
 		return this.get('recordCache').getRecord(typeKey, id);
 	},
 
@@ -172,7 +172,7 @@ var Store = (Ember.Service || Ember.Object).extend({
 	 * @param {String} typeKey
 	 * @returns {Model[]}
 	 */
-	getLiveRecordArray: function(typeKey) {
+	getLiveRecordArray(typeKey) {
 		return this.get('recordCache').getLiveRecordArray(typeKey);
 	},
 
@@ -192,7 +192,7 @@ var Store = (Ember.Service || Ember.Object).extend({
 	 * @param {String|String[]|Object} [options]
 	 * @return {PromiseObject|PromiseArray}
 	 */
-	find: function(typeKey, options) {
+	find(typeKey, options) {
 		switch (Ember.typeOf(options)) {
 			case 'string':
 				return this._findSingle(typeKey, options);
@@ -218,38 +218,35 @@ var Store = (Ember.Service || Ember.Object).extend({
 	 * @return {PromiseObject}
 	 * @private
 	 */
-	_findSingle: function(typeKey, id) {
-		var promise;
+	_findSingle(typeKey, id) {
+		let promise;
 
-		var record = this.getRecord(typeKey, id);
+		const record = this.getRecord(typeKey, id);
 		if (record) {
 			promise = Promise.resolve();
 		}
 
-		var recordRequestCache = this.get('recordRequestCache');
+		const recordRequestCache = this.get('recordRequestCache');
 		if (!promise) {
-			var pendingRequest = recordRequestCache.getPendingRequest(typeKey, id);
+			const pendingRequest = recordRequestCache.getPendingRequest(typeKey, id);
 
 			if (pendingRequest) {
 				promise = pendingRequest;
 			}
 		}
 
-		var _this = this;
-
 		if (!promise) {
-			promise = this.adapterFor(typeKey).findRecord(typeKey, id).then(function(payload) {
-				_this.pushPayload(payload);
+			promise = this.adapterFor(typeKey).findRecord(typeKey, id).then((payload) => {
+				this.pushPayload(payload);
 			});
 
 			recordRequestCache.savePendingRequest(typeKey, id, promise);
 		}
 
 		return ModelPromiseObject.create({
-			id: id,
-			typeKey: typeKey,
-			promise: promise.then(function() {
-				return _this.getRecord(typeKey, id);
+			id, typeKey,
+			promise: promise.then(() => {
+				return this.getRecord(typeKey, id);
 			})
 		});
 	},
@@ -262,28 +259,26 @@ var Store = (Ember.Service || Ember.Object).extend({
 	 * @return {PromiseArray}
 	 * @private
 	 */
-	_findMany: function(typeKey, ids = []) {
-		var _this = this;
-
-		if (ids.length <= 0) {
+	_findMany(typeKey, ids = []) {
+		if (ids.length === 0) {
 			return PromiseArray.create({
 				promise: Promise.resolve([])
 			});
 		}
 
-		var idsToFetch = ids.filter(function(id) {
-			return (_this.getRecord(typeKey, id) === null);
+		const idsToFetch = ids.filter((id) => {
+			return (this.getRecord(typeKey, id) === null);
 		});
 
-		var promise;
+		let promise;
 
 		if (idsToFetch.length === 0) {
 			promise = Promise.resolve();
 		}
 
-		var recordRequestCache = this.get('recordRequestCache');
+		const recordRequestCache = this.get('recordRequestCache');
 		if (!promise) {
-			var pendingRequest = recordRequestCache.getPendingRequest(typeKey, ids);
+			const pendingRequest = recordRequestCache.getPendingRequest(typeKey, ids);
 
 			if (pendingRequest) {
 				promise = pendingRequest;
@@ -291,17 +286,17 @@ var Store = (Ember.Service || Ember.Object).extend({
 		}
 
 		if (!promise) {
-			promise = this.adapterFor(typeKey).findMany(typeKey, ids).then(function(payload) {
-				_this.pushPayload(payload);
+			promise = this.adapterFor(typeKey).findMany(typeKey, ids).then((payload) => {
+				this.pushPayload(payload);
 			});
 
 			recordRequestCache.savePendingRequest(typeKey, ids, promise);
 		}
 
 		return PromiseArray.create({
-			promise: promise.then(function() {
-				return ids.map(function(id) {
-					return _this.getRecord(typeKey, id);
+			promise: promise.then(() => {
+				return ids.map((id) => {
+					return this.getRecord(typeKey, id);
 				}).toArray();
 			})
 		});
@@ -314,28 +309,26 @@ var Store = (Ember.Service || Ember.Object).extend({
 	 * @return {PromiseArray}
 	 * @private
 	 */
-	_findAll: function(typeKey) {
-		var promise;
+	_findAll(typeKey) {
+		let promise;
 
-		var recordRequestCache = this.get('recordRequestCache');
-		var pendingRequest = recordRequestCache.getPendingRequest(typeKey);
+		const recordRequestCache = this.get('recordRequestCache');
+		const pendingRequest = recordRequestCache.getPendingRequest(typeKey);
 		if (pendingRequest) {
 			promise = pendingRequest;
 		}
 
-		var _this = this;
-
 		if (!promise) {
-			promise = this.adapterFor(typeKey).findAll(typeKey).then(function(payload) {
-				_this.pushPayload(payload);
+			promise = this.adapterFor(typeKey).findAll(typeKey).then((payload) => {
+				this.pushPayload(payload);
 			});
 
 			recordRequestCache.savePendingRequest(typeKey, promise);
 		}
 
 		return PromiseArray.create({
-			promise: promise.then(function() {
-				return _this.cachedRecordsFor(typeKey);
+			promise: promise.then(() => {
+				return this.cachedRecordsFor(typeKey);
 			})
 		});
 	},
@@ -348,11 +341,11 @@ var Store = (Ember.Service || Ember.Object).extend({
 	 * @return {PromiseArray}
 	 * @private
 	 */
-	_findQuery: function(typeKey, query) {
-		var promise;
+	_findQuery(typeKey, query) {
+		let promise;
 
-		var recordRequestCache = this.get('recordRequestCache');
-		var pendingRequest = recordRequestCache.getPendingRequest(typeKey, query);
+		const recordRequestCache = this.get('recordRequestCache');
+		const pendingRequest = recordRequestCache.getPendingRequest(typeKey, query);
 		if (pendingRequest) {
 			promise = pendingRequest;
 		}
@@ -362,14 +355,13 @@ var Store = (Ember.Service || Ember.Object).extend({
 			recordRequestCache.savePendingRequest(typeKey, query, promise);
 		}
 
-		var _this = this;
 		return PromiseArray.create({
-			promise: promise.then(function(payload) {
+			promise: promise.then((payload) => {
 				var records = payload.meta.matchedRecords;
-				_this.pushPayload(payload);
+				this.pushPayload(payload);
 
-				return records.map(function(record) {
-					return _this.getRecord(record.type, record.id);
+				return records.map((record) => {
+					return this.getRecord(record.type, record.id);
 				});
 			})
 		});
@@ -382,7 +374,7 @@ var Store = (Ember.Service || Ember.Object).extend({
 	 * @param {Model} record
 	 * @return {Promise} Resolves to the saved record
 	 */
-	saveRecord: function(record) {
+	saveRecord(record) {
 		if (!record.get('isNew')) {
 			return this.updateRecord(record);
 		}
@@ -391,12 +383,11 @@ var Store = (Ember.Service || Ember.Object).extend({
 			throw new Ember.Error('Can\'t save an uninitialized record.');
 		}
 
-		var _this = this;
-		var typeKey = record.get('typeKey');
+		const typeKey = record.get('typeKey');
 
-		return this.adapterFor(typeKey).createRecord(record).then(function(payload) {
-			var tempId = record.get('id');
-			var newId = Ember.get(payload, 'meta.createdRecord.id');
+		return this.adapterFor(typeKey).createRecord(record).then((payload) => {
+			const tempId = record.get('id');
+			let newId = Ember.get(payload, 'meta.createdRecord.id');
 
 			if (!newId) {
 				if (payload[typeKey].length === 1) {
@@ -408,12 +399,12 @@ var Store = (Ember.Service || Ember.Object).extend({
 
 			record.set('id', newId);
 
-			var recordCache = _this.get('recordCache');
+			const recordCache = this.get('recordCache');
 			recordCache.deleteRecord(typeKey, tempId);
 			recordCache.storeRecord(record);
-			_this.updateRelationshipsWithNewId(typeKey, tempId, newId);
+			this.updateRelationshipsWithNewId(typeKey, tempId, newId);
 
-			_this.pushPayload(payload);
+			this.pushPayload(payload);
 			return record;
 		});
 	},
@@ -425,26 +416,24 @@ var Store = (Ember.Service || Ember.Object).extend({
 	 * @param {Model} record
 	 * @return {Promise} Resolves to the saved record
 	 */
-	updateRecord: function(record) {
-		var _this = this;
-
+	updateRecord(record) {
 		var recordJson = {
 			id: record.get('id')
 		};
 
-		record.constructor.eachAttribute(function(name) {
+		record.constructor.eachAttribute((name) => {
 			recordJson[name] = record.get(name);
 		});
 
-		record.constructor.eachRelationship(function(name) {
-			recordJson[name] = record.get('_' + name);
+		record.constructor.eachRelationship((name) => {
+			recordJson[name] = record.get(`_${name}`);
 		});
 
-		var potentialPayload = {};
+		const potentialPayload = {};
 		potentialPayload[record.get('typeKey')] = [recordJson];
 
-		return this.adapterFor(record.get('typeKey')).updateRecord(record).then(function(payload) {
-			_this.pushPayload(payload || potentialPayload);
+		return this.adapterFor(record.get('typeKey')).updateRecord(record).then((payload) => {
+			this.pushPayload(payload || potentialPayload);
 			return record;
 		});
 	},
@@ -456,23 +445,22 @@ var Store = (Ember.Service || Ember.Object).extend({
 	 * @param {Model} record
 	 * @return {Promise}
 	 */
-	deleteRecord: function(record) {
+	deleteRecord(record) {
 		if (record.get('isCreating')) {
 			return Promise.reject('Can\'t delete a record before it\'s created.');
 		}
 
-		var _this = this;
-		var typeKey = record.get('typeKey');
-		var id = record.get('id');
+		const typeKey = record.get('typeKey');
+		const id = record.get('id');
 
 		if (record.get('isNew')) {
 			this.deleteRecordFromStore(typeKey, id);
 			return Promise.resolve();
 		}
 
-		return this.adapterFor(typeKey).deleteRecord(record).then(function(payload) {
-			_this.deleteRecordFromStore(typeKey, id);
-			_this.pushPayload(payload);
+		return this.adapterFor(typeKey).deleteRecord(record).then((payload) => {
+			this.deleteRecordFromStore(typeKey, id);
+			this.pushPayload(payload);
 		});
 	},
 
@@ -485,7 +473,7 @@ var Store = (Ember.Service || Ember.Object).extend({
 	 * @param {String} id
 	 * @private
 	 */
-	deleteRecordFromStore: function(typeKey, id) {
+	deleteRecordFromStore(typeKey, id) {
 		this.deleteRelationshipsForRecord(typeKey, id);
 		this.get('recordCache').deleteRecord(typeKey, id);
 
@@ -500,15 +488,15 @@ var Store = (Ember.Service || Ember.Object).extend({
 	 * @param {Model} record
 	 * @return {Promise} Resolves to the reloaded record
 	 */
-	reloadRecord: function(record) {
+	reloadRecord(record) {
 		if (record.get('isDirty') && !this.get('reloadDirty')) {
 			throw new Ember.Error('Can\'t reload a record while it\'s dirty and `reloadDirty` is turned off.');
 		}
 
-		return this.adapterFor(record.typeKey).findRecord(record.typeKey, record.get('id')).then(function(payload) {
+		return this.adapterFor(record.typeKey).findRecord(record.typeKey, record.get('id')).then((payload) => {
 			this.pushPayload(payload);
 			return record;
-		}.bind(this));
+		});
 	},
 
 	/**
@@ -581,13 +569,13 @@ var Store = (Ember.Service || Ember.Object).extend({
 	 * @method pushPayload
 	 * @param {Object} payload
 	 */
-	pushPayload: function(payload) {
-		if (!payload || Object.keys(payload).length === 0) {
+	pushPayload(payload = {}) {
+		if (Object.keys(payload).length === 0) {
 			return;
 		}
 
 		Ember.changeProperties(() => {
-			var reloadDirty = this.get('reloadDirty');
+			const reloadDirty = this.get('reloadDirty');
 
 			(Ember.get(payload, 'meta.deletedRecords') || []).forEach((record) => {
 				this.deleteRecordFromStore(record.type, record.id);
@@ -628,18 +616,18 @@ var Store = (Ember.Service || Ember.Object).extend({
 	 * @param {Model} record
 	 * @param {Boolean} [discardChanges=false]
 	 */
-	unloadRecord: function(record, discardChanges) {
+	unloadRecord(record, discardChanges) {
 		if (!discardChanges && record.get('isDirty')) {
 			throw new Ember.Error('Can\'t unload a dirty record.');
 		}
 
-		Ember.changeProperties(function() {
+		Ember.changeProperties(() => {
 			record.rollback();
 
 			this.queueConnectedRelationships(record);
 			this.get('recordCache').deleteRecord(record.get('typeKey'), record.get('id'));
 			record.set('store', null);
-		}, this);
+		});
 	}
 
 });

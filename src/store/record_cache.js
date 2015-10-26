@@ -19,7 +19,7 @@ export default Ember.Object.extend({
 
 	liveRecordArrays: {},
 
-	init: function() {
+	init() {
 		this.setProperties({
 			_cacheTimeout: Infinity,
 			records: {},
@@ -27,9 +27,9 @@ export default Ember.Object.extend({
 		});
 	},
 
-	getRecord: function(typeKey, id) {
-		var key = typeKey + ':' + id;
-		var records = this.get('records');
+	getRecord(typeKey, id) {
+		const key = `${typeKey}:${id}`;
+		const records = this.get('records');
 
 		if (records[key] && records[key].timestamp >= (new Date()).getTime() - this.get('cacheTimeout')) {
 			return records[key].record;
@@ -38,12 +38,12 @@ export default Ember.Object.extend({
 		return null;
 	},
 
-	getRecords: function(typeKey) {
-		var records = this.get('records');
-		var found = [];
-		var cutoff = (new Date()).getTime() - this.get('cacheTimeout');
+	getRecords(typeKey) {
+		const records = this.get('records');
+		const found = [];
+		const cutoff = (new Date()).getTime() - this.get('cacheTimeout');
 
-		Object.keys(records).forEach(function(key) {
+		Object.keys(records).forEach((key) => {
 			if (key.indexOf(typeKey) === 0 && records[key].timestamp >= cutoff) {
 				found.push(records[key].record);
 			}
@@ -52,33 +52,33 @@ export default Ember.Object.extend({
 		return found;
 	},
 
-	storeRecord: function(record) {
+	storeRecord(record) {
 		if (PromiseObject.detectInstance(record)) {
 			record = record.getModel();
 		}
 
-		var typeKey = record.get('typeKey');
+		const typeKey = record.get('typeKey');
 
-		var records = this.get('records');
-		records[typeKey + ':' + record.get('id')] = {
-			record: record,
+		const records = this.get('records');
+		records[`${typeKey}:${record.get('id')}`] = {
+			record,
 			timestamp: (new Date()).getTime()
 		};
 
-		var liveRecordArrays = this.get('liveRecordArrays');
+		const liveRecordArrays = this.get('liveRecordArrays');
 		liveRecordArrays[typeKey] = liveRecordArrays[typeKey] || Ember.A();
 		if (!liveRecordArrays[typeKey].contains(record)) {
 			liveRecordArrays[typeKey].addObject(record);
 		}
 	},
 
-	deleteRecord: function(typeKey, id) {
-		var records = this.get('records');
-		delete records[typeKey + ':' + id];
+	deleteRecord(typeKey, id) {
+		const records = this.get('records');
+		delete records[`${typeKey}:${id}`];
 	},
 
-	getLiveRecordArray: function(typeKey) {
-		var liveRecordArrays = this.get('liveRecordArrays');
+	getLiveRecordArray(typeKey) {
+		const liveRecordArrays = this.get('liveRecordArrays');
 		liveRecordArrays[typeKey] = liveRecordArrays[typeKey] || Ember.A();
 		return liveRecordArrays[typeKey];
 	}
