@@ -76,7 +76,7 @@ export default Adapter.extend({
 		const urls = this.buildMultipleUrls(typeKey, ids);
 		const promises = urls.map((url) => this.ajax(url, 'GET'));
 
-		Promise.all(promises).then((payloads) => {
+		return Promise.all(promises).then((payloads) => {
 			const payload = this.mergePayloads(payloads);
 			return this.deserialize(payload, { requestType: 'findMany', recordType: typeKey, ids });
 		});
