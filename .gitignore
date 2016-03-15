@@ -7,4 +7,3 @@ site_build/*
 site/stylesheets/style.css
 report/*
 temp/*
-dist/*

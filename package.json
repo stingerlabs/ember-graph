@@ -1,5 +1,10 @@
 {
 	"name": "Ember-Graph",
+	"license": "MIT",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/stingerlabs/ember-graph"
+    },
 	"engines": {
 		"node": ">= 0.12.0"
 	},
