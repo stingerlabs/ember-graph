@@ -145,18 +145,10 @@ beyond that, just ask me directly, I'd be glad to help.
 
 ## Getting Ember Graph
 
-Originally, I intended Ember Graph to use SemVer. Unfortunately, it went through so many API changes in the beginning
-that it was simply too hard to keep up with all of the versions. I plan to come back to SemVer one day, but for now
-it's recommended that you use the latest version of Ember Graph. You can find all of the Ember Graph builds
-[here](https://ember-graph-builds.s3.amazonaws.com/index.html). They are organized by Git SHA1 hash. To use the builds
-with Bower, simply point Bower to one of the .zip files on the builds site. Example:
+Get it from Bower:
 
-```json
-{
-	"dependencies": {
-		"ember-graph": "http://ember-graph-builds.s3.amazonaws.com/18dfe952f917e9c7f37d283252e4e2ff88e4f6c3/ember-graph.zip"
-	}
-}
+```
+bower install ember-graph-dist
 ```
 
 Bower will then fetch and extract a debug build, a production build, and a minified build of Ember Graph.

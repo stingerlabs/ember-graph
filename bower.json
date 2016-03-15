@@ -1,7 +1,13 @@
 {
 	"name": "ember-graph",
-	"main": "ember-graph.js",
-	"dependencies": {
+	"description": "Ember persistence library for complex object graphs",
+    "main": "dist/ember-graph.js",
+    "homepage": "https://github.com/stingerlabs/ember-graph",
+    "repository": {
+        "type": "git",
+        "url": "git@github.com/stingerlabs/ember-graph.git"
+    },
+    "dependencies": {
 		"ember": ">=1.8.0"
 	},
 	"devDependencies": {
@@ -9,5 +15,30 @@
 		"ember-1.8.0": "ember#1.8.0",
 		"ember-1.13.0": "ember#1.13.0",
 		"ember-2.0.0": "ember#2.0.0"
-	}
+	},
+    "keywords": [
+        "ember",
+        "store",
+        "graph",
+        "persistence"
+    ],
+    "authors": [
+        { "name": "Gordon Kristan" },
+        { "name": "greenlight.guru", "homepage": "http://www.greenlight.guru/" }
+    ],
+    "license": "MIT",
+    "ignore": [
+        "lib",
+        "node_modules",
+        "report",
+        "site",
+        "tasks",
+        "test",
+        ".bowerrc",
+        ".codeclimate.yml",
+        ".eslintrc",
+        ".gitignore",
+        ".travis.yml",
+        "Gruntfile.js"
+    ]
 }
