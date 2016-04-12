@@ -3331,7 +3331,7 @@ define('ember-graph/model/relationship', ['exports', 'ember', 'ember-graph/relat
 						return;
 					}
 
-					if (!oldVal && newVal || oldVal && !newVal || (oldVal.typeKey !== newVal.typeKey || oldVal.id !== newVal.id)) {
+					if (!oldVal && newVal || oldVal && !newVal || oldVal.typeKey !== newVal.typeKey || oldVal.id !== newVal.id) {
 						changes[name] = [oldVal, newVal];
 					}
 				}
@@ -6515,7 +6515,7 @@ define('ember-graph/store/relationship', ['exports', 'ember', 'ember-graph/relat
 	};
 });
 
-define('ember-graph/store/store', ['exports', 'ember', 'ember-graph/store/record_cache', 'ember-graph/store/record_request_cache', 'ember-graph/store/lookup', 'ember-graph/store/relationship', 'ember-graph/data/promise_object', 'ember-graph/util/util'], function (exports, _ember, _emberGraphStoreRecord_cache, _emberGraphStoreRecord_request_cache, _emberGraphStoreLookup, _emberGraphStoreRelationship, _emberGraphDataPromise_object, _emberGraphUtilUtil) {
+define('ember-graph/store/store', ['exports', 'ember', 'ember-graph/store/record_cache', 'ember-graph/store/record_request_cache', 'ember-graph/store/lookup', 'ember-graph/store/relationship', 'ember-graph/data/promise_object', 'ember-graph/util/util'], function (exports, _ember, _emberGraphStoreRecord_cache, _emberGraphStoreRecord_request_cache, _emberGraphStoreLookup, _emberGraphStoreRelationship, _emberGraphDataPromise_object2, _emberGraphUtilUtil) {
 
 	var Promise = _ember.default.RSVP.Promise;
 
@@ -6754,7 +6754,7 @@ define('ember-graph/store/store', ['exports', 'ember', 'ember-graph/store/record
 				recordRequestCache.savePendingRequest(typeKey, id, promise);
 			}
 
-			return _emberGraphDataPromise_object.ModelPromiseObject.create({
+			return _emberGraphDataPromise_object2.ModelPromiseObject.create({
 				id: id, typeKey: typeKey,
 				promise: promise.then(function () {
 					return _this.getRecord(typeKey, id);
@@ -6776,7 +6776,7 @@ define('ember-graph/store/store', ['exports', 'ember', 'ember-graph/store/record
 			var ids = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
 
 			if (ids.length === 0) {
-				return _emberGraphDataPromise_object.PromiseArray.create({
+				return _emberGraphDataPromise_object2.PromiseArray.create({
 					promise: Promise.resolve([])
 				});
 			}
@@ -6808,7 +6808,7 @@ define('ember-graph/store/store', ['exports', 'ember', 'ember-graph/store/record
 				recordRequestCache.savePendingRequest(typeKey, ids, promise);
 			}
 
-			return _emberGraphDataPromise_object.PromiseArray.create({
+			return _emberGraphDataPromise_object2.PromiseArray.create({
 				promise: promise.then(function () {
 					return ids.map(function (id) {
 						return _this2.getRecord(typeKey, id);
@@ -6843,7 +6843,7 @@ define('ember-graph/store/store', ['exports', 'ember', 'ember-graph/store/record
 				recordRequestCache.savePendingRequest(typeKey, promise);
 			}
 
-			return _emberGraphDataPromise_object.PromiseArray.create({
+			return _emberGraphDataPromise_object2.PromiseArray.create({
 				promise: promise.then(function () {
 					return _this3.cachedRecordsFor(typeKey);
 				})
@@ -6859,8 +6859,6 @@ define('ember-graph/store/store', ['exports', 'ember', 'ember-graph/store/record
    * @private
    */
 		_findQuery: function (typeKey, query) {
-			var _this4 = this;
-
 			var promise = undefined;
 
 			var recordRequestCache = this.get('recordRequestCache');
@@ -6874,15 +6872,20 @@ define('ember-graph/store/store', ['exports', 'ember', 'ember-graph/store/record
 				recordRequestCache.savePendingRequest(typeKey, query, promise);
 			}
 
-			return _emberGraphDataPromise_object.PromiseArray.create({
-				promise: promise.then(function (payload) {
-					var records = payload.meta.matchedRecords;
-					_this4.pushPayload(payload);
+			return promise.then(function (payload) {
+				return {
+					records: _emberGraphDataPromise_object.PromiseArray.create({
+						promise: promise.then(function (payload) {
+							var records = payload.meta.matchedRecords;
+							_this4.pushPayload(payload);
 
-					return records.map(function (record) {
-						return _this4.getRecord(record.type, record.id);
-					});
-				})
+							return records.map(function (record) {
+								return _this4.getRecord(record.type, record.id);
+							});
+						})
+					}),
+					meta: payload.meta.serverMeta
+				};
 			});
 		},
 
