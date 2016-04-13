@@ -355,14 +355,14 @@ var Store = (Ember.Service || Ember.Object).extend({
 			recordRequestCache.savePendingRequest(typeKey, query, promise);
 		}
 
-		return promise.then(function(payload) {
+		return promise.then((payload) => {
 			return {
 				records: PromiseArray.create({
-					promise: promise.then(function(payload) {
+					promise: promise.then((payload) => {
 						var records = payload.meta.matchedRecords;
 						this.pushPayload(payload);
 
-						return records.map(function(record) {
+						return records.map((record) => {
 							return this.getRecord(record.type, record.id);
 						});
 					})

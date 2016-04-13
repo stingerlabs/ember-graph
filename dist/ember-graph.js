@@ -6859,6 +6859,8 @@ define('ember-graph/store/store', ['exports', 'ember', 'ember-graph/store/record
    * @private
    */
 		_findQuery: function (typeKey, query) {
+			var _this4 = this;
+
 			var promise = undefined;
 
 			var recordRequestCache = this.get('recordRequestCache');
@@ -6877,10 +6879,10 @@ define('ember-graph/store/store', ['exports', 'ember', 'ember-graph/store/record
 					records: _emberGraphDataPromise_object.PromiseArray.create({
 						promise: promise.then(function (payload) {
 							var records = payload.meta.matchedRecords;
-							this.pushPayload(payload);
+							_this4.pushPayload(payload);
 
 							return records.map(function (record) {
-								return this.getRecord(record.type, record.id);
+								return _this4.getRecord(record.type, record.id);
 							});
 						})
 					}),
@@ -6897,7 +6899,7 @@ define('ember-graph/store/store', ['exports', 'ember', 'ember-graph/store/record
    * @return {Promise} Resolves to the saved record
    */
 		saveRecord: function (record) {
-			var _this4 = this;
+			var _this5 = this;
 
 			if (!record.get('isNew')) {
 				return this.updateRecord(record);
@@ -6923,12 +6925,12 @@ define('ember-graph/store/store', ['exports', 'ember', 'ember-graph/store/record
 
 				record.set('id', newId);
 
-				var recordCache = _this4.get('recordCache');
+				var recordCache = _this5.get('recordCache');
 				recordCache.deleteRecord(typeKey, tempId);
 				recordCache.storeRecord(record);
-				_this4.updateRelationshipsWithNewId(typeKey, tempId, newId);
+				_this5.updateRelationshipsWithNewId(typeKey, tempId, newId);
 
-				_this4.pushPayload(payload);
+				_this5.pushPayload(payload);
 				return record;
 			});
 		},
@@ -6941,7 +6943,7 @@ define('ember-graph/store/store', ['exports', 'ember', 'ember-graph/store/record
    * @return {Promise} Resolves to the saved record
    */
 		updateRecord: function (record) {
-			var _this5 = this;
+			var _this6 = this;
 
 			var recordJson = {
 				id: record.get('id')
@@ -6959,7 +6961,7 @@ define('ember-graph/store/store', ['exports', 'ember', 'ember-graph/store/record
 			potentialPayload[record.get('typeKey')] = [recordJson];
 
 			return this.adapterFor(record.get('typeKey')).updateRecord(record).then(function (payload) {
-				_this5.pushPayload(payload || potentialPayload);
+				_this6.pushPayload(payload || potentialPayload);
 				return record;
 			});
 		},
@@ -6972,7 +6974,7 @@ define('ember-graph/store/store', ['exports', 'ember', 'ember-graph/store/record
    * @return {Promise}
    */
 		deleteRecord: function (record) {
-			var _this6 = this;
+			var _this7 = this;
 
 			if (record.get('isCreating')) {
 				return Promise.reject('Can\'t delete a record before it\'s created.');
@@ -6987,8 +6989,8 @@ define('ember-graph/store/store', ['exports', 'ember', 'ember-graph/store/record
 			}
 
 			return this.adapterFor(typeKey).deleteRecord(record).then(function (payload) {
-				_this6.deleteRecordFromStore(typeKey, id);
-				_this6.pushPayload(payload);
+				_this7.deleteRecordFromStore(typeKey, id);
+				_this7.pushPayload(payload);
 			});
 		},
 
@@ -7017,14 +7019,14 @@ define('ember-graph/store/store', ['exports', 'ember', 'ember-graph/store/record
    * @return {Promise} Resolves to the reloaded record
    */
 		reloadRecord: function (record) {
-			var _this7 = this;
+			var _this8 = this;
 
 			if (record.get('isDirty') && !this.get('reloadDirty')) {
 				throw new _ember.default.Error('Can\'t reload a record while it\'s dirty and `reloadDirty` is turned off.');
 			}
 
 			return this.adapterFor(record.typeKey).findRecord(record.typeKey, record.get('id')).then(function (payload) {
-				_this7.pushPayload(payload);
+				_this8.pushPayload(payload);
 				return record;
 			});
 		},
@@ -7100,7 +7102,7 @@ define('ember-graph/store/store', ['exports', 'ember', 'ember-graph/store/record
    * @param {Object} payload
    */
 		pushPayload: function () {
-			var _this8 = this;
+			var _this9 = this;
 
 			var payload = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 
@@ -7109,30 +7111,30 @@ define('ember-graph/store/store', ['exports', 'ember', 'ember-graph/store/record
 			}
 
 			_ember.default.changeProperties(function () {
-				var reloadDirty = _this8.get('reloadDirty');
+				var reloadDirty = _this9.get('reloadDirty');
 
 				(_ember.default.get(payload, 'meta.deletedRecords') || []).forEach(function (record) {
-					_this8.deleteRecordFromStore(record.type, record.id);
+					_this9.deleteRecordFromStore(record.type, record.id);
 				});
 
 				delete payload.meta;
 
 				Object.keys(payload).forEach(function (typeKey) {
-					var model = _this8.modelFor(typeKey);
+					var model = _this9.modelFor(typeKey);
 
 					payload[typeKey].forEach(function (json) {
-						var record = _this8.getRecord(typeKey, json.id);
+						var record = _this9.getRecord(typeKey, json.id);
 
 						if (record) {
 							if (!record.get('isDirty') || reloadDirty) {
 								record.loadDataFromServer(json);
 							}
 						} else {
-							record = model.create(_this8);
+							record = model.create(_this9);
 							record.set('id', json.id);
 
-							_this8.get('recordCache').storeRecord(record);
-							_this8.connectQueuedRelationships(record);
+							_this9.get('recordCache').storeRecord(record);
+							_this9.connectQueuedRelationships(record);
 							record.loadDataFromServer(json);
 						}
 					});
@@ -7151,7 +7153,7 @@ define('ember-graph/store/store', ['exports', 'ember', 'ember-graph/store/record
    * @param {Boolean} [discardChanges=false]
    */
 		unloadRecord: function (record, discardChanges) {
-			var _this9 = this;
+			var _this10 = this;
 
 			if (!discardChanges && record.get('isDirty')) {
 				throw new _ember.default.Error('Can\'t unload a dirty record.');
@@ -7160,8 +7162,8 @@ define('ember-graph/store/store', ['exports', 'ember', 'ember-graph/store/record
 			_ember.default.changeProperties(function () {
 				record.rollback();
 
-				_this9.queueConnectedRelationships(record);
-				_this9.get('recordCache').deleteRecord(record.get('typeKey'), record.get('id'));
+				_this10.queueConnectedRelationships(record);
+				_this10.get('recordCache').deleteRecord(record.get('typeKey'), record.get('id'));
 				record.set('store', null);
 			});
 		}
