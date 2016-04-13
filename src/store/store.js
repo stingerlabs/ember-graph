@@ -357,18 +357,18 @@ var Store = (Ember.Service || Ember.Object).extend({
 
 		return promise.then(function(payload) {
 			return {
-				records: _emberGraphDataPromise_object.PromiseArray.create({
-					promise: promise.then(function (payload) {
+				records: PromiseArray.create({
+					promise: promise.then(function(payload) {
 						var records = payload.meta.matchedRecords;
-						_this4.pushPayload(payload);
+						this.pushPayload(payload);
 
-						return records.map(function (record) {
-							return _this4.getRecord(record.type, record.id);
+						return records.map(function(record) {
+							return this.getRecord(record.type, record.id);
 						});
 					})
 				}),
 				meta: payload.meta.serverMeta
-			}
+			};
 		});
 	},
 
