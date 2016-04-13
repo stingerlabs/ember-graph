@@ -1,0 +1,1598 @@
+<!DOCTYPE html>
+<html>
+	<head lang="en">
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+
+		<title>Ember-Graph</title>
+
+		<link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600,700,400italic,600italic,700italic'
+		      rel='stylesheet' type='text/css'>
+
+		<!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+		<!--[if lt IE 9]>
+			<script src="//oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="//oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+		<link rel="stylesheet" href="../stylesheets/style.css">
+	</head>
+	<body>
+		<div class="navbar navbar-default navbar-static-top">
+			<div class="container">
+				<div class="navbar-header">
+					<a class="navbar-brand" href="http://ember-graph.com" target="ext">
+						<b>Ember-Graph</b>
+					</a>
+					<a class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+						<span class="glyphicon glyphicon-chevron-down"></span>
+					</a>
+				</div>
+				<div class="navbar-collapse collapse">
+					<ul class="nav navbar-nav">
+						<li><a href="#">About</a></li>
+						<li><a href="#">Guides</a></li>
+						<li class="active"><a href="#">API</a></li>
+						<li><a href="https://ember-graph-builds.s3.amazonaws.com/index.html">Builds</a></li>
+					</ul>
+					<ul class="nav pull-right navbar-nav">
+						<li>
+							<a href="https://github.com/gordonkristan/ember-graph">
+								<i class="fa fa-lg fa-github"></i> View on GitHub
+							</a>
+						</li>
+					</ul>
+				</div>
+			</div>
+		</div>
+
+		<div class="container">
+	<div class="row">
+		<div class="col-md-3 well side-nav">
+			<ul class="list-unstyled">
+	<li>
+		<h4>
+			<strong>Namespaces</strong>
+		</h4>
+	</li>
+	
+		<li class="">
+			<a href="EmberGraph.html">
+				<small>EmberGraph</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="String.html">
+				<small>String</small>
+			</a>
+		</li>
+	
+</ul>
+
+<ul class="list-unstyled">
+	<li>
+		<h4>
+			<strong>Classes</strong>
+		</h4>
+	</li>
+	
+		<li class="">
+			<a href="Adapter.html">
+				<small>Adapter</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="ArrayType.html">
+				<small>ArrayType</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="AttributeType.html">
+				<small>AttributeType</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="BooleanType.html">
+				<small>BooleanType</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="CoreModel.html">
+				<small>CoreModel</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="DataAdapter.html">
+				<small>DataAdapter</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="DateType.html">
+				<small>DateType</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="EmberGraphAdapter.html">
+				<small>EmberGraphAdapter</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="EmberGraphSerializer.html">
+				<small>EmberGraphSerializer</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="EnumType.html">
+				<small>EnumType</small>
+			</a>
+		</li>
+	
+		<li class="active">
+			<a href="JSONSerializer.html">
+				<small>JSONSerializer</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="LocalStorageAdapter.html">
+				<small>LocalStorageAdapter</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="MemoryAdapter.html">
+				<small>MemoryAdapter</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="Model.html">
+				<small>Model</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="ModelPromiseObject.html">
+				<small>ModelPromiseObject</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="NumberType.html">
+				<small>NumberType</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="ObjectType.html">
+				<small>ObjectType</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="PromiseArray.html">
+				<small>PromiseArray</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="PromiseObject.html">
+				<small>PromiseObject</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="RESTAdapter.html">
+				<small>RESTAdapter</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="Serializer.html">
+				<small>Serializer</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="Store.html">
+				<small>Store</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="StringType.html">
+				<small>StringType</small>
+			</a>
+		</li>
+	
+</ul>
+		</div>
+		<div class="col-md-9 api-contents">
+			
+				
+					<div class="api-page-header">
+						<h1>
+							<i class="fa fa-code"></i> JSONSerializer Class
+						</h1>
+						<hr>
+					</div>
+
+					<div class="api-metadata">
+						
+							<strong>Extends:</strong>
+							<a href="#">
+								Serializer
+							</a>
+							<br>
+						
+
+						
+
+						<strong>Defined in:</strong>
+						<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/serializer/json.js#L10">
+							src/serializer/json.js:10
+						</a>
+					</div>
+					<br>
+					<p><p>This serializer was designed to be compatible with the
+<a href="http://jsonapi.org">JSON API</a>
+(the ID format, not the URL format).</p>
+</p>
+				
+			
+
+			
+
+			
+				<div class="api-index">
+		<ul class="nav nav-tabs nav-justified">
+			<li>
+				<a href="#index">Index</a>
+			</li>
+			<li>
+				<a href="#properties">Properties</a>
+			</li>
+			<li>
+				<a href="#methods">Methods</a>
+			</li>
+		</ul>
+
+		<div class="tab-content contents">
+			<div class="tab-pane active" id="index">
+				<h3>Properties</h3>
+
+	<ul class="list-unstyled">
+		
+			<li>
+				<a href="#property_polymorphicRelationships">polymorphicRelationships</a>
+			</li>
+		
+			<li>
+				<a href="#property_store">store</a>
+			</li>
+		
+	</ul>
+
+
+
+	<h3>Methods</h3>
+
+	<ul class="list-unstyled">
+		
+			<li>
+				<a href="#method_deserialize">deserialize</a>
+			</li>
+		
+			<li>
+				<a href="#method_deserializeAttribute">deserializeAttribute</a>
+			</li>
+		
+			<li>
+				<a href="#method_deserializeHasManyRelationship">deserializeHasManyRelationship</a>
+			</li>
+		
+			<li>
+				<a href="#method_deserializeHasOneRelationship">deserializeHasOneRelationship</a>
+			</li>
+		
+			<li>
+				<a href="#method_deserializeRecord">deserializeRecord</a>
+			</li>
+		
+			<li>
+				<a href="#method_deserializeRelationship">deserializeRelationship</a>
+			</li>
+		
+			<li>
+				<a href="#method_serialize">serialize</a>
+			</li>
+		
+			<li>
+				<a href="#method_serializeAttribute">serializeAttribute</a>
+			</li>
+		
+			<li>
+				<a href="#method_serializeAttributeDelta">serializeAttributeDelta</a>
+			</li>
+		
+			<li>
+				<a href="#method_serializeDelta">serializeDelta</a>
+			</li>
+		
+			<li>
+				<a href="#method_serializeRecord">serializeRecord</a>
+			</li>
+		
+			<li>
+				<a href="#method_serializeRelationship">serializeRelationship</a>
+			</li>
+		
+			<li>
+				<a href="#method_serializeRelationshipDelta">serializeRelationshipDelta</a>
+			</li>
+		
+			<li>
+				<a href="#method_transformPayload">transformPayload</a>
+			</li>
+		
+	</ul>
+			</div>
+			<div class="tab-pane" id="properties">
+				<div class="api-property" id="property_polymorphicRelationships">
+		<h4 class="property-name">
+			<strong>polymorphicRelationships</strong>
+			<small>
+				<a>&#123;Boolean&#125;</a>
+				
+				
+				
+					<code>private</code>
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/serializer/json.js#L21">
+				src/serializer/json.js:21
+			</a>
+		</small>
+		<p><p>This property can be overridden if you&#39;re using polymorphic relationships
+in your models. Instead of strings for IDs, the serializer will use objects
+for IDs. Each object will contain a <code>type</code> and <code>id</code> property.</p>
+</p>
+
+		
+			<span>
+				<strong>Default:</strong> <code>false</code>
+			</span>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-property" id="property_store">
+		<h4 class="property-name">
+			<strong>store</strong>
+			<small>
+				<a>&#123;Store&#125;</a>
+				
+				
+					<code>read only</code>
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/serializer/serializer.js#L14">
+				src/serializer/serializer.js:14
+			</a>
+		</small>
+		<p><p>The store that the records will be loaded into. This
+property is injected by the container on startup.
+This can be used for fetching models and their metadata.</p>
+</p>
+
+		
+	</div>
+			</div>
+			<div class="tab-pane" id="methods">
+				<div class="api-method" id="method_deserialize">
+		<h4 class="property-name">
+			<strong>deserialize</strong>
+			<small>
+				<span>
+					(payload, options)
+				</span>
+				
+					<a>&#123;Object&#125;</a>
+				
+				
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/serializer/serializer.js#L44">
+				src/serializer/serializer.js:44
+			</a>
+		</small>
+		<p><p>Takes a payload from the server and converts it into a normalized
+JSON payload that the store can use. Details about the format
+can be found in the <a href="/api/Store.html#method_pushPayload">pushPayload</a>
+documentation.</p>
+<p>In addition to the format described by the store, the store
+may require some additional information. This information should
+be included in the <code>meta</code> object. The attributes required by the
+store are:</p>
+<ul>
+<li><code>matchedRecords</code>: This is an array of objects (with <code>type</code> and
+  <code>id</code> fields) that tell which records were matched on a query.
+  This helps distinguish queried records from records of the
+  same type that may have been side loaded. If this property
+  doesn&#39;t exist, the adapter will assume that all objects
+  of that type were returned by the query.</li>
+<li><code>createdRecord</code>: This is a single object (with <code>type</code> and <code>id</code>)
+  that tells the adapter which record was created as the result
+  of a <code>createRecord</code> request. Again, this helps distinguish
+  the record from other records of the same type.</li>
+</ul>
+<p>To determine whether those meta attributes are required or not, the
+<code>requestType</code> option can be used. The built-in Ember-Graph adapters
+will pass one of the following values: <code>findRecord</code>, <code>findMany</code>,
+<code>findAll</code>, <code>findQuery</code>, <code>createRecord</code>, <code>updateRecord</code>, <code>deleteRecord</code>.
+If the value is <code>findQuery</code>, then the <code>matchedRecords</code> meta attribute is
+required. If the value is <code>createRecord</code>, then the <code>createdRecord</code> meta
+attribute is required.</p>
+<p>In addition to <code>requestType</code>, the following options are available:</p>
+<ul>
+<li><code>recordType</code>: The type of record that the request was performed on</li>
+<li><code>id</code>:  The ID of the record referred to by a <code>findRecord</code>,
+  <code>updateRecord</code> or <code>deleteRecord</code> request</li>
+<li><code>ids</code>: The IDs of the records requested by a <code>findMany</code> request</li>
+<li><code>query</code>: The query submitted to the <code>findQuery</code> request</li>
+</ul>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>payload</strong>
+						<small>
+							<a>&#123;JSON&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>options</strong>
+						<small>
+							<a>&#123;Object&#125;</a><br>
+							
+								<span>Any options that were passed by the adapter</span>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Object&#125;</a><br>
+						
+							<span>Normalized JSON payload</span>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_deserializeAttribute">
+		<h4 class="property-name">
+			<strong>deserializeAttribute</strong>
+			<small>
+				<span>
+					(model, json, name, options)
+				</span>
+				
+					<a>&#123;Object&#125;</a>
+				
+				
+				
+				
+					<code>protected</code>
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/serializer/json.js#L401">
+				src/serializer/json.js:401
+			</a>
+		</small>
+		<p><p>Deserializes a single attribute for a record. This function
+determines how the value is deserialized and what the
+deserialized name will be. To remove the attribute
+from deserialization, return <code>null</code> from this function. To
+keep the attribute, return an object like the one below:</p>
+<pre><code class="lang-js"><span class="hljs-rules">{
+    <span class="hljs-rule"><span class="hljs-attribute">name</span>:<span class="hljs-value"> <span class="hljs-string">"deserialized_name"</span>,
+    value: <span class="hljs-string">"deserialized_value"</span>
+</span></span></span>}
+</code></pre>
+<p>By default, this function keeps the original name and
+serializes the value using the corresponding
+<a href="/api/AttributeType.html">AttributeType</a>.
+If the value is missing, it attempts to use the default
+value. If it&#39;s missing and required, it has to throw an
+error.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>model</strong>
+						<small>
+							<a>&#123;Class&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>json</strong>
+						<small>
+							<a>&#123;JSON&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>name</strong>
+						<small>
+							<a>&#123;String&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>options</strong>
+						<small>
+							<a>&#123;Object&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Object&#125;</a><br>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_deserializeHasManyRelationship">
+		<h4 class="property-name">
+			<strong>deserializeHasManyRelationship</strong>
+			<small>
+				<span>
+					(model, name, values, options)
+				</span>
+				
+					<a>&#123;Object&#125;</a>
+				
+				
+				
+				
+					<code>protected</code>
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/serializer/json.js#L528">
+				src/serializer/json.js:528
+			</a>
+		</small>
+		<p><p>After <a href="/api/JSONSerializer.html#method_deserializeRelationship">deserializeRelationship</a> has checked
+for missing values, it delegates to this function to deserialize a single
+hasMany relationship. Their return types are the same.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>model</strong>
+						<small>
+							<a>&#123;Class&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>name</strong>
+						<small>
+							<a>&#123;String&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>values</strong>
+						<small>
+							<a>&#123;Object[]|String[]|Number[]&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>options</strong>
+						<small>
+							<a>&#123;Object&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Object&#125;</a><br>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_deserializeHasOneRelationship">
+		<h4 class="property-name">
+			<strong>deserializeHasOneRelationship</strong>
+			<small>
+				<span>
+					(model, name, value, options)
+				</span>
+				
+					<a>&#123;Object&#125;</a>
+				
+				
+				
+				
+					<code>protected</code>
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/serializer/json.js#L499">
+				src/serializer/json.js:499
+			</a>
+		</small>
+		<p><p>After <a href="/api/JSONSerializer.html#method_deserializeRelationship">deserializeRelationship</a> has checked
+for missing values, it delegates to this function to deserialize a single
+hasOne relationship. Their return types are the same.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>model</strong>
+						<small>
+							<a>&#123;Class&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>name</strong>
+						<small>
+							<a>&#123;String&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>value</strong>
+						<small>
+							<a>&#123;Object|String|Number&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>options</strong>
+						<small>
+							<a>&#123;Object&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Object&#125;</a><br>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_deserializeRecord">
+		<h4 class="property-name">
+			<strong>deserializeRecord</strong>
+			<small>
+				<span>
+					(model, json, options)
+				</span>
+				
+					<a>&#123;Object&#125;</a>
+				
+				
+				
+				
+					<code>protected</code>
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/serializer/json.js#L362">
+				src/serializer/json.js:362
+			</a>
+		</small>
+		<p><p>Converts a single record from its JSON representation
+to the Javascript representation that the store expects.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>model</strong>
+						<small>
+							<a>&#123;Model&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>json</strong>
+						<small>
+							<a>&#123;JSON&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>options</strong>
+						<small>
+							<a>&#123;Object&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Object&#125;</a><br>
+						
+							<span>Deserialized record</span>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_deserializeRelationship">
+		<h4 class="property-name">
+			<strong>deserializeRelationship</strong>
+			<small>
+				<span>
+					(model, json, name, options)
+				</span>
+				
+					<a>&#123;Object&#125;</a>
+				
+				
+				
+				
+					<code>protected</code>
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/serializer/json.js#L450">
+				src/serializer/json.js:450
+			</a>
+		</small>
+		<p><p>Deserializes a single relationship for a record. This function
+determines how the value is deserialized and what the
+deserialized name will be. To remove the relationship
+from deserialization, return <code>null</code> from this function. To
+keep the relationship, return an object like the one below:</p>
+<pre><code class="lang-js"><span class="hljs-rules">{
+    <span class="hljs-rule"><span class="hljs-attribute">name</span>:<span class="hljs-value"> <span class="hljs-string">"deserialized_name"</span>,
+    value: <span class="hljs-string">"deserialized_value"</span>
+</span></span></span>}
+</code></pre>
+<p>By default, this function keeps the original name. HasOne
+relationships are expected to be either <code>null</code>, or a number
+or string. Numbers are converted to strings for the store.
+HasMany relationships are expected to be an array of
+numbers or strings. If any relationship is missing or invalid,
+the default value will be used. If it&#39;s missing or invalid
+and required, an error will be thrown.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>model</strong>
+						<small>
+							<a>&#123;Class&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>json</strong>
+						<small>
+							<a>&#123;JSON&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>name</strong>
+						<small>
+							<a>&#123;String&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>options</strong>
+						<small>
+							<a>&#123;Object&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Object&#125;</a><br>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_serialize">
+		<h4 class="property-name">
+			<strong>serialize</strong>
+			<small>
+				<span>
+					(record, options)
+				</span>
+				
+					<a>&#123;JSON&#125;</a>
+				
+				
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/serializer/serializer.js#L25">
+				src/serializer/serializer.js:25
+			</a>
+		</small>
+		<p><p>Converts a record to a JSON payload that can be sent to
+the server. The options object is a general object where any options
+necessary can be passed in from the adapter. The built-in Ember-Graph
+adapters pass in just one option: <code>requestType</code>. This lets the
+serializer know what kind of request will made using the payload
+returned from this call. The value of <code>requestType</code> will be one of
+either <code>createRecord</code> or <code>updateRecord</code>. If you write a custom
+adapter or serializer, you&#39;re free to pass in any other options
+you may need.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>record</strong>
+						<small>
+							<a>&#123;Model&#125;</a><br>
+							
+								<span>The record to serialize</span>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>options</strong>
+						<small>
+							<a>&#123;Object&#125;</a><br>
+							
+								<span>Any options that were passed by the adapter</span>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;JSON&#125;</a><br>
+						
+							<span>JSON payload to send to server</span>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_serializeAttribute">
+		<h4 class="property-name">
+			<strong>serializeAttribute</strong>
+			<small>
+				<span>
+					(record, name, options)
+				</span>
+				
+					<a>&#123;Object&#125;</a>
+				
+				
+				
+				
+					<code>protected</code>
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/serializer/json.js#L76">
+				src/serializer/json.js:76
+			</a>
+		</small>
+		<p><p>Serializes a single attribute for a record. This function
+determines how the value is serialized and what the
+serialized name will be. To remove the attribute
+from serialization, return <code>null</code> from this function. To
+keep the attribute, return an object like the one below:</p>
+<pre><code class="lang-js"><span class="hljs-rules">{
+    <span class="hljs-rule"><span class="hljs-attribute">name</span>:<span class="hljs-value"> <span class="hljs-string">"serialized_name"</span>,
+    value: <span class="hljs-string">"serialized_value"</span>
+</span></span></span>}
+</code></pre>
+<p>By default, this function will keep the name of the
+attribute and serialize the value using the corresponding
+<a href="/api/AttributeType.html">AttributeType</a>.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>record</strong>
+						<small>
+							<a>&#123;Model&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>name</strong>
+						<small>
+							<a>&#123;String&#125;</a><br>
+							
+								<span>The name of the attribute to serialize</span>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>options</strong>
+						<small>
+							<a>&#123;Object&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Object&#125;</a><br>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_serializeAttributeDelta">
+		<h4 class="property-name">
+			<strong>serializeAttributeDelta</strong>
+			<small>
+				<span>
+					(record, options)
+				</span>
+				
+					<a>&#123;JSON&#125;</a>
+				
+				
+				
+				
+					<code>protected</code>
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/serializer/json.js#L207">
+				src/serializer/json.js:207
+			</a>
+		</small>
+		<p><p>Serializes a record&#39;s attributes changes to operation objects.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>record</strong>
+						<small>
+							<a>&#123;Model&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>options</strong>
+						<small>
+							<a>&#123;Object&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;JSON&#125;</a><br>
+						
+							<span>Array of change operations</span>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_serializeDelta">
+		<h4 class="property-name">
+			<strong>serializeDelta</strong>
+			<small>
+				<span>
+					(record, options)
+				</span>
+				
+					<a>&#123;JSON&#125;</a>
+				
+				
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/serializer/json.js#L167">
+				src/serializer/json.js:167
+			</a>
+		</small>
+		<p><p>Serializes a record&#39;s changes to a list of change operations
+that can be used in a JSON API <code>PATCH</code> request. The format
+follows the specification except for one minor detail. At the
+time of writing this, the <code>path</code> in a change operation must
+be fully qualified, but there is a change upcoming to fix
+that. This uses the soon-to-be format. So instead of this:</p>
+<pre><code class="lang-json">PATCH /photos/<span class="hljs-number">1</span>
+
+[
+    { <span class="hljs-string">"op"</span>: <span class="hljs-string">"remove"</span>, <span class="hljs-string">"path"</span>: <span class="hljs-string">"/photos/1/links/comments/5"</span> }
+]
+</code></pre>
+<p>It uses this:</p>
+<pre><code class="lang-json">PATCH /photos/<span class="hljs-number">1</span>
+
+[
+    { <span class="hljs-string">"op"</span>: <span class="hljs-string">"remove"</span>, <span class="hljs-string">"path"</span>: <span class="hljs-string">"/links/comments/5"</span> }
+]
+</code></pre>
+<p>Everything else remains the same. It will use the <code>replace</code>
+operation for attributes and hasOne relationships, and the
+<code>add</code> and <code>remove</code> operations for hasMany relationships.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>record</strong>
+						<small>
+							<a>&#123;Model&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>options</strong>
+						<small>
+							<a>&#123;Object&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;JSON&#125;</a><br>
+						
+							<span>Array of change operations</span>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_serializeRecord">
+		<h4 class="property-name">
+			<strong>serializeRecord</strong>
+			<small>
+				<span>
+					(record, options)
+				</span>
+				
+					<a>&#123;JSON&#125;</a>
+				
+				
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/serializer/json.js#L46">
+				src/serializer/json.js:46
+			</a>
+		</small>
+		<p><p>Converts a single record to its JSON representation.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>record</strong>
+						<small>
+							<a>&#123;Model&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>options</strong>
+						<small>
+							<a>&#123;Object&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;JSON&#125;</a><br>
+						
+							<span>The JSON representation of the record</span>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_serializeRelationship">
+		<h4 class="property-name">
+			<strong>serializeRelationship</strong>
+			<small>
+				<span>
+					(record, name, options)
+				</span>
+				
+					<a>&#123;Object&#125;</a>
+				
+				
+				
+				
+					<code>protected</code>
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/serializer/json.js#L112">
+				src/serializer/json.js:112
+			</a>
+		</small>
+		<p><p>Serializes a single relationship for a record. This function
+determines how the value is serialized and what the
+serialized name will be. To remove the relationship
+from serialization, return <code>null</code> from this function. To
+keep the relationship, return an object like the one below:</p>
+<pre><code class="lang-js"><span class="hljs-rules">{
+    <span class="hljs-rule"><span class="hljs-attribute">name</span>:<span class="hljs-value"> <span class="hljs-string">"serialized_name"</span>,
+    value: <span class="hljs-string">"serialized_value"</span>
+</span></span></span>}
+</code></pre>
+<p>By default, this function will keep the name of the
+relationship. For hasOne relationships, it will
+use either a single string ID or <code>null</code>. For hasMany
+relationships, it will use an array of string IDs.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>record</strong>
+						<small>
+							<a>&#123;Model&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>name</strong>
+						<small>
+							<a>&#123;String&#125;</a><br>
+							
+								<span>The name of the relationship to serialize</span>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>options</strong>
+						<small>
+							<a>&#123;Object&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Object&#125;</a><br>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_serializeRelationshipDelta">
+		<h4 class="property-name">
+			<strong>serializeRelationshipDelta</strong>
+			<small>
+				<span>
+					(record, options)
+				</span>
+				
+					<a>&#123;JSON&#125;</a>
+				
+				
+				
+				
+					<code>protected</code>
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/serializer/json.js#L229">
+				src/serializer/json.js:229
+			</a>
+		</small>
+		<p><p>Serializes a record&#39;s relationship changes to operation objects.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>record</strong>
+						<small>
+							<a>&#123;Model&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>options</strong>
+						<small>
+							<a>&#123;Object&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;JSON&#125;</a><br>
+						
+							<span>Array of change operations</span>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_transformPayload">
+		<h4 class="property-name">
+			<strong>transformPayload</strong>
+			<small>
+				<span>
+					(payload, options)
+				</span>
+				
+					<a>&#123;Object&#125;</a>
+				
+				
+				
+				
+					<code>protected</code>
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/serializer/json.js#L308">
+				src/serializer/json.js:308
+			</a>
+		</small>
+		<p><p>Converts a payload partially to normalized JSON.
+The layout is the same, but the individual records
+themselves have yet to be deserialized.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>payload</strong>
+						<small>
+							<a>&#123;JSON&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>options</strong>
+						<small>
+							<a>&#123;Object&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Object&#125;</a><br>
+						
+							<span>Normalized JSON payload</span>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+			</div>
+		</div>
+	</div>
+			
+		</div>
+	</div>
+</div>
+
+		<footer>
+			<hr>
+			<a class="text-muted">&copy; Copyright Gordon Kristan 2014.</a>
+		</footer>
+
+
+		<script src="../javascripts/jquery.min.js"></script>
+		<script src="../javascripts/bootstrap.min.js"></script>
+		<script src="../javascripts/api.js"></script>
+	</body>
+</html>

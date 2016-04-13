@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html>
+	<head lang="en">
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+
+		<title>Ember-Graph</title>
+
+		<link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600,700,400italic,600italic,700italic'
+		      rel='stylesheet' type='text/css'>
+
+		<!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+		<!--[if lt IE 9]>
+			<script src="//oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="//oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+		<link rel="stylesheet" href="../stylesheets/style.css">
+	</head>
+	<body>
+		<div class="navbar navbar-default navbar-static-top">
+			<div class="container">
+				<div class="navbar-header">
+					<a class="navbar-brand" href="http://ember-graph.com" target="ext">
+						<b>Ember-Graph</b>
+					</a>
+					<a class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+						<span class="glyphicon glyphicon-chevron-down"></span>
+					</a>
+				</div>
+				<div class="navbar-collapse collapse">
+					<ul class="nav navbar-nav">
+						<li><a href="#">About</a></li>
+						<li><a href="#">Guides</a></li>
+						<li class="active"><a href="#">API</a></li>
+						<li><a href="https://ember-graph-builds.s3.amazonaws.com/index.html">Builds</a></li>
+					</ul>
+					<ul class="nav pull-right navbar-nav">
+						<li>
+							<a href="https://github.com/gordonkristan/ember-graph">
+								<i class="fa fa-lg fa-github"></i> View on GitHub
+							</a>
+						</li>
+					</ul>
+				</div>
+			</div>
+		</div>
+
+		<div class="container">
+	<div class="row">
+		<div class="col-md-3 well side-nav">
+			<ul class="list-unstyled">
+	<li>
+		<h4>
+			<strong>Namespaces</strong>
+		</h4>
+	</li>
+	
+		<li class="active">
+			<a href="EmberGraph.html">
+				<small>EmberGraph</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="String.html">
+				<small>String</small>
+			</a>
+		</li>
+	
+</ul>
+
+<ul class="list-unstyled">
+	<li>
+		<h4>
+			<strong>Classes</strong>
+		</h4>
+	</li>
+	
+		<li class="">
+			<a href="Adapter.html">
+				<small>Adapter</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="ArrayType.html">
+				<small>ArrayType</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="AttributeType.html">
+				<small>AttributeType</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="BooleanType.html">
+				<small>BooleanType</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="CoreModel.html">
+				<small>CoreModel</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="DataAdapter.html">
+				<small>DataAdapter</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="DateType.html">
+				<small>DateType</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="EmberGraphAdapter.html">
+				<small>EmberGraphAdapter</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="EmberGraphSerializer.html">
+				<small>EmberGraphSerializer</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="EnumType.html">
+				<small>EnumType</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="JSONSerializer.html">
+				<small>JSONSerializer</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="LocalStorageAdapter.html">
+				<small>LocalStorageAdapter</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="MemoryAdapter.html">
+				<small>MemoryAdapter</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="Model.html">
+				<small>Model</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="ModelPromiseObject.html">
+				<small>ModelPromiseObject</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="NumberType.html">
+				<small>NumberType</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="ObjectType.html">
+				<small>ObjectType</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="PromiseArray.html">
+				<small>PromiseArray</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="PromiseObject.html">
+				<small>PromiseObject</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="RESTAdapter.html">
+				<small>RESTAdapter</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="Serializer.html">
+				<small>Serializer</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="Store.html">
+				<small>Store</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="StringType.html">
+				<small>StringType</small>
+			</a>
+		</li>
+	
+</ul>
+		</div>
+		<div class="col-md-9 api-contents">
+			
+
+			
+				
+					<div class="api-page-header">
+						<h1>
+							<i class="fa fa-code"></i> EmberGraph Namespace
+						</h1>
+						<hr>
+					</div>
+
+					<div class="api-metadata"></div>
+					<br>
+					<p></p>
+				
+			
+
+			
+				<div class="api-index">
+		<ul class="nav nav-tabs nav-justified">
+			<li>
+				<a href="#index">Index</a>
+			</li>
+			<li>
+				<a href="#properties">Properties</a>
+			</li>
+			<li>
+				<a href="#methods">Methods</a>
+			</li>
+		</ul>
+
+		<div class="tab-content contents">
+			<div class="tab-pane active" id="index">
+				<h3>Methods</h3>
+
+	<ul class="list-unstyled">
+		
+			<li>
+				<a href="#method_abstractMethod">abstractMethod</a>
+			</li>
+		
+			<li>
+				<a href="#method_abstractProperty">abstractProperty</a>
+			</li>
+		
+			<li>
+				<a href="#method_arrayContentsEqual">arrayContentsEqual</a>
+			</li>
+		
+			<li>
+				<a href="#method_attr">attr</a>
+			</li>
+		
+			<li>
+				<a href="#method_deprecateMethod">deprecateMethod</a>
+			</li>
+		
+			<li>
+				<a href="#method_deprecateProperty">deprecateProperty</a>
+			</li>
+		
+			<li>
+				<a href="#method_generateUUID">generateUUID</a>
+			</li>
+		
+			<li>
+				<a href="#method_groupRecords">groupRecords</a>
+			</li>
+		
+			<li>
+				<a href="#method_hasMany">hasMany</a>
+			</li>
+		
+			<li>
+				<a href="#method_hasOne">hasOne</a>
+			</li>
+		
+			<li>
+				<a href="#method_values">values</a>
+			</li>
+		
+	</ul>
+			</div>
+			<div class="tab-pane" id="properties">
+				
+			</div>
+			<div class="tab-pane" id="methods">
+				<div class="api-method" id="method_abstractMethod">
+		<h4 class="property-name">
+			<strong>abstractMethod</strong>
+			<small>
+				<span>
+					(methodName)
+				</span>
+				
+					<a>&#123;Function&#125;</a>
+				
+				
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/util/util.js#L6">
+				src/util/util.js:6
+			</a>
+		</small>
+		<p><p>Denotes that method must be implemented in a subclass.
+If it&#39;s not overridden, calling it will throw an error.</p>
+<pre><code class="lang-js"><span class="hljs-keyword">var</span> Shape = Ember.<span class="hljs-built_in">Object</span>.extend({
+    getNumberOfSides: EG.abstractMethod(<span class="hljs-string">'getNumberOfSides'</span>)
+});
+</code></pre>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>methodName</strong>
+						<small>
+							<a>&#123;String&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Function&#125;</a><br>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_abstractProperty">
+		<h4 class="property-name">
+			<strong>abstractProperty</strong>
+			<small>
+				<span>
+					(propertyName)
+				</span>
+				
+					<a>&#123;ComputedProperty&#125;</a>
+				
+				
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/util/util.js#L27">
+				src/util/util.js:27
+			</a>
+		</small>
+		<p><p>Denotes that a property must be overridden in a subclass.
+If it&#39;s not overridden, using it will throw an error.</p>
+<pre><code class="lang-js"><span class="hljs-keyword">var</span> Shape = Ember.<span class="hljs-built_in">Object</span>.extend({
+    name: EG.abstractProperty(<span class="hljs-string">'name'</span>)
+});
+</code></pre>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>propertyName</strong>
+						<small>
+							<a>&#123;String&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;ComputedProperty&#125;</a><br>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_arrayContentsEqual">
+		<h4 class="property-name">
+			<strong>arrayContentsEqual</strong>
+			<small>
+				<span>
+					(a, b)
+				</span>
+				
+					<a>&#123;Boolean&#125;</a>
+				
+				
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/util/util.js#L65">
+				src/util/util.js:65
+			</a>
+		</small>
+		<p><p>Compares the contents of two arrays for equality. Uses
+Ember.Set to make the comparison, so the objects must
+be equal with <code>===</code>.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>a</strong>
+						<small>
+							<a>&#123;Array&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>b</strong>
+						<small>
+							<a>&#123;Array&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Boolean&#125;</a><br>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_attr">
+		<h4 class="property-name">
+			<strong>attr</strong>
+			<small>
+				<span>
+					(options)
+				</span>
+				
+					<a>&#123;Object&#125;</a>
+				
+				
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/model/schema.js#L4">
+				src/model/schema.js:4
+			</a>
+		</small>
+		<p><p>Declares an attribute on a model. The options determine the type and behavior
+of the attributes. Bold options are required:</p>
+<ul>
+<li><strong><code>type</code></strong>: The type of the attribute. <code>string</code>, <code>boolean</code>, <code>number</code>, <code>date</code>, <code>array</code>
+and <code>object</code> are the built in types. New types can be declared by extending <code>AttributeType</code>.</li>
+<li><code>defaultValue</code>: The value that gets used if the attribute is missing from the loaded data.
+This can be a function if the value needs to be computed or you need to return different
+instances of an object each time.
+If omitted, the attribute is required and will error if missing.</li>
+<li><code>readOnly</code>: Set to <code>true</code> to make the attribute read-only (except for new records). Defaults to <code>false</code>.</li>
+<li><code>isEqual</code>: Function that will compare two different instances of the attribute. Should take
+two arguments and return <code>true</code> if the given attributes are equal. Defaults to the function
+declared in the <code>AttributeType</code> subclass. <strong>deprecated</strong></li>
+<li><code>serverOnly</code>: This marks the attribute as a server-only attribute. This can be used when
+an attribute is required for the model, but cannot be created on the client side. Ember-Graph
+will allow the attribute to remain uninitialized until the record is persisted to the server.
+This automatically makes the attribute read only.</li>
+</ul>
+<p>The option values are all available as property metadata, as well the <code>isAttribute</code> property
+which is always <code>true</code>, and the <code>isRequired</code> property. However, the <code>defaultValue</code> property
+should not be used directly; use the <code>getDefaultValue()</code> method instead.</p>
+<p>Like other Ember properties, <code>undefined</code> is <em>not</em> a valid attribute value.</p>
+<p>As a shorthand, the <code>options</code> parameter may be a single string type. So this</p>
+<pre><code class="lang-js"><span class="hljs-tag">EmberGraph</span><span class="hljs-class">.attr</span>(<span class="hljs-rules">{
+    <span class="hljs-rule"><span class="hljs-attribute">type</span>:<span class="hljs-value"> <span class="hljs-string">'string'</span>
+</span></span></span>})
+</code></pre>
+<p>can be turned into this</p>
+<pre><code class="lang-js">EmberGraph.attr(<span class="hljs-string">'string'</span>)
+</code></pre>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>options</strong>
+						<small>
+							<a>&#123;Object&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Object&#125;</a><br>
+						
+							<span>Property descriptor used by model during initialization</span>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_deprecateMethod">
+		<h4 class="property-name">
+			<strong>deprecateMethod</strong>
+			<small>
+				<span>
+					(message, method)
+				</span>
+				
+					<a>&#123;Function&#125;</a>
+				
+				
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/util/util.js#L129">
+				src/util/util.js:129
+			</a>
+		</small>
+		<p><p>Works like <code>Ember.aliasMethod</code> only it displays a
+deprecation warning before the aliased method is called.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>message</strong>
+						<small>
+							<a>&#123;String&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>method</strong>
+						<small>
+							<a>&#123;String&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Function&#125;</a><br>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_deprecateProperty">
+		<h4 class="property-name">
+			<strong>deprecateProperty</strong>
+			<small>
+				<span>
+					(message, property)
+				</span>
+				
+					<a>&#123;ComputedProperty&#125;</a>
+				
+				
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/util/util.js#L146">
+				src/util/util.js:146
+			</a>
+		</small>
+		<p><p>Works like &#39;Ember.computed.alias&#39; only it displays a
+deprecation warning before the aliased property is returned.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>message</strong>
+						<small>
+							<a>&#123;String&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>property</strong>
+						<small>
+							<a>&#123;String&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;ComputedProperty&#125;</a><br>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_generateUUID">
+		<h4 class="property-name">
+			<strong>generateUUID</strong>
+			<small>
+				<span>
+					()
+				</span>
+				
+					<a>&#123;String&#125;</a>
+				
+				
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/util/util.js#L50">
+				src/util/util.js:50
+			</a>
+		</small>
+		<p><p>Generates a version 4 (random) UUID.</p>
+</p>
+
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;String&#125;</a><br>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_groupRecords">
+		<h4 class="property-name">
+			<strong>groupRecords</strong>
+			<small>
+				<span>
+					(records)
+				</span>
+				
+					<a>&#123;Array[]&#125;</a>
+				
+				
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/util/util.js#L82">
+				src/util/util.js:82
+			</a>
+		</small>
+		<p><p>Takes a list of record objects (with <code>type</code> and <code>id</code>)
+and groups them into arrays based on their type.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>records</strong>
+						<small>
+							<a>&#123;Object[]&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Array[]&#125;</a><br>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_hasMany">
+		<h4 class="property-name">
+			<strong>hasMany</strong>
+			<small>
+				<span>
+					(options)
+				</span>
+				
+					<a>&#123;Object&#125;</a>
+				
+				
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/model/schema.js#L64">
+				src/model/schema.js:64
+			</a>
+		</small>
+		<p><p>Declares a *-to-many relationship on a model. The options determine
+the type and behavior of the relationship. Bold options are required:</p>
+<ul>
+<li><strong><code>relatedType</code></strong>: The type of the related models.</li>
+<li><strong><code>inverse</code></strong>: The relationship on the related models that reciprocates this relationship.</li>
+<li><code>isRequired</code>: <code>false</code> if the relationship can be left out of the JSON. Defaults to <code>true</code>.</li>
+<li><code>defaultValue</code>: The value that gets used if the relationship is missing from the loaded data.
+The default is an empty array. This can be a function if the value needs to be computed or
+you need to return different instances of an object each time.</li>
+<li><code>readOnly</code>: Set to <code>true</code> to make the relationship read-only (except for new records). Defaults to <code>false</code>.</li>
+<li><code>serverOnly</code>: This marks the relationship as a server-only relationship. This can be used when
+a relationship is required for the model, but cannot be created on the client side. Ember-Graph
+will allow the relationship to remain uninitialized until the record is persisted to the server.
+This automatically makes the relationship read only.</li>
+</ul>
+<p>The option values are all available as property metadata, as well the <code>isRelationship</code> property
+which is always <code>true</code>, and the <code>kind</code> property which is always <code>hasMany</code>. However, the
+<code>defaultValue</code> property should not be used directly; use the <code>getDefaultValue()</code> method instead.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>options</strong>
+						<small>
+							<a>&#123;Object&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Object&#125;</a><br>
+						
+							<span>Property descriptor used by model during initialization</span>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_hasOne">
+		<h4 class="property-name">
+			<strong>hasOne</strong>
+			<small>
+				<span>
+					(options)
+				</span>
+				
+					<a>&#123;Object&#125;</a>
+				
+				
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/model/schema.js#L97">
+				src/model/schema.js:97
+			</a>
+		</small>
+		<p><p>Declares a *-to-one relationship on a model. The options determine
+the type and behavior of the relationship. Bold options are required:</p>
+<ul>
+<li><strong><code>relatedType</code></strong>: The type of the related models.</li>
+<li><strong><code>inverse</code></strong>: The relationship on the related model that reciprocates this relationship.</li>
+<li><code>isRequired</code>: <code>false</code> if the relationship can be left out of the JSON. Defaults to <code>true</code>.</li>
+<li><code>defaultValue</code>: The value that gets used if the relationship is missing from the loaded data.
+The default is <code>null</code>. This can be a function if the value needs to be computed or you need
+to return different instances of an object each time.</li>
+<li><code>readOnly</code>: Set to <code>true</code> to make the relationship read-only (except for new records). Defaults to <code>false</code>.</li>
+<li><code>serverOnly</code>: This marks the relationship as a server-only relationship. This can be used when
+a relationship is required for the model, but cannot be created on the client side. Ember-Graph
+will allow the relationship to remain uninitialized until the record is persisted to the server.
+This automatically makes the relationship read only.</li>
+</ul>
+<p>The option values are all available as property metadata, as well the <code>isRelationship</code> property
+which is always <code>true</code>, and the <code>kind</code> property which is always <code>hasOne</code>. However, the
+<code>defaultValue</code> property should not be used directly; use the <code>getDefaultValue()</code> method instead.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>options</strong>
+						<small>
+							<a>&#123;Object&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Object&#125;</a><br>
+						
+							<span>Property descriptor used by model during initialization</span>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_values">
+		<h4 class="property-name">
+			<strong>values</strong>
+			<small>
+				<span>
+					(obj, callback, thisArg)
+				</span>
+				
+				
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/util/util.js#L111">
+				src/util/util.js:111
+			</a>
+		</small>
+		<p><p>Calls <code>callback</code> once for each value of the given object.
+The callback receives <code>key</code> and <code>value</code> parameters.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>obj</strong>
+						<small>
+							<a>&#123;Object&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>callback</strong>
+						<small>
+							<a>&#123;Function&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>thisArg</strong>
+						<small>
+							<a>&#123;Any&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+	</div>
+			</div>
+		</div>
+	</div>
+			
+		</div>
+	</div>
+</div>
+
+		<footer>
+			<hr>
+			<a class="text-muted">&copy; Copyright Gordon Kristan 2014.</a>
+		</footer>
+
+
+		<script src="../javascripts/jquery.min.js"></script>
+		<script src="../javascripts/bootstrap.min.js"></script>
+		<script src="../javascripts/api.js"></script>
+	</body>
+</html>
