@@ -9,7 +9,6 @@ module.exports = function(grunt) {
 
 		execSync('cp -r site/fonts site_build/');
 		execSync('cp -r site/javascripts site_build/');
-		execSync('cp -r site/CNAME site_build/');
 		execSync('cp -r site/index.html site_build/');
 
 		execSync('mkdir -p site_build/stylesheets');
