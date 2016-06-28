@@ -2640,9 +2640,8 @@ define('ember-graph/model/core', ['exports', 'ember', 'ember-graph/util/set', 'e
    * @param {String} attr
    */
 		rollbackSingleAttribute: function (attr) {
-			var clientAttributesCopy = _ember.default.copy(this.get('clientAttributes'));
-			delete clientAttributesCopy[attr];
-			this.set('clientAttributes', clientAttributesCopy);
+			var clientAttributes = this.get('clientAttributes');
+			delete clientAttributes[attr];
 		},
 
 		/**
