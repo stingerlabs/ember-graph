@@ -2640,8 +2640,7 @@ define('ember-graph/model/core', ['exports', 'ember', 'ember-graph/util/set', 'e
    * @param {String} attr
    */
 		rollbackSingleAttribute: function (attr) {
-			var clientAttributes = this.get('clientAttributes');
-			delete clientAttributes[attr];
+			this.clientAttributes.set(attr, this.serverAttributes.get(attr));
 		},
 
 		/**

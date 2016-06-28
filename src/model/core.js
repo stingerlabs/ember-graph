@@ -158,8 +158,7 @@ var CoreModel = Ember.Object.extend({
 	 * @param {String} attr
 	 */
 	rollbackSingleAttribute: function(attr) {
-		var clientAttributes = this.get('clientAttributes');
-		delete clientAttributes[attr];
+		this.clientAttributes.set(attr, this.serverAttributes.get(attr));
 	},
 
 	/**
