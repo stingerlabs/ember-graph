@@ -2634,6 +2634,18 @@ define('ember-graph/model/core', ['exports', 'ember', 'ember-graph/util/set', 'e
 		},
 
 		/**
+   * Resets a single attribute to last known server attribute
+   *
+   * @method rollbackSingleAttribute
+   * @param {String} attr
+   */
+		rollbackSingleAttribute: function (attr) {
+			var clientAttributesCopy = _ember.default.copy(this.get('clientAttributes'));
+			delete clientAttributesCopy[attr];
+			this.set('clientAttributes', clientAttributesCopy);
+		},
+
+		/**
    * Loads attributes from the server.
    */
 		loadAttributesFromServer: function (json) {
