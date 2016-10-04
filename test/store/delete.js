@@ -109,11 +109,13 @@
 
 		store.pushPayload({
 			meta: {
-				deletedRecords: [
-					{ type: 'post', id: '1' },
-					{ type: 'post', id: '2' },
-					{ type: 'post', id: '3' }
-				]
+				serverMeta: {
+					deletedRecords: [
+						{ type: 'post', id: '1' },
+						{ type: 'post', id: '2' },
+						{ type: 'post', id: '3' }
+					]
+				}
 			}
 		});
 

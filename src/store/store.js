@@ -582,7 +582,7 @@ var Store = (Ember.Service || Ember.Object).extend({
 		Ember.changeProperties(() => {
 			const reloadDirty = this.get('reloadDirty');
 
-			(Ember.get(payload, 'meta.deletedRecords') || []).forEach((record) => {
+			(Ember.get(payload, 'meta.serverMeta.deletedRecords') || []).forEach((record) => {
 				this.deleteRecordFromStore(record.type, record.id);
 			});
 

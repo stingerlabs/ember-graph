@@ -217,7 +217,7 @@ export default {
 			/* eslint-enable */
 
 			// Everything else is invalid
-			Ember.assert('Invalid hasOne relationship values.');
+			Ember.assert('Invalid hasOne relationship values for: ' + type + '.' + name);
 		});
 
 		return values;
