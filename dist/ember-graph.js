@@ -6506,7 +6506,7 @@ define('ember-graph/store/relationship', ['exports', 'ember', 'ember-graph/relat
 				/* eslint-enable */
 
 				// Everything else is invalid
-				_ember.default.assert('Invalid hasOne relationship values.');
+				_ember.default.assert('Invalid hasOne relationship values for: ' + type + '.' + name);
 			});
 
 			return values;
@@ -7123,7 +7123,7 @@ define('ember-graph/store/store', ['exports', 'ember', 'ember-graph/store/record
 			_ember.default.changeProperties(function () {
 				var reloadDirty = _this9.get('reloadDirty');
 
-				(_ember.default.get(payload, 'meta.deletedRecords') || []).forEach(function (record) {
+				(_ember.default.get(payload, 'meta.serverMeta.deletedRecords') || []).forEach(function (record) {
 					_this9.deleteRecordFromStore(record.type, record.id);
 				});
 
