@@ -3331,7 +3331,7 @@ define('ember-graph/model/relationship', ['exports', 'ember', 'ember-graph/relat
 						return;
 					}
 
-					if (!oldVal && newVal || oldVal && !newVal || (oldVal.typeKey !== newVal.typeKey || oldVal.id !== newVal.id)) {
+					if (!oldVal && newVal || oldVal && !newVal || oldVal.typeKey !== newVal.typeKey || oldVal.id !== newVal.id) {
 						changes[name] = [oldVal, newVal];
 					}
 				}
@@ -4964,6 +4964,99 @@ define('ember-graph/relationship/relationship', ['exports', 'ember', 'ember-grap
 	exports.default = Relationship;
 });
 
+define('ember-graph/relationship/relationship_hash', ['exports', 'ember'], function (exports, _ember) {
+
+	/**
+  * Define HashMap class
+  *
+  * Simple use of associative array as hash table allowing buckets w/
+  * chaining for duplicates.
+  */
+
+	var RelationshipNode = _ember.default.Object.extend({
+
+		next: undefined,
+		prev: undefined,
+		item: undefined,
+
+		initialize: _ember.default.on('init', function () {
+			this.setProperties({
+				next: undefined,
+				prev: undefined,
+				item: undefined
+			});
+		})
+
+	});
+
+	var RelationshipHash = _ember.default.Object.extend({
+
+		buckets: [],
+
+		initialize: _ember.default.on('init', function () {
+			this.setProperties({
+				buckets: []
+			});
+		}),
+
+		add: function (item, ids) {
+			for (var i = 0; i < ids.length; ++i) {
+				var newNode = RelationshipNode.create();
+				newNode.item = item;
+				if (this.buckets[ids[i]]) {
+					// Push onto head of chain
+					newNode.next = this.buckets[ids[i]];
+					this.buckets[ids[i]].prev = newNode;
+				}
+				this.buckets[ids[i]] = newNode;
+			}
+		},
+
+		findAllByKeys: function (ids) {
+			var retVal = [];
+			for (var i = 0; i < ids.length; ++i) {
+				var current = this.buckets[ids[i]];
+				while (current) {
+					retVal[current.item.id] = current.item;
+					current = current.next;
+				}
+			}
+			return retVal;
+		},
+
+		remove: function (item, ids) {
+			for (var i = 0; i < ids.length; ++i) {
+				var current = this.buckets[ids[i]];
+				while (current) {
+					var next = current.next;
+					if (current.item === item) {
+						if (!current.next && !current.prev) {
+							var deleteme = this.buckets[ids[i]];
+							this.buckets[ids[i]] = undefined;
+							// Don't forget to delete last node removed
+							deleteme.destroy();
+						} else {
+							if (current.next) {
+								current.next.prev = current.prev;
+							}
+							if (current.prev) {
+								current.prev.next = current.next;
+							}
+							current.prev = undefined;
+							current.next = undefined;
+							// Delete node when removed
+							current.destroy();
+						}
+					}
+					current = next;
+				}
+			}
+		}
+	});
+
+	exports.default = RelationshipHash;
+});
+
 define('ember-graph/relationship/relationship_store', ['exports', 'ember', 'ember-graph/relationship/relationship', 'ember-graph/util/set'], function (exports, _ember, _emberGraphRelationshipRelationship, _emberGraphUtilSet) {
 
 	var CLIENT_STATE = _emberGraphRelationshipRelationship.default.CLIENT_STATE;
@@ -5852,6 +5945,8 @@ define('ember-graph/shim', ['exports', 'ember-graph', 'ember-graph/util/data_ada
 
 	// Testing shims
 
+	_emberGraph.default.RelationshipHash = _emberGraphRelationshipRelationship.default;
+
 	_emberGraph.default.Relationship = _emberGraphRelationshipRelationship.default;
 
 	_emberGraph.default.RelationshipStore = _emberGraphRelationshipRelationship_store.default;
@@ -6272,7 +6367,7 @@ define('ember-graph/store/record_request_cache', ['exports', 'ember'], function 
 	});
 });
 
-define('ember-graph/store/relationship', ['exports', 'ember', 'ember-graph/relationship/relationship'], function (exports, _ember, _emberGraphRelationshipRelationship) {
+define('ember-graph/store/relationship', ['exports', 'ember', 'ember-graph/relationship/relationship', 'ember-graph/relationship/relationship_hash'], function (exports, _ember, _emberGraphRelationshipRelationship, _emberGraphRelationshipRelationship_hash) {
 	var CLIENT_STATE = _emberGraphRelationshipRelationship.default.CLIENT_STATE;
 	var SERVER_STATE = _emberGraphRelationshipRelationship.default.SERVER_STATE;
 	var DELETED_STATE = _emberGraphRelationshipRelationship.default.DELETED_STATE;
@@ -6280,11 +6375,14 @@ define('ember-graph/store/relationship', ['exports', 'ember', 'ember-graph/relat
 
 		allRelationships: _ember.default.Object.create(),
 
+		relationshipsById: _emberGraphRelationshipRelationship_hash.default.create(),
+
 		queuedRelationships: _ember.default.Object.create(),
 
 		initializeRelationships: _ember.default.on('init', function () {
 			this.setProperties({
 				allRelationships: _ember.default.Object.create(),
+				relationshipsById: _emberGraphRelationshipRelationship_hash.default.create(),
 				queuedRelationships: _ember.default.Object.create()
 			});
 		}),
@@ -6309,6 +6407,7 @@ define('ember-graph/store/relationship', ['exports', 'ember', 'ember-graph/relat
 				this.notifyPropertyChange('queuedRelationships');
 			}
 
+			this.get('relationshipsById').add(relationship, [relationship.get('id1'), relationship.get('id2')]);
 			this.get('allRelationships')[relationship.get('id')] = relationship;
 		},
 
@@ -6324,6 +6423,7 @@ define('ember-graph/store/relationship', ['exports', 'ember', 'ember-graph/relat
 			this.notifyPropertyChange('queuedRelationships');
 
 			delete this.get('allRelationships')[relationship.get('id')];
+			this.get('relationshipsById').remove(relationship, [relationship.get('id1'), relationship.get('id2')]);
 			delete this.get('queuedRelationships')[relationship.get('id')];
 
 			relationship.erase();
@@ -6383,8 +6483,8 @@ define('ember-graph/store/relationship', ['exports', 'ember', 'ember-graph/relat
 
 		relationshipsForRecord: function (type, id, name) {
 			var filtered = [];
-			var all = this.get('allRelationships');
-
+			// const all = this.get('allRelationships');
+			var all = this.get('relationshipsById').findAllByKeys([id]);
 			Object.keys(all).forEach(function (key) {
 				if (all[key].matchesOneSide(type, id, name)) {
 					filtered.push(all[key]);
@@ -6398,7 +6498,8 @@ define('ember-graph/store/relationship', ['exports', 'ember', 'ember-graph/relat
 			var _this3 = this;
 
 			_ember.default.changeProperties(function () {
-				var all = _this3.get('allRelationships');
+				// const all = this.get('allRelationships');
+				var all = _this3.get('relationshipsById').findAllByKeys([id]);
 				var keys = Object.keys(all);
 
 				keys.forEach(function (key) {
@@ -6503,10 +6604,19 @@ define('ember-graph/store/relationship', ['exports', 'ember', 'ember-graph/relat
 		},
 
 		updateRelationshipsWithNewId: function (typeKey, oldId, newId) {
+			var _this4 = this;
+
+			console.log('Updating ids!! old: ' + oldId + ' new: ' + newId);
 			var all = this.get('allRelationships');
 
 			Object.keys(all).forEach(function (id) {
 				all[id].changeId(typeKey, oldId, newId);
+			});
+
+			var oldMappings = this.get('relationshipsById').findAllByKeys([oldId]);
+			oldMappings.forEach(function (item) {
+				_this4.get('relationshipsById').remove(item, [oldId]);
+				_this4.get('relationshipsById').add(item, [newId]);
 			});
 
 			this.notifyPropertyChange('allRelationships');

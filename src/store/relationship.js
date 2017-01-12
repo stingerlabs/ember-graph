@@ -1,5 +1,6 @@
 import Ember from 'ember';
 import Relationship from 'ember-graph/relationship/relationship';
+import RelationshipHash from 'ember-graph/relationship/relationship_hash';
 
 const { CLIENT_STATE, SERVER_STATE, DELETED_STATE } = Relationship;
 
@@ -7,11 +8,14 @@ export default {
 
 	allRelationships: Ember.Object.create(),
 
+	relationshipsById: RelationshipHash.create(),
+
 	queuedRelationships: Ember.Object.create(),
 
 	initializeRelationships: Ember.on('init', function() {
 		this.setProperties({
 			allRelationships: Ember.Object.create(),
+			relationshipsById: RelationshipHash.create(),
 			queuedRelationships: Ember.Object.create()
 		});
 	}),
@@ -31,10 +35,14 @@ export default {
 			this.connectRelationshipTo(record2, relationship);
 		}
 
+		// ? Is there a race condition between this and queued relationship processing?
+		this.get('relationshipsById').add(relationship, [relationship.get('id1'), relationship.get('id2')]);
+
 		if (!record1 || !record2) {
 			queuedRelationships[relationship.get('id')] = relationship;
 			this.notifyPropertyChange('queuedRelationships');
 		}
+
 
 		this.get('allRelationships')[relationship.get('id')] = relationship;
 	},
@@ -50,10 +58,12 @@ export default {
 		delete queuedRelationships[relationship.get('id')];
 		this.notifyPropertyChange('queuedRelationships');
 
+		// dequeue from hash first otherwise we have a deleted item still in hash momentarily
+		this.get('relationshipsById').remove(relationship, [relationship.get('id1'), relationship.get('id2')]);
 		delete this.get('allRelationships')[relationship.get('id')];
 		delete this.get('queuedRelationships')[relationship.get('id')];
 
-		relationship.erase();
+		relationship.erase();  //? Isn't this deleted now?  (Possible attempt to do "late" cleanup?)
 	},
 
 	changeRelationshipState(relationship, newState) {
@@ -106,8 +116,8 @@ export default {
 
 	relationshipsForRecord(type, id, name) {
 		const filtered = [];
-		const all = this.get('allRelationships');
-
+		// const all = this.get('allRelationships');
+		const all = this.get('relationshipsById').findAllByKeys([id]);
 		Object.keys(all).forEach((key) => {
 			if (all[key].matchesOneSide(type, id, name)) {
 				filtered.push(all[key]);
@@ -119,7 +129,8 @@ export default {
 
 	deleteRelationshipsForRecord(type, id) {
 		Ember.changeProperties(() => {
-			const all = this.get('allRelationships');
+			// const all = this.get('allRelationships');
+			const all = this.get('relationshipsById').findAllByKeys([id]);
 			const keys = Object.keys(all);
 
 			keys.forEach((key) => {
@@ -224,10 +235,17 @@ export default {
 	},
 
 	updateRelationshipsWithNewId(typeKey, oldId, newId) {
+		console.log('Updating ids!! old: ' + oldId + ' new: ' + newId);
 		const all = this.get('allRelationships');
 
 		Object.keys(all).forEach((id) => {
 			all[id].changeId(typeKey, oldId, newId);
+		});
+
+		const oldMappings = this.get('relationshipsById').findAllByKeys([oldId]);
+		oldMappings.forEach((item) => {
+			this.get('relationshipsById').remove(item, [oldId]);
+			this.get('relationshipsById').add(item, [newId]);
 		});
 
 		this.notifyPropertyChange('allRelationships');

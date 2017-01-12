@@ -126,6 +126,8 @@ import Model from 'ember-graph/model/model';
 EmberGraph.Model = Model;
 
 // Testing shims
+import RelationshipHash from 'ember-graph/relationship/relationship_hash';
+EmberGraph.RelationshipHash = RelationshipHash;
 import Relationship from 'ember-graph/relationship/relationship';
 EmberGraph.Relationship = Relationship;
 import RelationshipStore from 'ember-graph/relationship/relationship_store';
