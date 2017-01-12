@@ -152,6 +152,16 @@ var CoreModel = Ember.Object.extend({
 	},
 
 	/**
+	 * Resets a single attribute to last known server attribute
+	 *
+	 * @method rollbackSingleAttribute
+	 * @param {String} attr
+	 */
+	rollbackSingleAttribute: function(attr) {
+		this.clientAttributes.set(attr, this.serverAttributes.get(attr));
+	},
+
+	/**
 	 * Loads attributes from the server.
 	 */
 	loadAttributesFromServer: function(json) {
