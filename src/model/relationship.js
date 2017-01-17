@@ -98,11 +98,22 @@ var RelationshipClassMethods = {
 	 * @static
 	 */
 	eachRelationship: function(callback, binding) {
+		//var tmp = this.get('_relationships');
+		//var relathipships = binding.__proto__('_relationships');
+		/*
+		var tmp = this.prototype.prototype.get('_relationships');
 		this.eachComputedProperty(function(name, meta) {
 			if (meta.isRelationship) {
 				callback.call(binding, name, meta);
 			}
 		});
+		*/
+		// For performance reasons, AVOID iterating across all properties and iterate across relationships ONLY
+		if (this.prototype._relationships && this.prototype._relationships['_all']) {
+			for (var i = 0, length = this.prototype._relationships['_all'].length; i < length; ++i) {
+				callback.call(binding, this.prototype._relationships['_all'][i], this.prototype._relationships[this.prototype._relationships['_all'][i]]);
+			}
+		}
 	},
 
 	declareRelationships: function(relationships) {
@@ -159,6 +170,12 @@ var RelationshipClassMethods = {
 
 			meta.isRelationship = true;
 			obj[name] = computed(`_${name}`, { 'get': relationship }).meta(meta);
+			if (!obj['_relationships']) {
+				obj['_relationships'] = [];
+				obj['_relationships']['_all'] = [];
+			}
+			obj['_relationships'][name] = meta;
+			obj['_relationships']['_all'].push(name);
 		});
 
 		this.reopen(obj);
