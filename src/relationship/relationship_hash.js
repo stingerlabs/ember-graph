@@ -76,6 +76,9 @@ var RelationshipHash = Ember.Object.extend({
 						}
 						if (current.prev) {
 							current.prev.next = current.next;
+						} else {
+							// Removing head
+							this.buckets[ids[i]] = current.next;
 						}
 						current.prev = undefined;
 						current.next = undefined;
