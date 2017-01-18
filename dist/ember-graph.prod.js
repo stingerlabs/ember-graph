@@ -3217,11 +3217,18 @@ define('ember-graph/model/relationship', ['exports', 'ember', 'ember-graph/relat
    * @static
    */
 		eachRelationship: function (callback, binding) {
-			this.eachComputedProperty(function (name, meta) {
-				if (meta.isRelationship) {
-					callback.call(binding, name, meta);
+			// Climb through class hierarchy looking for relationships
+			// (###TODO: Might be nice to wire this up when creating the class hierarchy if possible.)
+			var classProto = this.prototype;
+			while (classProto && classProto.metaMap) {
+				if (classProto.metaMap['_all']) {
+					for (var j = 0, len = classProto.metaMap['_all'].length; j < len; ++j) {
+						var name = classProto.metaMap['_all'][j];
+						callback.call(binding, name, classProto.metaMap[name]);
+					}
 				}
-			});
+				classProto = classProto.__proto__;
+			}
 		},
 
 		declareRelationships: function (relationships) {
@@ -3271,6 +3278,12 @@ define('ember-graph/model/relationship', ['exports', 'ember', 'ember-graph/relat
 
 				meta.isRelationship = true;
 				obj[name] = (0, _emberGraphUtilComputed.computed)('_' + name, { 'get': relationship }).meta(meta);
+				if (!obj['metaMap']) {
+					obj['metaMap'] = [];
+					obj['metaMap']['_all'] = [];
+				}
+				obj['metaMap'][name] = meta;
+				obj['metaMap']['_all'].push(name);
 			});
 
 			this.reopen(obj);
@@ -5033,6 +5046,9 @@ define('ember-graph/relationship/relationship_hash', ['exports', 'ember'], funct
 							}
 							if (current.prev) {
 								current.prev.next = current.next;
+							} else {
+								// Removing head
+								this.buckets[ids[i]] = current.next;
 							}
 							current.prev = undefined;
 							current.next = undefined;
