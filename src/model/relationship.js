@@ -98,21 +98,17 @@ var RelationshipClassMethods = {
 	 * @static
 	 */
 	eachRelationship: function(callback, binding) {
-		//var tmp = this.get('_relationships');
-		//var relathipships = binding.__proto__('_relationships');
-		/*
-		var tmp = this.prototype.prototype.get('_relationships');
-		this.eachComputedProperty(function(name, meta) {
-			if (meta.isRelationship) {
-				callback.call(binding, name, meta);
+		// Climb through class hierarchy looking for relationships
+		// (###TODO: Might be nice to wire this up when creating the class hierarchy if possible.)
+		var classProto = this.prototype;
+		while (classProto && classProto.metaMap) {
+			if (classProto.metaMap['_all']) {
+				for (var j = 0, len = classProto.metaMap['_all'].length; j < len; ++j) {
+					var name = classProto.metaMap['_all'][j];
+					callback.call(binding, name, classProto.metaMap[name]);
+				}
 			}
-		});
-		*/
-		// For performance reasons, AVOID iterating across all properties and iterate across relationships ONLY
-		if (this.prototype._relationships && this.prototype._relationships['_all']) {
-			for (var i = 0, length = this.prototype._relationships['_all'].length; i < length; ++i) {
-				callback.call(binding, this.prototype._relationships['_all'][i], this.prototype._relationships[this.prototype._relationships['_all'][i]]);
-			}
+			classProto = classProto.__proto__;
 		}
 	},
 
@@ -121,7 +117,7 @@ var RelationshipClassMethods = {
 
 		Ember.runInDebug(function() {
 			var disallowedNames = EmberGraphSet.create();
-			disallowedNames.addObjects(['id', 'type', 'content', 'length', 'model']);
+			disallowedNames.addObjects(['id', 'type', 'content', 'length', 'model', 'metaMap']);
 
 			Object.keys(relationships).forEach(function(name) {
 				Ember.assert('`' + name + '` cannot be used as a relationship name.', !disallowedNames.contains(name));
@@ -170,12 +166,12 @@ var RelationshipClassMethods = {
 
 			meta.isRelationship = true;
 			obj[name] = computed(`_${name}`, { 'get': relationship }).meta(meta);
-			if (!obj['_relationships']) {
-				obj['_relationships'] = [];
-				obj['_relationships']['_all'] = [];
+			if (!obj['metaMap']) {
+				obj['metaMap'] = [];
+				obj['metaMap']['_all'] = [];
 			}
-			obj['_relationships'][name] = meta;
-			obj['_relationships']['_all'].push(name);
+			obj['metaMap'][name] = meta;
+			obj['metaMap']['_all'].push(name);
 		});
 
 		this.reopen(obj);
