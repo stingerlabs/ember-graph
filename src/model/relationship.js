@@ -14,7 +14,6 @@ import {
 	RelationshipTypes
 } from 'ember-graph/constants';
 
-
 var HAS_ONE_KEY = RelationshipTypes.HAS_ONE_KEY;
 var HAS_MANY_KEY = RelationshipTypes.HAS_MANY_KEY;
 
@@ -108,7 +107,21 @@ var RelationshipClassMethods = {
 					callback.call(binding, name, classProto.metaMap[name]);
 				}
 			}
-			classProto = classProto.__proto__;
+			// Might be better to do this in initialization somewhere rather than on every eachRelationship call;
+			// however, only costs one typeof and one string match each call
+			if (typeof Object.getPrototypeOf !== 'function') {
+				if (typeof 'test'.__proto__ === 'object') { // eslint-disable-line no-proto
+					Object.getPrototypeOf = function(object) {
+						return object.__proto__;  // eslint-disable-line no-proto
+					};
+				} else {
+					Object.getPrototypeOf = function(object) {
+						// May break if the constructor has been tampered with
+						return object.constructor.prototype;
+					};
+				}
+			}
+			classProto = Object.getPrototypeOf(classProto);
 		}
 	},
 
