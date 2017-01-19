@@ -2634,6 +2634,16 @@ define('ember-graph/model/core', ['exports', 'ember', 'ember-graph/util/set', 'e
 		},
 
 		/**
+   * Resets a single attribute to last known server attribute
+   *
+   * @method rollbackSingleAttribute
+   * @param {String} attr
+   */
+		rollbackSingleAttribute: function (attr) {
+			this.clientAttributes.set(attr, this.serverAttributes.get(attr));
+		},
+
+		/**
    * Loads attributes from the server.
    */
 		loadAttributesFromServer: function (json) {
@@ -3331,7 +3341,7 @@ define('ember-graph/model/relationship', ['exports', 'ember', 'ember-graph/relat
 						return;
 					}
 
-					if (!oldVal && newVal || oldVal && !newVal || (oldVal.typeKey !== newVal.typeKey || oldVal.id !== newVal.id)) {
+					if (!oldVal && newVal || oldVal && !newVal || oldVal.typeKey !== newVal.typeKey || oldVal.id !== newVal.id) {
 						changes[name] = [oldVal, newVal];
 					}
 				}
@@ -6496,7 +6506,7 @@ define('ember-graph/store/relationship', ['exports', 'ember', 'ember-graph/relat
 				/* eslint-enable */
 
 				// Everything else is invalid
-				_ember.default.assert('Invalid hasOne relationship values.');
+				_ember.default.assert('Invalid hasOne relationship values for: ' + type + '.' + name);
 			});
 
 			return values;
@@ -6874,15 +6884,20 @@ define('ember-graph/store/store', ['exports', 'ember', 'ember-graph/store/record
 				recordRequestCache.savePendingRequest(typeKey, query, promise);
 			}
 
-			return _emberGraphDataPromise_object.PromiseArray.create({
-				promise: promise.then(function (payload) {
-					var records = payload.meta.matchedRecords;
-					_this4.pushPayload(payload);
+			return promise.then(function (payload) {
+				return {
+					records: _emberGraphDataPromise_object.PromiseArray.create({
+						promise: promise.then(function (payload) {
+							var records = payload.meta.matchedRecords;
+							_this4.pushPayload(payload);
 
-					return records.map(function (record) {
-						return _this4.getRecord(record.type, record.id);
-					});
-				})
+							return records.map(function (record) {
+								return _this4.getRecord(record.type, record.id);
+							});
+						})
+					}),
+					meta: payload.meta.serverMeta
+				};
 			});
 		},
 
@@ -7108,7 +7123,7 @@ define('ember-graph/store/store', ['exports', 'ember', 'ember-graph/store/record
 			_ember.default.changeProperties(function () {
 				var reloadDirty = _this9.get('reloadDirty');
 
-				(_ember.default.get(payload, 'meta.deletedRecords') || []).forEach(function (record) {
+				(_ember.default.get(payload, 'meta.serverMeta.deletedRecords') || []).forEach(function (record) {
 					_this9.deleteRecordFromStore(record.type, record.id);
 				});
 

@@ -355,15 +355,20 @@ var Store = (Ember.Service || Ember.Object).extend({
 			recordRequestCache.savePendingRequest(typeKey, query, promise);
 		}
 
-		return PromiseArray.create({
-			promise: promise.then((payload) => {
-				var records = payload.meta.matchedRecords;
-				this.pushPayload(payload);
+		return promise.then((payload) => {
+			return {
+				records: PromiseArray.create({
+					promise: promise.then((payload) => {
+						var records = payload.meta.matchedRecords;
+						this.pushPayload(payload);
 
-				return records.map((record) => {
-					return this.getRecord(record.type, record.id);
-				});
-			})
+						return records.map((record) => {
+							return this.getRecord(record.type, record.id);
+						});
+					})
+				}),
+				meta: payload.meta.serverMeta
+			};
 		});
 	},
 
@@ -577,7 +582,7 @@ var Store = (Ember.Service || Ember.Object).extend({
 		Ember.changeProperties(() => {
 			const reloadDirty = this.get('reloadDirty');
 
-			(Ember.get(payload, 'meta.deletedRecords') || []).forEach((record) => {
+			(Ember.get(payload, 'meta.serverMeta.deletedRecords') || []).forEach((record) => {
 				this.deleteRecordFromStore(record.type, record.id);
 			});
 
