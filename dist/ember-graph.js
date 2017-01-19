@@ -3236,6 +3236,8 @@ define('ember-graph/model/relationship', ['exports', 'ember', 'ember-graph/relat
 						callback.call(binding, name, classProto.metaMap[name]);
 					}
 				}
+				// Might be better to do this in initialization somewhere rather than on every eachRelationship call;
+				// however, only costs one typeof and one string match each call
 				if (typeof Object.getPrototypeOf !== 'function') {
 					if (typeof 'test'.__proto__ === 'object') {
 						// eslint-disable-line no-proto
