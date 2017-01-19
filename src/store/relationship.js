@@ -4,19 +4,25 @@ import RelationshipHash from 'ember-graph/relationship/relationship_hash';
 
 const { CLIENT_STATE, SERVER_STATE, DELETED_STATE } = Relationship;
 
+// ### TODO: 1. incorporate both type AND id into hash (reduce repetitive verifications)
+// ### TODO: 2. move all remaining type== id== tests to relationship/relationships.js
+
 export default {
 
 	allRelationships: Ember.Object.create(),
 
 	relationshipsById: RelationshipHash.create(),
 
-	queuedRelationships: Ember.Object.create(),
+	queuedRelationships: RelationshipHash.create(),
+
+	// oldQueuedRelationships: Ember.Object.create(),
 
 	initializeRelationships: Ember.on('init', function() {
 		this.setProperties({
 			allRelationships: Ember.Object.create(),
 			relationshipsById: RelationshipHash.create(),
-			queuedRelationships: Ember.Object.create()
+			queuedRelationships: RelationshipHash.create()
+			// oldQueuedRelationships: Ember.Object.create()
 		});
 	}),
 
@@ -24,6 +30,7 @@ export default {
 		const relationship = Relationship.create(type1, id1, name1, type2, id2, name2, state);
 
 		const queuedRelationships = this.get('queuedRelationships');
+		// const oldQueuedRelationships = this.get('oldQueuedRelationships');
 		const record1 = this.getRecord(type1, id1);
 		const record2 = this.getRecord(type2, id2);
 
@@ -38,10 +45,10 @@ export default {
 		this.get('relationshipsById').add(relationship, [relationship.get('id1'), relationship.get('id2')]);
 
 		if (!record1 || !record2) {
-			queuedRelationships[relationship.get('id')] = relationship;
+			queuedRelationships.add(relationship, [relationship.get('id1'), relationship.get('id2')]);
+			// oldQueuedRelationships[relationship.get('id')] = relationship;
 			this.notifyPropertyChange('queuedRelationships');
 		}
-
 
 		this.get('allRelationships')[relationship.get('id')] = relationship;
 	},
@@ -54,13 +61,14 @@ export default {
 		this.disconnectRelationshipFrom(record2, relationship);
 
 		const queuedRelationships = this.get('queuedRelationships');
-		delete queuedRelationships[relationship.get('id')];
+		// const oldQueuedRelationships = this.get('oldQueuedRelationships');
+		queuedRelationships.remove(relationship, [relationship.get('id1'), relationship.get('id2')]);
+		// delete oldQueuedRelationships[relationships.get('id')];
 		this.notifyPropertyChange('queuedRelationships');
 
 		// dequeue from hash first otherwise we have a deleted item still in hash momentarily
 		this.get('relationshipsById').remove(relationship, [relationship.get('id1'), relationship.get('id2')]);
 		delete this.get('allRelationships')[relationship.get('id')];
-		delete this.get('queuedRelationships')[relationship.get('id')];
 
 		relationship.erase();
 	},
@@ -84,18 +92,15 @@ export default {
 
 	connectQueuedRelationships(record) {
 		const queuedRelationships = this.get('queuedRelationships');
-		const filtered = Object.keys(queuedRelationships).filter((id) => {
-			return queuedRelationships[id].isConnectedTo(record);
-		});
+		// const oldQueuedRelationships = this.get('oldQueuedRelationships');
+		const potential = queuedRelationships.findAllByKeys([record.get('id')]);
 
-		if (filtered.length <= 0) {
-			return;
-		}
-
-		filtered.forEach((id) => {
-			const relationship = queuedRelationships[id];
-			this.connectRelationshipTo(record, relationship);
-			delete queuedRelationships[id];
+		Object.keys(potential).forEach((key) => {
+			let relationship = potential[key];
+			if (relationship.isConnectedTo(record)) {
+				this.connectRelationshipTo(record, relationship);
+				queuedRelationships.remove(relationship, [relationship.get('id1'), relationship.get('id2')]);
+			}
 		});
 
 		this.notifyPropertyChange('queuedRelationships');
@@ -107,7 +112,7 @@ export default {
 
 		server.forEach((relationship) => {
 			this.disconnectRelationshipFrom(record, relationship);
-			queued[relationship.get('id')] = relationship;
+			queued.add(relationship, [relationship.get('id1'), relationship.get('id2')]);
 		});
 
 		this.notifyPropertyChange('queuedRelationships');
@@ -125,6 +130,20 @@ export default {
 		return filtered;
 	},
 
+	relationshipsForRecordNoName(type, id) {
+		const filtered = [];
+		const all = this.get('relationshipsById').findAllByKeys([id]);
+		Object.keys(all).forEach((key) => {
+			const t = all[key];
+			if ((t.get('id1') === id) && (t.get('type1') === type) ||
+				(t.get('id1') === id) && (t.get('type1') === type)) {
+				filtered.push(all[key]);
+			}
+		});
+
+		return filtered;
+	},
+
 	deleteRelationshipsForRecord(type, id) {
 		Ember.changeProperties(() => {
 			const all = this.get('relationshipsById').findAllByKeys([id]);
@@ -133,6 +152,7 @@ export default {
 			keys.forEach((key) => {
 				const relationship = all[key];
 
+					// Merge into single || statement
 				if (relationship.get('type1') === type && relationship.get('id1') === id) {
 					this.deleteRelationship(relationship);
 				} else if (relationship.get('type2') === type && relationship.get('id2') === id) {
@@ -232,16 +252,18 @@ export default {
 	},
 
 	updateRelationshipsWithNewId(typeKey, oldId, newId) {
-		const all = this.get('allRelationships');
+		const relationships = this.relationshipsForRecordNoName(typeKey, oldId);
 
-		Object.keys(all).forEach((id) => {
-			all[id].changeId(typeKey, oldId, newId);
-		});
-
-		const oldMappings = this.get('relationshipsById').findAllByKeys([oldId]);
-		oldMappings.forEach((item) => {
-			this.get('relationshipsById').remove(item, [oldId]);
-			this.get('relationshipsById').add(item, [newId]);
+		//  Note: Not the most efficient.  Most efficient would be to embed into relationship_hash to rename internally as crawling the queue.
+		Object.keys(relationships).forEach((key) => {
+			let relationship = relationships[key];
+			relationship.changeId(typeKey, oldId, newId);
+			if (this.get('relationshipsById').remove(relationship, [oldId])) {
+				this.get('relationshipsById').add(relationship, [newId]);
+			}
+			if (this.get('queuedRelationships').remove(relationship, [oldId])) {
+				this.get('queuedRelationships').add(relationship, [newId]);
+			}
 		});
 
 		this.notifyPropertyChange('allRelationships');

@@ -60,6 +60,7 @@ var RelationshipHash = Ember.Object.extend({
 	},
 
 	remove(item, ids) {
+		let removed;
 		for (var i = 0; i < ids.length; ++i) {
 			var current = this.buckets[ids[i]];
 			while (current) {
@@ -68,6 +69,7 @@ var RelationshipHash = Ember.Object.extend({
 					if (!current.next && !current.prev) {
 						var deleteme = this.buckets[ids[i]];
 						this.buckets[ids[i]] = undefined;
+						removed = 1;
 						// Don't forget to delete last node removed
 						deleteme.destroy();
 					} else {
@@ -82,6 +84,7 @@ var RelationshipHash = Ember.Object.extend({
 						}
 						current.prev = undefined;
 						current.next = undefined;
+						removed = 1;
 						// Delete node when removed
 						current.destroy();
 					}
@@ -89,6 +92,7 @@ var RelationshipHash = Ember.Object.extend({
 				current = next;
 			}
 		}
+		return removed;
 	}
 });
 

@@ -5030,6 +5030,7 @@ define('ember-graph/relationship/relationship_hash', ['exports', 'ember'], funct
 		},
 
 		remove: function (item, ids) {
+			var removed = undefined;
 			for (var i = 0; i < ids.length; ++i) {
 				var current = this.buckets[ids[i]];
 				while (current) {
@@ -5038,6 +5039,7 @@ define('ember-graph/relationship/relationship_hash', ['exports', 'ember'], funct
 						if (!current.next && !current.prev) {
 							var deleteme = this.buckets[ids[i]];
 							this.buckets[ids[i]] = undefined;
+							removed = 1;
 							// Don't forget to delete last node removed
 							deleteme.destroy();
 						} else {
@@ -5052,6 +5054,7 @@ define('ember-graph/relationship/relationship_hash', ['exports', 'ember'], funct
 							}
 							current.prev = undefined;
 							current.next = undefined;
+							removed = 1;
 							// Delete node when removed
 							current.destroy();
 						}
@@ -5059,6 +5062,7 @@ define('ember-graph/relationship/relationship_hash', ['exports', 'ember'], funct
 					current = next;
 				}
 			}
+			return removed;
 		}
 	});
 
@@ -6379,19 +6383,26 @@ define('ember-graph/store/relationship', ['exports', 'ember', 'ember-graph/relat
 	var CLIENT_STATE = _emberGraphRelationshipRelationship.default.CLIENT_STATE;
 	var SERVER_STATE = _emberGraphRelationshipRelationship.default.SERVER_STATE;
 	var DELETED_STATE = _emberGraphRelationshipRelationship.default.DELETED_STATE;
+
+	// ### TODO: 1. incorporate both type AND id into hash (reduce repetitive verifications)
+	// ### TODO: 2. move all remaining type== id== tests to relationship/relationships.js
+
 	exports.default = {
 
 		allRelationships: _ember.default.Object.create(),
 
 		relationshipsById: _emberGraphRelationshipRelationship_hash.default.create(),
 
-		queuedRelationships: _ember.default.Object.create(),
+		queuedRelationships: _emberGraphRelationshipRelationship_hash.default.create(),
+
+		// oldQueuedRelationships: Ember.Object.create(),
 
 		initializeRelationships: _ember.default.on('init', function () {
 			this.setProperties({
 				allRelationships: _ember.default.Object.create(),
 				relationshipsById: _emberGraphRelationshipRelationship_hash.default.create(),
-				queuedRelationships: _ember.default.Object.create()
+				queuedRelationships: _emberGraphRelationshipRelationship_hash.default.create()
+				// oldQueuedRelationships: Ember.Object.create()
 			});
 		}),
 
@@ -6399,6 +6410,7 @@ define('ember-graph/store/relationship', ['exports', 'ember', 'ember-graph/relat
 			var relationship = _emberGraphRelationshipRelationship.default.create(type1, id1, name1, type2, id2, name2, state);
 
 			var queuedRelationships = this.get('queuedRelationships');
+			// const oldQueuedRelationships = this.get('oldQueuedRelationships');
 			var record1 = this.getRecord(type1, id1);
 			var record2 = this.getRecord(type2, id2);
 
@@ -6413,7 +6425,8 @@ define('ember-graph/store/relationship', ['exports', 'ember', 'ember-graph/relat
 			this.get('relationshipsById').add(relationship, [relationship.get('id1'), relationship.get('id2')]);
 
 			if (!record1 || !record2) {
-				queuedRelationships[relationship.get('id')] = relationship;
+				queuedRelationships.add(relationship, [relationship.get('id1'), relationship.get('id2')]);
+				// oldQueuedRelationships[relationship.get('id')] = relationship;
 				this.notifyPropertyChange('queuedRelationships');
 			}
 
@@ -6428,13 +6441,14 @@ define('ember-graph/store/relationship', ['exports', 'ember', 'ember-graph/relat
 			this.disconnectRelationshipFrom(record2, relationship);
 
 			var queuedRelationships = this.get('queuedRelationships');
-			delete queuedRelationships[relationship.get('id')];
+			// const oldQueuedRelationships = this.get('oldQueuedRelationships');
+			queuedRelationships.remove(relationship, [relationship.get('id1'), relationship.get('id2')]);
+			// delete oldQueuedRelationships[relationships.get('id')];
 			this.notifyPropertyChange('queuedRelationships');
 
 			// dequeue from hash first otherwise we have a deleted item still in hash momentarily
 			this.get('relationshipsById').remove(relationship, [relationship.get('id1'), relationship.get('id2')]);
 			delete this.get('allRelationships')[relationship.get('id')];
-			delete this.get('queuedRelationships')[relationship.get('id')];
 
 			relationship.erase();
 		},
@@ -6460,18 +6474,15 @@ define('ember-graph/store/relationship', ['exports', 'ember', 'ember-graph/relat
 			var _this = this;
 
 			var queuedRelationships = this.get('queuedRelationships');
-			var filtered = Object.keys(queuedRelationships).filter(function (id) {
-				return queuedRelationships[id].isConnectedTo(record);
-			});
+			// const oldQueuedRelationships = this.get('oldQueuedRelationships');
+			var potential = queuedRelationships.findAllByKeys([record.get('id')]);
 
-			if (filtered.length <= 0) {
-				return;
-			}
-
-			filtered.forEach(function (id) {
-				var relationship = queuedRelationships[id];
-				_this.connectRelationshipTo(record, relationship);
-				delete queuedRelationships[id];
+			Object.keys(potential).forEach(function (key) {
+				var relationship = potential[key];
+				if (relationship.isConnectedTo(record)) {
+					_this.connectRelationshipTo(record, relationship);
+					queuedRelationships.remove(relationship, [relationship.get('id1'), relationship.get('id2')]);
+				}
 			});
 
 			this.notifyPropertyChange('queuedRelationships');
@@ -6485,7 +6496,7 @@ define('ember-graph/store/relationship', ['exports', 'ember', 'ember-graph/relat
 
 			server.forEach(function (relationship) {
 				_this2.disconnectRelationshipFrom(record, relationship);
-				queued[relationship.get('id')] = relationship;
+				queued.add(relationship, [relationship.get('id1'), relationship.get('id2')]);
 			});
 
 			this.notifyPropertyChange('queuedRelationships');
@@ -6503,6 +6514,19 @@ define('ember-graph/store/relationship', ['exports', 'ember', 'ember-graph/relat
 			return filtered;
 		},
 
+		relationshipsForRecordNoName: function (type, id) {
+			var filtered = [];
+			var all = this.get('relationshipsById').findAllByKeys([id]);
+			Object.keys(all).forEach(function (key) {
+				var t = all[key];
+				if (t.get('id1') === id && t.get('type1') === type || t.get('id1') === id && t.get('type1') === type) {
+					filtered.push(all[key]);
+				}
+			});
+
+			return filtered;
+		},
+
 		deleteRelationshipsForRecord: function (type, id) {
 			var _this3 = this;
 
@@ -6513,6 +6537,7 @@ define('ember-graph/store/relationship', ['exports', 'ember', 'ember-graph/relat
 				keys.forEach(function (key) {
 					var relationship = all[key];
 
+					// Merge into single || statement
 					if (relationship.get('type1') === type && relationship.get('id1') === id) {
 						_this3.deleteRelationship(relationship);
 					} else if (relationship.get('type2') === type && relationship.get('id2') === id) {
@@ -6598,16 +6623,18 @@ define('ember-graph/store/relationship', ['exports', 'ember', 'ember-graph/relat
 		updateRelationshipsWithNewId: function (typeKey, oldId, newId) {
 			var _this4 = this;
 
-			var all = this.get('allRelationships');
+			var relationships = this.relationshipsForRecordNoName(typeKey, oldId);
 
-			Object.keys(all).forEach(function (id) {
-				all[id].changeId(typeKey, oldId, newId);
-			});
-
-			var oldMappings = this.get('relationshipsById').findAllByKeys([oldId]);
-			oldMappings.forEach(function (item) {
-				_this4.get('relationshipsById').remove(item, [oldId]);
-				_this4.get('relationshipsById').add(item, [newId]);
+			//  Note: Not the most efficient.  Most efficient would be to embed into relationship_hash to rename internally as crawling the queue.
+			Object.keys(relationships).forEach(function (key) {
+				var relationship = relationships[key];
+				relationship.changeId(typeKey, oldId, newId);
+				if (_this4.get('relationshipsById').remove(relationship, [oldId])) {
+					_this4.get('relationshipsById').add(relationship, [newId]);
+				}
+				if (_this4.get('queuedRelationships').remove(relationship, [oldId])) {
+					_this4.get('queuedRelationships').add(relationship, [newId]);
+				}
 			});
 
 			this.notifyPropertyChange('allRelationships');
