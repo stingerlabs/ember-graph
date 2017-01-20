@@ -94,13 +94,15 @@
 		var user3 = store.getRecord('user', '3');
 		ok(user3.get('_posts').mapBy('id').indexOf('7') >= 0);
 
-		var rid, after_rid;
-		var relationship, after_relationship; // eslint-disable-line no-unused-vars
+		var rid;
+		var afterRid;
+		var relationship;
+		var afterRelationship;
 		var queued = store.get('queuedRelationships');
 
 		var current = queued.buckets['7'];
 		while (current) {
-			if ((current.item.get('type2')==='post') && (current.item.get('id2')=== '7')) {
+			if ((current.item.get('type2') === 'post') && (current.item.get('id2') === '7')) {
 				relationship = current.item;
 				rid = relationship.get('id');
 				break;
@@ -117,9 +119,9 @@
 
 		current = queued.buckets['7'];
 		while (current) {
-			if ((current.item.get('type2')==='post') && (current.item.get('id2')=== '7')) {
-				after_relationship = current.item;
-				after_rid = after_relationship.get('id');
+			if ((current.item.get('type2') === 'post') && (current.item.get('id2') === '7')) {
+				afterRelationship = current.item;
+				afterRid = afterRelationship.get('id');
 				break;
 			}
 		}
@@ -127,7 +129,7 @@
 		var post = store.getRecord('post', '7');
 
 		strictEqual(typeof rid, 'string');
-		strictEqual(after_rid, undefined);
+		strictEqual(afterRid, undefined);
 		ok(user3.get('_posts').mapBy('id').indexOf('7') >= 0);
 		strictEqual(post.get('_author').id, '3');
 	});
