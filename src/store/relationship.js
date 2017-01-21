@@ -4,9 +4,6 @@ import RelationshipHash from 'ember-graph/relationship/relationship_hash';
 
 const { CLIENT_STATE, SERVER_STATE, DELETED_STATE } = Relationship;
 
-// ### TODO: 1. incorporate both type AND id into hash (reduce repetitive verifications)
-// ### TODO: 2. move all remaining type== id== tests to relationship/relationships.js
-
 export default {
 
 	allRelationships: Ember.Object.create(),
