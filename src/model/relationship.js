@@ -97,9 +97,8 @@ var RelationshipClassMethods = {
 	 * @static
 	 */
 	eachRelationship: function(callback, binding) {
-		// Climb through class hierarchy looking for relationships
-		// (###TODO: Might be nice to wire this up when creating the class hierarchy if possible.)
 		var classProto = this.prototype;
+
 		while (classProto && classProto.metaMap) {
 			if (classProto.metaMap['_all']) {
 				for (var j = 0, len = classProto.metaMap['_all'].length; j < len; ++j) {
@@ -107,8 +106,7 @@ var RelationshipClassMethods = {
 					callback.call(binding, name, classProto.metaMap[name]);
 				}
 			}
-			// Might be better to do this in initialization somewhere rather than on every eachRelationship call;
-			// however, only costs one typeof and one string match each call
+
 			if (typeof Object.getPrototypeOf !== 'function') {
 				if (typeof 'test'.__proto__ === 'object') { // eslint-disable-line no-proto
 					Object.getPrototypeOf = function(object) {

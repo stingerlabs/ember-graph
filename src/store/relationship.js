@@ -12,14 +12,11 @@ export default {
 
 	queuedRelationships: RelationshipHash.create(),
 
-	// oldQueuedRelationships: Ember.Object.create(),
-
 	initializeRelationships: Ember.on('init', function() {
 		this.setProperties({
 			allRelationships: Ember.Object.create(),
 			relationshipsById: RelationshipHash.create(),
 			queuedRelationships: RelationshipHash.create()
-			// oldQueuedRelationships: Ember.Object.create()
 		});
 	}),
 
@@ -27,7 +24,6 @@ export default {
 		const relationship = Relationship.create(type1, id1, name1, type2, id2, name2, state);
 
 		const queuedRelationships = this.get('queuedRelationships');
-		// const oldQueuedRelationships = this.get('oldQueuedRelationships');
 		const record1 = this.getRecord(type1, id1);
 		const record2 = this.getRecord(type2, id2);
 
@@ -43,7 +39,6 @@ export default {
 
 		if (!record1 || !record2) {
 			queuedRelationships.add(relationship, [relationship.get('id1'), relationship.get('id2')]);
-			// oldQueuedRelationships[relationship.get('id')] = relationship;
 			this.notifyPropertyChange('queuedRelationships');
 		}
 
@@ -58,12 +53,10 @@ export default {
 		this.disconnectRelationshipFrom(record2, relationship);
 
 		const queuedRelationships = this.get('queuedRelationships');
-		// const oldQueuedRelationships = this.get('oldQueuedRelationships');
 		queuedRelationships.remove(relationship, [relationship.get('id1'), relationship.get('id2')]);
-		// delete oldQueuedRelationships[relationships.get('id')];
 		this.notifyPropertyChange('queuedRelationships');
 
-		// dequeue from hash first otherwise we have a deleted item still in hash momentarily
+		// de-queue from hash first otherwise we have a deleted item still in hash momentarily
 		this.get('relationshipsById').remove(relationship, [relationship.get('id1'), relationship.get('id2')]);
 		delete this.get('allRelationships')[relationship.get('id')];
 
@@ -89,7 +82,6 @@ export default {
 
 	connectQueuedRelationships(record) {
 		const queuedRelationships = this.get('queuedRelationships');
-		// const oldQueuedRelationships = this.get('oldQueuedRelationships');
 		const potential = queuedRelationships.findAllByKeys([record.get('id')]);
 
 		Object.keys(potential).forEach((key) => {
@@ -149,7 +141,6 @@ export default {
 			keys.forEach((key) => {
 				const relationship = all[key];
 
-					// Merge into single || statement
 				if (relationship.get('type1') === type && relationship.get('id1') === id) {
 					this.deleteRelationship(relationship);
 				} else if (relationship.get('type2') === type && relationship.get('id2') === id) {
