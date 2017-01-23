@@ -5027,7 +5027,7 @@ define('ember-graph/relationship/relationship_hash', ['exports', 'ember'], funct
 
 	var RelationshipHash = _ember.default.Object.extend({
 
-		buckets: [],
+		buckets: {},
 
 		initialize: _ember.default.on('init', function () {
 			this.setProperties({
@@ -6556,9 +6556,7 @@ define('ember-graph/store/relationship', ['exports', 'ember', 'ember-graph/relat
 				keys.forEach(function (key) {
 					var relationship = all[key];
 
-					if (relationship.get('type1') === type && relationship.get('id1') === id) {
-						_this3.deleteRelationship(relationship);
-					} else if (relationship.get('type2') === type && relationship.get('id2') === id) {
+					if (relationship.get('type1') === type && relationship.get('id1') === id || relationship.get('type2') === type && relationship.get('id2') === id) {
 						_this3.deleteRelationship(relationship);
 					}
 				});

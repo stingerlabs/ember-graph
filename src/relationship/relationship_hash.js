@@ -26,7 +26,7 @@ var RelationshipNode = Ember.Object.extend({
 
 var RelationshipHash = Ember.Object.extend({
 
-	buckets: [],
+	buckets: {},
 
 	initialize: Ember.on('init', function() {
 		this.setProperties({
