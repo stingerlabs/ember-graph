@@ -14,7 +14,6 @@ import {
 	RelationshipTypes
 } from 'ember-graph/constants';
 
-
 var HAS_ONE_KEY = RelationshipTypes.HAS_ONE_KEY;
 var HAS_MANY_KEY = RelationshipTypes.HAS_MANY_KEY;
 
@@ -98,11 +97,30 @@ var RelationshipClassMethods = {
 	 * @static
 	 */
 	eachRelationship: function(callback, binding) {
-		this.eachComputedProperty(function(name, meta) {
-			if (meta.isRelationship) {
-				callback.call(binding, name, meta);
+		var classProto = this.prototype;
+
+		while (classProto && classProto.metaMap) {
+			if (classProto.metaMap['_all']) {
+				for (var j = 0, len = classProto.metaMap['_all'].length; j < len; ++j) {
+					var name = classProto.metaMap['_all'][j];
+					callback.call(binding, name, classProto.metaMap[name]);
+				}
 			}
-		});
+
+			if (typeof Object.getPrototypeOf !== 'function') {
+				if (typeof 'test'.__proto__ === 'object') { // eslint-disable-line no-proto
+					Object.getPrototypeOf = function(object) {
+						return object.__proto__;  // eslint-disable-line no-proto
+					};
+				} else {
+					Object.getPrototypeOf = function(object) {
+						// May break if the constructor has been tampered with
+						return object.constructor.prototype;
+					};
+				}
+			}
+			classProto = Object.getPrototypeOf(classProto);
+		}
 	},
 
 	declareRelationships: function(relationships) {
@@ -110,7 +128,7 @@ var RelationshipClassMethods = {
 
 		Ember.runInDebug(function() {
 			var disallowedNames = EmberGraphSet.create();
-			disallowedNames.addObjects(['id', 'type', 'content', 'length', 'model']);
+			disallowedNames.addObjects(['id', 'type', 'content', 'length', 'model', 'metaMap']);
 
 			Object.keys(relationships).forEach(function(name) {
 				Ember.assert('`' + name + '` cannot be used as a relationship name.', !disallowedNames.contains(name));
@@ -159,6 +177,12 @@ var RelationshipClassMethods = {
 
 			meta.isRelationship = true;
 			obj[name] = computed(`_${name}`, { 'get': relationship }).meta(meta);
+			if (!obj['metaMap']) {
+				obj['metaMap'] = [];
+				obj['metaMap']['_all'] = [];
+			}
+			obj['metaMap'][name] = meta;
+			obj['metaMap']['_all'].push(name);
 		});
 
 		this.reopen(obj);

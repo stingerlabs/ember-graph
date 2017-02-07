@@ -95,16 +95,17 @@
 		ok(user3.get('_posts').mapBy('id').indexOf('7') >= 0);
 
 		var rid;
-		var relationship; // eslint-disable-line no-unused-vars
+		var afterRid;
+		var relationship;
+		var afterRelationship;
 		var queued = store.get('queuedRelationships');
 
-		for (var i in queued) {
-			if (queued.hasOwnProperty(i)) {
-				if (queued[i].get('type2') === 'post' && queued[i].get('id2') === '7') {
-					rid = i;
-					relationship = queued[rid];
-					break;
-				}
+		var current = queued.buckets['7'];
+		while (current) {
+			if ((current.item.get('type2') === 'post') && (current.item.get('id2') === '7')) {
+				relationship = current.item;
+				rid = relationship.get('id');
+				break;
 			}
 		}
 
@@ -116,10 +117,19 @@
 			}]
 		});
 
+		current = queued.buckets['7'];
+		while (current) {
+			if ((current.item.get('type2') === 'post') && (current.item.get('id2') === '7')) {
+				afterRelationship = current.item;
+				afterRid = afterRelationship.get('id');
+				break;
+			}
+		}
+
 		var post = store.getRecord('post', '7');
 
 		strictEqual(typeof rid, 'string');
-		strictEqual(queued[rid], undefined);
+		strictEqual(afterRid, undefined);
 		ok(user3.get('_posts').mapBy('id').indexOf('7') >= 0);
 		strictEqual(post.get('_author').id, '3');
 	});

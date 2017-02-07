@@ -3226,11 +3226,31 @@ define('ember-graph/model/relationship', ['exports', 'ember', 'ember-graph/relat
    * @static
    */
 		eachRelationship: function (callback, binding) {
-			this.eachComputedProperty(function (name, meta) {
-				if (meta.isRelationship) {
-					callback.call(binding, name, meta);
+			var classProto = this.prototype;
+
+			while (classProto && classProto.metaMap) {
+				if (classProto.metaMap['_all']) {
+					for (var j = 0, len = classProto.metaMap['_all'].length; j < len; ++j) {
+						var name = classProto.metaMap['_all'][j];
+						callback.call(binding, name, classProto.metaMap[name]);
+					}
 				}
-			});
+
+				if (typeof Object.getPrototypeOf !== 'function') {
+					if (typeof 'test'.__proto__ === 'object') {
+						// eslint-disable-line no-proto
+						Object.getPrototypeOf = function (object) {
+							return object.__proto__; // eslint-disable-line no-proto
+						};
+					} else {
+							Object.getPrototypeOf = function (object) {
+								// May break if the constructor has been tampered with
+								return object.constructor.prototype;
+							};
+						}
+				}
+				classProto = Object.getPrototypeOf(classProto);
+			}
 		},
 
 		declareRelationships: function (relationships) {
@@ -3238,7 +3258,7 @@ define('ember-graph/model/relationship', ['exports', 'ember', 'ember-graph/relat
 
 			_ember.default.runInDebug(function () {
 				var disallowedNames = _emberGraphUtilSet.default.create();
-				disallowedNames.addObjects(['id', 'type', 'content', 'length', 'model']);
+				disallowedNames.addObjects(['id', 'type', 'content', 'length', 'model', 'metaMap']);
 
 				Object.keys(relationships).forEach(function (name) {
 					_ember.default.assert('`' + name + '` cannot be used as a relationship name.', !disallowedNames.contains(name));
@@ -3289,6 +3309,12 @@ define('ember-graph/model/relationship', ['exports', 'ember', 'ember-graph/relat
 
 				meta.isRelationship = true;
 				obj[name] = (0, _emberGraphUtilComputed.computed)('_' + name, { 'get': relationship }).meta(meta);
+				if (!obj['metaMap']) {
+					obj['metaMap'] = [];
+					obj['metaMap']['_all'] = [];
+				}
+				obj['metaMap'][name] = meta;
+				obj['metaMap']['_all'].push(name);
 			});
 
 			this.reopen(obj);
@@ -4974,6 +5000,106 @@ define('ember-graph/relationship/relationship', ['exports', 'ember', 'ember-grap
 	exports.default = Relationship;
 });
 
+define('ember-graph/relationship/relationship_hash', ['exports', 'ember'], function (exports, _ember) {
+
+	/**
+  * Define HashMap class
+  *
+  * Simple use of associative array as hash table allowing buckets w/
+  * chaining for duplicates.
+  */
+
+	var RelationshipNode = _ember.default.Object.extend({
+
+		next: undefined,
+		prev: undefined,
+		item: undefined,
+
+		initialize: _ember.default.on('init', function () {
+			this.setProperties({
+				next: undefined,
+				prev: undefined,
+				item: undefined
+			});
+		})
+
+	});
+
+	var RelationshipHash = _ember.default.Object.extend({
+
+		buckets: {},
+
+		initialize: _ember.default.on('init', function () {
+			this.setProperties({
+				buckets: []
+			});
+		}),
+
+		add: function (item, ids) {
+			for (var i = 0; i < ids.length; ++i) {
+				var newNode = RelationshipNode.create();
+				newNode.item = item;
+				if (this.buckets[ids[i]]) {
+					// Push onto head of chain
+					newNode.next = this.buckets[ids[i]];
+					this.buckets[ids[i]].prev = newNode;
+				}
+				this.buckets[ids[i]] = newNode;
+			}
+		},
+
+		findAllByKeys: function (ids) {
+			var retVal = [];
+			for (var i = 0; i < ids.length; ++i) {
+				var current = this.buckets[ids[i]];
+				while (current) {
+					retVal[current.item.id] = current.item;
+					current = current.next;
+				}
+			}
+			return retVal;
+		},
+
+		remove: function (item, ids) {
+			var removed = undefined;
+			for (var i = 0; i < ids.length; ++i) {
+				var current = this.buckets[ids[i]];
+				while (current) {
+					var next = current.next;
+					if (current.item === item) {
+						if (!current.next && !current.prev) {
+							var deleteme = this.buckets[ids[i]];
+							this.buckets[ids[i]] = undefined;
+							removed = 1;
+							// Don't forget to delete last node removed
+							deleteme.destroy();
+						} else {
+							if (current.next) {
+								current.next.prev = current.prev;
+							}
+							if (current.prev) {
+								current.prev.next = current.next;
+							} else {
+								// Removing head
+								this.buckets[ids[i]] = current.next;
+							}
+							current.prev = undefined;
+							current.next = undefined;
+							removed = 1;
+							// Delete node when removed
+							current.destroy();
+						}
+					}
+					current = next;
+				}
+			}
+			return removed;
+		}
+	});
+
+	exports.default = RelationshipHash;
+});
+
 define('ember-graph/relationship/relationship_store', ['exports', 'ember', 'ember-graph/relationship/relationship', 'ember-graph/util/set'], function (exports, _ember, _emberGraphRelationshipRelationship, _emberGraphUtilSet) {
 
 	var CLIENT_STATE = _emberGraphRelationshipRelationship.default.CLIENT_STATE;
@@ -5767,7 +5893,7 @@ define('ember-graph/serializer/serializer', ['exports', 'ember', 'ember-graph/ut
 	});
 });
 
-define('ember-graph/shim', ['exports', 'ember-graph', 'ember-graph/util/data_adapter', 'ember-graph/util/array', 'ember-graph/util/util', 'ember-graph/model/schema', 'ember-graph/util/set', 'ember-graph/util/string', 'ember-graph/util/inflector', 'ember-graph/data/promise_object', 'ember-graph/serializer/serializer', 'ember-graph/serializer/json', 'ember-graph/serializer/ember_graph', 'ember-graph/adapter/adapter', 'ember-graph/adapter/ember_graph/adapter', 'ember-graph/adapter/local_storage', 'ember-graph/adapter/memory', 'ember-graph/adapter/rest', 'ember-graph/store/store', 'ember-graph/attribute_type/type', 'ember-graph/attribute_type/array', 'ember-graph/attribute_type/boolean', 'ember-graph/attribute_type/date', 'ember-graph/attribute_type/enum', 'ember-graph/attribute_type/number', 'ember-graph/attribute_type/object', 'ember-graph/attribute_type/string', 'ember-graph/model/model', 'ember-graph/relationship/relationship', 'ember-graph/relationship/relationship_store', 'ember-graph/store/record_cache', 'ember-graph/store/record_request_cache'], function (exports, _emberGraph, _emberGraphUtilData_adapter, _emberGraphUtilArray, _emberGraphUtilUtil, _emberGraphModelSchema, _emberGraphUtilSet, _emberGraphUtilString, _emberGraphUtilInflector, _emberGraphDataPromise_object, _emberGraphSerializerSerializer, _emberGraphSerializerJson, _emberGraphSerializerEmber_graph, _emberGraphAdapterAdapter, _emberGraphAdapterEmber_graphAdapter, _emberGraphAdapterLocal_storage, _emberGraphAdapterMemory, _emberGraphAdapterRest, _emberGraphStoreStore, _emberGraphAttribute_typeType, _emberGraphAttribute_typeArray, _emberGraphAttribute_typeBoolean, _emberGraphAttribute_typeDate, _emberGraphAttribute_typeEnum, _emberGraphAttribute_typeNumber, _emberGraphAttribute_typeObject, _emberGraphAttribute_typeString, _emberGraphModelModel, _emberGraphRelationshipRelationship, _emberGraphRelationshipRelationship_store, _emberGraphStoreRecord_cache, _emberGraphStoreRecord_request_cache) {
+define('ember-graph/shim', ['exports', 'ember-graph', 'ember-graph/util/data_adapter', 'ember-graph/util/array', 'ember-graph/util/util', 'ember-graph/model/schema', 'ember-graph/util/set', 'ember-graph/util/string', 'ember-graph/util/inflector', 'ember-graph/data/promise_object', 'ember-graph/serializer/serializer', 'ember-graph/serializer/json', 'ember-graph/serializer/ember_graph', 'ember-graph/adapter/adapter', 'ember-graph/adapter/ember_graph/adapter', 'ember-graph/adapter/local_storage', 'ember-graph/adapter/memory', 'ember-graph/adapter/rest', 'ember-graph/store/store', 'ember-graph/attribute_type/type', 'ember-graph/attribute_type/array', 'ember-graph/attribute_type/boolean', 'ember-graph/attribute_type/date', 'ember-graph/attribute_type/enum', 'ember-graph/attribute_type/number', 'ember-graph/attribute_type/object', 'ember-graph/attribute_type/string', 'ember-graph/model/model', 'ember-graph/relationship/relationship_hash', 'ember-graph/relationship/relationship', 'ember-graph/relationship/relationship_store', 'ember-graph/store/record_cache', 'ember-graph/store/record_request_cache'], function (exports, _emberGraph, _emberGraphUtilData_adapter, _emberGraphUtilArray, _emberGraphUtilUtil, _emberGraphModelSchema, _emberGraphUtilSet, _emberGraphUtilString, _emberGraphUtilInflector, _emberGraphDataPromise_object, _emberGraphSerializerSerializer, _emberGraphSerializerJson, _emberGraphSerializerEmber_graph, _emberGraphAdapterAdapter, _emberGraphAdapterEmber_graphAdapter, _emberGraphAdapterLocal_storage, _emberGraphAdapterMemory, _emberGraphAdapterRest, _emberGraphStoreStore, _emberGraphAttribute_typeType, _emberGraphAttribute_typeArray, _emberGraphAttribute_typeBoolean, _emberGraphAttribute_typeDate, _emberGraphAttribute_typeEnum, _emberGraphAttribute_typeNumber, _emberGraphAttribute_typeObject, _emberGraphAttribute_typeString, _emberGraphModelModel, _emberGraphRelationshipRelationship_hash, _emberGraphRelationshipRelationship, _emberGraphRelationshipRelationship_store, _emberGraphStoreRecord_cache, _emberGraphStoreRecord_request_cache) {
 	_emberGraph.default.DataAdapter = _emberGraphUtilData_adapter.default;
 
 	// Array polyfills
@@ -5861,6 +5987,8 @@ define('ember-graph/shim', ['exports', 'ember-graph', 'ember-graph/util/data_ada
 	_emberGraph.default.Model = _emberGraphModelModel.default;
 
 	// Testing shims
+
+	_emberGraph.default.RelationshipHash = _emberGraphRelationshipRelationship_hash.default;
 
 	_emberGraph.default.Relationship = _emberGraphRelationshipRelationship.default;
 
@@ -6282,7 +6410,7 @@ define('ember-graph/store/record_request_cache', ['exports', 'ember'], function 
 	});
 });
 
-define('ember-graph/store/relationship', ['exports', 'ember', 'ember-graph/relationship/relationship'], function (exports, _ember, _emberGraphRelationshipRelationship) {
+define('ember-graph/store/relationship', ['exports', 'ember', 'ember-graph/relationship/relationship', 'ember-graph/relationship/relationship_hash'], function (exports, _ember, _emberGraphRelationshipRelationship, _emberGraphRelationshipRelationship_hash) {
 	var CLIENT_STATE = _emberGraphRelationshipRelationship.default.CLIENT_STATE;
 	var SERVER_STATE = _emberGraphRelationshipRelationship.default.SERVER_STATE;
 	var DELETED_STATE = _emberGraphRelationshipRelationship.default.DELETED_STATE;
@@ -6290,12 +6418,15 @@ define('ember-graph/store/relationship', ['exports', 'ember', 'ember-graph/relat
 
 		allRelationships: _ember.default.Object.create(),
 
-		queuedRelationships: _ember.default.Object.create(),
+		relationshipsById: _emberGraphRelationshipRelationship_hash.default.create(),
+
+		queuedRelationships: _emberGraphRelationshipRelationship_hash.default.create(),
 
 		initializeRelationships: _ember.default.on('init', function () {
 			this.setProperties({
 				allRelationships: _ember.default.Object.create(),
-				queuedRelationships: _ember.default.Object.create()
+				relationshipsById: _emberGraphRelationshipRelationship_hash.default.create(),
+				queuedRelationships: _emberGraphRelationshipRelationship_hash.default.create()
 			});
 		}),
 
@@ -6314,8 +6445,10 @@ define('ember-graph/store/relationship', ['exports', 'ember', 'ember-graph/relat
 				this.connectRelationshipTo(record2, relationship);
 			}
 
+			this.get('relationshipsById').add(relationship, [relationship.get('id1'), relationship.get('id2')]);
+
 			if (!record1 || !record2) {
-				queuedRelationships[relationship.get('id')] = relationship;
+				queuedRelationships.add(relationship, [relationship.get('id1'), relationship.get('id2')]);
 				this.notifyPropertyChange('queuedRelationships');
 			}
 
@@ -6330,11 +6463,12 @@ define('ember-graph/store/relationship', ['exports', 'ember', 'ember-graph/relat
 			this.disconnectRelationshipFrom(record2, relationship);
 
 			var queuedRelationships = this.get('queuedRelationships');
-			delete queuedRelationships[relationship.get('id')];
+			queuedRelationships.remove(relationship, [relationship.get('id1'), relationship.get('id2')]);
 			this.notifyPropertyChange('queuedRelationships');
 
+			// de-queue from hash first otherwise we have a deleted item still in hash momentarily
+			this.get('relationshipsById').remove(relationship, [relationship.get('id1'), relationship.get('id2')]);
 			delete this.get('allRelationships')[relationship.get('id')];
-			delete this.get('queuedRelationships')[relationship.get('id')];
 
 			relationship.erase();
 		},
@@ -6360,18 +6494,14 @@ define('ember-graph/store/relationship', ['exports', 'ember', 'ember-graph/relat
 			var _this = this;
 
 			var queuedRelationships = this.get('queuedRelationships');
-			var filtered = Object.keys(queuedRelationships).filter(function (id) {
-				return queuedRelationships[id].isConnectedTo(record);
-			});
+			var potential = queuedRelationships.findAllByKeys([record.get('id')]);
 
-			if (filtered.length <= 0) {
-				return;
-			}
-
-			filtered.forEach(function (id) {
-				var relationship = queuedRelationships[id];
-				_this.connectRelationshipTo(record, relationship);
-				delete queuedRelationships[id];
+			Object.keys(potential).forEach(function (key) {
+				var relationship = potential[key];
+				if (relationship.isConnectedTo(record)) {
+					_this.connectRelationshipTo(record, relationship);
+					queuedRelationships.remove(relationship, [relationship.get('id1'), relationship.get('id2')]);
+				}
 			});
 
 			this.notifyPropertyChange('queuedRelationships');
@@ -6385,7 +6515,7 @@ define('ember-graph/store/relationship', ['exports', 'ember', 'ember-graph/relat
 
 			server.forEach(function (relationship) {
 				_this2.disconnectRelationshipFrom(record, relationship);
-				queued[relationship.get('id')] = relationship;
+				queued.add(relationship, [relationship.get('id1'), relationship.get('id2')]);
 			});
 
 			this.notifyPropertyChange('queuedRelationships');
@@ -6393,10 +6523,22 @@ define('ember-graph/store/relationship', ['exports', 'ember', 'ember-graph/relat
 
 		relationshipsForRecord: function (type, id, name) {
 			var filtered = [];
-			var all = this.get('allRelationships');
-
+			var all = this.get('relationshipsById').findAllByKeys([id]);
 			Object.keys(all).forEach(function (key) {
 				if (all[key].matchesOneSide(type, id, name)) {
+					filtered.push(all[key]);
+				}
+			});
+
+			return filtered;
+		},
+
+		relationshipsForRecordNoName: function (type, id) {
+			var filtered = [];
+			var all = this.get('relationshipsById').findAllByKeys([id]);
+			Object.keys(all).forEach(function (key) {
+				var t = all[key];
+				if (t.get('id1') === id && t.get('type1') === type || t.get('id1') === id && t.get('type1') === type) {
 					filtered.push(all[key]);
 				}
 			});
@@ -6408,15 +6550,13 @@ define('ember-graph/store/relationship', ['exports', 'ember', 'ember-graph/relat
 			var _this3 = this;
 
 			_ember.default.changeProperties(function () {
-				var all = _this3.get('allRelationships');
+				var all = _this3.get('relationshipsById').findAllByKeys([id]);
 				var keys = Object.keys(all);
 
 				keys.forEach(function (key) {
 					var relationship = all[key];
 
-					if (relationship.get('type1') === type && relationship.get('id1') === id) {
-						_this3.deleteRelationship(relationship);
-					} else if (relationship.get('type2') === type && relationship.get('id2') === id) {
+					if (relationship.get('type1') === type && relationship.get('id1') === id || relationship.get('type2') === type && relationship.get('id2') === id) {
 						_this3.deleteRelationship(relationship);
 					}
 				});
@@ -6513,10 +6653,20 @@ define('ember-graph/store/relationship', ['exports', 'ember', 'ember-graph/relat
 		},
 
 		updateRelationshipsWithNewId: function (typeKey, oldId, newId) {
-			var all = this.get('allRelationships');
+			var _this4 = this;
 
-			Object.keys(all).forEach(function (id) {
-				all[id].changeId(typeKey, oldId, newId);
+			var relationships = this.relationshipsForRecordNoName(typeKey, oldId);
+
+			//  Note: Not the most efficient.  Most efficient would be to embed into relationship_hash to rename internally as crawling the queue.
+			Object.keys(relationships).forEach(function (key) {
+				var relationship = relationships[key];
+				relationship.changeId(typeKey, oldId, newId);
+				if (_this4.get('relationshipsById').remove(relationship, [oldId])) {
+					_this4.get('relationshipsById').add(relationship, [newId]);
+				}
+				if (_this4.get('queuedRelationships').remove(relationship, [oldId])) {
+					_this4.get('queuedRelationships').add(relationship, [newId]);
+				}
 			});
 
 			this.notifyPropertyChange('allRelationships');
