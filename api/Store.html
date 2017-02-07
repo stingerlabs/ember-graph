@@ -1,0 +1,1742 @@
+<!DOCTYPE html>
+<html>
+	<head lang="en">
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+
+		<title>Ember-Graph</title>
+
+		<link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600,700,400italic,600italic,700italic'
+		      rel='stylesheet' type='text/css'>
+
+		<!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+		<!--[if lt IE 9]>
+			<script src="//oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="//oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+		<link rel="stylesheet" href="../stylesheets/style.css">
+	</head>
+	<body>
+		<div class="navbar navbar-default navbar-static-top">
+			<div class="container">
+				<div class="navbar-header">
+					<a class="navbar-brand" href="http://ember-graph.com" target="ext">
+						<b>Ember-Graph</b>
+					</a>
+					<a class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+						<span class="glyphicon glyphicon-chevron-down"></span>
+					</a>
+				</div>
+				<div class="navbar-collapse collapse">
+					<ul class="nav navbar-nav">
+						<li><a href="#">About</a></li>
+						<li><a href="#">Guides</a></li>
+						<li class="active"><a href="#">API</a></li>
+						<li><a href="https://ember-graph-builds.s3.amazonaws.com/index.html">Builds</a></li>
+					</ul>
+					<ul class="nav pull-right navbar-nav">
+						<li>
+							<a href="https://github.com/gordonkristan/ember-graph">
+								<i class="fa fa-lg fa-github"></i> View on GitHub
+							</a>
+						</li>
+					</ul>
+				</div>
+			</div>
+		</div>
+
+		<div class="container">
+	<div class="row">
+		<div class="col-md-3 well side-nav">
+			<ul class="list-unstyled">
+	<li>
+		<h4>
+			<strong>Namespaces</strong>
+		</h4>
+	</li>
+	
+		<li class="">
+			<a href="EmberGraph.html">
+				<small>EmberGraph</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="String.html">
+				<small>String</small>
+			</a>
+		</li>
+	
+</ul>
+
+<ul class="list-unstyled">
+	<li>
+		<h4>
+			<strong>Classes</strong>
+		</h4>
+	</li>
+	
+		<li class="">
+			<a href="Adapter.html">
+				<small>Adapter</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="ArrayType.html">
+				<small>ArrayType</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="AttributeType.html">
+				<small>AttributeType</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="BooleanType.html">
+				<small>BooleanType</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="CoreModel.html">
+				<small>CoreModel</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="DataAdapter.html">
+				<small>DataAdapter</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="DateType.html">
+				<small>DateType</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="EmberGraphAdapter.html">
+				<small>EmberGraphAdapter</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="EmberGraphSerializer.html">
+				<small>EmberGraphSerializer</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="EnumType.html">
+				<small>EnumType</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="JSONSerializer.html">
+				<small>JSONSerializer</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="LocalStorageAdapter.html">
+				<small>LocalStorageAdapter</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="MemoryAdapter.html">
+				<small>MemoryAdapter</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="Model.html">
+				<small>Model</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="ModelPromiseObject.html">
+				<small>ModelPromiseObject</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="NumberType.html">
+				<small>NumberType</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="ObjectType.html">
+				<small>ObjectType</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="PromiseArray.html">
+				<small>PromiseArray</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="PromiseObject.html">
+				<small>PromiseObject</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="RESTAdapter.html">
+				<small>RESTAdapter</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="Serializer.html">
+				<small>Serializer</small>
+			</a>
+		</li>
+	
+		<li class="active">
+			<a href="Store.html">
+				<small>Store</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="StringType.html">
+				<small>StringType</small>
+			</a>
+		</li>
+	
+</ul>
+		</div>
+		<div class="col-md-9 api-contents">
+			
+				
+					<div class="api-page-header">
+						<h1>
+							<i class="fa fa-code"></i> Store Class
+						</h1>
+						<hr>
+					</div>
+
+					<div class="api-metadata">
+						
+
+						
+
+						<strong>Defined in:</strong>
+						<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/store/store.js#L15">
+							src/store/store.js:15
+						</a>
+					</div>
+					<br>
+					<p><p>The store is used to manage all records in the application.
+Ideally, there should only be one store for an application.</p>
+</p>
+				
+			
+
+			
+
+			
+				<div class="api-index">
+		<ul class="nav nav-tabs nav-justified">
+			<li>
+				<a href="#index">Index</a>
+			</li>
+			<li>
+				<a href="#properties">Properties</a>
+			</li>
+			<li>
+				<a href="#methods">Methods</a>
+			</li>
+		</ul>
+
+		<div class="tab-content contents">
+			<div class="tab-pane active" id="index">
+				<h3>Properties</h3>
+
+	<ul class="list-unstyled">
+		
+			<li>
+				<a href="#property_adapterCache">adapterCache</a>
+			</li>
+		
+			<li>
+				<a href="#property_attributeTypeCache">attributeTypeCache</a>
+			</li>
+		
+			<li>
+				<a href="#property_cacheTimeout">cacheTimeout</a>
+			</li>
+		
+			<li>
+				<a href="#property_modelCache">modelCache</a>
+			</li>
+		
+			<li>
+				<a href="#property_overwriteClientAttributes">overwriteClientAttributes</a>
+			</li>
+		
+			<li>
+				<a href="#property_recordCache">recordCache</a>
+			</li>
+		
+			<li>
+				<a href="#property_recordRequestCache">recordRequestCache</a>
+			</li>
+		
+			<li>
+				<a href="#property_reloadDirty">reloadDirty</a>
+			</li>
+		
+			<li>
+				<a href="#property_sideWithClientOnConflict">sideWithClientOnConflict</a>
+			</li>
+		
+	</ul>
+
+
+
+	<h3>Methods</h3>
+
+	<ul class="list-unstyled">
+		
+			<li>
+				<a href="#method_adapterFor">adapterFor</a>
+			</li>
+		
+			<li>
+				<a href="#method_attributeTypeFor">attributeTypeFor</a>
+			</li>
+		
+			<li>
+				<a href="#method_cachedRecordsFor">cachedRecordsFor</a>
+			</li>
+		
+			<li>
+				<a href="#method_createRecord">createRecord</a>
+			</li>
+		
+			<li>
+				<a href="#method_deleteRecord">deleteRecord</a>
+			</li>
+		
+			<li>
+				<a href="#method_deleteRecordFromStore">deleteRecordFromStore</a>
+			</li>
+		
+			<li>
+				<a href="#method_extractPayload">extractPayload</a>
+			</li>
+		
+			<li>
+				<a href="#method_find">find</a>
+			</li>
+		
+			<li>
+				<a href="#method_getLiveRecordArray">getLiveRecordArray</a>
+			</li>
+		
+			<li>
+				<a href="#method_getRecord">getRecord</a>
+			</li>
+		
+			<li>
+				<a href="#method_modelFor">modelFor</a>
+			</li>
+		
+			<li>
+				<a href="#method_pushPayload">pushPayload</a>
+			</li>
+		
+			<li>
+				<a href="#method_reloadRecord">reloadRecord</a>
+			</li>
+		
+			<li>
+				<a href="#method_saveRecord">saveRecord</a>
+			</li>
+		
+			<li>
+				<a href="#method_serializerFor">serializerFor</a>
+			</li>
+		
+			<li>
+				<a href="#method_unloadRecord">unloadRecord</a>
+			</li>
+		
+			<li>
+				<a href="#method_updateRecord">updateRecord</a>
+			</li>
+		
+	</ul>
+			</div>
+			<div class="tab-pane" id="properties">
+				<div class="api-property" id="property_adapterCache">
+		<h4 class="property-name">
+			<strong>adapterCache</strong>
+			<small>
+				<a>&#123;Object&#125;</a>
+				
+				
+					<code>read only</code>
+				
+				
+					<code>private</code>
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/store/lookup.js#L38">
+				src/store/lookup.js:38
+			</a>
+		</small>
+		<p><p>Stores serializers as they&#39;re looked up in the container.</p>
+</p>
+
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-property" id="property_attributeTypeCache">
+		<h4 class="property-name">
+			<strong>attributeTypeCache</strong>
+			<small>
+				<a>&#123;{Object}&#125;</a>
+				
+				
+					<code>read only</code>
+				
+				
+					<code>private</code>
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/store/lookup.js#L19">
+				src/store/lookup.js:19
+			</a>
+		</small>
+		<p><p>Stores attribute types as they&#39;re looked up in the container.</p>
+</p>
+
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-property" id="property_cacheTimeout">
+		<h4 class="property-name">
+			<strong>cacheTimeout</strong>
+			<small>
+				<a>&#123;Number&#125;</a>
+				
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/store/store.js#L24">
+				src/store/store.js:24
+			</a>
+		</small>
+		<p><p>The number of milliseconds after a record in the cache expires
+and must be re-fetched from the server. Leave at Infinity for
+now, as finite timeouts will likely cause a lot of bugs.</p>
+</p>
+
+		
+			<span>
+				<strong>Default:</strong> <code>Infinity</code>
+			</span>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-property" id="property_modelCache">
+		<h4 class="property-name">
+			<strong>modelCache</strong>
+			<small>
+				<a>&#123;{Object}&#125;</a>
+				
+				
+					<code>read only</code>
+				
+				
+					<code>private</code>
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/store/lookup.js#L7">
+				src/store/lookup.js:7
+			</a>
+		</small>
+		<p><p>Stores the models used so far. This not ony caches them so we don&#39;t
+have to hit the container, but it also let&#39;s use know that the
+typeKey has been property injected into them.</p>
+</p>
+
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-property" id="property_overwriteClientAttributes">
+		<h4 class="property-name">
+			<strong>overwriteClientAttributes</strong>
+			<small>
+				<a>&#123;Boolean&#125;</a>
+				
+				
+					<code>read only</code>
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/store/store.js#L77">
+				src/store/store.js:77
+			</a>
+		</small>
+		<p><p>If reloadDirty is true, this will overwrite client attributes on
+reload. Because of the more simplistic nature of attributes, it is
+recommended to keep this false. The server data will still be loaded
+into the record and can be activated at any time by rolling back
+attribute changes on the record.</p>
+</p>
+
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-property" id="property_recordCache">
+		<h4 class="property-name">
+			<strong>recordCache</strong>
+			<small>
+				<a>&#123;{RecordCache}&#125;</a>
+				
+				
+					<code>read only</code>
+				
+				
+					<code>private</code>
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/store/store.js#L91">
+				src/store/store.js:91
+			</a>
+		</small>
+		<p><p>Contains the records cached in the store. The keys are type names,
+and the values are nested objects keyed at the ID of the record.</p>
+</p>
+
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-property" id="property_recordRequestCache">
+		<h4 class="property-name">
+			<strong>recordRequestCache</strong>
+			<small>
+				<a>&#123;{RecordRequestCache}&#125;</a>
+				
+				
+					<code>read only</code>
+				
+				
+					<code>private</code>
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/store/store.js#L102">
+				src/store/store.js:102
+			</a>
+		</small>
+		<p><p>Contains currently pending requests for records.
+This allows us to chain duplicated requests.</p>
+</p>
+
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-property" id="property_reloadDirty">
+		<h4 class="property-name">
+			<strong>reloadDirty</strong>
+			<small>
+				<a>&#123;Boolean&#125;</a>
+				
+				
+					<code>read only</code>
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/store/store.js#L35">
+				src/store/store.js:35
+			</a>
+		</small>
+		<p><p>A boolean for whether or not to reload dirty records. If this is
+true, data from the server will be merged with the data on the
+client according to the other options defined on this class.
+If it&#39;s false, calling reload on a dirty record will throw an
+error, and any side loaded data from the server will be discarded.</p>
+<p>Note: If this is turned off, no relationship can be reloaded if
+either of the records is dirty. So if the server says that
+record 1 is connected to record 2, and you reload record 1, which
+is clean, Ember-Graph will abort the reload if record 2 is dirty.
+This is a particularly annoying corner case that can be mostly
+avoided in two ways: either enable reloadDirty, or ensure that
+records are changed and then saved or rollback back in the same
+&#39;action&#39;. (Don&#39;t let users perform different modifications at
+the same time.)</p>
+</p>
+
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-property" id="property_sideWithClientOnConflict">
+		<h4 class="property-name">
+			<strong>sideWithClientOnConflict</strong>
+			<small>
+				<a>&#123;Boolean&#125;</a>
+				
+				
+					<code>read only</code>
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/store/store.js#L59">
+				src/store/store.js:59
+			</a>
+		</small>
+		<p><p>If reloadDirty is true, this determines which side the store will
+settle conflicts for. If true, new client side relationships always
+take precedence over server side relationships loaded when the
+record is dirty. If false, server side relationships will overwrite
+any temporary client side relationships on reload.</p>
+<p>Note: This only affects relationships. Attributes aren&#39;t as tricky,
+so the server data can be loaded without affecting the client data.
+To have the server overwrite client data, use the option below.</p>
+</p>
+
+		
+	</div>
+			</div>
+			<div class="tab-pane" id="methods">
+				<div class="api-method" id="method_adapterFor">
+		<h4 class="property-name">
+			<strong>adapterFor</strong>
+			<small>
+				<span>
+					(typeKey)
+				</span>
+				
+					<a>&#123;Adapter&#125;</a>
+				
+				
+				
+				
+					<code>protected</code>
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/store/lookup.js#L106">
+				src/store/lookup.js:106
+			</a>
+		</small>
+		<p><p>Gets the adapter for the specified type. First, it looks for a type-specific
+adapter. If one isn&#39;t found, it looks for the application adapter. If that
+isn&#39;t found, it uses the default <a href="/api/RESTAdapter.html">RESTAdapter</a>.</p>
+<p>Note that this method will cache the results, so your adapter configuration
+must be finalized before the app starts up.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>typeKey</strong>
+						<small>
+							<a>&#123;String&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Adapter&#125;</a><br>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_attributeTypeFor">
+		<h4 class="property-name">
+			<strong>attributeTypeFor</strong>
+			<small>
+				<span>
+					(typeName)
+				</span>
+				
+					<a>&#123;AttributeType&#125;</a>
+				
+				
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/store/lookup.js#L85">
+				src/store/lookup.js:85
+			</a>
+		</small>
+		<p><p>Returns an <code>AttributeType</code> instance for the given named type.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>typeName</strong>
+						<small>
+							<a>&#123;String&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;AttributeType&#125;</a><br>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_cachedRecordsFor">
+		<h4 class="property-name">
+			<strong>cachedRecordsFor</strong>
+			<small>
+				<span>
+					(typeKey)
+				</span>
+				
+					<a>&#123;Model[]&#125;</a>
+				
+				
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/store/store.js#L140">
+				src/store/store.js:140
+			</a>
+		</small>
+		<p><p>Returns all records of the given type that are in the cache.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>typeKey</strong>
+						<small>
+							<a>&#123;String&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Model[]&#125;</a><br>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_createRecord">
+		<h4 class="property-name">
+			<strong>createRecord</strong>
+			<small>
+				<span>
+					(typeKey, json)
+				</span>
+				
+					<a>&#123;Model&#125;</a>
+				
+				
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/store/store.js#L120">
+				src/store/store.js:120
+			</a>
+		</small>
+		<p><p>Creates a record of the specified type. The record starts in a blank
+state, meaning all attributes are <code>undefined</code>, all hasOne relationships
+are <code>null</code> and all hasMany relationships are <code>[]</code>. But before the record
+can be saved to the server, all relationships and attributes must be
+initialized (except for <code>serverOnly</code> ones). Even optional attributes
+and relationships must have their values filled in explicitly.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>typeKey</strong>
+						<small>
+							<a>&#123;String&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>json</strong>
+						<small>
+							<a>&#123;Object&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Model&#125;</a><br>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_deleteRecord">
+		<h4 class="property-name">
+			<strong>deleteRecord</strong>
+			<small>
+				<span>
+					(record)
+				</span>
+				
+					<a>&#123;Promise&#125;</a>
+				
+				
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/store/store.js#L446">
+				src/store/store.js:446
+			</a>
+		</small>
+		<p><p>Deletes a record from the server.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>record</strong>
+						<small>
+							<a>&#123;Model&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Promise&#125;</a><br>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_deleteRecordFromStore">
+		<h4 class="property-name">
+			<strong>deleteRecordFromStore</strong>
+			<small>
+				<span>
+					(typeKey, id)
+				</span>
+				
+				
+				
+					<code>private</code>
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/store/store.js#L472">
+				src/store/store.js:472
+			</a>
+		</small>
+		<p><p>Deletes a record from the store, removing its relationships and unloading it.
+This should only be used when a record has already been deleted from the server.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>typeKey</strong>
+						<small>
+							<a>&#123;String&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>id</strong>
+						<small>
+							<a>&#123;String&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_extractPayload">
+		<h4 class="property-name">
+			<strong>extractPayload</strong>
+			<small>
+				<span>
+					()
+				</span>
+				
+				
+				
+				
+				
+					<code>deprecated</code>
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/store/store.js#L507">
+				src/store/store.js:507
+			</a>
+		</small>
+		<p></p>
+
+		
+
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_find">
+		<h4 class="property-name">
+			<strong>find</strong>
+			<small>
+				<span>
+					(typeKey, options)
+				</span>
+				
+					<a>&#123;PromiseObject|PromiseArray&#125;</a>
+				
+				
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/store/store.js#L179">
+				src/store/store.js:179
+			</a>
+		</small>
+		<p><p>Fetches a record (or records), either from the cache or from the server.
+The type of <code>options</code> determines the behavior of this method:</p>
+<ul>
+<li><code>string</code> fetches a single record by ID</li>
+<li><code>string[]</code> fetches several records by the IDs</li>
+<li><code>object</code> fetches records according to the given query object</li>
+<li><code>undefined</code> fetches all records of the given type</li>
+</ul>
+<p>Any other value, including <code>null</code>, will result in an error being thrown.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>typeKey</strong>
+						<small>
+							<a>&#123;String&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>options</strong>
+						<small>
+							<a>&#123;String|String[]|Object&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;PromiseObject|PromiseArray&#125;</a><br>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_getLiveRecordArray">
+		<h4 class="property-name">
+			<strong>getLiveRecordArray</strong>
+			<small>
+				<span>
+					(typeKey)
+				</span>
+				
+					<a>&#123;Model[]&#125;</a>
+				
+				
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/store/store.js#L164">
+				src/store/store.js:164
+			</a>
+		</small>
+		<p><p>Returns an array containing all of the cached records for the
+given type. The array will be updated as more records of the
+type are cached. This will contain <em>all</em> records of that type,
+new and saved. This method will always return the same array
+for a type.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>typeKey</strong>
+						<small>
+							<a>&#123;String&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Model[]&#125;</a><br>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_getRecord">
+		<h4 class="property-name">
+			<strong>getRecord</strong>
+			<small>
+				<span>
+					(typeKey, id)
+				</span>
+				
+					<a>&#123;Model&#125;</a>
+				
+				
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/store/store.js#L151">
+				src/store/store.js:151
+			</a>
+		</small>
+		<p><p>Returns the record directly if the record is cached in the store.
+Otherwise returns <code>null</code>.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>typeKey</strong>
+						<small>
+							<a>&#123;String&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>id</strong>
+						<small>
+							<a>&#123;String&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Model&#125;</a><br>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_modelFor">
+		<h4 class="property-name">
+			<strong>modelFor</strong>
+			<small>
+				<span>
+					(typeKey)
+				</span>
+				
+					<a>&#123;Class&#125;</a>
+				
+				
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/store/lookup.js#L59">
+				src/store/lookup.js:59
+			</a>
+		</small>
+		<p><p>Looks up the model for the specified typeKey. The <code>typeKey</code> property
+isn&#39;t available on the class or its instances until the type is
+looked up with this method for the first time.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>typeKey</strong>
+						<small>
+							<a>&#123;String&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Class&#125;</a><br>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_pushPayload">
+		<h4 class="property-name">
+			<strong>pushPayload</strong>
+			<small>
+				<span>
+					(payload)
+				</span>
+				
+				
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/store/store.js#L513">
+				src/store/store.js:513
+			</a>
+		</small>
+		<p><p>Takes a normalized payload from the server and load the
+record into the store. This format is called normalized JSON
+and allows you to easily load multiple records in at once.
+Normalized JSON is a single object that contains keys that are
+model type names, and whose values are arrays of JSON records.
+In addition, there is a single <code>meta</code> key that contains some
+extra information that the store may need. For example, say
+that the following models were defined:</p>
+<pre><code class="lang-js"><span class="hljs-filename">App.Post = EG.Model.extend({
+    title</span>: <span class="hljs-filename">EG.attr({ type</span>: <span class="hljs-string">'string'</span> }),
+    tags: <span class="hljs-filename">EG.hasMany({ relatedType</span>: <span class="hljs-string">'tag'</span>, inverse: null })
+});
+
+<span class="hljs-filename">App.Tag = EG.Model.extend({
+    name</span>: <span class="hljs-filename">EG.attr({ type</span>: <span class="hljs-string">'string'</span> })
+});
+</code></pre>
+<p>A normalized JSON payload for these models might look like this:</p>
+<pre><code class="lang-json">{
+    <span class="hljs-string">"post"</span>: [
+        {
+            <span class="hljs-property">id</span>: <span class="hljs-string">"1"</span>,
+            title: <span class="hljs-string">"Introduction To Ember-Graph"</span>,
+            tags: []
+        },
+        {
+            <span class="hljs-property">id</span>: <span class="hljs-string">"2"</span>,
+            title: <span class="hljs-string">"Defining Models"</span>,
+            tags: [{ <span class="hljs-string">"type"</span>: <span class="hljs-string">"tag"</span>, <span class="hljs-string">"id"</span>: <span class="hljs-string">"1"</span> }, { <span class="hljs-string">"type"</span>: <span class="hljs-string">"tag"</span>, <span class="hljs-string">"id"</span>: <span class="hljs-string">"3"</span> }]
+        },
+        {
+            <span class="hljs-property">id</span>: <span class="hljs-string">"3"</span>,
+            title: <span class="hljs-string">"Connecting to a REST API"</span>,
+            tags: [{ <span class="hljs-string">"type"</span>: <span class="hljs-string">"tag"</span>, <span class="hljs-string">"id"</span>: <span class="hljs-string">"2"</span> }]
+        }
+    ],
+    <span class="hljs-string">"tag"</span>: [
+        { <span class="hljs-property">id</span>: <span class="hljs-string">"1"</span>, <span class="hljs-property">name</span>: <span class="hljs-string">"relationship"</span> },
+        { <span class="hljs-property">id</span>: <span class="hljs-string">"2"</span>, <span class="hljs-property">name</span>: <span class="hljs-string">"adapter"</span> },
+        { <span class="hljs-property">id</span>: <span class="hljs-string">"3"</span>, <span class="hljs-property">name</span>: <span class="hljs-string">"store"</span> }
+    ],
+    <span class="hljs-string">"meta"</span>: {}
+}
+</code></pre>
+<p>Notice that the names of the types are in singular form. Also, the
+records contain all attributes and relationships in the top level.
+In addition, all IDs (either of records or in relationships) must
+be strings, not numbers.</p>
+<p>This format allows records to be easily loaded into the store even
+if they weren&#39;t specifically requested (side-loading). The store
+doesn&#39;t care how or where the records come from, as long as they can
+be converted to this form.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>payload</strong>
+						<small>
+							<a>&#123;Object&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_reloadRecord">
+		<h4 class="property-name">
+			<strong>reloadRecord</strong>
+			<small>
+				<span>
+					(record)
+				</span>
+				
+					<a>&#123;Promise&#125;</a>
+				
+				
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/store/store.js#L489">
+				src/store/store.js:489
+			</a>
+		</small>
+		<p><p>Reloads a record from the server.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>record</strong>
+						<small>
+							<a>&#123;Model&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Promise&#125;</a><br>
+						
+							<span>Resolves to the reloaded record</span>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_saveRecord">
+		<h4 class="property-name">
+			<strong>saveRecord</strong>
+			<small>
+				<span>
+					(record)
+				</span>
+				
+					<a>&#123;Promise&#125;</a>
+				
+				
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/store/store.js#L375">
+				src/store/store.js:375
+			</a>
+		</small>
+		<p><p>Persists a record (new or old) to the server.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>record</strong>
+						<small>
+							<a>&#123;Model&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Promise&#125;</a><br>
+						
+							<span>Resolves to the saved record</span>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_serializerFor">
+		<h4 class="property-name">
+			<strong>serializerFor</strong>
+			<small>
+				<span>
+					(typeKey)
+				</span>
+				
+					<a>&#123;Serializer&#125;</a>
+				
+				
+				
+				
+					<code>protected</code>
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/store/lookup.js#L133">
+				src/store/lookup.js:133
+			</a>
+		</small>
+		<p><p>Gets the serializer for the specified type. First, it looks for a type-specific
+serializer. If one isn&#39;t found, it looks for the application serializer. If that
+isn&#39;t found, it uses the default <a href="/api/JSONSerializer.html">JSONSerializer</a>.</p>
+<p>Note that this method will cache the results, so your serializer configuration
+must be finalized before the app starts up.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>typeKey</strong>
+						<small>
+							<a>&#123;String&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Serializer&#125;</a><br>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_unloadRecord">
+		<h4 class="property-name">
+			<strong>unloadRecord</strong>
+			<small>
+				<span>
+					(record, discardChanges)
+				</span>
+				
+				
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/store/store.js#L614">
+				src/store/store.js:614
+			</a>
+		</small>
+		<p><p>Unloads a record from the store. To get the record, back you must
+fetch it from your server again. If the record is dirty when this
+is called, an error will be thrown unless you set <code>discardChanges</code>
+to <code>true</code>.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>record</strong>
+						<small>
+							<a>&#123;Model&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>discardChanges</strong>
+						<small>
+							<a>&#123;Boolean&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_updateRecord">
+		<h4 class="property-name">
+			<strong>updateRecord</strong>
+			<small>
+				<span>
+					(record)
+				</span>
+				
+					<a>&#123;Promise&#125;</a>
+				
+				
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/store/store.js#L417">
+				src/store/store.js:417
+			</a>
+		</small>
+		<p><p>Saves an old record&#39;s changes to the server.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>record</strong>
+						<small>
+							<a>&#123;Model&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Promise&#125;</a><br>
+						
+							<span>Resolves to the saved record</span>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+			</div>
+		</div>
+	</div>
+			
+		</div>
+	</div>
+</div>
+
+		<footer>
+			<hr>
+			<a class="text-muted">&copy; Copyright Gordon Kristan 2014.</a>
+		</footer>
+
+
+		<script src="../javascripts/jquery.min.js"></script>
+		<script src="../javascripts/bootstrap.min.js"></script>
+		<script src="../javascripts/api.js"></script>
+	</body>
+</html>

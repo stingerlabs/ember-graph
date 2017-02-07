@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html>
+	<head lang="en">
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+
+		<title>Ember-Graph</title>
+
+		<link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600,700,400italic,600italic,700italic'
+		      rel='stylesheet' type='text/css'>
+
+		<!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+		<!--[if lt IE 9]>
+			<script src="//oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="//oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+		<link rel="stylesheet" href="../stylesheets/style.css">
+	</head>
+	<body>
+		<div class="navbar navbar-default navbar-static-top">
+			<div class="container">
+				<div class="navbar-header">
+					<a class="navbar-brand" href="http://ember-graph.com" target="ext">
+						<b>Ember-Graph</b>
+					</a>
+					<a class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+						<span class="glyphicon glyphicon-chevron-down"></span>
+					</a>
+				</div>
+				<div class="navbar-collapse collapse">
+					<ul class="nav navbar-nav">
+						<li><a href="#">About</a></li>
+						<li><a href="#">Guides</a></li>
+						<li class="active"><a href="#">API</a></li>
+						<li><a href="https://ember-graph-builds.s3.amazonaws.com/index.html">Builds</a></li>
+					</ul>
+					<ul class="nav pull-right navbar-nav">
+						<li>
+							<a href="https://github.com/gordonkristan/ember-graph">
+								<i class="fa fa-lg fa-github"></i> View on GitHub
+							</a>
+						</li>
+					</ul>
+				</div>
+			</div>
+		</div>
+
+		<div class="container">
+	<div class="row">
+		<div class="col-md-3 well side-nav">
+			<ul class="list-unstyled">
+	<li>
+		<h4>
+			<strong>Namespaces</strong>
+		</h4>
+	</li>
+	
+		<li class="">
+			<a href="EmberGraph.html">
+				<small>EmberGraph</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="String.html">
+				<small>String</small>
+			</a>
+		</li>
+	
+</ul>
+
+<ul class="list-unstyled">
+	<li>
+		<h4>
+			<strong>Classes</strong>
+		</h4>
+	</li>
+	
+		<li class="">
+			<a href="Adapter.html">
+				<small>Adapter</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="ArrayType.html">
+				<small>ArrayType</small>
+			</a>
+		</li>
+	
+		<li class="active">
+			<a href="AttributeType.html">
+				<small>AttributeType</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="BooleanType.html">
+				<small>BooleanType</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="CoreModel.html">
+				<small>CoreModel</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="DataAdapter.html">
+				<small>DataAdapter</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="DateType.html">
+				<small>DateType</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="EmberGraphAdapter.html">
+				<small>EmberGraphAdapter</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="EmberGraphSerializer.html">
+				<small>EmberGraphSerializer</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="EnumType.html">
+				<small>EnumType</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="JSONSerializer.html">
+				<small>JSONSerializer</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="LocalStorageAdapter.html">
+				<small>LocalStorageAdapter</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="MemoryAdapter.html">
+				<small>MemoryAdapter</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="Model.html">
+				<small>Model</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="ModelPromiseObject.html">
+				<small>ModelPromiseObject</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="NumberType.html">
+				<small>NumberType</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="ObjectType.html">
+				<small>ObjectType</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="PromiseArray.html">
+				<small>PromiseArray</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="PromiseObject.html">
+				<small>PromiseObject</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="RESTAdapter.html">
+				<small>RESTAdapter</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="Serializer.html">
+				<small>Serializer</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="Store.html">
+				<small>Store</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="StringType.html">
+				<small>StringType</small>
+			</a>
+		</li>
+	
+</ul>
+		</div>
+		<div class="col-md-9 api-contents">
+			
+				
+					<div class="api-page-header">
+						<h1>
+							<i class="fa fa-code"></i> AttributeType Class
+						</h1>
+						<hr>
+					</div>
+
+					<div class="api-metadata">
+						
+
+						
+
+						<strong>Defined in:</strong>
+						<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/attribute_type/type.js#L3">
+							src/attribute_type/type.js:3
+						</a>
+					</div>
+					<br>
+					<p><p>Specifies the details of a custom attribute type.
+Comes with reasonable defaults that can be used for some extended types.</p>
+</p>
+				
+			
+
+			
+
+			
+				<div class="api-index">
+		<ul class="nav nav-tabs nav-justified">
+			<li>
+				<a href="#index">Index</a>
+			</li>
+			<li>
+				<a href="#properties">Properties</a>
+			</li>
+			<li>
+				<a href="#methods">Methods</a>
+			</li>
+		</ul>
+
+		<div class="tab-content contents">
+			<div class="tab-pane active" id="index">
+				<h3>Properties</h3>
+
+	<ul class="list-unstyled">
+		
+			<li>
+				<a href="#property_defaultValue">defaultValue</a>
+			</li>
+		
+	</ul>
+
+
+
+	<h3>Methods</h3>
+
+	<ul class="list-unstyled">
+		
+			<li>
+				<a href="#method_deserialize">deserialize</a>
+			</li>
+		
+			<li>
+				<a href="#method_isEqual">isEqual</a>
+			</li>
+		
+			<li>
+				<a href="#method_serialize">serialize</a>
+			</li>
+		
+	</ul>
+			</div>
+			<div class="tab-pane" id="properties">
+				<div class="api-property" id="property_defaultValue">
+		<h4 class="property-name">
+			<strong>defaultValue</strong>
+			<small>
+				<a>&#123;Any&#125;</a>
+				
+				
+					<code>read only</code>
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/attribute_type/type.js#L12">
+				src/attribute_type/type.js:12
+			</a>
+		</small>
+		<p><p>The default value to use if a value of this type is missing.
+Can be overridden in subclasses.</p>
+</p>
+
+		
+			<span>
+				<strong>Default:</strong> <code>null</code>
+			</span>
+		
+	</div>
+			</div>
+			<div class="tab-pane" id="methods">
+				<div class="api-method" id="method_deserialize">
+		<h4 class="property-name">
+			<strong>deserialize</strong>
+			<small>
+				<span>
+					(json)
+				</span>
+				
+					<a>&#123;Any&#125;</a>
+				
+				
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/attribute_type/type.js#L35">
+				src/attribute_type/type.js:35
+			</a>
+		</small>
+		<p><p>Converts a JSON value to its Javascript form.
+The default function returns the value given.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>json</strong>
+						<small>
+							<a>&#123;JSON&#125;</a><br>
+							
+								<span>JSON representation of object</span>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Any&#125;</a><br>
+						
+							<span>Javascript value</span>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_isEqual">
+		<h4 class="property-name">
+			<strong>isEqual</strong>
+			<small>
+				<span>
+					(a, b)
+				</span>
+				
+					<a>&#123;Boolean&#125;</a>
+				
+				
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/attribute_type/type.js#L47">
+				src/attribute_type/type.js:47
+			</a>
+		</small>
+		<p><p>Determines if two values of this type are equal.
+Defaults to using <code>===</code>.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>a</strong>
+						<small>
+							<a>&#123;Any&#125;</a><br>
+							
+								<span>Javascript object</span>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>b</strong>
+						<small>
+							<a>&#123;Any&#125;</a><br>
+							
+								<span>Javascript object</span>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Boolean&#125;</a><br>
+						
+							<span>Whether or not the objects are equal or not</span>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_serialize">
+		<h4 class="property-name">
+			<strong>serialize</strong>
+			<small>
+				<span>
+					(obj)
+				</span>
+				
+					<a>&#123;JSON&#125;</a>
+				
+				
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/attribute_type/type.js#L23">
+				src/attribute_type/type.js:23
+			</a>
+		</small>
+		<p><p>Converts a value of this type to its JSON form.
+The default function returns the value given.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>obj</strong>
+						<small>
+							<a>&#123;Any&#125;</a><br>
+							
+								<span>Javascript value</span>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;JSON&#125;</a><br>
+						
+							<span>JSON representation</span>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+			</div>
+		</div>
+	</div>
+			
+		</div>
+	</div>
+</div>
+
+		<footer>
+			<hr>
+			<a class="text-muted">&copy; Copyright Gordon Kristan 2014.</a>
+		</footer>
+
+
+		<script src="../javascripts/jquery.min.js"></script>
+		<script src="../javascripts/bootstrap.min.js"></script>
+		<script src="../javascripts/api.js"></script>
+	</body>
+</html>

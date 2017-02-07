@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html>
+	<head lang="en">
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+
+		<title>Ember-Graph</title>
+
+		<link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:400,600,700,400italic,600italic,700italic'
+		      rel='stylesheet' type='text/css'>
+
+		<!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+		<!--[if lt IE 9]>
+			<script src="//oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="//oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+		<link rel="stylesheet" href="../stylesheets/style.css">
+	</head>
+	<body>
+		<div class="navbar navbar-default navbar-static-top">
+			<div class="container">
+				<div class="navbar-header">
+					<a class="navbar-brand" href="http://ember-graph.com" target="ext">
+						<b>Ember-Graph</b>
+					</a>
+					<a class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+						<span class="glyphicon glyphicon-chevron-down"></span>
+					</a>
+				</div>
+				<div class="navbar-collapse collapse">
+					<ul class="nav navbar-nav">
+						<li><a href="#">About</a></li>
+						<li><a href="#">Guides</a></li>
+						<li class="active"><a href="#">API</a></li>
+						<li><a href="https://ember-graph-builds.s3.amazonaws.com/index.html">Builds</a></li>
+					</ul>
+					<ul class="nav pull-right navbar-nav">
+						<li>
+							<a href="https://github.com/gordonkristan/ember-graph">
+								<i class="fa fa-lg fa-github"></i> View on GitHub
+							</a>
+						</li>
+					</ul>
+				</div>
+			</div>
+		</div>
+
+		<div class="container">
+	<div class="row">
+		<div class="col-md-3 well side-nav">
+			<ul class="list-unstyled">
+	<li>
+		<h4>
+			<strong>Namespaces</strong>
+		</h4>
+	</li>
+	
+		<li class="">
+			<a href="EmberGraph.html">
+				<small>EmberGraph</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="String.html">
+				<small>String</small>
+			</a>
+		</li>
+	
+</ul>
+
+<ul class="list-unstyled">
+	<li>
+		<h4>
+			<strong>Classes</strong>
+		</h4>
+	</li>
+	
+		<li class="active">
+			<a href="Adapter.html">
+				<small>Adapter</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="ArrayType.html">
+				<small>ArrayType</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="AttributeType.html">
+				<small>AttributeType</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="BooleanType.html">
+				<small>BooleanType</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="CoreModel.html">
+				<small>CoreModel</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="DataAdapter.html">
+				<small>DataAdapter</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="DateType.html">
+				<small>DateType</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="EmberGraphAdapter.html">
+				<small>EmberGraphAdapter</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="EmberGraphSerializer.html">
+				<small>EmberGraphSerializer</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="EnumType.html">
+				<small>EnumType</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="JSONSerializer.html">
+				<small>JSONSerializer</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="LocalStorageAdapter.html">
+				<small>LocalStorageAdapter</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="MemoryAdapter.html">
+				<small>MemoryAdapter</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="Model.html">
+				<small>Model</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="ModelPromiseObject.html">
+				<small>ModelPromiseObject</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="NumberType.html">
+				<small>NumberType</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="ObjectType.html">
+				<small>ObjectType</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="PromiseArray.html">
+				<small>PromiseArray</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="PromiseObject.html">
+				<small>PromiseObject</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="RESTAdapter.html">
+				<small>RESTAdapter</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="Serializer.html">
+				<small>Serializer</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="Store.html">
+				<small>Store</small>
+			</a>
+		</li>
+	
+		<li class="">
+			<a href="StringType.html">
+				<small>StringType</small>
+			</a>
+		</li>
+	
+</ul>
+		</div>
+		<div class="col-md-9 api-contents">
+			
+				
+					<div class="api-page-header">
+						<h1>
+							<i class="fa fa-code"></i> Adapter Class
+						</h1>
+						<hr>
+					</div>
+
+					<div class="api-metadata">
+						
+
+						
+
+						<strong>Defined in:</strong>
+						<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/adapter/adapter.js#L5">
+							src/adapter/adapter.js:5
+						</a>
+					</div>
+					<br>
+					<p><p>An interface for an adapter. And adapter is used to communicate with
+the server. The adapter is never called directly, its methods are
+called by the store to perform its operations.</p>
+<p>The adapter should return normalized JSON from its operations. Details
+about normalized JSON can be found in the <a href="/api/Store.html#method_pushPayload">pushPayload</a>
+documentation.</p>
+</p>
+				
+			
+
+			
+
+			
+				<div class="api-index">
+		<ul class="nav nav-tabs nav-justified">
+			<li>
+				<a href="#index">Index</a>
+			</li>
+			<li>
+				<a href="#properties">Properties</a>
+			</li>
+			<li>
+				<a href="#methods">Methods</a>
+			</li>
+		</ul>
+
+		<div class="tab-content contents">
+			<div class="tab-pane active" id="index">
+				<h3>Properties</h3>
+
+	<ul class="list-unstyled">
+		
+			<li>
+				<a href="#property_store">store</a>
+			</li>
+		
+	</ul>
+
+
+
+	<h3>Methods</h3>
+
+	<ul class="list-unstyled">
+		
+			<li>
+				<a href="#method_createRecord">createRecord</a>
+			</li>
+		
+			<li>
+				<a href="#method_deleteRecord">deleteRecord</a>
+			</li>
+		
+			<li>
+				<a href="#method_deserialize">deserialize</a>
+			</li>
+		
+			<li>
+				<a href="#method_findAll">findAll</a>
+			</li>
+		
+			<li>
+				<a href="#method_findMany">findMany</a>
+			</li>
+		
+			<li>
+				<a href="#method_findQuery">findQuery</a>
+			</li>
+		
+			<li>
+				<a href="#method_findRecord">findRecord</a>
+			</li>
+		
+			<li>
+				<a href="#method_serialize">serialize</a>
+			</li>
+		
+			<li>
+				<a href="#method_serializerFor">serializerFor</a>
+			</li>
+		
+			<li>
+				<a href="#method_updateRecord">updateRecord</a>
+			</li>
+		
+	</ul>
+			</div>
+			<div class="tab-pane" id="properties">
+				<div class="api-property" id="property_store">
+		<h4 class="property-name">
+			<strong>store</strong>
+			<small>
+				<a>&#123;Store&#125;</a>
+				
+				
+					<code>read only</code>
+				
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/adapter/adapter.js#L20">
+				src/adapter/adapter.js:20
+			</a>
+		</small>
+		<p><p>The store that this adapter belongs to.
+This might be needed to get models and their metadata.</p>
+</p>
+
+		
+	</div>
+			</div>
+			<div class="tab-pane" id="methods">
+				<div class="api-method" id="method_createRecord">
+		<h4 class="property-name">
+			<strong>createRecord</strong>
+			<small>
+				<span>
+					(record)
+				</span>
+				
+					<a>&#123;Promise&#125;</a>
+				
+				
+				
+				
+				
+				
+					<code>abstract</code>
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/adapter/adapter.js#L30">
+				src/adapter/adapter.js:30
+			</a>
+		</small>
+		<p><p>Persists a record to the server. The returned JSON
+must include the <code>newId</code> meta attribute as described
+<a href="/api/Serializer.html#method_deserialize">here</a>.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>record</strong>
+						<small>
+							<a>&#123;Model&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Promise&#125;</a><br>
+						
+							<span>Resolves to the normalized JSON</span>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_deleteRecord">
+		<h4 class="property-name">
+			<strong>deleteRecord</strong>
+			<small>
+				<span>
+					(record)
+				</span>
+				
+					<a>&#123;Promise&#125;</a>
+				
+				
+				
+				
+				
+				
+					<code>abstract</code>
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/adapter/adapter.js#L97">
+				src/adapter/adapter.js:97
+			</a>
+		</small>
+		<p><p>Deletes the record.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>record</strong>
+						<small>
+							<a>&#123;Model&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Promise&#125;</a><br>
+						
+							<span>Resolves to the normalized JSON</span>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_deserialize">
+		<h4 class="property-name">
+			<strong>deserialize</strong>
+			<small>
+				<span>
+					(payload, options)
+				</span>
+				
+					<a>&#123;Object&#125;</a>
+				
+				
+				
+				
+					<code>protected</code>
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/adapter/adapter.js#L135">
+				src/adapter/adapter.js:135
+			</a>
+		</small>
+		<p><p>Deserializes the given payload. By default, it defers to the serializer.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>payload</strong>
+						<small>
+							<a>&#123;JSON&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>options</strong>
+						<small>
+							<a>&#123;Object&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Object&#125;</a><br>
+						
+							<span>Normalized JSON payload</span>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_findAll">
+		<h4 class="property-name">
+			<strong>findAll</strong>
+			<small>
+				<span>
+					(typeKey)
+				</span>
+				
+					<a>&#123;Promise&#125;</a>
+				
+				
+				
+				
+				
+				
+					<code>abstract</code>
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/adapter/adapter.js#L64">
+				src/adapter/adapter.js:64
+			</a>
+		</small>
+		<p><p>The same as find, only it should load all records of the given type.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>typeKey</strong>
+						<small>
+							<a>&#123;String&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Promise&#125;</a><br>
+						
+							<span>Resolves to the normalized JSON</span>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_findMany">
+		<h4 class="property-name">
+			<strong>findMany</strong>
+			<small>
+				<span>
+					(typeKey, ids)
+				</span>
+				
+					<a>&#123;Promise&#125;</a>
+				
+				
+				
+				
+				
+				
+					<code>abstract</code>
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/adapter/adapter.js#L53">
+				src/adapter/adapter.js:53
+			</a>
+		</small>
+		<p><p>The same as find, only it should load several records.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>typeKey</strong>
+						<small>
+							<a>&#123;String&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>ids</strong>
+						<small>
+							<a>&#123;String[]&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Promise&#125;</a><br>
+						
+							<span>Resolves to the normalized JSON</span>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_findQuery">
+		<h4 class="property-name">
+			<strong>findQuery</strong>
+			<small>
+				<span>
+					(typeKey, query)
+				</span>
+				
+					<a>&#123;Promise&#125;</a>
+				
+				
+				
+				
+				
+				
+					<code>abstract</code>
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/adapter/adapter.js#L74">
+				src/adapter/adapter.js:74
+			</a>
+		</small>
+		<p><p>Queries the server for records of the given type. The resolved
+JSON should include the <code>queryIds</code> meta attribute as
+described <a href="/api/Serializer.html#method_deserialize">here</a>.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>typeKey</strong>
+						<small>
+							<a>&#123;String&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>query</strong>
+						<small>
+							<a>&#123;Object&#125;</a><br>
+							
+								<span>The query object passed into the store&#39;s <code>find</code> method</span>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Promise&#125;</a><br>
+						
+							<span>Resolves to the normalized JSON</span>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_findRecord">
+		<h4 class="property-name">
+			<strong>findRecord</strong>
+			<small>
+				<span>
+					(typeKey, id)
+				</span>
+				
+					<a>&#123;Promise&#125;</a>
+				
+				
+				
+				
+				
+				
+					<code>abstract</code>
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/adapter/adapter.js#L42">
+				src/adapter/adapter.js:42
+			</a>
+		</small>
+		<p><p>Fetch a record from the server.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>typeKey</strong>
+						<small>
+							<a>&#123;String&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>id</strong>
+						<small>
+							<a>&#123;String&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Promise&#125;</a><br>
+						
+							<span>Resolves to the normalized JSON</span>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_serialize">
+		<h4 class="property-name">
+			<strong>serialize</strong>
+			<small>
+				<span>
+					(record, options)
+				</span>
+				
+					<a>&#123;Object&#125;</a>
+				
+				
+				
+				
+					<code>protected</code>
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/adapter/adapter.js#L122">
+				src/adapter/adapter.js:122
+			</a>
+		</small>
+		<p><p>Serializes the given record. By default, it defers to the serializer.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>record</strong>
+						<small>
+							<a>&#123;Model&#125;</a><br>
+							
+						</small>
+					</li>
+				
+					<li>
+						<strong>options</strong>
+						<small>
+							<a>&#123;Object&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Object&#125;</a><br>
+						
+							<span>Serialized record</span>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_serializerFor">
+		<h4 class="property-name">
+			<strong>serializerFor</strong>
+			<small>
+				<span>
+					(typeKey)
+				</span>
+				
+					<a>&#123;Serializer&#125;</a>
+				
+				
+				
+				
+					<code>protected</code>
+				
+				
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/adapter/adapter.js#L107">
+				src/adapter/adapter.js:107
+			</a>
+		</small>
+		<p><p>Gets the serializer specified for a type. It first tries to get
+a type-specific serializer. If it can&#39;t find one, it tries to use
+the application serializer. If it can&#39;t find one, it uses the default
+<a href="/api/JSONSerializer.html">JSONSerializer</a>.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>typeKey</strong>
+						<small>
+							<a>&#123;String&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Serializer&#125;</a><br>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+
+	
+		<hr>
+	
+
+	<div class="api-method" id="method_updateRecord">
+		<h4 class="property-name">
+			<strong>updateRecord</strong>
+			<small>
+				<span>
+					(record)
+				</span>
+				
+					<a>&#123;Promise&#125;</a>
+				
+				
+				
+				
+				
+				
+					<code>abstract</code>
+				
+			</small>
+		</h4>
+		<small>Defined in:
+			<a href="https://github.com/gordonkristan/ember-graph/blob/master/src/adapter/adapter.js#L87">
+				src/adapter/adapter.js:87
+			</a>
+		</small>
+		<p><p>Saves the record&#39;s changes to the server.</p>
+</p>
+
+		
+			<h4><strong>Parameters</strong>:</h4>
+			<ul class="list-unstyled parameter-list">
+				
+					<li>
+						<strong>record</strong>
+						<small>
+							<a>&#123;Model&#125;</a><br>
+							
+						</small>
+					</li>
+				
+			</ul>
+		
+
+		
+			<h4><strong>Returns</strong>:</h4>
+			<ul class="list-unstyled return-value">
+				<li>
+					<small>
+						<a>&#123;Promise&#125;</a><br>
+						
+							<span>Resolves to the normalized JSON</span>
+						
+					</small>
+				</li>
+			</ul>
+		
+	</div>
+			</div>
+		</div>
+	</div>
+			
+		</div>
+	</div>
+</div>
+
+		<footer>
+			<hr>
+			<a class="text-muted">&copy; Copyright Gordon Kristan 2014.</a>
+		</footer>
+
+
+		<script src="../javascripts/jquery.min.js"></script>
+		<script src="../javascripts/bootstrap.min.js"></script>
+		<script src="../javascripts/api.js"></script>
+	</body>
+</html>
