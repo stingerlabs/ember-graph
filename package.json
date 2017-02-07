@@ -1,7 +1,7 @@
 {
 	"name": "Ember-Graph",
 	"license": "MIT",
-	"version": "1.1.0",
+	"version": "1.1.1",
     "repository": {
       "type": "git",
       "url": "https://github.com/stingerlabs/ember-graph"
