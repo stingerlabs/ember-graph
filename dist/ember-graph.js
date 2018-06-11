@@ -2522,7 +2522,7 @@ define('ember-graph/model/core', ['exports', 'ember', 'ember-graph/util/set', 'e
 				}
 
 				if (value === undefined) {
-					_ember.default.warn('`undefined` is not a valid property value.', { id: 'undefined-invalid-prop' });
+					_ember.default.warn('`undefined` is not a valid property value.', false, { id: 'undefined-invalid-prop' });
 					return;
 				}
 
