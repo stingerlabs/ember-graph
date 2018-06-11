@@ -39,7 +39,7 @@ var createAttribute = function(attributeName, options) {
 			}
 
 			if (value === undefined) {
-				Ember.warn('`undefined` is not a valid property value.');
+				Ember.warn('`undefined` is not a valid property value.', { id: 'undefined-invalid-prop' });
 				return;
 			}
 
