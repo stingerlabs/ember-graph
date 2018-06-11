@@ -8,13 +8,11 @@ import Ember from 'ember';
  *
  * TODO: Remove and use ES6 Set
  */
-export default Ember.CoreObject.extend(Ember.MutableEnumerable, Ember.Copyable, Ember.Freezable, {
+export default Ember.CoreObject.extend(Ember.MutableEnumerable, Ember.Copyable, {
 
 	length: 0,
 
 	clear() {
-		if (this.isFrozen) { throw new Ember.Error(Ember.FROZEN_ERROR); }
-
 		var len = Ember.get(this, 'length');
 		if (len === 0) { return this; }
 
@@ -64,10 +62,6 @@ export default Ember.CoreObject.extend(Ember.MutableEnumerable, Ember.Copyable, 
 	remove: Ember.aliasMethod('removeObject'),
 
 	pop() {
-		if (Ember.get(this, 'isFrozen')) {
-			throw new Ember.Error(Ember.FROZEN_ERROR);
-		}
-
 		var obj = this.length > 0 ? this[this.length-1] : null;
 		this.remove(obj);
 		return obj;
@@ -110,10 +104,6 @@ export default Ember.CoreObject.extend(Ember.MutableEnumerable, Ember.Copyable, 
 	}),
 
 	addObject(obj) {
-		if (Ember.get(this, 'isFrozen')) {
-			throw new Ember.Error(Ember.FROZEN_ERROR);
-		}
-
 		if (Ember.isNone(obj)) {
 			return this; // nothing to do
 		}
@@ -144,10 +134,6 @@ export default Ember.CoreObject.extend(Ember.MutableEnumerable, Ember.Copyable, 
 	},
 
 	removeObject(obj) {
-		if (Ember.get(this, 'isFrozen')) {
-			throw new Ember.Error(Ember.FROZEN_ERROR);
-		}
-
 		if (Ember.isNone(obj)) {
 			return this; // nothing to do
 		}
