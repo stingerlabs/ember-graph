@@ -4674,7 +4674,7 @@ define('ember-graph/model/schema', ['exports', 'ember', 'ember-graph/model/model
       optionsObject = { type: optionsObject };
     }
 
-    _ember.default.deprecate('The `isEqual` method on attributes is deprecated. ' + 'Please use a custom attribute type instead.', !optionsObject.isEqual);
+    _ember.default.deprecate('The `isEqual` method on attributes is deprecated. ' + 'Please use a custom attribute type instead.', !optionsObject.isEqual, { id: 'isEqual', until: '2.0.0' });
 
     return {
       isAttribute: true,
@@ -8086,7 +8086,7 @@ define('ember-graph/util/util', ['exports', 'ember', 'ember-graph/util/set', 'em
    */
   function deprecateMethod(message, method) {
     return function () {
-      _ember.default.deprecate(message);
+      _ember.default.deprecate(message, false, { id: method, until: '2.0.0' });
       this[method].apply(this, arguments);
     };
   }
@@ -8104,7 +8104,7 @@ define('ember-graph/util/util', ['exports', 'ember', 'ember-graph/util/set', 'em
   function deprecateProperty(message, property) {
     return (0, _emberGraphUtilComputed.computed)(property, {
       get: function () {
-        _ember.default.deprecate(message);
+        _ember.default.deprecate(message, false, { id: property, until: '2.0.0' });
         return this.get(property);
       },
       set: function (key, value) {
