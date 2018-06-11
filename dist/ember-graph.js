@@ -6225,7 +6225,7 @@ define('ember-graph/store/record_cache', ['exports', 'ember', 'ember-graph/data/
 
 			var liveRecordArrays = this.get('liveRecordArrays');
 			liveRecordArrays[typeKey] = liveRecordArrays[typeKey] || _ember.default.A();
-			if (!liveRecordArrays[typeKey].contains(record)) {
+			if (!liveRecordArrays[typeKey].includes(record)) {
 				liveRecordArrays[typeKey].addObject(record);
 			}
 		},
@@ -7714,7 +7714,7 @@ define('ember-graph/util/set', ['exports', 'ember'], function (exports, _ember) 
 			}
 
 			while (--loc >= 0) {
-				if (!obj.contains(this[loc])) {
+				if (!obj.includes(this[loc])) {
 					return false;
 				}
 			}
@@ -7743,13 +7743,7 @@ define('ember-graph/util/set', ['exports', 'ember'], function (exports, _ember) 
 		removeEach: _ember.default.aliasMethod('removeObjects'),
 
 		init: function (items) {
-			// Suppress deprecation notices
-			// Also make sure groundskeeper doesn't remove the code
-			var name = 'deprecate';
-			var deprecate = _ember.default[name];
-			_ember.default[name] = function () {};
 			this._super.apply(this, arguments);
-			_ember.default[name] = deprecate;
 
 			if (items) {
 				this.addObjects(items);

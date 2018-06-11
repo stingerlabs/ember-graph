@@ -49,7 +49,7 @@ export default Ember.CoreObject.extend(Ember.MutableEnumerable, Ember.Copyable, 
 		}
 
 		while (--loc >= 0) {
-			if (!obj.contains(this[loc])) {
+			if (!obj.includes(this[loc])) {
 				return false;
 			}
 		}
@@ -78,13 +78,7 @@ export default Ember.CoreObject.extend(Ember.MutableEnumerable, Ember.Copyable, 
 	removeEach: Ember.aliasMethod('removeObjects'),
 
 	init(items) {
-		// Suppress deprecation notices
-		// Also make sure groundskeeper doesn't remove the code
-		const name = 'deprecate';
-		const deprecate = Ember[name];
-		Ember[name] = () => {};
 		this._super(...arguments);
-		Ember[name] = deprecate;
 
 		if (items) {
 			this.addObjects(items);
