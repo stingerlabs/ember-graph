@@ -16,7 +16,7 @@ const EmberGraphDataAdapter = Ember.DataAdapter && Ember.DataAdapter.extend({
 
 	containerDebugAdapter: computed({
 		get() {
-			return this.get('container').lookup('container-debug-adapter:main');
+			return Ember.getOwner(this).lookup('container-debug-adapter:main');
 		}
 	}),
 

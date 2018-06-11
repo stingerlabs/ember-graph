@@ -290,7 +290,7 @@ define('ember-graph/adapter/ember_graph/adapter', ['exports', 'ember', 'ember-gr
    */
 		serializer: (0, _emberGraphUtilComputed.computed)({
 			get: function () {
-				return this.get('container').lookup('serializer:ember_graph');
+				return _ember.default.getOwner(this).lookup('serializer:ember_graph');
 			}
 		}),
 
@@ -2410,7 +2410,8 @@ define('ember-graph/initializer', ['exports', 'ember', 'ember-graph'], function 
 	_ember.default.onLoad('Ember.Application', function (Application) {
 		Application.initializer({
 			name: 'ember-graph',
-			initialize: function (registry, application) {
+			initialize: function () {
+				var application = arguments[1] || arguments[0];
 				_ember.default.libraries.register('Ember Graph');
 
 				var useService = !!_ember.default.Service;
@@ -2458,8 +2459,8 @@ define('ember-graph/initializer', ['exports', 'ember', 'ember-graph'], function 
 			Application.instanceInitializer({
 				name: 'ember-graph',
 				initialize: function (instance) {
-					var application = instance.container.lookup('application:main');
-					var store = instance.container.lookup('store:main');
+					var application = instance.lookup('application:main');
+					var store = instance.lookup('store:main');
 					application.set('store', store);
 				}
 			});
@@ -6055,14 +6056,14 @@ define('ember-graph/store/lookup', ['exports', 'ember', 'ember-graph/util/util']
 			var modelCache = this.get('modelCache');
 
 			if (!modelCache[typeKey]) {
-				var model = this.get('container').lookupFactory('model:' + typeKey);
+				var model = _ember.default.getOwner(this).factoryFor('model:' + typeKey);
 				if (!model) {
 					throw new _ember.default.Error('Cannot find model class with typeKey: ' + typeKey);
 				}
 
-				model.reopen({ typeKey: typeKey });
-				model.reopenClass({ typeKey: typeKey });
-				modelCache[typeKey] = model;
+				model.class.reopen({ typeKey: typeKey });
+				model.class.reopenClass({ typeKey: typeKey });
+				modelCache[typeKey] = model.class;
 			}
 
 			return modelCache[typeKey];
@@ -6079,7 +6080,7 @@ define('ember-graph/store/lookup', ['exports', 'ember', 'ember-graph/util/util']
 			var attributeTypeCache = this.get('attributeTypeCache');
 
 			if (!attributeTypeCache[typeName]) {
-				attributeTypeCache[typeName] = this.get('container').lookup('type:' + typeName);
+				attributeTypeCache[typeName] = _ember.default.getOwner(this).lookup('type:' + typeName);
 
 				if (!attributeTypeCache[typeName]) {
 					throw new _ember.default.Error('Cannot find attribute type with name: ' + typeName);
@@ -6106,7 +6107,7 @@ define('ember-graph/store/lookup', ['exports', 'ember', 'ember-graph/util/util']
 			var adapterCache = this.get('adapterCache');
 
 			if (!adapterCache[typeKey]) {
-				var container = this.get('container');
+				var container = _ember.default.getOwner(this);
 
 				adapterCache[typeKey] = container.lookup('adapter:' + typeKey) || container.lookup('adapter:application') || container.lookup('adapter:rest');
 			}
@@ -6131,7 +6132,7 @@ define('ember-graph/store/lookup', ['exports', 'ember', 'ember-graph/util/util']
 			var serializerCache = this.get('serializerCache');
 
 			if (!serializerCache[typeKey]) {
-				var container = this.get('container');
+				var container = _ember.default.getOwner(this);
 
 				serializerCache[typeKey] = container.lookup('serializer:' + (typeKey || 'application')) || container.lookup('serializer:application') || container.lookup('serializer:json');
 			}
@@ -7429,7 +7430,7 @@ define('ember-graph/util/data_adapter', ['exports', 'ember', 'ember-graph/model/
 
 		containerDebugAdapter: (0, _emberGraphUtilComputed.computed)({
 			get: function () {
-				return this.get('container').lookup('container-debug-adapter:main');
+				return _ember.default.getOwner(this).lookup('container-debug-adapter:main');
 			}
 		}),
 

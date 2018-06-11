@@ -69,14 +69,14 @@ export default {
 		const modelCache = this.get('modelCache');
 
 		if (!modelCache[typeKey]) {
-			const model = this.get('container').lookupFactory(`model:${typeKey}`);
+			const model = Ember.getOwner(this).factoryFor(`model:${typeKey}`);
 			if (!model) {
 				throw new Ember.Error(`Cannot find model class with typeKey: ${typeKey}`);
 			}
 
-			model.reopen({ typeKey });
-			model.reopenClass({ typeKey });
-			modelCache[typeKey] = model;
+			model.class.reopen({ typeKey });
+			model.class.reopenClass({ typeKey });
+			modelCache[typeKey] = model.class;
 		}
 
 		return modelCache[typeKey];
@@ -93,7 +93,7 @@ export default {
 		const attributeTypeCache = this.get('attributeTypeCache');
 
 		if (!attributeTypeCache[typeName]) {
-			attributeTypeCache[typeName] = this.get('container').lookup(`type:${typeName}`);
+			attributeTypeCache[typeName] = Ember.getOwner(this).lookup(`type:${typeName}`);
 
 			if (!attributeTypeCache[typeName]) {
 				throw new Ember.Error(`Cannot find attribute type with name: ${typeName}`);
@@ -120,7 +120,7 @@ export default {
 		const adapterCache = this.get('adapterCache');
 
 		if (!adapterCache[typeKey]) {
-			const container = this.get('container');
+			const container = Ember.getOwner(this);
 
 			adapterCache[typeKey] = container.lookup(`adapter:${typeKey}`) ||
 					container.lookup('adapter:application') ||
@@ -147,7 +147,7 @@ export default {
 		const serializerCache = this.get('serializerCache');
 
 		if (!serializerCache[typeKey]) {
-			const container = this.get('container');
+			const container = Ember.getOwner(this);
 
 			serializerCache[typeKey] =
 					container.lookup('serializer:' + (typeKey || 'application')) ||
