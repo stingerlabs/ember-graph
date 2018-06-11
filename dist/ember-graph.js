@@ -7670,15 +7670,11 @@ define('ember-graph/util/set', ['exports', 'ember'], function (exports, _ember) 
   *
   * TODO: Remove and use ES6 Set
   */
-	exports.default = _ember.default.CoreObject.extend(_ember.default.MutableEnumerable, _ember.default.Copyable, _ember.default.Freezable, {
+	exports.default = _ember.default.CoreObject.extend(_ember.default.MutableEnumerable, _ember.default.Copyable, {
 
 		length: 0,
 
 		clear: function () {
-			if (this.isFrozen) {
-				throw new _ember.default.Error(_ember.default.FROZEN_ERROR);
-			}
-
 			var len = _ember.default.get(this, 'length');
 			if (len === 0) {
 				return this;
@@ -7730,10 +7726,6 @@ define('ember-graph/util/set', ['exports', 'ember'], function (exports, _ember) 
 		remove: _ember.default.aliasMethod('removeObject'),
 
 		pop: function () {
-			if (_ember.default.get(this, 'isFrozen')) {
-				throw new _ember.default.Error(_ember.default.FROZEN_ERROR);
-			}
-
 			var obj = this.length > 0 ? this[this.length - 1] : null;
 			this.remove(obj);
 			return obj;
@@ -7776,10 +7768,6 @@ define('ember-graph/util/set', ['exports', 'ember'], function (exports, _ember) 
 		}),
 
 		addObject: function (obj) {
-			if (_ember.default.get(this, 'isFrozen')) {
-				throw new _ember.default.Error(_ember.default.FROZEN_ERROR);
-			}
-
 			if (_ember.default.isNone(obj)) {
 				return this; // nothing to do
 			}
@@ -7810,10 +7798,6 @@ define('ember-graph/util/set', ['exports', 'ember'], function (exports, _ember) 
 		},
 
 		removeObject: function (obj) {
-			if (_ember.default.get(this, 'isFrozen')) {
-				throw new _ember.default.Error(_ember.default.FROZEN_ERROR);
-			}
-
 			if (_ember.default.isNone(obj)) {
 				return this; // nothing to do
 			}
@@ -7884,7 +7868,7 @@ define('ember-graph/util/set', ['exports', 'ember'], function (exports, _ember) 
 			for (idx = 0; idx < len; idx++) {
 				array[idx] = this[idx];
 			}
-			return _ember.default.fmt('Ember.Set<%@>', [array.join(',')]);
+			return 'Ember.Set<' + array.join(',') + '>';
 		},
 
 		withoutAll: function (items) {
