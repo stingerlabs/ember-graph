@@ -211,7 +211,7 @@ export default Ember.CoreObject.extend(Ember.MutableEnumerable, Ember.Copyable, 
 		for (idx = 0; idx < len; idx++) {
 			array[idx] = this[idx];
 		}
-		return Ember.fmt('Ember.Set<%@>', [array.join(',')]);
+		return 'Ember.Set<' + array.join(',') + '>';
 	},
 
 	withoutAll(items) {
