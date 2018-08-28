@@ -2969,16 +2969,16 @@ define('ember-graph/model/model', ['exports', 'ember', 'ember-graph/model/core',
 		/**
    * Proxies the store's delete method for convenience.
    *
-   * @method destroy
+   * @method destroyRecord
    * @return Promise
    */
-		destroy: function () {
+		destroyRecord: function () {
 			var _this = this;
 
 			this.set('isDeleting', true);
 			return this.get('store').deleteRecord(this).then(function () {
 				_this.set('isDeleted', true);
-				_this.set('store', null);
+				_this.destroy();
 			}).finally(function () {
 				_this.set('isDeleting', false);
 			});
