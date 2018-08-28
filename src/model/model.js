@@ -180,7 +180,6 @@ var Model = CoreModel.extend(Ember.Evented, {
 		this.set('isDeleting', true);
 		return this.get('store').deleteRecord(this).then(function() {
 			_this.set('isDeleted', true);
-			_this.set('store', null);
 		}).finally(function() {
 			_this.set('isDeleting', false);
 		});
