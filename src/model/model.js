@@ -171,10 +171,10 @@ var Model = CoreModel.extend(Ember.Evented, {
 	/**
 	 * Proxies the store's delete method for convenience.
 	 *
-	 * @method destroy
+	 * @method destroyRecord
 	 * @return Promise
 	 */
-	destroy: function() {
+	destroyRecord: function() {
 		var _this = this;
 
 		this.set('isDeleting', true);
