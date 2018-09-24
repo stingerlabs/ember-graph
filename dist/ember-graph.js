@@ -374,7 +374,7 @@ define('ember-graph/adapter/ember_graph/adapter', ['exports', 'ember', 'ember-gr
 	exports.default = EmberGraphAdapter;
 });
 
-define('ember-graph/adapter/ember_graph/database', ['exports', 'ember', 'ember-graph/model/model', 'ember-graph/util/util', 'ember-graph/util/string'], function (exports, _ember, _emberGraphModelModel, _emberGraphUtilUtil, _emberGraphUtilString) {
+define('ember-graph/adapter/ember_graph/database', ['exports', 'ember', 'ember-graph/model/model', 'ember-graph/util/copy', 'ember-graph/util/util', 'ember-graph/util/string'], function (exports, _ember, _emberGraphModelModel, _emberGraphUtilCopy, _emberGraphUtilUtil, _emberGraphUtilString) {
 
 	var ADD_OP_NAME_REGEX = /^\/links\/([^/]+)/i;
 	var REMOVE_OP_REGEX = /^\/links\/([^/]+)\/.+/i;
@@ -486,7 +486,7 @@ define('ember-graph/adapter/ember_graph/database', ['exports', 'ember', 'ember-g
    */
 		getRecordFromDatabase: function (typeKey, id, db) {
 			var model = this.get('store').modelFor(typeKey);
-			var json = _ember.default.copy(db.records[typeKey][id], true);
+			var json = (0, _emberGraphUtilCopy.default)(db.records[typeKey][id], true);
 			json.id = id;
 			json.links = {};
 
@@ -762,7 +762,7 @@ define('ember-graph/adapter/ember_graph/database', ['exports', 'ember', 'ember-g
 	};
 });
 
-define('ember-graph/adapter/ember_graph/load', ['exports', 'ember', 'ember-graph/model/model', 'ember-graph/util/set', 'ember-graph/util/util'], function (exports, _ember, _emberGraphModelModel, _emberGraphUtilSet, _emberGraphUtilUtil) {
+define('ember-graph/adapter/ember_graph/load', ['exports', 'ember', 'ember-graph/model/model', 'ember-graph/util/set', 'ember-graph/util/copy', 'ember-graph/util/util'], function (exports, _ember, _emberGraphModelModel, _emberGraphUtilSet, _emberGraphUtilCopy, _emberGraphUtilUtil) {
 
 	var Promise = _ember.default.RSVP.Promise;
 
@@ -827,7 +827,7 @@ define('ember-graph/adapter/ember_graph/load', ['exports', 'ember', 'ember-graph
 			var payload = this.getInitialPayload();
 
 			try {
-				var db = this.convertAndVerifyPayload(_ember.default.copy(payload, true));
+				var db = this.convertAndVerifyPayload((0, _emberGraphUtilCopy.default)(payload, true));
 				return this.setDatabase(db);
 			} catch (error) {
 				return Promise.reject(error);
@@ -1358,7 +1358,7 @@ define('ember-graph/adapter/memory', ['exports', 'ember', 'ember-graph/adapter/e
 	});
 });
 
-define('ember-graph/adapter/rest', ['exports', 'jquery', 'ember', 'ember-graph/adapter/adapter', 'ember-graph/util/inflector', 'ember-graph/util/computed'], function (exports, _jquery, _ember, _emberGraphAdapterAdapter, _emberGraphUtilInflector, _emberGraphUtilComputed) {
+define('ember-graph/adapter/rest', ['exports', 'jquery', 'ember', 'ember-graph/util/copy', 'ember-graph/adapter/adapter', 'ember-graph/util/inflector', 'ember-graph/util/computed'], function (exports, _jquery, _ember, _emberGraphUtilCopy, _emberGraphAdapterAdapter, _emberGraphUtilInflector, _emberGraphUtilComputed) {
 
 	var Promise = _ember.default.RSVP.Promise;
 
@@ -1581,7 +1581,7 @@ define('ember-graph/adapter/rest', ['exports', 'jquery', 'ember', 'ember-graph/a
 
 		mergePayloads: function (payloads) {
 			var mergeObjects = function (a, b) {
-				var merged = _ember.default.merge(_ember.default.copy(a, true), b);
+				var merged = _ember.default.assign((0, _emberGraphUtilCopy.default)(a, true), b);
 
 				for (var key in b) {
 					if (b.hasOwnProperty(key) && a.hasOwnProperty(key)) {
@@ -3146,7 +3146,7 @@ define('ember-graph/model/model', ['exports', 'ember', 'ember-graph/model/core',
 	exports.default = Model;
 });
 
-define('ember-graph/model/relationship', ['exports', 'ember', 'ember-graph/relationship/relationship', 'ember-graph/relationship/relationship_store', 'ember-graph/util/set', 'ember-graph/util/computed', 'ember-graph/util/util', 'ember-graph/constants'], function (exports, _ember, _emberGraphRelationshipRelationship, _emberGraphRelationshipRelationship_store, _emberGraphUtilSet, _emberGraphUtilComputed, _emberGraphUtilUtil, _emberGraphConstants) {
+define('ember-graph/model/relationship', ['exports', 'ember', 'ember-graph/relationship/relationship', 'ember-graph/relationship/relationship_store', 'ember-graph/util/set', 'ember-graph/util/copy', 'ember-graph/util/computed', 'ember-graph/util/util', 'ember-graph/constants'], function (exports, _ember, _emberGraphRelationshipRelationship, _emberGraphRelationshipRelationship_store, _emberGraphUtilSet, _emberGraphUtilCopy, _emberGraphUtilComputed, _emberGraphUtilUtil, _emberGraphConstants) {
 
 	var HAS_ONE_KEY = _emberGraphConstants.RelationshipTypes.HAS_ONE_KEY;
 	var HAS_MANY_KEY = _emberGraphConstants.RelationshipTypes.HAS_MANY_KEY;
@@ -3270,7 +3270,7 @@ define('ember-graph/model/relationship', ['exports', 'ember', 'ember-graph/relat
 
 			Object.keys(relationships).forEach(function (name) {
 				obj['_' + name] = createRelationship(name, relationships[name].kind, relationships[name].options);
-				var meta = _ember.default.copy(obj['_' + name].meta(), true);
+				var meta = (0, _emberGraphUtilCopy.default)(obj['_' + name].meta(), true);
 				var relatedType = meta.relatedType;
 
 				var relationship;
@@ -3384,19 +3384,21 @@ define('ember-graph/model/relationship', ['exports', 'ember', 'ember-graph/relat
    * @for Model
    */
 		rollbackRelationships: function () {
-			_ember.default.changeProperties(function () {
-				var store = this.get('store');
+			var _this = this;
 
-				var client = this.get('relationships').getRelationshipsByState(CLIENT_STATE);
+			_ember.default.changeProperties(function () {
+				var store = _this.get('store');
+
+				var client = _this.get('relationships').getRelationshipsByState(CLIENT_STATE);
 				client.forEach(function (relationship) {
 					store.deleteRelationship(relationship);
 				});
 
-				var deleted = this.get('relationships').getRelationshipsByState(DELETED_STATE);
+				var deleted = _this.get('relationships').getRelationshipsByState(DELETED_STATE);
 				deleted.forEach(function (relationship) {
 					store.changeRelationshipState(relationship, SERVER_STATE);
 				});
-			}, this);
+			});
 		},
 
 		/**
@@ -3413,6 +3415,8 @@ define('ember-graph/model/relationship', ['exports', 'ember', 'ember-graph/relat
    * @param {String} [polymorphicType] Defaults to declared `relatedType`
    */
 		addToRelationship: function (relationshipName, id, polymorphicType) {
+			var _this2 = this;
+
 			var meta = this.constructor.metaForRelationship(relationshipName);
 			if (meta.kind !== HAS_MANY_KEY) {
 				throw new _ember.default.Error('`addToRelationship` called on hasOne relationship.');
@@ -3423,9 +3427,9 @@ define('ember-graph/model/relationship', ['exports', 'ember', 'ember-graph/relat
 			}
 
 			_ember.default.changeProperties(function () {
-				this.set('initializedRelationships.' + relationshipName, true);
+				_this2.set('initializedRelationships.' + relationshipName, true);
 
-				var store = this.get('store');
+				var store = _this2.get('store');
 
 				// If the type wasn't provided, fill it in based on the inverse
 				if (_ember.default.typeOf(id) !== 'string') {
@@ -3437,12 +3441,12 @@ define('ember-graph/model/relationship', ['exports', 'ember', 'ember-graph/relat
 
 				var otherModel = store.modelFor(polymorphicType);
 				var otherMeta = meta.inverse === null ? null : otherModel.metaForRelationship(meta.inverse);
-				var currentValues = this.getHasManyRelationships(relationshipName, false);
-				var serverValues = this.getHasManyRelationships(relationshipName, true);
+				var currentValues = _this2.getHasManyRelationships(relationshipName, false);
+				var serverValues = _this2.getHasManyRelationships(relationshipName, true);
 
 				// Check to see if the records are already connected
 				for (var i = 0; i < currentValues.length; ++i) {
-					if (currentValues[i].otherType(this) === polymorphicType && currentValues[i].otherId(this) === id) {
+					if (currentValues[i].otherType(_this2) === polymorphicType && currentValues[i].otherId(_this2) === id) {
 						return;
 					}
 				}
@@ -3451,13 +3455,13 @@ define('ember-graph/model/relationship', ['exports', 'ember', 'ember-graph/relat
 				if (meta.inverse === null || otherMeta.kind === HAS_MANY_KEY) {
 					// Check for delete relationships first
 					for (var i = 0; i < serverValues.length; ++i) {
-						if (serverValues[i].otherType(this) === polymorphicType && serverValues[i].otherId(this) === id) {
+						if (serverValues[i].otherType(_this2) === polymorphicType && serverValues[i].otherId(_this2) === id) {
 							store.changeRelationshipState(serverValues[i], SERVER_STATE);
 							return;
 						}
 					}
 
-					store.createRelationship(this.typeKey, this.get('id'), relationshipName, polymorphicType, id, meta.inverse, CLIENT_STATE);
+					store.createRelationship(_this2.typeKey, _this2.get('id'), relationshipName, polymorphicType, id, meta.inverse, CLIENT_STATE);
 
 					return;
 				}
@@ -3472,15 +3476,15 @@ define('ember-graph/model/relationship', ['exports', 'ember', 'ember-graph/relat
 
 				// Check for any deleted relationships that match the one we need
 				for (var i = 0; i < serverValues.length; ++i) {
-					if (serverValues[i].otherType(this) === polymorphicType && serverValues[i].otherId(this) === id) {
+					if (serverValues[i].otherType(_this2) === polymorphicType && serverValues[i].otherId(_this2) === id) {
 						store.changeRelationshipState(serverValues[i], SERVER_STATE);
 						return;
 					}
 				}
 
 				// If all else fails, create a relationship
-				store.createRelationship(this.typeKey, this.get('id'), relationshipName, polymorphicType, id, meta.inverse, CLIENT_STATE);
-			}, this);
+				store.createRelationship(_this2.typeKey, _this2.get('id'), relationshipName, polymorphicType, id, meta.inverse, CLIENT_STATE);
+			});
 		},
 
 		/**
@@ -3497,6 +3501,8 @@ define('ember-graph/model/relationship', ['exports', 'ember', 'ember-graph/relat
    * @param {String} [polymorphicType] Defaults to declared `relatedType`
    */
 		removeFromRelationship: function (relationshipName, id, polymorphicType) {
+			var _this3 = this;
+
 			var meta = this.constructor.metaForRelationship(relationshipName);
 			if (meta.kind !== HAS_MANY_KEY) {
 				throw new _ember.default.Error('`removeFromRelationship` called on hasOne relationship.');
@@ -3515,19 +3521,19 @@ define('ember-graph/model/relationship', ['exports', 'ember', 'ember-graph/relat
 						polymorphicType = meta.relatedType; // eslint-disable-line no-param-reassign
 					}
 
-				var relationships = this.getHasManyRelationships(relationshipName, false);
+				var relationships = _this3.getHasManyRelationships(relationshipName, false);
 				for (var i = 0; i < relationships.length; ++i) {
-					if (relationships[i].otherType(this) === polymorphicType && relationships[i].otherId(this) === id) {
+					if (relationships[i].otherType(_this3) === polymorphicType && relationships[i].otherId(_this3) === id) {
 						if (relationships[i].get('state') === CLIENT_STATE) {
-							this.get('store').deleteRelationship(relationships[i]);
+							_this3.get('store').deleteRelationship(relationships[i]);
 						} else {
-							this.get('store').changeRelationshipState(relationships[i], DELETED_STATE);
+							_this3.get('store').changeRelationshipState(relationships[i], DELETED_STATE);
 						}
 
 						break;
 					}
 				}
-			}, this);
+			});
 		},
 
 		/**
@@ -3544,6 +3550,8 @@ define('ember-graph/model/relationship', ['exports', 'ember', 'ember-graph/relat
    * @param {String} [polymorphicType] Defaults to declared `relatedType`
    */
 		setHasOneRelationship: function (relationshipName, id, polymorphicType) {
+			var _this4 = this;
+
 			var meta = this.constructor.metaForRelationship(relationshipName);
 			if (meta.kind !== HAS_ONE_KEY) {
 				throw new _ember.default.Error('`setHasOneRelationship` called on hasMany relationship.');
@@ -3554,9 +3562,9 @@ define('ember-graph/model/relationship', ['exports', 'ember', 'ember-graph/relat
 			}
 
 			_ember.default.changeProperties(function () {
-				this.set('initializedRelationships.' + relationshipName, true);
+				_this4.set('initializedRelationships.' + relationshipName, true);
 
-				var store = this.get('store');
+				var store = _this4.get('store');
 
 				// If the type wasn't provided, fill it in based on the inverse
 				if (_ember.default.typeOf(id) !== 'string') {
@@ -3568,14 +3576,14 @@ define('ember-graph/model/relationship', ['exports', 'ember', 'ember-graph/relat
 
 				var otherModel = store.modelFor(polymorphicType);
 				var otherMeta = meta.inverse === null ? null : otherModel.metaForRelationship(meta.inverse);
-				var currentRelationships = store.sortHasOneRelationships(this.typeKey, this.get('id'), relationshipName);
+				var currentRelationships = store.sortHasOneRelationships(_this4.typeKey, _this4.get('id'), relationshipName);
 
 				// First make sure they're not already connected
-				if (currentRelationships[SERVER_STATE] && currentRelationships[SERVER_STATE].otherType(this) === polymorphicType && currentRelationships[SERVER_STATE].otherId(this) === id) {
+				if (currentRelationships[SERVER_STATE] && currentRelationships[SERVER_STATE].otherType(_this4) === polymorphicType && currentRelationships[SERVER_STATE].otherId(_this4) === id) {
 					return;
 				}
 
-				if (currentRelationships[CLIENT_STATE] && currentRelationships[CLIENT_STATE].otherType(this) === polymorphicType && currentRelationships[CLIENT_STATE].otherId(this) === id) {
+				if (currentRelationships[CLIENT_STATE] && currentRelationships[CLIENT_STATE].otherType(_this4) === polymorphicType && currentRelationships[CLIENT_STATE].otherId(_this4) === id) {
 					return;
 				}
 
@@ -3592,14 +3600,14 @@ define('ember-graph/model/relationship', ['exports', 'ember', 'ember-graph/relat
 					// Check for a deleted relationship first
 					for (var i = 0; i < currentRelationships[DELETED_STATE].length; ++i) {
 						temp1 = currentRelationships[DELETED_STATE][i];
-						if (temp1.otherType(this) === polymorphicType && temp1.otherId(this) === id) {
+						if (temp1.otherType(_this4) === polymorphicType && temp1.otherId(_this4) === id) {
 							store.changeRelationshipState(temp1, SERVER_STATE);
 							return;
 						}
 					}
 
 					// If we can't find one, just create a new relationship
-					store.createRelationship(this.typeKey, this.get('id'), relationshipName, polymorphicType, id, meta.inverse, CLIENT_STATE);
+					store.createRelationship(_this4.typeKey, _this4.get('id'), relationshipName, polymorphicType, id, meta.inverse, CLIENT_STATE);
 
 					return;
 				}
@@ -3616,15 +3624,15 @@ define('ember-graph/model/relationship', ['exports', 'ember', 'ember-graph/relat
 				var temp2;
 				for (var j = 0; j < currentRelationships[DELETED_STATE].length; ++j) {
 					temp2 = currentRelationships[DELETED_STATE][j];
-					if (temp2.otherType(this) === polymorphicType && temp2.otherId(this) === id) {
+					if (temp2.otherType(_this4) === polymorphicType && temp2.otherId(_this4) === id) {
 						store.changeRelationshipState(temp2, SERVER_STATE);
 						return;
 					}
 				}
 
 				// If all else fails, create a relationship
-				store.createRelationship(this.typeKey, this.get('id'), relationshipName, polymorphicType, id, meta.inverse, CLIENT_STATE);
-			}, this);
+				store.createRelationship(_this4.typeKey, _this4.get('id'), relationshipName, polymorphicType, id, meta.inverse, CLIENT_STATE);
+			});
 		},
 
 		/**
@@ -3635,6 +3643,8 @@ define('ember-graph/model/relationship', ['exports', 'ember', 'ember-graph/relat
    * @param {String} relationshipName
    */
 		clearHasOneRelationship: function (relationshipName) {
+			var _this5 = this;
+
 			var meta = this.constructor.metaForRelationship(relationshipName);
 			if (meta.kind !== HAS_ONE_KEY) {
 				throw new _ember.default.Error('`clearHasOneRelationship` called on hasMany relationship.');
@@ -3645,15 +3655,15 @@ define('ember-graph/model/relationship', ['exports', 'ember', 'ember-graph/relat
 			}
 
 			_ember.default.changeProperties(function () {
-				var relationship = this.getHasOneRelationship(relationshipName, false);
+				var relationship = _this5.getHasOneRelationship(relationshipName, false);
 				if (relationship) {
 					if (relationship.get('state') === CLIENT_STATE) {
-						this.get('store').deleteRelationship(relationship);
+						_this5.get('store').deleteRelationship(relationship);
 					} else {
-						this.get('store').changeRelationshipState(relationship, DELETED_STATE);
+						_this5.get('store').changeRelationshipState(relationship, DELETED_STATE);
 					}
 				}
-			}, this);
+			});
 		},
 
 		/**
@@ -5257,7 +5267,7 @@ define('ember-graph/serializer/ember_graph', ['exports', 'ember-graph/serializer
   });
 });
 
-define('ember-graph/serializer/json', ['exports', 'ember', 'ember-graph/model/model', 'ember-graph/serializer/serializer', 'ember-graph/util/set', 'ember-graph/util/array', 'ember-graph/util/inflector'], function (exports, _ember, _emberGraphModelModel, _emberGraphSerializerSerializer, _emberGraphUtilSet, _emberGraphUtilArray, _emberGraphUtilInflector) {
+define('ember-graph/serializer/json', ['exports', 'ember', 'ember-graph/model/model', 'ember-graph/serializer/serializer', 'ember-graph/util/set', 'ember-graph/util/copy', 'ember-graph/util/array', 'ember-graph/util/inflector'], function (exports, _ember, _emberGraphModelModel, _emberGraphSerializerSerializer, _emberGraphUtilSet, _emberGraphUtilCopy, _emberGraphUtilArray, _emberGraphUtilInflector) {
 
 	/**
   * This serializer was designed to be compatible with the
@@ -5573,7 +5583,7 @@ define('ember-graph/serializer/json', ['exports', 'ember', 'ember-graph/model/mo
 				return {};
 			}
 
-			payload = _ember.default.copy(payload, true);
+			payload = (0, _emberGraphUtilCopy.default)(payload, true);
 
 			var normalized = {
 				meta: {
@@ -7450,6 +7460,126 @@ define('ember-graph/util/computed', ['exports', 'ember', 'ember-graph/util/compa
 	exports.computed = computed;
 });
 
+define('ember-graph/util/copy', ['exports', 'ember', 'ember-graph/util/copyable'], function (exports, _ember, _emberGraphUtilCopyable) {
+  exports.default = copy;
+
+  var assert = _ember.default.assert;
+  var EmberObject = _ember.default.Object;
+
+  function _copy(obj, deep, seen, copies) {
+    // primitive data types are immutable, just return them.
+    if (typeof obj !== 'object' || obj === null) {
+      return obj;
+    }
+
+    var ret = undefined,
+        loc = undefined;
+
+    // avoid cyclical loops
+    if (deep && (loc = seen.indexOf(obj)) >= 0) {
+      return copies[loc];
+    }
+
+    // IMPORTANT: this specific test will detect a native array only. Any other
+    // object will need to implement Copyable.
+    if (Array.isArray(obj)) {
+      ret = obj.slice();
+
+      if (deep) {
+        loc = ret.length;
+
+        while (--loc >= 0) {
+          ret[loc] = _copy(ret[loc], deep, seen, copies);
+        }
+      }
+    } else if (_emberGraphUtilCopyable.default.detect(obj)) {
+      ret = obj.copy(deep, seen, copies);
+    } else if (obj instanceof Date) {
+      ret = new Date(obj.getTime());
+    } else {
+      assert('Cannot clone an EmberObject that does not implement Copyable', !(obj instanceof EmberObject));
+
+      ret = {};
+      var key = undefined;
+      for (key in obj) {
+        // support Null prototype
+        if (!Object.prototype.hasOwnProperty.call(obj, key)) {
+          continue;
+        }
+
+        // Prevents browsers that don't respect non-enumerability from
+        // copying internal Ember properties
+        if (key.substring(0, 2) === '__') {
+          continue;
+        }
+
+        ret[key] = deep ? _copy(obj[key], deep, seen, copies) : obj[key];
+      }
+    }
+    if (deep) {
+      seen.push(obj);
+      copies.push(ret);
+    }
+
+    return ret;
+  }
+
+  /**
+    Creates a shallow copy of the passed object. A deep copy of the object is
+    returned if the optional `deep` argument is `true`.
+  
+    If the passed object implements the `Copyable` interface, then this
+    function will delegate to the object's `copy()` method and return the
+    result. See `Copyable` for further details.
+  
+    For primitive values (which are immutable in JavaScript), the passed object
+    is simply returned.
+  
+    @function copy
+    @param {Object} obj The object to clone
+    @param {Boolean} [deep=false] If true, a deep copy of the object is made.
+    @return {Object} The copied object
+  */
+
+  function copy(obj, deep) {
+    // fast paths
+    if ('object' !== typeof obj || obj === null) {
+      return obj; // can't copy primitives
+    }
+
+    if (!Array.isArray(obj) && _emberGraphUtilCopyable.default.detect(obj)) {
+      return obj.copy(deep);
+    }
+
+    return _copy(obj, deep, deep ? [] : null, deep ? [] : null);
+  }
+});
+
+define('ember-graph/util/copyable', ['exports', 'ember'], function (exports, _ember) {
+
+   var Mixin = _ember.default.Mixin;
+
+   /**
+      Implements some standard methods for copying an object. Add this mixin to
+      any object you create that can create a copy of itself. This mixin is
+      added automatically to the built-in array.
+      You should generally implement the `copy()` method to return a copy of the
+      receiver.
+      @class Copyable
+   */
+   exports.default = Mixin.create({
+      /**
+         __Required.__ You must implement this method to apply this mixin.
+         Override to return a copy of the receiver. Default implementation raises
+         an exception.
+         @method copy
+         @param {Boolean} deep if `true`, a deep copy of the object should be made
+         @return {Object} copy of receiver
+      */
+      copy: null
+   });
+});
+
 define('ember-graph/util/data_adapter', ['exports', 'ember', 'ember-graph/model/model', 'ember-graph/util/computed'], function (exports, _ember, _emberGraphModelModel, _emberGraphUtilComputed) {
 
 	/**
@@ -7645,7 +7775,7 @@ define('ember-graph/util/inflector', ['exports', 'ember'], function (exports, _e
 		SINGULARIZE_CACHE[plural] = singular;
 	}
 
-	if (_ember.default.EXTEND_PROTOTYPES === true || _ember.default.EXTEND_PROTOTYPES.String) {
+	if (_ember.default.ENV.EXTEND_PROTOTYPES === true || _ember.default.ENV.EXTEND_PROTOTYPES.String) {
 		String.prototype.pluralize = String.prototype.pluralize || function () {
 			return pluralize(this);
 		};
@@ -7661,7 +7791,7 @@ define('ember-graph/util/inflector', ['exports', 'ember'], function (exports, _e
 	exports.overrideSingularRule = overrideSingularRule;
 });
 
-define('ember-graph/util/set', ['exports', 'ember'], function (exports, _ember) {
+define('ember-graph/util/set', ['exports', 'ember', 'ember-graph/util/copyable'], function (exports, _ember, _emberGraphUtilCopyable) {
 
 	/* eslint-disable */
 	/**
@@ -7671,7 +7801,7 @@ define('ember-graph/util/set', ['exports', 'ember'], function (exports, _ember) 
   *
   * TODO: Remove and use ES6 Set
   */
-	exports.default = _ember.default.CoreObject.extend(_ember.default.MutableEnumerable, _ember.default.Copyable, {
+	exports.default = _ember.default.CoreObject.extend(_ember.default.MutableArray, _emberGraphUtilCopyable.default, {
 
 		length: 0,
 
@@ -7683,9 +7813,7 @@ define('ember-graph/util/set', ['exports', 'ember'], function (exports, _ember) 
 
 			var guid;
 
-			this.enumerableContentWillChange(len, 0);
-			_ember.default.propertyWillChange(this, 'firstObject');
-			_ember.default.propertyWillChange(this, 'lastObject');
+			this.arrayContentWillChange(len, 0);
 
 			for (var i = 0; i < len; i++) {
 				guid = _ember.default.guidFor(this[i]);
@@ -7695,9 +7823,9 @@ define('ember-graph/util/set', ['exports', 'ember'], function (exports, _ember) 
 
 			_ember.default.set(this, 'length', 0);
 
-			_ember.default.propertyDidChange(this, 'firstObject');
-			_ember.default.propertyDidChange(this, 'lastObject');
-			this.enumerableContentDidChange(len, 0);
+			_ember.default.notifyPropertyChange(this, 'firstObject');
+			_ember.default.notifyPropertyChange(this, 'lastObject');
+			this.arrayContentDidChange(len, 0);
 
 			return this;
 		},
@@ -7778,16 +7906,15 @@ define('ember-graph/util/set', ['exports', 'ember'], function (exports, _ember) 
 
 			added = [obj];
 
-			this.enumerableContentWillChange(null, added);
-			_ember.default.propertyWillChange(this, 'lastObject');
+			this.arrayContentWillChange(null, added);
 
 			len = _ember.default.get(this, 'length');
 			this[guid] = len;
 			this[len] = obj;
 			_ember.default.set(this, 'length', len + 1);
 
-			_ember.default.propertyDidChange(this, 'lastObject');
-			this.enumerableContentDidChange(null, added);
+			_ember.default.notifyPropertyChange(this, 'lastObject');
+			this.arrayContentDidChange(null, added);
 
 			return this;
 		},
@@ -7807,13 +7934,7 @@ define('ember-graph/util/set', ['exports', 'ember'], function (exports, _ember) 
 			if (idx >= 0 && idx < len && this[idx] === obj) {
 				removed = [obj];
 
-				this.enumerableContentWillChange(removed, null);
-				if (isFirst) {
-					_ember.default.propertyWillChange(this, 'firstObject');
-				}
-				if (isLast) {
-					_ember.default.propertyWillChange(this, 'lastObject');
-				}
+				this.arrayContentWillChange(removed, null);
 
 				// swap items - basically move the item to the end so it can be removed
 				if (idx < len - 1) {
@@ -7827,12 +7948,12 @@ define('ember-graph/util/set', ['exports', 'ember'], function (exports, _ember) 
 				_ember.default.set(this, 'length', len - 1);
 
 				if (isFirst) {
-					_ember.default.propertyDidChange(this, 'firstObject');
+					_ember.default.notifyPropertyChange(this, 'firstObject');
 				}
 				if (isLast) {
-					_ember.default.propertyDidChange(this, 'lastObject');
+					_ember.default.notifyPropertyChange(this, 'lastObject');
 				}
-				this.enumerableContentDidChange(removed, null);
+				this.arrayContentDidChange(removed, null);
 			}
 
 			return this;
@@ -7894,7 +8015,7 @@ define('ember-graph/util/string', ['exports', 'ember'], function (exports, _embe
 		return string[0].toLocaleLowerCase() + string.substring(1);
 	}
 
-	if (_ember.default.EXTEND_PROTOTYPES === true || _ember.default.EXTEND_PROTOTYPES.String) {
+	if (_ember.default.ENV.EXTEND_PROTOTYPES === true || _ember.default.ENV.EXTEND_PROTOTYPES.String) {
 
 		/**
    * Polyfill for String.prototype.startsWith
@@ -7904,9 +8025,11 @@ define('ember-graph/util/string', ['exports', 'ember'], function (exports, _embe
    * @return {Boolean}
    * @namespace String
    */
-		String.prototype.startsWith = String.prototype.startsWith || function (prefix) {
-			return startsWith(this, prefix);
-		};
+		if (!String.prototype.startsWith) {
+			String.prototype.startsWith = function (prefix) {
+				return startsWith(this, prefix);
+			};
+		}
 
 		/**
    *Polyfill for String.prototype.endsWith
@@ -7916,9 +8039,11 @@ define('ember-graph/util/string', ['exports', 'ember'], function (exports, _embe
    * @return {Boolean}
    * @namespace String
    */
-		String.prototype.endsWith = String.prototype.endsWith || function (suffix) {
-			return endsWith(this, suffix);
-		};
+		if (!String.prototype.endsWith) {
+			String.prototype.endsWith = function (suffix) {
+				return endsWith(this, suffix);
+			};
+		}
 
 		/**
    * Capitalizes the first letter of a string.
@@ -7927,9 +8052,11 @@ define('ember-graph/util/string', ['exports', 'ember'], function (exports, _embe
    * @return {String}
    * @namespace String
    */
-		String.prototype.capitalize = String.prototype.capitalize || function () {
-			return capitalize(this);
-		};
+		if (!String.prototype.capitalize) {
+			String.prototype.capitalize = function () {
+				return capitalize(this);
+			};
+		}
 
 		/**
    * Decapitalizes the first letter of a string.
@@ -7938,9 +8065,11 @@ define('ember-graph/util/string', ['exports', 'ember'], function (exports, _embe
    * @return {String}
    * @namespace String
    */
-		String.prototype.decapitalize = String.prototype.decapitalize || function () {
-			return decapitalize(this);
-		};
+		if (!String.prototype.decapitalize) {
+			String.prototype.decapitalize = function () {
+				return decapitalize(this);
+			};
+		}
 	}
 
 	exports.startsWith = startsWith;

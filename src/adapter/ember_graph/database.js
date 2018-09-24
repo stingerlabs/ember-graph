@@ -1,5 +1,6 @@
 import Ember from 'ember';
 import Model from 'ember-graph/model/model';
+import copy from 'ember-graph/util/copy';
 
 import { abstractMethod } from 'ember-graph/util/util';
 import { startsWith } from 'ember-graph/util/string';
@@ -114,7 +115,7 @@ export default {
 	 */
 	getRecordFromDatabase: function(typeKey, id, db) {
 		var model = this.get('store').modelFor(typeKey);
-		var json = Ember.copy(db.records[typeKey][id], true);
+		var json = copy(db.records[typeKey][id], true);
 		json.id = id;
 		json.links = {};
 

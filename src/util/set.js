@@ -1,4 +1,5 @@
 import Ember from 'ember';
+import Copyable from 'ember-graph/util/copyable';
 
 /* eslint-disable */
 /**
@@ -8,7 +9,7 @@ import Ember from 'ember';
  *
  * TODO: Remove and use ES6 Set
  */
-export default Ember.CoreObject.extend(Ember.MutableEnumerable, Ember.Copyable, {
+export default Ember.CoreObject.extend(Ember.MutableArray, Copyable, {
 
 	length: 0,
 
@@ -18,9 +19,7 @@ export default Ember.CoreObject.extend(Ember.MutableEnumerable, Ember.Copyable, 
 
 		var guid;
 
-		this.enumerableContentWillChange(len, 0);
-		Ember.propertyWillChange(this, 'firstObject');
-		Ember.propertyWillChange(this, 'lastObject');
+		this.arrayContentWillChange(len, 0);
 
 		for (var i=0; i < len; i++) {
 			guid = Ember.guidFor(this[i]);
@@ -30,9 +29,9 @@ export default Ember.CoreObject.extend(Ember.MutableEnumerable, Ember.Copyable, 
 
 		Ember.set(this, 'length', 0);
 
-		Ember.propertyDidChange(this, 'firstObject');
-		Ember.propertyDidChange(this, 'lastObject');
-		this.enumerableContentDidChange(len, 0);
+		Ember.notifyPropertyChange(this, 'firstObject');
+		Ember.notifyPropertyChange(this, 'lastObject');
+		this.arrayContentDidChange(len, 0);
 
 		return this;
 	},
@@ -113,16 +112,15 @@ export default Ember.CoreObject.extend(Ember.MutableEnumerable, Ember.Copyable, 
 
 		added = [obj];
 
-		this.enumerableContentWillChange(null, added);
-		Ember.propertyWillChange(this, 'lastObject');
+		this.arrayContentWillChange(null, added);
 
 		len = Ember.get(this, 'length');
 		this[guid] = len;
 		this[len] = obj;
 		Ember.set(this, 'length', len+1);
 
-		Ember.propertyDidChange(this, 'lastObject');
-		this.enumerableContentDidChange(null, added);
+		Ember.notifyPropertyChange(this, 'lastObject');
+		this.arrayContentDidChange(null, added);
 
 		return this;
 	},
@@ -143,9 +141,7 @@ export default Ember.CoreObject.extend(Ember.MutableEnumerable, Ember.Copyable, 
 		if (idx>=0 && idx<len && (this[idx] === obj)) {
 			removed = [obj];
 
-			this.enumerableContentWillChange(removed, null);
-			if (isFirst) { Ember.propertyWillChange(this, 'firstObject'); }
-			if (isLast) { Ember.propertyWillChange(this, 'lastObject'); }
+			this.arrayContentWillChange(removed, null);
 
 			// swap items - basically move the item to the end so it can be removed
 			if (idx < len-1) {
@@ -158,9 +154,9 @@ export default Ember.CoreObject.extend(Ember.MutableEnumerable, Ember.Copyable, 
 			delete this[len-1];
 			Ember.set(this, 'length', len-1);
 
-			if (isFirst) { Ember.propertyDidChange(this, 'firstObject'); }
-			if (isLast) { Ember.propertyDidChange(this, 'lastObject'); }
-			this.enumerableContentDidChange(removed, null);
+			if (isFirst) { Ember.notifyPropertyChange(this, 'firstObject'); }
+			if (isLast) { Ember.notifyPropertyChange(this, 'lastObject'); }
+			this.arrayContentDidChange(removed, null);
 		}
 
 		return this;
