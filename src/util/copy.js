@@ -1,7 +1,6 @@
 import Ember from 'ember';
 import Copyable from 'ember-graph/util/copyable';
 
-const assert = Ember.assert;
 const EmberObject = Ember.Object;
 
 function _copy(obj, deep, seen, copies) {
@@ -34,7 +33,7 @@ function _copy(obj, deep, seen, copies) {
   } else if (obj instanceof Date) {
     ret = new Date(obj.getTime());
   } else {
-    assert(
+    Ember.assert(
       'Cannot clone an EmberObject that does not implement Copyable',
       !(obj instanceof EmberObject)
     );
