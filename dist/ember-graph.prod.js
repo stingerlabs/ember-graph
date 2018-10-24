@@ -7429,7 +7429,6 @@ define('ember-graph/util/computed', ['exports', 'ember', 'ember-graph/util/compa
 define('ember-graph/util/copy', ['exports', 'ember', 'ember-graph/util/copyable'], function (exports, _ember, _emberGraphUtilCopyable) {
   exports.default = copy;
 
-  
   var EmberObject = _ember.default.Object;
 
   function _copy(obj, deep, seen, copies) {
@@ -7463,7 +7462,7 @@ define('ember-graph/util/copy', ['exports', 'ember', 'ember-graph/util/copyable'
     } else if (obj instanceof Date) {
       ret = new Date(obj.getTime());
     } else {
-      assert('Cannot clone an EmberObject that does not implement Copyable', !(obj instanceof EmberObject));
+      
 
       ret = {};
       var key = undefined;
