@@ -1958,7 +1958,9 @@ define('ember-graph/attribute_type/enum', ['exports', 'ember', 'ember-graph/util
    * @param {String} option
    * @return {String}
    */
-		deserialize: _ember.default.aliasMethod('serialize'),
+		deserialize: function () {
+			return this.serialize.apply(this, arguments);
+		},
 
 		/**
    * Compares two enum values, case-insensitive.
@@ -2775,7 +2777,9 @@ define('ember-graph/model/core', ['exports', 'ember', 'ember-graph/util/set', 'e
    * @return {Object}
    * @static
    */
-		metaForAttribute: _ember.default.aliasMethod('metaForProperty'),
+		metaForAttribute: function () {
+			return this.metaForProperty.apply(this, arguments);
+		},
 
 		/**
    * @method isAttribute
@@ -2893,7 +2897,9 @@ define('ember-graph/model/model', ['exports', 'ember', 'ember-graph/model/core',
    * @param {Object} json
    * @deprecated Use `loadDataFromServer` instead
    */
-		loadData: _ember.default.aliasMethod('loadDataFromServer'),
+		loadData: function () {
+			return this.loadDataFromServer.apply(this, arguments);
+		},
 
 		/**
    * Takes a payload from the server and merges the data into the current data.
@@ -3193,7 +3199,9 @@ define('ember-graph/model/relationship', ['exports', 'ember', 'ember-graph/relat
    * @return {Object}
    * @static
    */
-		metaForRelationship: _ember.default.aliasMethod('metaForProperty'),
+		metaForRelationship: function () {
+			return this.metaForProperty.apply(this, arguments);
+		},
 
 		/**
    * Determines the kind (multiplicity) of the given relationship.
@@ -3896,9 +3904,13 @@ define('ember-graph/model/relationship_load', ['exports', 'ember', 'ember-graph/
 			}, this);
 		},
 
-		disconnectHasOneFromNull: _ember.default.aliasMethod('disconnectHasOneFromHasMany'),
+		disconnectHasOneFromNull: function () {
+			return this.disconnectHasOneFromHasMany.apply(this, arguments);
+		},
 
-		disconnectHasOneFromHasOne: _ember.default.aliasMethod('disconnectHasOneFromHasMany'),
+		disconnectHasOneFromHasOne: function () {
+			return this.disconnectHasOneFromHasMany.apply(this, arguments);
+		},
 
 		disconnectHasOneFromHasMany: function (name, meta) {
 			var store = this.get('store');
@@ -3926,7 +3938,9 @@ define('ember-graph/model/relationship_load', ['exports', 'ember', 'ember-graph/
 			}
 		},
 
-		connectHasOneToNull: _ember.default.aliasMethod('connectHasOneToHasMany'),
+		connectHasOneToNull: function () {
+			return this.connectHasOneToHasMany.apply(this, arguments);
+		},
 
 		connectHasOneToHasOne: function (name, meta, value) {
 			// TODO: This is going to be LONG. But make it right, then make it good
@@ -4451,7 +4465,9 @@ define('ember-graph/model/relationship_load', ['exports', 'ember', 'ember-graph/
 			}
 		},
 
-		connectHasManyToNull: _ember.default.aliasMethod('connectHasManyToHasMany'),
+		connectHasManyToNull: function () {
+			return this.connectHasManyToHasMany.apply(this, arguments);
+		},
 
 		connectHasManyToHasOne: function (name, meta, values) {
 			var thisType = this.typeKey;
@@ -7815,9 +7831,13 @@ define('ember-graph/util/set', ['exports', 'ember', 'ember-graph/util/copyable']
 			return true;
 		},
 
-		add: _ember.default.aliasMethod('addObject'),
+		add: function () {
+			return this.addObject.apply(this, arguments);
+		},
 
-		remove: _ember.default.aliasMethod('removeObject'),
+		remove: function () {
+			return this.removeObject.apply(this, arguments);
+		},
 
 		pop: function () {
 			var obj = this.length > 0 ? this[this.length - 1] : null;
@@ -7825,15 +7845,25 @@ define('ember-graph/util/set', ['exports', 'ember', 'ember-graph/util/copyable']
 			return obj;
 		},
 
-		push: _ember.default.aliasMethod('addObject'),
+		push: function () {
+			return this.addObject.apply(this, arguments);
+		},
 
-		shift: _ember.default.aliasMethod('pop'),
+		shift: function () {
+			return this.pop.apply(this, arguments);
+		},
 
-		unshift: _ember.default.aliasMethod('push'),
+		unshift: function () {
+			return this.push.apply(this, arguments);
+		},
 
-		addEach: _ember.default.aliasMethod('addObjects'),
+		addEach: function () {
+			return this.addObject.apply(this, arguments);
+		},
 
-		removeEach: _ember.default.aliasMethod('removeObjects'),
+		removeEach: function () {
+			return this.removeObjects.apply(this, arguments);
+		},
 
 		init: function (items) {
 			this._super.apply(this, arguments);
