@@ -302,7 +302,9 @@ CoreModel.reopenClass({
 	 * @return {Object}
 	 * @static
 	 */
-	metaForAttribute: Ember.aliasMethod('metaForProperty'),
+	metaForAttribute() {
+		return this.metaForProperty(...arguments);
+	},
 
 	/**
 	 * @method isAttribute

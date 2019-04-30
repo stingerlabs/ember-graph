@@ -56,9 +56,13 @@ export default Ember.CoreObject.extend(Ember.MutableArray, Copyable, {
 		return true;
 	},
 
-	add: Ember.aliasMethod('addObject'),
+	add() {
+		return this.addObject(...arguments);
+	},
 
-	remove: Ember.aliasMethod('removeObject'),
+	remove() {
+		return this.removeObject(...arguments);
+	},
 
 	pop() {
 		var obj = this.length > 0 ? this[this.length-1] : null;
@@ -66,15 +70,25 @@ export default Ember.CoreObject.extend(Ember.MutableArray, Copyable, {
 		return obj;
 	},
 
-	push: Ember.aliasMethod('addObject'),
+	push() {
+		return this.addObject(...arguments);
+	},
 
-	shift: Ember.aliasMethod('pop'),
+	shift() {
+		return this.pop(...arguments);
+	},
 
-	unshift: Ember.aliasMethod('push'),
+	unshift() {
+		return this.push(...arguments);
+	},
 
-	addEach: Ember.aliasMethod('addObjects'),
+	addEach() {
+		return this.addObject(...arguments);
+	},
 
-	removeEach: Ember.aliasMethod('removeObjects'),
+	removeEach() {
+		return this.removeObjects(...arguments);
+	},
 
 	init(items) {
 		this._super(...arguments);

@@ -98,7 +98,9 @@ var Model = CoreModel.extend(Ember.Evented, {
 	 * @param {Object} json
 	 * @deprecated Use `loadDataFromServer` instead
 	 */
-	loadData: Ember.aliasMethod('loadDataFromServer'),
+	loadData() {
+		return this.loadDataFromServer(...arguments);
+	},
 
 	/**
 	 * Takes a payload from the server and merges the data into the current data.

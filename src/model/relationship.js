@@ -73,7 +73,9 @@ var RelationshipClassMethods = {
 	 * @return {Object}
 	 * @static
 	 */
-	metaForRelationship: Ember.aliasMethod('metaForProperty'),
+	metaForRelationship() {
+		return this.metaForProperty(...arguments);
+	},
 
 	/**
 	 * Determines the kind (multiplicity) of the given relationship.

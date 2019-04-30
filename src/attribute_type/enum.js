@@ -102,7 +102,9 @@ export default AttributeType.extend({
 	 * @param {String} option
 	 * @return {String}
 	 */
-	deserialize: Ember.aliasMethod('serialize'),
+	deserialize() {
+		return this.serialize(...arguments);
+	},
 
 	/**
 	 * Compares two enum values, case-insensitive.
