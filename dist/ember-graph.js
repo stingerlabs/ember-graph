@@ -3194,7 +3194,10 @@ define('ember-graph/model/relationship', ['exports', 'ember', 'ember-graph/relat
 		_ember.default.assert('defaultValue for hasMany must be an array.', meta.kind === HAS_ONE_KEY || _ember.default.isArray(meta.getDefaultValue()));
 		_ember.default.assert('defaultValue for hasOne must be null or a string.', meta.kind === HAS_MANY_KEY || meta.getDefaultValue() === null || _ember.default.typeOf(meta.getDefaultValue()) === 'string');
 
-		return (0, _emberGraphUtilComputed.computed)('relationships.{client,deleted,server}.' + name, { 'get': meta.kind === HAS_MANY_KEY ? HAS_MANY_GETTER : HAS_ONE_GETTER }).meta(meta);
+		return {
+			relationship: (0, _emberGraphUtilComputed.computed)('relationships.{client,deleted,server}.' + name, { 'get': meta.kind === HAS_MANY_KEY ? HAS_MANY_GETTER : HAS_ONE_GETTER }).meta(meta),
+			meta: meta
+		};
 	};
 
 	var RelationshipClassMethods = {
@@ -3277,8 +3280,13 @@ define('ember-graph/model/relationship', ['exports', 'ember', 'ember-graph/relat
 			});
 
 			Object.keys(relationships).forEach(function (name) {
-				obj['_' + name] = createRelationship(name, relationships[name].kind, relationships[name].options);
-				var meta = (0, _emberGraphUtilCopy.default)(obj['_' + name].meta(), true);
+				var _createRelationship = createRelationship(name, relationships[name].kind, relationships[name].options);
+
+				var rel = _createRelationship.relationship;
+				var relMeta = _createRelationship.meta;
+
+				obj['_' + name] = rel;
+				var meta = (0, _emberGraphUtilCopy.default)(relMeta, true);
 				var relatedType = meta.relatedType;
 
 				var relationship;
