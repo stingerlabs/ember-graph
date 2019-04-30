@@ -15,7 +15,7 @@
 				adapter: EG.RESTAdapter.extend({
 					prefix: Em.computed(function() {
 						return '/api';
-					}).property()
+					})
 				})
 			});
 
