@@ -58,8 +58,10 @@ var createRelationship = function(name, kind, options) {
 			meta.kind === HAS_MANY_KEY || meta.getDefaultValue() === null ||
 			Ember.typeOf(meta.getDefaultValue()) === 'string');
 
-	return computed(`relationships.{client,deleted,server}.${name}`,
-		{ 'get': meta.kind === HAS_MANY_KEY ? HAS_MANY_GETTER : HAS_ONE_GETTER }).meta(meta);
+	return {
+    relationship: computed(`relationships.{client,deleted,server}.${name}`, { 'get': meta.kind === HAS_MANY_KEY ? HAS_MANY_GETTER : HAS_ONE_GETTER }).meta(meta),
+    meta
+  };
 };
 
 var RelationshipClassMethods = {
@@ -141,8 +143,9 @@ var RelationshipClassMethods = {
 		});
 
 		Object.keys(relationships).forEach(function(name) {
-			obj['_' + name] = createRelationship(name, relationships[name].kind, relationships[name].options);
-			var meta = copy(obj['_' + name].meta(), true);
+			const { relationship: rel, meta: relMeta } = createRelationship(name, relationships[name].kind, relationships[name].options);
+			obj['_' + name] = rel;
+			var meta = copy(relMeta, true);
 			var relatedType = meta.relatedType;
 
 			var relationship;
