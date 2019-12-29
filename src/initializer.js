@@ -4,7 +4,8 @@ import EmberGraph from 'ember-graph';
 Ember.onLoad('Ember.Application', function(Application) {
 	Application.initializer({
 		name: 'ember-graph',
-		initialize(registry, application) {
+		initialize() {
+			let application = arguments[1] || arguments[0];
 			Ember.libraries.register('Ember Graph');
 
 			const useService = !!Ember.Service;
@@ -52,8 +53,8 @@ Ember.onLoad('Ember.Application', function(Application) {
 		Application.instanceInitializer({
 			name: 'ember-graph',
 			initialize(instance) {
-				const application = instance.container.lookup('application:main');
-				const store = instance.container.lookup('store:main');
+				const application = instance.lookup('application:main');
+				const store = instance.lookup('store:main');
 				application.set('store', store);
 			}
 		});

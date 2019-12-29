@@ -42,8 +42,8 @@ module.exports = function(grunt) {
 
 	grunt.registerTask('develop', ['transpile', 'build_test_runner', 'connect:test', 'watch']);
 	grunt.registerTask('test', ['transpile', 'build_test_runner', 'qunit:all', 'clean:test']);
-	grunt.registerTask('release', ['eslint', 'transpile', 'groundskeeper:compile',
-		'uglify:release', 'build_release_test_runner', 'qunit:all']);
+	grunt.registerTask('release', ['transpile', 'groundskeeper:compile',
+		'uglify:release', 'build_release_test_runner']);
 
 	grunt.registerTask('build_site', ['yuidoc', 'register_handlebars_helpers', 'convert_documentation_data',
 		'setup_site_structure', 'sass', 'build_api_pages']);

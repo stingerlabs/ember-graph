@@ -2,6 +2,7 @@ import Ember from 'ember';
 import Model from 'ember-graph/model/model';
 import Serializer from 'ember-graph/serializer/serializer';
 import EmberGraphSet from 'ember-graph/util/set';
+import copy from 'ember-graph/util/copy';
 
 import { mapBy } from 'ember-graph/util/array';
 import { pluralize, singularize } from 'ember-graph/util/inflector';
@@ -321,7 +322,7 @@ export default Serializer.extend({
 			return {};
 		}
 
-		payload = Ember.copy(payload, true);
+		payload = copy(payload, true);
 
 		var normalized = {
 			meta: {

@@ -122,7 +122,7 @@ function overrideSingularRule(plural, singular) {
 	SINGULARIZE_CACHE[plural] = singular;
 }
 
-if (Ember.EXTEND_PROTOTYPES === true || Ember.EXTEND_PROTOTYPES.String) {
+if (Ember.ENV.EXTEND_PROTOTYPES === true || Ember.ENV.EXTEND_PROTOTYPES.String) {
 	String.prototype.pluralize = String.prototype.pluralize || function() {
 		return pluralize(this);
 	};

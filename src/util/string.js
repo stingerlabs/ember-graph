@@ -16,7 +16,7 @@ function decapitalize(string) {
 	return string[0].toLocaleLowerCase() + string.substring(1);
 }
 
-if (Ember.EXTEND_PROTOTYPES === true || Ember.EXTEND_PROTOTYPES.String) {
+if (Ember.ENV.EXTEND_PROTOTYPES === true || Ember.ENV.EXTEND_PROTOTYPES.String) {
 
 	/**
 	 * Polyfill for String.prototype.startsWith
@@ -26,9 +26,11 @@ if (Ember.EXTEND_PROTOTYPES === true || Ember.EXTEND_PROTOTYPES.String) {
 	 * @return {Boolean}
 	 * @namespace String
 	 */
-	String.prototype.startsWith = String.prototype.startsWith || function(prefix) {
-		return startsWith(this, prefix);
-	};
+  if (!String.prototype.startsWith) {
+    String.prototype.startsWith = function(prefix) {
+      return startsWith(this, prefix);
+    };
+  }
 
 	/**
 	 *Polyfill for String.prototype.endsWith
@@ -38,9 +40,11 @@ if (Ember.EXTEND_PROTOTYPES === true || Ember.EXTEND_PROTOTYPES.String) {
 	 * @return {Boolean}
 	 * @namespace String
 	 */
-	String.prototype.endsWith = String.prototype.endsWith || function(suffix) {
-		return endsWith(this, suffix);
-	};
+  if (!String.prototype.endsWith) {
+	  String.prototype.endsWith = function(suffix) {
+		  return endsWith(this, suffix);
+	  };
+  }
 
 	/**
 	 * Capitalizes the first letter of a string.
@@ -49,9 +53,11 @@ if (Ember.EXTEND_PROTOTYPES === true || Ember.EXTEND_PROTOTYPES.String) {
 	 * @return {String}
 	 * @namespace String
 	 */
-	String.prototype.capitalize = String.prototype.capitalize || function() {
-		return capitalize(this);
-	};
+  if (!String.prototype.capitalize) {
+    String.prototype.capitalize = function() {
+      return capitalize(this);
+    };
+  }
 
 	/**
 	 * Decapitalizes the first letter of a string.
@@ -60,9 +66,11 @@ if (Ember.EXTEND_PROTOTYPES === true || Ember.EXTEND_PROTOTYPES.String) {
 	 * @return {String}
 	 * @namespace String
 	 */
-	String.prototype.decapitalize = String.prototype.decapitalize || function() {
-		return decapitalize(this);
-	};
+  if (!String.prototype.decapitalize) {
+    String.prototype.decapitalize = function() {
+      return decapitalize(this);
+    };
+  }
 }
 
 export {

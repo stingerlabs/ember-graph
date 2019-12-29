@@ -67,7 +67,7 @@ export default Ember.Object.extend({
 
 		const liveRecordArrays = this.get('liveRecordArrays');
 		liveRecordArrays[typeKey] = liveRecordArrays[typeKey] || Ember.A();
-		if (!liveRecordArrays[typeKey].contains(record)) {
+		if (!liveRecordArrays[typeKey].includes(record)) {
 			liveRecordArrays[typeKey].addObject(record);
 		}
 	},

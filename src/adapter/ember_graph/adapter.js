@@ -61,7 +61,7 @@ var EmberGraphAdapter = Adapter.extend({
 	 */
 	serializer: computed({
 		get() {
-			return this.get('container').lookup('serializer:ember_graph');
+			return Ember.getOwner(this).lookup('serializer:ember_graph');
 		}
 	}),
 

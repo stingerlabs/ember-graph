@@ -138,7 +138,7 @@ function values(obj, callback, thisArg) {
  */
 function deprecateMethod(message, method) {
 	return function() {
-		Ember.deprecate(message);
+		Ember.deprecate(message, false, { id: method, until: '2.0.0' });
 		this[method].apply(this, arguments);
 	};
 }
@@ -156,7 +156,7 @@ function deprecateMethod(message, method) {
 function deprecateProperty(message, property) {
 	return computed(property, {
 		get() {
-			Ember.deprecate(message);
+			Ember.deprecate(message, false, { id: property, until: '2.0.0' });
 			return this.get(property);
 		},
 		set(key, value) {

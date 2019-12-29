@@ -53,7 +53,7 @@ var attr = function(options) {
 	}
 
 	Ember.deprecate('The `isEqual` method on attributes is deprecated. ' +
-			'Please use a custom attribute type instead.', !optionsObject.isEqual);
+			'Please use a custom attribute type instead.', !optionsObject.isEqual, { id: 'isEqual', until: '2.0.0' });
 
 	return {
 		isAttribute: true,

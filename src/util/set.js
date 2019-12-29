@@ -1,4 +1,5 @@
 import Ember from 'ember';
+import Copyable from 'ember-graph/util/copyable';
 
 /* eslint-disable */
 /**
@@ -8,21 +9,17 @@ import Ember from 'ember';
  *
  * TODO: Remove and use ES6 Set
  */
-export default Ember.CoreObject.extend(Ember.MutableEnumerable, Ember.Copyable, Ember.Freezable, {
+export default Ember.CoreObject.extend(Ember.MutableArray, Copyable, {
 
 	length: 0,
 
 	clear() {
-		if (this.isFrozen) { throw new Ember.Error(Ember.FROZEN_ERROR); }
-
 		var len = Ember.get(this, 'length');
 		if (len === 0) { return this; }
 
 		var guid;
 
-		this.enumerableContentWillChange(len, 0);
-		Ember.propertyWillChange(this, 'firstObject');
-		Ember.propertyWillChange(this, 'lastObject');
+		this.arrayContentWillChange(len, 0);
 
 		for (var i=0; i < len; i++) {
 			guid = Ember.guidFor(this[i]);
@@ -32,9 +29,9 @@ export default Ember.CoreObject.extend(Ember.MutableEnumerable, Ember.Copyable, 
 
 		Ember.set(this, 'length', 0);
 
-		Ember.propertyDidChange(this, 'firstObject');
-		Ember.propertyDidChange(this, 'lastObject');
-		this.enumerableContentDidChange(len, 0);
+		Ember.notifyPropertyChange(this, 'firstObject');
+		Ember.notifyPropertyChange(this, 'lastObject');
+		this.arrayContentDidChange(len, 0);
 
 		return this;
 	},
@@ -51,7 +48,7 @@ export default Ember.CoreObject.extend(Ember.MutableEnumerable, Ember.Copyable, 
 		}
 
 		while (--loc >= 0) {
-			if (!obj.contains(this[loc])) {
+			if (!obj.includes(this[loc])) {
 				return false;
 			}
 		}
@@ -59,38 +56,42 @@ export default Ember.CoreObject.extend(Ember.MutableEnumerable, Ember.Copyable, 
 		return true;
 	},
 
-	add: Ember.aliasMethod('addObject'),
+	add() {
+		return this.addObject(...arguments);
+	},
 
-	remove: Ember.aliasMethod('removeObject'),
+	remove() {
+		return this.removeObject(...arguments);
+	},
 
 	pop() {
-		if (Ember.get(this, 'isFrozen')) {
-			throw new Ember.Error(Ember.FROZEN_ERROR);
-		}
-
 		var obj = this.length > 0 ? this[this.length-1] : null;
 		this.remove(obj);
 		return obj;
 	},
 
-	push: Ember.aliasMethod('addObject'),
+	push() {
+		return this.addObject(...arguments);
+	},
 
-	shift: Ember.aliasMethod('pop'),
+	shift() {
+		return this.pop(...arguments);
+	},
 
-	unshift: Ember.aliasMethod('push'),
+	unshift() {
+		return this.push(...arguments);
+	},
 
-	addEach: Ember.aliasMethod('addObjects'),
+	addEach() {
+		return this.addObject(...arguments);
+	},
 
-	removeEach: Ember.aliasMethod('removeObjects'),
+	removeEach() {
+		return this.removeObjects(...arguments);
+	},
 
 	init(items) {
-		// Suppress deprecation notices
-		// Also make sure groundskeeper doesn't remove the code
-		const name = 'deprecate';
-		const deprecate = Ember[name];
-		Ember[name] = () => {};
 		this._super(...arguments);
-		Ember[name] = deprecate;
 
 		if (items) {
 			this.addObjects(items);
@@ -110,10 +111,6 @@ export default Ember.CoreObject.extend(Ember.MutableEnumerable, Ember.Copyable, 
 	}),
 
 	addObject(obj) {
-		if (Ember.get(this, 'isFrozen')) {
-			throw new Ember.Error(Ember.FROZEN_ERROR);
-		}
-
 		if (Ember.isNone(obj)) {
 			return this; // nothing to do
 		}
@@ -129,25 +126,20 @@ export default Ember.CoreObject.extend(Ember.MutableEnumerable, Ember.Copyable, 
 
 		added = [obj];
 
-		this.enumerableContentWillChange(null, added);
-		Ember.propertyWillChange(this, 'lastObject');
+		this.arrayContentWillChange(null, added);
 
 		len = Ember.get(this, 'length');
 		this[guid] = len;
 		this[len] = obj;
 		Ember.set(this, 'length', len+1);
 
-		Ember.propertyDidChange(this, 'lastObject');
-		this.enumerableContentDidChange(null, added);
+		Ember.notifyPropertyChange(this, 'lastObject');
+		this.arrayContentDidChange(null, added);
 
 		return this;
 	},
 
 	removeObject(obj) {
-		if (Ember.get(this, 'isFrozen')) {
-			throw new Ember.Error(Ember.FROZEN_ERROR);
-		}
-
 		if (Ember.isNone(obj)) {
 			return this; // nothing to do
 		}
@@ -163,9 +155,7 @@ export default Ember.CoreObject.extend(Ember.MutableEnumerable, Ember.Copyable, 
 		if (idx>=0 && idx<len && (this[idx] === obj)) {
 			removed = [obj];
 
-			this.enumerableContentWillChange(removed, null);
-			if (isFirst) { Ember.propertyWillChange(this, 'firstObject'); }
-			if (isLast) { Ember.propertyWillChange(this, 'lastObject'); }
+			this.arrayContentWillChange(removed, null);
 
 			// swap items - basically move the item to the end so it can be removed
 			if (idx < len-1) {
@@ -178,9 +168,9 @@ export default Ember.CoreObject.extend(Ember.MutableEnumerable, Ember.Copyable, 
 			delete this[len-1];
 			Ember.set(this, 'length', len-1);
 
-			if (isFirst) { Ember.propertyDidChange(this, 'firstObject'); }
-			if (isLast) { Ember.propertyDidChange(this, 'lastObject'); }
-			this.enumerableContentDidChange(removed, null);
+			if (isFirst) { Ember.notifyPropertyChange(this, 'firstObject'); }
+			if (isLast) { Ember.notifyPropertyChange(this, 'lastObject'); }
+			this.arrayContentDidChange(removed, null);
 		}
 
 		return this;
@@ -211,7 +201,7 @@ export default Ember.CoreObject.extend(Ember.MutableEnumerable, Ember.Copyable, 
 		for (idx = 0; idx < len; idx++) {
 			array[idx] = this[idx];
 		}
-		return Ember.fmt('Ember.Set<%@>', [array.join(',')]);
+		return 'Ember.Set<' + array.join(',') + '>';
 	},
 
 	withoutAll(items) {

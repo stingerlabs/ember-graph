@@ -1,6 +1,7 @@
 import Ember from 'ember';
 import Model from 'ember-graph/model/model';
 import EmberGraphSet from 'ember-graph/util/set';
+import copy from 'ember-graph/util/copy';
 
 import { values } from 'ember-graph/util/util';
 
@@ -67,7 +68,7 @@ export default {
 		var payload = this.getInitialPayload();
 
 		try {
-			var db = this.convertAndVerifyPayload(Ember.copy(payload, true));
+			var db = this.convertAndVerifyPayload(copy(payload, true));
 			return this.setDatabase(db);
 		} catch (error) {
 			return Promise.reject(error);

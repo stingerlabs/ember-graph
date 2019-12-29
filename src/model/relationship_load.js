@@ -136,9 +136,13 @@ export default {
 		}, this);
 	},
 
-	disconnectHasOneFromNull: Ember.aliasMethod('disconnectHasOneFromHasMany'),
+	disconnectHasOneFromNull() {
+		return this.disconnectHasOneFromHasMany(...arguments);
+	},
 
-	disconnectHasOneFromHasOne: Ember.aliasMethod('disconnectHasOneFromHasMany'),
+	disconnectHasOneFromHasOne() {
+		return this.disconnectHasOneFromHasMany(...arguments);
+	},
 
 	disconnectHasOneFromHasMany: function(name, meta) {
 		var store = this.get('store');
@@ -166,7 +170,9 @@ export default {
 		}
 	},
 
-	connectHasOneToNull: Ember.aliasMethod('connectHasOneToHasMany'),
+	connectHasOneToNull() {
+		return this.connectHasOneToHasMany(...arguments);
+	},
 
 	connectHasOneToHasOne: function(name, meta, value) {
 		// TODO: This is going to be LONG. But make it right, then make it good
@@ -699,7 +705,9 @@ export default {
 		}
 	},
 
-	connectHasManyToNull: Ember.aliasMethod('connectHasManyToHasMany'),
+	connectHasManyToNull() {
+		return this.connectHasManyToHasMany(...arguments);
+	},
 
 	connectHasManyToHasOne: function(name, meta, values) {
 		var thisType = this.typeKey;

@@ -2,6 +2,7 @@ import Ember from 'ember';
 import Relationship from 'ember-graph/relationship/relationship';
 import RelationshipStore from 'ember-graph/relationship/relationship_store';
 import EmberGraphSet from 'ember-graph/util/set';
+import copy from 'ember-graph/util/copy';
 
 import { computed } from 'ember-graph/util/computed';
 
@@ -57,8 +58,10 @@ var createRelationship = function(name, kind, options) {
 			meta.kind === HAS_MANY_KEY || meta.getDefaultValue() === null ||
 			Ember.typeOf(meta.getDefaultValue()) === 'string');
 
-	return computed(`relationships.{client,deleted,server}.${name}`,
-		{ 'get': meta.kind === HAS_MANY_KEY ? HAS_MANY_GETTER : HAS_ONE_GETTER }).meta(meta);
+	return {
+    relationship: computed(`relationships.{client,deleted,server}.${name}`, { 'get': meta.kind === HAS_MANY_KEY ? HAS_MANY_GETTER : HAS_ONE_GETTER }).meta(meta),
+    meta
+  };
 };
 
 var RelationshipClassMethods = {
@@ -72,7 +75,9 @@ var RelationshipClassMethods = {
 	 * @return {Object}
 	 * @static
 	 */
-	metaForRelationship: Ember.aliasMethod('metaForProperty'),
+	metaForRelationship() {
+		return this.metaForProperty(...arguments);
+	},
 
 	/**
 	 * Determines the kind (multiplicity) of the given relationship.
@@ -138,8 +143,9 @@ var RelationshipClassMethods = {
 		});
 
 		Object.keys(relationships).forEach(function(name) {
-			obj['_' + name] = createRelationship(name, relationships[name].kind, relationships[name].options);
-			var meta = Ember.copy(obj['_' + name].meta(), true);
+			const { relationship: rel, meta: relMeta } = createRelationship(name, relationships[name].kind, relationships[name].options);
+			obj['_' + name] = rel;
+			var meta = copy(relMeta, true);
 			var relatedType = meta.relatedType;
 
 			var relationship;
@@ -252,7 +258,7 @@ var RelationshipPublicMethods = {
 	 * @for Model
 	 */
 	rollbackRelationships: function() {
-		Ember.changeProperties(function() {
+		Ember.changeProperties(() => {
 			var store = this.get('store');
 
 			var client = this.get('relationships').getRelationshipsByState(CLIENT_STATE);
@@ -264,7 +270,7 @@ var RelationshipPublicMethods = {
 			deleted.forEach(function(relationship) {
 				store.changeRelationshipState(relationship, SERVER_STATE);
 			});
-		}, this);
+		});
 	},
 
 	/**
@@ -290,7 +296,7 @@ var RelationshipPublicMethods = {
 			throw new Ember.Error('Can\'t modify a read-only relationship.');
 		}
 
-		Ember.changeProperties(function() {
+		Ember.changeProperties(() => {
 			this.set('initializedRelationships.' + relationshipName, true);
 
 			const store = this.get('store');
@@ -350,7 +356,7 @@ var RelationshipPublicMethods = {
 			// If all else fails, create a relationship
 			store.createRelationship(this.typeKey, this.get('id'), relationshipName,
 				polymorphicType, id, meta.inverse, CLIENT_STATE);
-		}, this);
+		});
 	},
 
 	/**
@@ -376,7 +382,7 @@ var RelationshipPublicMethods = {
 			throw new Ember.Error('Can\'t modify a read-only relationship.');
 		}
 
-		Ember.changeProperties(function() {
+		Ember.changeProperties(() => {
 			// If the type wasn't provided, fill it in based on the inverse
 			if (Ember.typeOf(id) !== 'string') {
 				polymorphicType = Ember.get(id, 'typeKey'); // eslint-disable-line no-param-reassign
@@ -397,7 +403,7 @@ var RelationshipPublicMethods = {
 					break;
 				}
 			}
-		}, this);
+		});
 	},
 
 	/**
@@ -423,7 +429,7 @@ var RelationshipPublicMethods = {
 			throw new Ember.Error('Can\'t modify a read-only relationship.');
 		}
 
-		Ember.changeProperties(function() {
+		Ember.changeProperties(() => {
 			this.set('initializedRelationships.' + relationshipName, true);
 
 			var store = this.get('store');
@@ -500,7 +506,7 @@ var RelationshipPublicMethods = {
 			// If all else fails, create a relationship
 			store.createRelationship(this.typeKey, this.get('id'), relationshipName,
 				polymorphicType, id, meta.inverse, CLIENT_STATE);
-		}, this);
+		});
 	},
 
 	/**
@@ -520,7 +526,7 @@ var RelationshipPublicMethods = {
 			throw new Ember.Error('Can\'t modify a read-only relationship.');
 		}
 
-		Ember.changeProperties(function() {
+		Ember.changeProperties(() => {
 			var relationship = this.getHasOneRelationship(relationshipName, false);
 			if (relationship) {
 				if (relationship.get('state') === CLIENT_STATE) {
@@ -529,7 +535,7 @@ var RelationshipPublicMethods = {
 					this.get('store').changeRelationshipState(relationship, DELETED_STATE);
 				}
 			}
-		}, this);
+		});
 	},
 
 	/**

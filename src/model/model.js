@@ -98,7 +98,9 @@ var Model = CoreModel.extend(Ember.Evented, {
 	 * @param {Object} json
 	 * @deprecated Use `loadDataFromServer` instead
 	 */
-	loadData: Ember.aliasMethod('loadDataFromServer'),
+	loadData() {
+		return this.loadDataFromServer(...arguments);
+	},
 
 	/**
 	 * Takes a payload from the server and merges the data into the current data.
@@ -171,16 +173,16 @@ var Model = CoreModel.extend(Ember.Evented, {
 	/**
 	 * Proxies the store's delete method for convenience.
 	 *
-	 * @method destroy
+	 * @method destroyRecord
 	 * @return Promise
 	 */
-	destroy: function() {
+	destroyRecord: function() {
 		var _this = this;
 
 		this.set('isDeleting', true);
 		return this.get('store').deleteRecord(this).then(function() {
 			_this.set('isDeleted', true);
-			_this.set('store', null);
+			_this.destroy();
 		}).finally(function() {
 			_this.set('isDeleting', false);
 		});

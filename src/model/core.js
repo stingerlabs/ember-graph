@@ -39,7 +39,7 @@ var createAttribute = function(attributeName, options) {
 			}
 
 			if (value === undefined) {
-				Ember.warn('`undefined` is not a valid property value.');
+				Ember.warn('`undefined` is not a valid property value.', false, { id: 'undefined-invalid-prop' });
 				return;
 			}
 
@@ -302,7 +302,9 @@ CoreModel.reopenClass({
 	 * @return {Object}
 	 * @static
 	 */
-	metaForAttribute: Ember.aliasMethod('metaForProperty'),
+	metaForAttribute() {
+		return this.metaForProperty(...arguments);
+	},
 
 	/**
 	 * @method isAttribute

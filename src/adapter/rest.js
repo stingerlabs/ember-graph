@@ -1,5 +1,6 @@
 import $ from 'jquery';
 import Ember from 'ember';
+import copy from 'ember-graph/util/copy';
 import Adapter from 'ember-graph/adapter/adapter';
 
 import { pluralize } from 'ember-graph/util/inflector';
@@ -220,7 +221,7 @@ export default Adapter.extend({
 
 	mergePayloads(payloads) {
 		const mergeObjects = (a, b) => {
-			const merged = Ember.merge(Ember.copy(a, true), b);
+			const merged = Ember.assign(copy(a, true), b);
 
 			for (let key in b) {
 				if (b.hasOwnProperty(key) && a.hasOwnProperty(key)) {
