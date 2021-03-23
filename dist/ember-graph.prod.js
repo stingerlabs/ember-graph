@@ -6265,9 +6265,9 @@ define('ember-graph/store/record_request_cache', ['exports', 'ember'], function 
 
 		cache: null,
 
-		initializeCache: (function () {
+		initializeCache: _ember.default.on('init', function () {
 			this.set('cache', _ember.default.Object.create());
-		}).on('init'),
+		}),
 
 		_getAndCreateTypeCache: function (typeKey) {
 			if (!this.get('cache.' + typeKey)) {

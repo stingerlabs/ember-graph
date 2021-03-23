@@ -4,9 +4,9 @@ export default Ember.Object.extend({
 
 	cache: null,
 
-	initializeCache: function() {
+	initializeCache: Ember.on('init', function() {
 		this.set('cache', Ember.Object.create());
-	}.on('init'),
+	}),
 
 	_getAndCreateTypeCache(typeKey) {
 		if (!this.get('cache.' + typeKey)) {
