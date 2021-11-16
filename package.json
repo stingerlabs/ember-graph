@@ -11,7 +11,7 @@
 	},
 	"devDependencies": {
 		"adm-zip": "0.4.4",
-		"aws-sdk": "2.0.8",
+		"aws-sdk": "2.814.0",
 		"babel": "5.0.8",
 		"fs-readdir-recursive": "0.1.1",
 		"grunt": "0.4.5",
