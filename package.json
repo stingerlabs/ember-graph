@@ -28,8 +28,5 @@
 		"highlight.js": "8.0.0",
 		"marked": "0.3.2",
 		"node-sass": "2.1.1"
-	},
-	"peerDependencies": {
-		"eslint": "1.4.1"
 	}
 }
