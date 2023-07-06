@@ -1,0 +1,21 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ember-graph
+  description: A data persistence library for Ember.js with a focus on complex object graphs
+  annotations:
+    github.com/project-slug: stingerlabs/ember-graph
+    sonarqube.org/project-key: stingerlabs_ember-graph
+    snyk.io/org-name: greenlight-engineering
+    snyk.io/project-ids: 06708d9e-7cd6-4965-a621-396d90289da0
+  links:
+    - url: https://greenlightguru.slack.com/archives/C05FS321Y6R
+      title: '#ask channel'
+      icon: help
+  tags:
+    - javascript
+    - ember
+spec:
+  type: library
+  lifecycle: production
+  owner: team-gg
