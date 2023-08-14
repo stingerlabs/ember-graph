@@ -6,8 +6,7 @@ metadata:
   annotations:
     github.com/project-slug: stingerlabs/ember-graph
     sonarqube.org/project-key: stingerlabs_ember-graph
-    snyk.io/org-name: greenlight-engineering
-    snyk.io/project-ids: 06708d9e-7cd6-4965-a621-396d90289da0
+    snyk.io/org-id: de43b40c-8694-45ec-985c-404d8ab5977e
   links:
     - url: https://greenlightguru.slack.com/archives/C05FS321Y6R
       title: '#ask channel'
